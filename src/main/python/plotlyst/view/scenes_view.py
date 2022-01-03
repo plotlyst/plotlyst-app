@@ -22,9 +22,9 @@ from functools import partial
 from typing import Optional, List
 
 import qtawesome
-from PyQt5.QtCore import pyqtSignal, Qt, QModelIndex, \
+from PyQt6.QtCore import pyqtSignal, Qt, QModelIndex, \
     QPoint
-from PyQt5.QtWidgets import QWidget, QHeaderView, QMenu, QWidgetAction
+from PyQt6.QtWidgets import QWidget, QHeaderView, QMenu, QWidgetAction
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Scene, Novel, Chapter, SceneStage
@@ -75,8 +75,8 @@ class ScenesOutlineView(AbstractNovelView):
                                       ScenesTableModel.ColMiddle, ScenesTableModel.ColEnd]
         self._proxy = ScenesFilterProxyModel()
         self._proxy.setSourceModel(self.tblModel)
-        self._proxy.setSortCaseSensitivity(Qt.CaseInsensitive)
-        self._proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self._proxy.setSortCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self._proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.ui.tblScenes.setModel(self._proxy)
         self.ui.tblScenes.horizontalHeader().setSectionResizeMode(ScenesTableModel.ColTitle, QHeaderView.Fixed)
         self.ui.tblScenes.horizontalHeader().setFixedHeight(30)
@@ -101,7 +101,7 @@ class ScenesOutlineView(AbstractNovelView):
         self.ui.treeChapters.expandAll()
         self.chaptersModel.orderChanged.connect(self._on_scene_moved)
         self.chaptersModel.modelReset.connect(self.ui.treeChapters.expandAll)
-        self.ui.treeChapters.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.ui.treeChapters.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.ui.treeChapters.setColumnWidth(ChaptersTreeModel.ColPlus, 24)
         self.ui.treeChapters.selectionModel().selectionChanged.connect(self._on_chapter_selected)
         self.ui.treeChapters.clicked.connect(self._on_chapter_clicked)
@@ -145,7 +145,7 @@ class ScenesOutlineView(AbstractNovelView):
 
         self._update_cards()
 
-        self.ui.tblScenes.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tblScenes.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.ui.tblScenes.customContextMenuRequested.connect(self._on_custom_menu_requested)
 
         self.ui.tblScenes.selectionModel().selectionChanged.connect(self._on_scene_selected)
@@ -364,9 +364,9 @@ class ScenesOutlineView(AbstractNovelView):
             height = 60
             relax_colors = True
             self.ui.tblScenes.horizontalHeader().setSectionResizeMode(ScenesTableModel.ColBeginning,
-                                                                      QHeaderView.Stretch)
+                                                                      QHeaderView.ResizeMode.Stretch)
             self.ui.tblScenes.horizontalHeader().setSectionResizeMode(ScenesTableModel.ColMiddle,
-                                                                      QHeaderView.Stretch)
+                                                                      QHeaderView.ResizeMode.Stretch)
         self.tblModel.setRelaxColors(relax_colors)
         for col in range(self.tblModel.columnCount()):
             if col in columns:
@@ -405,8 +405,8 @@ class ScenesOutlineView(AbstractNovelView):
             self.stagesModel = ScenesStageTableModel(self.novel)
             self._stages_proxy = ScenesFilterProxyModel()
             self._stages_proxy.setSourceModel(self.stagesModel)
-            self._stages_proxy.setSortCaseSensitivity(Qt.CaseInsensitive)
-            self._stages_proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
+            self._stages_proxy.setSortCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+            self._stages_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
             self.ui.tblSceneStages.setModel(self._stages_proxy)
             self.ui.btnAct1.toggled.connect(partial(self._stages_proxy.setActsFilter, 1))
             self.ui.btnAct2.toggled.connect(partial(self._stages_proxy.setActsFilter, 2))

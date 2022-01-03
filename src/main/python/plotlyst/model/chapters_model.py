@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import pickle
 from typing import Any, Dict, List
 
-from PyQt5.QtCore import QModelIndex, Qt, QMimeData, QByteArray, pyqtSignal, QPersistentModelIndex, QVariant
-from PyQt5.QtGui import QFont, QColor
+from PyQt6.QtCore import QModelIndex, Qt, QMimeData, QByteArray, pyqtSignal, QPersistentModelIndex, QVariant
+from PyQt6.QtGui import QFont, QColor
 from anytree import Node
 from overrides import overrides
 
@@ -77,10 +77,10 @@ class ChaptersTreeModel(TreeItemModel, ActionBasedTreeModel):
         return 2
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if index.column() > 0 and self._action_index and index.row() == self._action_index.row() \
                 and self._action_index.parent() == index.parent():
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 if index.column() == self.ColPlus:
                     return IconRegistry.plus_circle_icon()
         if index.column() > 0:
@@ -90,22 +90,22 @@ class ChaptersTreeModel(TreeItemModel, ActionBasedTreeModel):
 
         node = index.internalPointer()
         if isinstance(node, ChapterNode):
-            if role == Qt.DisplayRole:
+            if role == Qt.ItemDataRole.DisplayRole:
                 return f'Chapter {index.row() + 1}'
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 return IconRegistry.chapter_icon()
         if isinstance(node, UncategorizedChapterNode) or (
                 isinstance(node, SceneNode) and isinstance(node.parent, UncategorizedChapterNode)):
-            if role == Qt.FontRole:
+            if role == Qt.ItemDataRole.FontRole:
                 font = QFont()
                 font.setItalic(True)
                 return font
-            if role == Qt.ForegroundRole:
-                return QColor(Qt.gray)
-        if isinstance(node, UncategorizedChapterNode) and role == Qt.DisplayRole:
+            if role == Qt.ItemDataRole.ForegroundRole:
+                return QColor(Qt.GlobalColor.gray)
+        if isinstance(node, UncategorizedChapterNode) and role == Qt.ItemDataRole.DisplayRole:
             if node.children:
                 return f'{node.name} ({len(node.children)})'
-        if isinstance(node, SceneNode) and role == Qt.DisplayRole:
+        if isinstance(node, SceneNode) and role == Qt.ItemDataRole.DisplayRole:
             if not node.name:
                 return f'Scene {self.novel.scenes.index(node.scene) + 1}'
 
@@ -156,12 +156,12 @@ class ChaptersTreeModel(TreeItemModel, ActionBasedTreeModel):
         self.modelReset.emit()
 
     @overrides
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         flags = super().flags(index)
         node = index.internalPointer()
         if isinstance(node, SceneNode):
-            return flags | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
-        return flags | Qt.ItemIsDropEnabled
+            return flags | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
+        return flags | Qt.ItemFlag.ItemIsDropEnabled
 
     @overrides
     def mimeData(self, indexes: List[QModelIndex]) -> QMimeData:

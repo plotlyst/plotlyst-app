@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from abc import abstractmethod
 from typing import List, Any, Set, Optional, Dict
 
-from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QAbstractItemModel, QSortFilterProxyModel, pyqtSignal, \
+from PyQt6.QtCore import QAbstractTableModel, QModelIndex, Qt, QAbstractItemModel, QSortFilterProxyModel, pyqtSignal, \
     QVariant
-from PyQt5.QtGui import QFont, QColor, QBrush
+from PyQt6.QtGui import QFont, QColor, QBrush
 from overrides import overrides
 
 from src.main.python.plotlyst.common import WIP_COLOR, PIVOTAL_COLOR
@@ -49,13 +49,13 @@ class AbstractHorizontalHeaderBasedTableModel(QAbstractTableModel):
         self.headers = headers
 
     @overrides
-    def columnCount(self, parent: QModelIndex = Qt.DisplayRole) -> int:
+    def columnCount(self, parent: QModelIndex = Qt.ItemDataRole.DisplayRole) -> int:
         return len(self.headers)
 
     @overrides
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> Any:
-        if role == Qt.DisplayRole:
-            if orientation == Qt.Horizontal:
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+        if role == Qt.ItemDataRole.DisplayRole:
+            if orientation == Qt.Orientation.Horizontal:
                 return self.headers[section]
 
             return str(section + 1)
@@ -65,8 +65,8 @@ class AbstractHorizontalHeaderBasedTableModel(QAbstractTableModel):
 def proxy(model: QAbstractItemModel) -> QSortFilterProxyModel:
     _proxy = QSortFilterProxyModel()
     _proxy.setSourceModel(model)
-    _proxy.setSortCaseSensitivity(Qt.CaseInsensitive)
-    _proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
+    _proxy.setSortCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+    _proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
 
     return _proxy
 
@@ -74,7 +74,7 @@ def proxy(model: QAbstractItemModel) -> QSortFilterProxyModel:
 class SelectionItemsModel(QAbstractTableModel):
     selection_changed = pyqtSignal()
     item_edited = pyqtSignal()
-    ItemRole: int = Qt.UserRole + 1
+    ItemRole: int = Qt.ItemDataRole.UserRole + 1
 
     ColIcon: int = 0
     ColBgColor: int = 1
@@ -138,47 +138,48 @@ class SelectionItemsModel(QAbstractTableModel):
         return 3
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         item = self.item(index)
         if role == self.ItemRole:
             return item
-        if index.column() == self.ColIcon and role == Qt.DecorationRole:
+        if index.column() == self.ColIcon and role == Qt.ItemDataRole.DecorationRole:
             if item.icon:
                 return IconRegistry.from_name(item.icon,
                                               item.icon_color)
             return IconRegistry.icons_icon('lightgrey')
-        if index.column() == self.ColIcon and role == Qt.BackgroundRole:
+        if index.column() == self.ColIcon and role == Qt.ItemDataRole.BackgroundRole:
             if item.icon and item.icon_color in ['#ffffff', 'white']:
                 return QBrush(QColor('lightGrey'))
-        if index.column() == self.ColName and role == Qt.DisplayRole:
+        if index.column() == self.ColName and role == Qt.ItemDataRole.DisplayRole:
             return item.text
-        if role == Qt.CheckStateRole and self._checkable and index.column() == self._checkable_column:
-            return Qt.Checked if item in self._checked else Qt.Unchecked
-        if role == Qt.FontRole and self._checkable and index.column() == self._checkable_column:
+        if role == Qt.ItemDataRole.CheckStateRole and self._checkable and index.column() == self._checkable_column:
+            return Qt.CheckState.Checked if item in self._checked else Qt.CheckState.Unchecked
+        if role == Qt.ItemDataRole.FontRole and self._checkable and index.column() == self._checkable_column:
             if item in self._checked:
                 font = QFont()
                 font.setBold(True)
                 return font
         if index.column() == self.ColBgColor:
-            if role == Qt.BackgroundRole and item.color_hexa:
+            if role == Qt.ItemDataRole.BackgroundRole and item.color_hexa:
                 return QBrush(QColor(item.color_hexa))
-            if role == Qt.DecorationRole and (not item.color_hexa or item.color_hexa in ['white', '#ffffff']):
+            if role == Qt.ItemDataRole.DecorationRole and (
+                    not item.color_hexa or item.color_hexa in ['white', '#ffffff']):
                 return IconRegistry.from_name('mdi.palette', color='lightgrey')
 
     @overrides
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         flags = super().flags(index)
         if self._checkable and index.column() == self._checkable_column:
-            flags = flags | Qt.ItemIsUserCheckable
+            flags = flags | Qt.ItemFlag.ItemIsUserCheckable
         if self._editable and self.columnIsEditable(index.column()):
-            flags = flags | Qt.ItemIsEditable
+            flags = flags | Qt.ItemFlag.ItemIsEditable
 
         return flags
 
     @overrides
-    def setData(self, index: QModelIndex, value: Any, role: int = Qt.DisplayRole) -> bool:
+    def setData(self, index: QModelIndex, value: Any, role: int = Qt.ItemDataRole.DisplayRole) -> bool:
         item: SelectionItem = self.item(index)
-        if role == Qt.EditRole:
+        if role == Qt.ItemDataRole.EditRole:
             if index.column() == self.ColName:
                 was_checked = item in self._checked
                 if was_checked:
@@ -188,19 +189,19 @@ class SelectionItemsModel(QAbstractTableModel):
                     self._checked.add(item)
                 self.item_edited.emit()
                 return True
-        if role == Qt.DecorationRole:
+        if role == Qt.ItemDataRole.DecorationRole:
             item.icon = value[0]
             item.icon_color = value[1]
             self.item_edited.emit()
             return True
-        if role == Qt.CheckStateRole:
-            if value == Qt.Checked:
+        if role == Qt.ItemDataRole.CheckStateRole:
+            if value == Qt.CheckState.Checked:
                 self._checked.add(item)
-            elif value == Qt.Unchecked:
+            elif value == Qt.CheckState.Unchecked:
                 self._checked.remove(item)
             self.selection_changed.emit()
             return True
-        if role == Qt.BackgroundRole:
+        if role == Qt.ItemDataRole.BackgroundRole:
             item.color_hexa = value
             self.item_edited.emit()
             return True
@@ -249,8 +250,8 @@ class DefaultSelectionItemsModel(SelectionItemsModel):
 
 
 class DistributionModel(QAbstractTableModel):
-    SortRole: int = Qt.UserRole + 1
-    SceneRole: int = Qt.UserRole + 2
+    SortRole: int = Qt.ItemDataRole.UserRole + 1
+    SceneRole: int = Qt.ItemDataRole.UserRole + 2
 
     IndexMeta: int = 0
     IndexTags: int = 1
@@ -266,16 +267,16 @@ class DistributionModel(QAbstractTableModel):
         return len(self.novel.scenes) + 2
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if role == self.SceneRole:
             if index.column() > self.IndexTags:
                 return self.novel.scenes[index.column() - 2]
             else:
                 return None
         if index.column() == self.IndexTags:
-            if role == Qt.ForegroundRole:
+            if role == Qt.ItemDataRole.ForegroundRole:
                 if self._highlighted_tags and index not in self._highlighted_tags:
-                    return QBrush(QColor(Qt.gray))
+                    return QBrush(QColor(Qt.GlobalColor.gray))
                 else:
                     return self._dataForTag(index, role)
             elif role == self.SortRole:
@@ -288,19 +289,19 @@ class DistributionModel(QAbstractTableModel):
                 return self._dataForTag(index, role)
         elif index.column() == self.IndexMeta:
             return self._dataForMeta(index, role)
-        elif role == Qt.ToolTipRole:
+        elif role == Qt.ItemDataRole.ToolTipRole:
             tooltip = f'{index.column() - 1}. {self.novel.scenes[index.column() - 2].title}'
             if self.novel.scenes[index.column() - 2].beat:
                 tooltip += f' ({self.novel.scenes[index.column() - 2].beat.text})'
             return tooltip
-        elif role == Qt.BackgroundRole:
+        elif role == Qt.ItemDataRole.BackgroundRole:
             if self._match(index):
                 if self._highlighted_scene:
                     if self._highlighted_scene.column() != index.column():
-                        return QBrush(QColor(Qt.gray))
+                        return QBrush(QColor(Qt.GlobalColor.gray))
                 if self._highlighted_tags:
                     if not all([self._match_by_row_col(x.row(), index.column()) for x in self._highlighted_tags]):
-                        return QBrush(QColor(Qt.gray))
+                        return QBrush(QColor(Qt.GlobalColor.gray))
                 if self.novel.scenes[index.column() - 2].wip:
                     return QBrush(QColor(WIP_COLOR))
                 if self.novel.scenes[index.column() - 2].beat:
@@ -309,12 +310,12 @@ class DistributionModel(QAbstractTableModel):
         return QVariant()
 
     @overrides
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         flags = super().flags(index)
 
         if self._highlighted_scene and index.column() == self.IndexTags:
             if not self._match_by_row_col(index.row(), self._highlighted_scene.column()):
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
 
         return flags
 
@@ -343,10 +344,10 @@ class DistributionModel(QAbstractTableModel):
         return self._match_by_row_col(index.row(), index.column())
 
     @abstractmethod
-    def _dataForTag(self, index: QModelIndex, role: int = Qt.DisplayRole):
+    def _dataForTag(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole):
         pass
 
-    def _dataForMeta(self, index: QModelIndex, role: int = Qt.DisplayRole):
+    def _dataForMeta(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole):
         return QVariant()
 
     @abstractmethod

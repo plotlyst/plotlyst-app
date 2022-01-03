@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import Qt
 
 from src.main.python.plotlyst.test.common import show_widget
 from src.main.python.plotlyst.view.widget.input import RichTextEditor, PowerBar, Toggle
@@ -31,8 +31,8 @@ def test_toggle(qtbot):
     toggle = Toggle()
     show_widget(qtbot, toggle)
 
-    qtbot.mouseClick(toggle, Qt.LeftButton)
+    qtbot.mouseClick(toggle, Qt.MouseButton.LeftButton)
     assert toggle.isChecked()
 
-    qtbot.mouseClick(toggle, Qt.LeftButton)
+    qtbot.mouseClick(toggle, Qt.MouseButton.LeftButton)
     assert not toggle.isChecked()

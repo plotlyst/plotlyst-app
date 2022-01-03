@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Any
 
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt6.QtCore import pyqtSignal, QObject
 
 
 class Severity(Enum):

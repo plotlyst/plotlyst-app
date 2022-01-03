@@ -21,10 +21,10 @@ from functools import partial
 from typing import Optional, List
 
 import emoji
-from PyQt5.QtCore import QObject, pyqtSignal, QModelIndex, QItemSelectionModel, \
+from PyQt6.QtCore import QObject, pyqtSignal, QModelIndex, QItemSelectionModel, \
     QAbstractItemModel, Qt, QSize
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QStyledItemDelegate, QStyleOptionViewItem, QTextEdit, QLineEdit, QComboBox, \
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QWidget, QStyledItemDelegate, QStyleOptionViewItem, QTextEdit, QLineEdit, QComboBox, \
     QWidgetAction, QTableView
 from fbs_runtime import platform
 from overrides import overrides
@@ -265,7 +265,9 @@ class SceneEditor(QObject):
         if self.scene.pov:
             if self.scene.pov.avatar:
                 pixmap = avatars.pixmap(self.scene.pov)
-                self.ui.lblAvatar.setPixmap(pixmap.scaled(128, 128, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                self.ui.lblAvatar.setPixmap(
+                    pixmap.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio,
+                                  Qt.TransformationMode.SmoothTransformation))
             else:
                 pixmap = avatars.name_initial_icon(self.scene.pov).pixmap(128, 128)
                 self.ui.lblAvatar.setPixmap(pixmap)
@@ -418,7 +420,7 @@ class ScenesBuilderDelegate(QStyledItemDelegate):
     @overrides
     def setModelData(self, editor: QWidget, model: QAbstractItemModel, index: QModelIndex):
         if isinstance(editor, QComboBox):
-            model.setData(index, editor.currentData(Qt.UserRole))
+            model.setData(index, editor.currentData(Qt.ItemDataRole.UserRole))
         elif isinstance(editor, QLineEdit):
             model.setData(index, editor.text())
 

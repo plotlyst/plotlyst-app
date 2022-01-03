@@ -23,10 +23,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Any
 
-from PyQt5.QtCore import Qt, QRectF, QModelIndex, QRect, QPoint
-from PyQt5.QtGui import QPixmap, QPainterPath, QPainter, QCursor, QFont, QColor, QIcon
-from PyQt5.QtWidgets import QWidget, QApplication, QMessageBox, QSizePolicy, QFrame, QColorDialog, QAbstractItemView, \
-    QMenu, QAction, QGraphicsOpacityEffect, QProxyStyle, QStyle, QStyleOption, QStyleHintReturn
+from PyQt6.QtCore import Qt, QRectF, QModelIndex, QRect, QPoint
+from PyQt6.QtGui import QPixmap, QPainterPath, QPainter, QCursor, QFont, QColor, QIcon, QAction
+from PyQt6.QtWidgets import QWidget, QApplication, QMessageBox, QSizePolicy, QFrame, QColorDialog, QAbstractItemView, \
+    QMenu, QGraphicsOpacityEffect, QProxyStyle, QStyle, QStyleOption, QStyleHintReturn
 from fbs_runtime import platform
 from overrides import overrides
 
@@ -57,13 +57,13 @@ def rounded_pixmap(original: QPixmap) -> QPixmap:
     size = max(original.width(), original.height())
 
     rounded = QPixmap(size, size)
-    rounded.fill(Qt.transparent)
+    rounded.fill(Qt.GlobalColor.transparent)
     path = QPainterPath()
     path.addEllipse(QRectF(rounded.rect()))
     painter = QPainter(rounded)
-    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     painter.setClipPath(path)
-    painter.fillRect(rounded.rect(), Qt.black)
+    painter.fillRect(rounded.rect(), Qt.GlobalColor.black)
     x = int((original.width() - size) / 2)
     y = int((original.height() - size) / 2)
 
@@ -75,10 +75,10 @@ def rounded_pixmap(original: QPixmap) -> QPixmap:
 
 def ask_confirmation(message: str, parent: Optional[QWidget] = None) -> bool:
     """Raise a confirmation dialog. Return True if the user clicked Yes, False otherwise."""
-    QApplication.setOverrideCursor(QCursor(Qt.ArrowCursor))
+    QApplication.setOverrideCursor(QCursor(Qt.CursorShape.ArrowCursor))
     status: int = QMessageBox.question(parent, 'Confirmation', message)
     QApplication.restoreOverrideCursor()
-    if status & QMessageBox.Yes:
+    if status & QMessageBox.StandardButton.Yes:
         return True
     return False
 
@@ -86,9 +86,9 @@ def ask_confirmation(message: str, parent: Optional[QWidget] = None) -> bool:
 def spacer_widget(max_width: Optional[int] = None, vertical: bool = False) -> QWidget:
     spacer = QWidget()
     if vertical:
-        spacer.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        spacer.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
     else:
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
     if max_width:
         spacer.setMaximumWidth(max_width)
     return spacer
@@ -97,10 +97,10 @@ def spacer_widget(max_width: Optional[int] = None, vertical: bool = False) -> QW
 def line(vertical: bool = False) -> QFrame:
     line = QFrame()
     if vertical:
-        line.setFrameShape(QFrame.VLine)
+        line.setFrameShape(QFrame.Shape.VLine)
     else:
-        line.setFrameShape(QFrame.HLine)
-    line.setFrameShadow(QFrame.Sunken)
+        line.setFrameShape(QFrame.Shape.HLine)
+    line.setFrameShadow(QFrame.Shadow.Sunken)
 
     return line
 
@@ -108,7 +108,7 @@ def line(vertical: bool = False) -> QFrame:
 def busy(func):
     @functools.wraps(func)
     def wrapper_timer(*args, **kwargs):
-        QApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        QApplication.setOverrideCursor(QCursor(Qt.CursorShape.BusyCursor))
         try:
             return func(*args, **kwargs)
         finally:
@@ -128,7 +128,7 @@ def emoji_font(size: int = 13) -> QFont:
 def show_color_picker(default_color: QColor = QColor('white')) -> QColor:
     if platform.is_linux():
         color: QColor = QColorDialog.getColor(QColor(default_color),
-                                              options=QColorDialog.DontUseNativeDialog)
+                                              options=QColorDialog.ColorDialogOption.DontUseNativeDialog)
     else:
         color = QColorDialog.getColor(QColor(default_color))
 
@@ -204,7 +204,7 @@ class InstantTooltipStyle(QProxyStyle):
     @overrides
     def styleHint(self, hint: QStyle.StyleHint, option: Optional[QStyleOption] = None, widget: Optional[QWidget] = None,
                   returnData: Optional[QStyleHintReturn] = None) -> int:
-        if hint == QStyle.SH_ToolTip_WakeUpDelay or hint == QStyle.SH_ToolTip_FallAsleepDelay:
+        if hint == QStyle.StyleHint.SH_ToolTip_WakeUpDelay or hint == QStyle.StyleHint.SH_ToolTip_FallAsleepDelay:
             return 0
 
         return super(InstantTooltipStyle, self).styleHint(hint, option, widget, returnData)

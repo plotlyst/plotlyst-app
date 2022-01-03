@@ -24,7 +24,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional, Any, Dict
 
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import Qt
 from dataclasses_json import dataclass_json, Undefined
 from overrides import overrides
 
@@ -851,16 +851,16 @@ for item in role_field.selections:
 
 class HAlignment(Enum):
     DEFAULT = 0
-    LEFT = Qt.AlignLeft
-    RIGHT = Qt.AlignRight
-    CENTER = Qt.AlignHCenter
-    JUSTIFY = Qt.AlignJustify
+    LEFT = Qt.AlignmentFlag.AlignLeft
+    RIGHT = Qt.AlignmentFlag.AlignRight
+    CENTER = Qt.AlignmentFlag.AlignHCenter
+    JUSTIFY = Qt.AlignmentFlag.AlignJustify
 
 
 class VAlignment(Enum):
-    TOP = Qt.AlignTop
-    BOTTOM = Qt.AlignBottom
-    CENTER = Qt.AlignVCenter
+    TOP = Qt.AlignmentFlag.AlignTop
+    BOTTOM = Qt.AlignmentFlag.AlignBottom
+    CENTER = Qt.AlignmentFlag.AlignVCenter
 
 
 @dataclass

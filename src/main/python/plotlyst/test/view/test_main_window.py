@@ -2,8 +2,8 @@ import sys
 from pathlib import Path
 from uuid import UUID
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QFileDialog
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QFileDialog
 
 from src.main.python.plotlyst.core.client import client
 from src.main.python.plotlyst.test.common import go_to_home, create_novel
@@ -55,16 +55,16 @@ def test_load_new_empty_novel(qtbot, filled_window: MainWindow):
     card = view.novel_cards[1]
     assert card.novel.id
     assert card.novel.title == new_title
-    qtbot.mouseClick(card, Qt.LeftButton)
+    qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
 
     view.ui.btnActivate.click()
 
     assert_views(filled_window)
     first_card = view.novel_cards[0]
     assert first_card.novel.id
-    qtbot.mouseClick(first_card, Qt.LeftButton)
+    qtbot.mouseClick(first_card, Qt.MouseButton.LeftButton)
 
-    qtbot.mouseClick(first_card, Qt.LeftButton)
+    qtbot.mouseClick(first_card, Qt.MouseButton.LeftButton)
     view.ui.btnActivate.click()
     assert_views(filled_window)
 
@@ -82,7 +82,7 @@ def test_import_from_scrivener(qtbot, window: MainWindow, monkeypatch):
     card = view.novel_cards[0]
     assert card.novel.id == UUID('C4B3D990-B9C2-4FE6-861E-B06B498283A4')
     assert card.novel.title == 'Importer project'
-    qtbot.mouseClick(card, Qt.LeftButton)
+    qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
 
     view.ui.btnActivate.click()
     assert_views(window)
@@ -93,7 +93,7 @@ def _test_sidebar_toggle(qtbot, filled_window: MainWindow):
     assert len(view.novel_cards) == 1
 
     card = view.novel_cards[0]
-    qtbot.mouseClick(card, Qt.LeftButton)
+    qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
 
     view.ui.btnActivate.click()
 

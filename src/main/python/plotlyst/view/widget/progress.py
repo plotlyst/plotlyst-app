@@ -19,19 +19,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import List
 
-from PyQt5.QtChart import QChart, QChartView, QPieSeries, QPieSlice
-from PyQt5.QtCore import Qt, QMargins
-from PyQt5.QtGui import QPainter, QColor, QFont
+from PyQt6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
+from PyQt6.QtCore import Qt, QMargins
+from PyQt6.QtGui import QPainter, QColor, QFont
 
 from src.main.python.plotlyst.core.domain import Novel, SceneStage
 
 
 class ProgressChartView(QChartView):
-    def __init__(self, value: int, max: int, title_prefix: str = 'Progress', color=Qt.darkBlue, parent=None):
+    def __init__(self, value: int, max: int, title_prefix: str = 'Progress', color=Qt.GlobalColor.darkBlue,
+                 parent=None):
         super(ProgressChartView, self).__init__(parent)
         self.chart = QChart()
         self.chart.legend().hide()
-        self.chart.setAnimationOptions(QChart.SeriesAnimations)
+        self.chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
         self.chart.setMargins(QMargins(0, 1, 0, 1))
         font = QFont()
         font.setBold(True)
@@ -42,7 +43,7 @@ class ProgressChartView(QChartView):
         self.setChart(self.chart)
         self.setMaximumHeight(200)
         self.setMaximumWidth(250)
-        self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         self.refresh(value, max)
 
@@ -53,7 +54,7 @@ class ProgressChartView(QChartView):
         percentage_slice = QPieSlice('Progress', value)
         percentage_slice.setColor(QColor(self._color))
         empty_slice = QPieSlice('', max - value)
-        empty_slice.setColor(Qt.white)
+        empty_slice.setColor(Qt.GlobalColor.white)
         series.append(percentage_slice)
         series.append(empty_slice)
         self.chart.setTitle(self._title_prefix + " {:.1f}%".format(100 * percentage_slice.percentage()))
@@ -133,7 +134,7 @@ class SceneStageProgressCharts:
 
             for i in range(1, 4):
                 act = ProgressChartView(values[i][0], values[i][1], f'Act {i}:',
-                                        color=self._act_colors.get(i, Qt.darkBlue))
+                                        color=self._act_colors.get(i, Qt.GlobalColor.darkBlue))
                 self._chartviews.append(act)
         else:
             for i, v in enumerate(values):

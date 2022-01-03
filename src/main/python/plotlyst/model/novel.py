@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from abc import abstractmethod
 from typing import Any
 
-from PyQt5.QtCore import QModelIndex, Qt, QAbstractTableModel
-from PyQt5.QtGui import QIcon
+from PyQt6.QtCore import QModelIndex, Qt, QAbstractTableModel
+from PyQt6.QtGui import QIcon
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Novel, SelectionItem, Conflict, SceneStage, Plot, PlotType
@@ -51,9 +51,9 @@ class _NovelSelectionItemsModel(SelectionItemsModel):
         pass
 
     @overrides
-    def setData(self, index: QModelIndex, value: Any, role: int = Qt.DisplayRole) -> bool:
+    def setData(self, index: QModelIndex, value: Any, role: int = Qt.ItemDataRole.DisplayRole) -> bool:
         updated = super().setData(index, value, role)
-        if updated and role != Qt.CheckStateRole:
+        if updated and role != Qt.ItemDataRole.CheckStateRole:
             self.repo.update_novel(self.novel)
         return updated
 
@@ -72,9 +72,9 @@ class NovelPlotsModel(_NovelSelectionItemsModel):
         return 6
 
     @overrides
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> Any:
-        if orientation == Qt.Horizontal:
-            if role == Qt.DisplayRole:
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+        if orientation == Qt.Orientation.Horizontal:
+            if role == Qt.ItemDataRole.DisplayRole:
                 if section == self.ColName:
                     return 'Plot title'
                 if section == self.ColPlotType:
@@ -83,41 +83,41 @@ class NovelPlotsModel(_NovelSelectionItemsModel):
                     return 'Linked character'
                 if section == self.ColValueType:
                     return 'Value'
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 if section == self.ColCharacter:
                     return IconRegistry.character_icon('white', 'white')
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if index.column() < self.ColPlotType:
             return super(NovelPlotsModel, self).data(index, role)
         plot: Plot = self.novel.plots[index.row()]
         if index.column() == self.ColPlotType:
             if plot.plot_type == PlotType.Main:
-                if role == Qt.DisplayRole:
+                if role == Qt.ItemDataRole.DisplayRole:
                     return 'Main'
-                if role == Qt.DecorationRole:
+                if role == Qt.ItemDataRole.DecorationRole:
                     return IconRegistry.cause_and_effect_icon()
             if plot.plot_type == PlotType.Internal:
-                if role == Qt.DisplayRole:
+                if role == Qt.ItemDataRole.DisplayRole:
                     return 'Internal'
-                if role == Qt.DecorationRole:
+                if role == Qt.ItemDataRole.DecorationRole:
                     return IconRegistry.conflict_self_icon()
             if plot.plot_type == PlotType.Subplot:
-                if role == Qt.DisplayRole:
+                if role == Qt.ItemDataRole.DisplayRole:
                     return 'Subplot'
-                if role == Qt.DecorationRole:
+                if role == Qt.ItemDataRole.DecorationRole:
                     return IconRegistry.from_name('mdi.source-branch')
         if index.column() == self.ColCharacter:
             character = plot.character(self.novel)
             if character:
-                if role == Qt.DisplayRole:
+                if role == Qt.ItemDataRole.DisplayRole:
                     return character.name
-                if role == Qt.DecorationRole:
+                if role == Qt.ItemDataRole.DecorationRole:
                     return QIcon(avatars.pixmap(character))
 
     @overrides
-    def setData(self, index: QModelIndex, value: Any, role: int = Qt.DisplayRole) -> bool:
+    def setData(self, index: QModelIndex, value: Any, role: int = Qt.ItemDataRole.DisplayRole) -> bool:
         updated = super().setData(index, value, role)
 
         if not updated:
@@ -128,7 +128,7 @@ class NovelPlotsModel(_NovelSelectionItemsModel):
                 self.novel.plots[index.row()].character_id = value.id
                 updated = True
 
-            if updated and role != Qt.CheckStateRole:
+            if updated and role != Qt.ItemDataRole.CheckStateRole:
                 self.repo.update_novel(self.novel)
         return updated
 
@@ -193,7 +193,7 @@ class NovelConflictsModel(QAbstractTableModel):
     ColType = 1
     ColPhrase = 2
 
-    ConflictRole = Qt.UserRole + 1
+    ConflictRole = Qt.ItemDataRole.UserRole + 1
 
     def __init__(self, novel: Novel, parent=None):
         super(NovelConflictsModel, self).__init__(parent)
@@ -208,13 +208,13 @@ class NovelConflictsModel(QAbstractTableModel):
         return 3
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         conflict: Conflict = self.novel.conflicts[index.row()]
         if role == self.ConflictRole:
             return conflict
-        if index.column() == self.ColPov and role == Qt.DecorationRole:
+        if index.column() == self.ColPov and role == Qt.ItemDataRole.DecorationRole:
             return QIcon(avatars.pixmap(conflict.character(self.novel)))
-        if index.column() == self.ColType and role == Qt.DecorationRole:
+        if index.column() == self.ColType and role == Qt.ItemDataRole.DecorationRole:
             if conflict.conflicting_character(self.novel):
                 if conflict.conflicting_character(self.novel).avatar:
                     return QIcon(avatars.pixmap(conflict.conflicting_character(self.novel)))
@@ -222,19 +222,19 @@ class NovelConflictsModel(QAbstractTableModel):
                     return avatars.name_initial_icon(conflict.conflicting_character(self.novel))
             else:
                 return IconRegistry.conflict_type_icon(conflict.type)
-        if index.column() == self.ColPhrase and role == Qt.DisplayRole:
+        if index.column() == self.ColPhrase and role == Qt.ItemDataRole.DisplayRole:
             return conflict.text
 
     @overrides
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         flags = super(NovelConflictsModel, self).flags(index)
         if index.column() == self.ColPhrase:
-            return flags | Qt.ItemIsEditable
+            return flags | Qt.ItemFlag.ItemIsEditable
         return flags
 
     @overrides
     def setData(self, index: QModelIndex, value: Any, role: int = ...) -> bool:
-        if index.column() == self.ColPhrase and role == Qt.EditRole:
+        if index.column() == self.ColPhrase and role == Qt.ItemDataRole.EditRole:
             self.novel.conflicts[index.row()].text = value
             RepositoryPersistenceManager.instance().update_novel(self.novel)
             return True

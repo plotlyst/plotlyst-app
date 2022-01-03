@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QModelIndex
+from PyQt6.QtCore import QModelIndex
 
 from src.main.python.plotlyst.core.client import json_client, client
 from src.main.python.plotlyst.test.common import go_to_docs, click_on_item, trigger_action_on_popup

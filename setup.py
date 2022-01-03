@@ -8,10 +8,10 @@ with (HERE / 'README.md').open('rt') as fh:
 
 REQUIREMENTS: dict = {
     'core': [
-        'PyQt5==5.15.4',
+        'PyQt6==6.2.0',
         'overrides==3.1.0',
         'qtawesome==1.1.1',
-        'PyQtChart==5.15.4',
+        'PyQt6-Charts==6.2',
         'anytree==2.8.0',
         'emoji==1.4.1',
         'fbs[sentry]',
@@ -23,9 +23,10 @@ REQUIREMENTS: dict = {
         'pytest==6.2.4',
         'pytest-qt==4.0.2',
         'pytest-cov==2.12.1',
+        'pytest-randomly==3.10.3',
     ],
     'dev': [
-        'pyqt5ac',
+        'pyqt6-tools',
     ],
     'doc': [
     ],

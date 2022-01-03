@@ -22,10 +22,10 @@ from abc import abstractmethod
 from functools import partial
 from typing import List, Set, Optional, Union, Tuple
 
-from PyQt5.QtCore import Qt, QObject, QEvent, QMimeData, QByteArray, QTimer, QSize, pyqtSignal
-from PyQt5.QtGui import QDrag, QMouseEvent, QDragEnterEvent, QDragMoveEvent, QDropEvent, QDragLeaveEvent, \
+from PyQt6.QtCore import Qt, QObject, QEvent, QMimeData, QByteArray, QTimer, QSize, pyqtSignal
+from PyQt6.QtGui import QDrag, QMouseEvent, QDragEnterEvent, QDragMoveEvent, QDropEvent, QDragLeaveEvent, \
     QResizeEvent, QCursor
-from PyQt5.QtWidgets import QSizePolicy, QWidget, QListView, QFrame, QToolButton, QHBoxLayout, QHeaderView, QSplitter
+from PyQt6.QtWidgets import QSizePolicy, QWidget, QListView, QFrame, QToolButton, QHBoxLayout, QHeaderView, QSplitter
 from overrides import overrides
 
 from src.main.python.plotlyst.common import ACT_ONE_COLOR, ACT_THREE_COLOR, ACT_TWO_COLOR
@@ -53,11 +53,11 @@ class SceneGoalsWidget(LabelsEditorWidget):
         self.novel = novel
         self.scene_structure_item = scene_structure_item
         super(SceneGoalsWidget, self).__init__(parent=parent)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.setValue([x.text for x in self.scene_structure_item.goals])
         self.btnEdit.setIcon(IconRegistry.goal_icon())
         self.btnEdit.setText('Track goals')
-        self._wdgLabels.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        self._wdgLabels.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.setStyleSheet('SceneGoalsWidget {border: 0px;}')
 
     @overrides
@@ -87,7 +87,7 @@ class SceneConflictsWidget(LabelsEditorWidget):
         self.setValue([x.text for x in self.scene_structure_item.conflicts])
         self.btnEdit.setIcon(IconRegistry.conflict_icon())
         self.btnEdit.setText('Track conflicts')
-        self._wdgLabels.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        self._wdgLabels.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.setStyleSheet('SceneConflictsWidget {border: 0px;}')
         self._popup.new_conflict_added.connect(self.btnEdit.menu().hide)
 
@@ -103,7 +103,7 @@ class SceneConflictsWidget(LabelsEditorWidget):
         widget.tblConflicts.horizontalHeader().setSectionResizeMode(SceneConflictsModel.ColIcon,
                                                                     QHeaderView.ResizeToContents)
         widget.tblConflicts.horizontalHeader().setSectionResizeMode(SceneConflictsModel.ColName,
-                                                                    QHeaderView.Stretch)
+                                                                    QHeaderView.ResizeMode.Stretch)
         return widget
 
     @overrides
@@ -212,10 +212,10 @@ class _PlaceHolder(QFrame):
     def __init__(self):
         super(_PlaceHolder, self).__init__()
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setFixedHeight(3)
         self.setAcceptDrops(True)
-        self.setFrameStyle(QFrame.Box)
+        self.setFrameStyle(QFrame.Shape.Box)
 
         self.setStyle()
 
@@ -522,16 +522,16 @@ class SceneStructureWidget(QWidget, Ui_SceneStructureWidget):
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         self._dragged = watched
-        if event.type() == QEvent.MouseButtonPress:
+        if event.type() == QEvent.Type.MouseButtonPress:
             self.mousePressEvent(event)
-        elif event.type() == QEvent.MouseMove:
+        elif event.type() == QEvent.Type.MouseMove:
             self.mouseMoveEvent(event)
-        elif event.type() == QEvent.MouseButtonRelease:
+        elif event.type() == QEvent.Type.MouseButtonRelease:
             self.mouseReleaseEvent(event)
-        elif event.type() == QEvent.DragEnter:
+        elif event.type() == QEvent.Type.DragEnter:
             self._target_to_drop = watched
             self.dragMoveEvent(event)
-        elif event.type() == QEvent.Drop:
+        elif event.type() == QEvent.Type.Drop:
             self.dropEvent(event)
             self._target_to_drop = None
         return super().eventFilter(watched, event)
@@ -542,7 +542,7 @@ class SceneStructureWidget(QWidget, Ui_SceneStructureWidget):
 
     @overrides
     def mouseMoveEvent(self, event: QMouseEvent):
-        if event.buttons() & Qt.LeftButton and self._dragged and self._dragged.isEnabled():
+        if event.buttons() & Qt.MouseButton.LeftButton and self._dragged and self._dragged.isEnabled():
             drag = QDrag(self._dragged)
             pix = self._dragged.grab()
             mimedata = QMimeData()
@@ -551,7 +551,7 @@ class SceneStructureWidget(QWidget, Ui_SceneStructureWidget):
             drag.setPixmap(pix)
             drag.setHotSpot(event.pos())
             drag.destroyed.connect(self._dragDestroyed)
-            drag.exec_()
+            drag.exec()
 
     def agendas(self) -> List[SceneStructureAgenda]:
         agenda = SceneStructureAgenda()
@@ -735,7 +735,7 @@ class SceneStoryStructureWidget(QWidget):
 
     def __init__(self, parent=None):
         super(SceneStoryStructureWidget, self).__init__(parent)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
 
         self.novel: Optional[Novel] = None
         self._acts: List[QToolButton] = []
@@ -764,7 +764,7 @@ class SceneStoryStructureWidget(QWidget):
             btn.toggled.connect(partial(self._beatToggled, btn))
             btn.clicked.connect(partial(self._beatClicked, beat, btn))
             btn.installEventFilter(self)
-            btn.setCursor(Qt.PointingHandCursor)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
             if beat not in occupied_beats:
                 btn.setCheckable(True)
                 self._beatToggled(btn, False)
@@ -797,9 +797,9 @@ class SceneStoryStructureWidget(QWidget):
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if isinstance(watched, QToolButton) and watched.isCheckable() and not watched.isChecked():
-            if event.type() == QEvent.Enter:
+            if event.type() == QEvent.Type.Enter:
                 set_opacity(watched, 0.5)
-            elif event.type() == QEvent.Leave:
+            elif event.type() == QEvent.Type.Leave:
                 set_opacity(watched, 0.2)
         return super(SceneStoryStructureWidget, self).eventFilter(watched, event)
 
@@ -840,7 +840,7 @@ class SceneStoryStructureWidget(QWidget):
                 if toggled:
                     btn.setCheckable(False)
                 else:
-                    btn.setCursor(Qt.PointingHandCursor)
+                    btn.setCursor(Qt.CursorShape.PointingHandCursor)
                     btn.setCheckable(True)
                     self._beatToggled(btn, False)
 
@@ -856,9 +856,9 @@ class SceneStoryStructureWidget(QWidget):
     def _actButton(self, text: str, color: str, left: bool = False, right: bool = False) -> QToolButton:
         act = QToolButton(self)
         act.setText(text)
-        act.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        act.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         act.setFixedHeight(self._lineHeight)
-        act.setCursor(Qt.PointingHandCursor)
+        act.setCursor(Qt.CursorShape.PointingHandCursor)
         act.setCheckable(True)
         act.setStyleSheet(f'''
         QToolButton {{

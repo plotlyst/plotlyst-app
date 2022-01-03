@@ -34,11 +34,9 @@ try:
     from src.main.python.plotlyst.view.dialog.dir import DirectoryPickerDialog
     from src.main.python.plotlyst.worker.persistence import flush_or_fail
 
-    from PyQt5 import QtWidgets
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QFont
-    from PyQt5.QtWidgets import QFileDialog, QApplication, QMessageBox
-    from fbs_runtime.application_context.PyQt5 import ApplicationContext
+    from PyQt6.QtGui import QFont
+    from PyQt6.QtWidgets import QFileDialog, QApplication, QMessageBox
+    from fbs_runtime.application_context.PyQt6 import ApplicationContext
     from fbs_runtime import PUBLIC_SETTINGS, platform
     from fbs_runtime.application_context import cached_property, is_frozen
     from fbs_runtime.excepthook.sentry import SentryExceptionHandler
@@ -53,9 +51,6 @@ except Exception as ex:
     appctxt = ApplicationContext()
     QMessageBox.critical(None, 'Could not launch application', traceback.format_exc())
     raise ex
-
-QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)  # enable highdpi scaling
-QtWidgets.QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)  # use highdpi icons
 
 
 class AppContext(ApplicationContext):

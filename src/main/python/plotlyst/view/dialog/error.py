@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import Optional
 
 import qtawesome
-from PyQt5.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QMessageBox
 
 
 class ErrorMessageBox(QMessageBox):
@@ -36,10 +36,10 @@ class ErrorMessageBox(QMessageBox):
                     btn.click()
 
         if warning:
-            self.setIcon(QMessageBox.Warning)
+            self.setIcon(QMessageBox.Icon.Warning)
             self.setWindowTitle('Warning')
         else:
-            self.setIcon(QMessageBox.Critical)
+            self.setIcon(QMessageBox.Icon.Critical)
             self.setWindowTitle('Error')
 
     def display(self) -> int:

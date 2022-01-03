@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import pickle
 from typing import Any, List
 
-from PyQt5.QtCore import QAbstractItemModel, QModelIndex, QVariant, Qt, QMimeData, QByteArray
+from PyQt6.QtCore import QAbstractItemModel, QModelIndex, QVariant, Qt, QMimeData, QByteArray
 from anytree import Node
 from overrides import overrides
 
@@ -32,7 +32,7 @@ class NodeMimeData(QMimeData):
 
 
 class TreeItemModel(QAbstractItemModel):
-    NodeRole = Qt.UserRole + 1
+    NodeRole = Qt.ItemDataRole.UserRole + 1
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -101,20 +101,20 @@ class TreeItemModel(QAbstractItemModel):
         return 1
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if not index.isValid():
             return QVariant()
         if role == self.NodeRole:
             return index.internalPointer()
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             node: Node = index.internalPointer()
             return node.name
 
     @overrides
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         flags = super().flags(index)
         if self.dragAndDropEnabled:
-            return flags | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
+            return flags | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
         return super().flags(index)
 
     @overrides

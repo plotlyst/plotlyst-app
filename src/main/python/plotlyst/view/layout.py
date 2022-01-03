@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import List, Optional
 
-from PyQt5.QtCore import QRect, Qt, QSize, QPoint
-from PyQt5.QtWidgets import QSizePolicy, QLayout, QLayoutItem
+from PyQt6.QtCore import QRect, Qt, QSize, QPoint
+from PyQt6.QtWidgets import QSizePolicy, QLayout, QLayoutItem
 from overrides import overrides
 
 
@@ -98,12 +98,14 @@ class FlowLayout(QLayout):
             widget = item.widget()
             spaceX = self.spacing()
             if spaceX == -1:
-                spaceX = widget.style().layoutSpacing(QSizePolicy.PushButton, QSizePolicy.PushButton,
-                                                      Qt.Horizontal)
+                spaceX = widget.style().layoutSpacing(QSizePolicy.ControlType.PushButton,
+                                                      QSizePolicy.ControlType.PushButton,
+                                                      Qt.Orientation.Horizontal)
             spaceY = self.spacing()
             if spaceY == -1:
-                spaceY = widget.style().layoutSpacing(QSizePolicy.PushButton, QSizePolicy.PushButton,
-                                                      Qt.Vertical)
+                spaceY = widget.style().layoutSpacing(QSizePolicy.ControlType.PushButton,
+                                                      QSizePolicy.ControlType.PushButton,
+                                                      Qt.Orientation.Vertical)
 
             nextX = x + item.sizeHint().width() + spaceX
             if nextX - spaceX > effectiveRect.right() and lineHeight > 0:

@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PyQt5.QtWidgets import QWidget
+from PyQt6.QtWidgets import QWidget
 
 from src.main.python.plotlyst.core.domain import Causality
 from src.main.python.plotlyst.model.causality import CaualityTreeModel

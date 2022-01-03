@@ -22,9 +22,9 @@ import logging
 import traceback
 from typing import Optional, List, Dict, TypeVar
 
-from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QCursor
-from PyQt5.QtWidgets import QMessageBox, QWidget, QStatusBar, QApplication
+from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtGui import QCursor
+from PyQt6.QtWidgets import QMessageBox, QWidget, QStatusBar, QApplication
 
 from src.main.python.plotlyst.env import app_env
 from src.main.python.plotlyst.event.core import EventLog, Severity, \

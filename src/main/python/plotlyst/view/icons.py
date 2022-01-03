@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import Dict
 
 import qtawesome
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QLabel
+from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtWidgets import QLabel
 
 from src.main.python.plotlyst.common import ACT_ONE_COLOR, ACT_TWO_COLOR, ACT_THREE_COLOR
 from src.main.python.plotlyst.core.domain import Character, VERY_UNHAPPY, UNHAPPY, HAPPY, VERY_HAPPY, ConflictType
@@ -486,7 +486,8 @@ avatars = AvatarsRegistry()
 def set_avatar(label: QLabel, character: Character, size: int = 128):
     if character.avatar:
         label.setPixmap(
-            avatars.pixmap(character).scaled(size, size, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            avatars.pixmap(character).scaled(size, size, Qt.AspectRatioMode.KeepAspectRatio,
+                                             Qt.TransformationMode.SmoothTransformation))
     elif character.name:
         label.setPixmap(avatars.name_initial_icon(character).pixmap(QSize(size, size)))
     else:

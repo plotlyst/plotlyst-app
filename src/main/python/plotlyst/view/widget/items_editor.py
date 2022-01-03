@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Optional
 
-from PyQt5.QtCore import QModelIndex, Qt, pyqtSignal
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QWidget, QAbstractItemView
+from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import QWidget, QAbstractItemView
 
 from src.main.python.plotlyst.core.domain import SelectionItem
 from src.main.python.plotlyst.model.common import SelectionItemsModel
@@ -77,9 +77,10 @@ class ItemsEditorWidget(QWidget, Ui_ItemsEditorWidget):
         self.inlineEditionEnabled = enabled
 
         if self.inlineEditionEnabled:
-            self.tableView.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.AnyKeyPressed)
+            self.tableView.setEditTriggers(
+                QAbstractItemView.EditTrigger.DoubleClicked | QAbstractItemView.EditTrigger.AnyKeyPressed)
         else:
-            self.tableView.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            self.tableView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.tableView.doubleClicked.connect(self._edit)
 
     def setAdditionEnabled(self, enabled: bool):
@@ -133,9 +134,9 @@ class ItemsEditorWidget(QWidget, Ui_ItemsEditorWidget):
         if index.column() == SelectionItemsModel.ColIcon:
             result = IconSelectorDialog(self).display()
             if result:
-                self.model.setData(index, (result[0], result[1].name()), role=Qt.DecorationRole)
+                self.model.setData(index, (result[0], result[1].name()), role=Qt.ItemDataRole.DecorationRole)
         if index.column() == SelectionItemsModel.ColBgColor:
             color: QColor = show_color_picker()
             if color.isValid():
-                self.model.setData(index, color.name(), role=Qt.BackgroundRole)
+                self.model.setData(index, color.name(), role=Qt.ItemDataRole.BackgroundRole)
             self.tableView.clearSelection()

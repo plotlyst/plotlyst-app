@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import List, Any, Optional
 
-from PyQt5.QtCore import QModelIndex, Qt, QVariant, pyqtSignal
-from PyQt5.QtGui import QFont, QIcon
+from PyQt6.QtCore import QModelIndex, Qt, QVariant, pyqtSignal
+from PyQt6.QtGui import QFont, QIcon
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Character, Novel, Scene, SelectionItem, enneagram_field
@@ -29,8 +29,8 @@ from src.main.python.plotlyst.view.icons import avatars, IconRegistry
 
 
 class CharactersTableModel(AbstractHorizontalHeaderBasedTableModel):
-    CharacterRole = Qt.UserRole + 1
-    SortRole = Qt.UserRole + 2
+    CharacterRole = Qt.ItemDataRole.UserRole + 1
+    SortRole = Qt.ItemDataRole.UserRole + 2
 
     ColName = 0
     ColRole = 1
@@ -49,19 +49,19 @@ class CharactersTableModel(AbstractHorizontalHeaderBasedTableModel):
         super().__init__(_headers, parent)
 
     @overrides
-    def rowCount(self, parent: QModelIndex = Qt.DisplayRole) -> int:
+    def rowCount(self, parent: QModelIndex = Qt.ItemDataRole.DisplayRole) -> int:
         return len(self._data)
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         character: Character = self._data[index.row()]
         if role == self.CharacterRole:
             return character
 
         if index.column() == self.ColName:
-            if role == Qt.DisplayRole or role == self.SortRole:
+            if role == Qt.ItemDataRole.DisplayRole or role == self.SortRole:
                 return character.name
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 return QIcon(avatars.pixmap(character))
         if index.column() == self.ColRole:
             return self._dataForSelectionItem(character.role(), role, displayText=False)
@@ -73,17 +73,17 @@ class CharactersTableModel(AbstractHorizontalHeaderBasedTableModel):
         if index.column() == self.ColMbti:
             return self._dataForSelectionItem(character.mbti(), role)
         if index.column() == self.ColGoals:
-            if role == Qt.DisplayRole or role == self.SortRole:
+            if role == Qt.ItemDataRole.DisplayRole or role == self.SortRole:
                 return ', '.join(character.goals())
 
     def _dataForSelectionItem(self, item: SelectionItem, role: int, displayText: bool = True, sortByText: bool = True):
         if item is None:
             return QVariant()
-        if displayText and role == Qt.DisplayRole:
+        if displayText and role == Qt.ItemDataRole.DisplayRole:
             return item.text
         if sortByText and role == self.SortRole:
             return item.text
-        if role == Qt.DecorationRole:
+        if role == Qt.ItemDataRole.DecorationRole:
             return IconRegistry.from_name(item.icon, item.icon_color)
 
 
@@ -98,38 +98,38 @@ class CharactersSceneAssociationTableModel(CharactersTableModel):
         self.scene = scene
 
     @overrides
-    def columnCount(self, parent: QModelIndex = Qt.DisplayRole) -> int:
+    def columnCount(self, parent: QModelIndex = Qt.ItemDataRole.DisplayRole) -> int:
         return 1
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if not self.scene:
             return QVariant()
 
         character: Character = self._data[index.row()]
         if character is self.scene.pov:
-            if role == Qt.ToolTipRole:
+            if role == Qt.ItemDataRole.ToolTipRole:
                 return 'POV character'
         elif character in self.scene.characters:
-            if role == Qt.FontRole:
+            if role == Qt.ItemDataRole.FontRole:
                 font = QFont()
                 font.setBold(True)
                 return font
-            elif role == Qt.CheckStateRole:
-                return Qt.Checked
-        elif role == Qt.CheckStateRole:
-            return Qt.Unchecked
+            elif role == Qt.ItemDataRole.CheckStateRole:
+                return Qt.CheckState.Checked
+        elif role == Qt.ItemDataRole.CheckStateRole:
+            return Qt.CheckState.Unchecked
 
         return super(CharactersSceneAssociationTableModel, self).data(index, role)
 
     @overrides
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         flags = super().flags(index)
         if not self.scene:
             return flags
         if self._data[index.row()] is self.scene.pov:
-            return Qt.NoItemFlags
-        return flags | Qt.ItemIsUserCheckable
+            return Qt.ItemFlag.NoItemFlags
+        return flags | Qt.ItemFlag.ItemIsUserCheckable
 
     def toggleSelection(self, index: QModelIndex):
         character = self._data[index.row()]

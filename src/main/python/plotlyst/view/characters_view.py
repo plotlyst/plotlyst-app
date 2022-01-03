@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Optional
 
-from PyQt5.QtCore import QItemSelection
+from PyQt6.QtCore import QItemSelection
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Novel

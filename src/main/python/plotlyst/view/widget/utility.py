@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Any
 
-from PyQt5.QtCore import QModelIndex, Qt, QAbstractListModel, pyqtSignal, QSortFilterProxyModel
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QWidget, QListView
+from PyQt6.QtCore import QModelIndex, Qt, QAbstractListModel, pyqtSignal, QSortFilterProxyModel
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import QWidget, QListView
 from overrides import overrides
 
 from src.main.python.plotlyst.view.common import show_color_picker
@@ -66,7 +66,7 @@ class IconSelectorWidget(QWidget, Ui_IconsSelectorWidget):
         self._proxy.setSourceModel(self.model)
         self._proxy.setFilterRole(self._Model.IconTypeRole)
         self.lstIcons.setModel(self._proxy)
-        self.lstIcons.setViewMode(QListView.IconMode)
+        self.lstIcons.setViewMode(QListView.ViewMode.IconMode)
         self.lstIcons.clicked.connect(self._icon_clicked)
 
         self.lineFilter.textChanged.connect(self._text_changed)
@@ -92,7 +92,7 @@ class IconSelectorWidget(QWidget, Ui_IconsSelectorWidget):
     def _text_changed(self, text: str):
         self.btnAll.setChecked(True)
         self._proxy.setFilterRole(self._Model.IconAliasRole)
-        self._proxy.setFilterRegExp(text)
+        self._proxy.setFilterRegularExpression(text)
 
     def _filter_toggled(self):
         self.lineFilter.clear()
@@ -125,8 +125,8 @@ class IconSelectorWidget(QWidget, Ui_IconsSelectorWidget):
 
     class _Model(QAbstractListModel):
 
-        IconAliasRole = Qt.UserRole + 1
-        IconTypeRole = Qt.UserRole + 2
+        IconAliasRole = Qt.ItemDataRole.UserRole + 1
+        IconTypeRole = Qt.ItemDataRole.UserRole + 2
 
         def __init__(self, icons):
             super().__init__()
@@ -142,5 +142,5 @@ class IconSelectorWidget(QWidget, Ui_IconsSelectorWidget):
                 return self.icons[index.row()].name
             if role == self.IconTypeRole:
                 return self.icons[index.row()].type
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 return IconRegistry.from_name(self.icons[index.row()].name)

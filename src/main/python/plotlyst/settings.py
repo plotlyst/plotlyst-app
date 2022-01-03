@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Optional, List
 
-from PyQt5.QtCore import QCoreApplication, QSettings
+from PyQt6.QtCore import QCoreApplication, QSettings
 
 
 class AppSettings:

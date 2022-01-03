@@ -22,9 +22,9 @@ import pickle
 from typing import Any, List, Optional
 
 import emoji
-from PyQt5.QtCore import QModelIndex, Qt, QMimeData, QByteArray
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication
+from PyQt6.QtCore import QModelIndex, Qt, QMimeData, QByteArray
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QApplication
 from anytree import Node
 from overrides import overrides
 
@@ -245,8 +245,8 @@ class _SceneBuilderTreeModel(TreeItemModel):
     MimeType: str = 'application/scene_element'
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
-        if role == Qt.FontRole:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+        if role == Qt.ItemDataRole.FontRole:
             return emoji_font(QApplication.font().pointSize())
         if role == self.NodeRole:
             return super(_SceneBuilderTreeModel, self).data(index, role)
@@ -258,9 +258,9 @@ class _SceneBuilderTreeModel(TreeItemModel):
 
     def _dataForInventoryNode(self, node: SceneInventoryNode, column: int, role: int):
         if column == 0:
-            if role == Qt.DisplayRole:
+            if role == Qt.ItemDataRole.DisplayRole:
                 return f'{node.emoji}{node.name}'
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 if node.character:
                     if isinstance(node.character, NpcCharacter):
                         return IconRegistry.portrait_icon()
@@ -320,11 +320,11 @@ class SceneBuilderInventoryTreeModel(_SceneBuilderTreeModel):
         EndingNode(self.root)
 
     @overrides
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         flags = super().flags(index)
         node = index.internalPointer()
         if isinstance(node, SceneInventoryNode):
-            return flags | Qt.ItemIsDragEnabled
+            return flags | Qt.ItemFlag.ItemIsDragEnabled
         return flags
 
 
@@ -346,12 +346,12 @@ class SceneBuilderPaletteTreeModel(_SceneBuilderTreeModel):
             self._createNode(child, node)
 
     @overrides
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         flags = super().flags(index)
         node = index.internalPointer()
         if isinstance(node, SceneInventoryNode):
-            return flags | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled | Qt.ItemIsEditable
-        return flags | Qt.ItemIsDropEnabled
+            return flags | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled | Qt.ItemFlag.ItemIsEditable
+        return flags | Qt.ItemFlag.ItemIsDropEnabled
 
     @overrides
     def setData(self, index: QModelIndex, value: Any, role: int = ...) -> bool:

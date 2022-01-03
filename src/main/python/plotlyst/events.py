@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 from typing import Optional
 
-from PyQt5.QtWidgets import QTextEdit
+from PyQt6.QtWidgets import QTextEdit
 
 from src.main.python.plotlyst.core.domain import Character, NovelDescriptor, Scene
 from src.main.python.plotlyst.event.core import Event

@@ -18,9 +18,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PyQt5 import QtGui
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QDialog, QHBoxLayout
+from PyQt6 import QtGui
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import QDialog, QHBoxLayout
 from overrides import overrides
 
 from src.main.python.plotlyst.view.widget.utility import IconSelectorWidget

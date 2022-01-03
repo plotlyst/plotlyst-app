@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from abc import abstractmethod
 from typing import Union, List, Iterable, Set
 
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QFrame, QToolButton, QVBoxLayout, QMenu, QWidgetAction, \
+from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QFrame, QToolButton, QVBoxLayout, QMenu, QWidgetAction, \
     QSizePolicy, QPushButton
 from overrides import overrides
 
@@ -213,13 +213,13 @@ class GoalLabel(SelectionItemLabel):
 
 
 class LabelsEditorWidget(QFrame):
-    def __init__(self, alignment=Qt.Horizontal, checkable: bool = True, parent=None):
+    def __init__(self, alignment=Qt.Orientation.Horizontal, checkable: bool = True, parent=None):
         super(LabelsEditorWidget, self).__init__(parent)
         self.checkable = checkable
         self.setLineWidth(1)
-        self.setFrameShape(QFrame.Box)
+        self.setFrameShape(QFrame.Shape.Box)
         self.setStyleSheet('LabelsEditorWidget {background: white;}')
-        if alignment == Qt.Horizontal:
+        if alignment == Qt.Orientation.Horizontal:
             self.setLayout(QHBoxLayout())
         else:
             self.setLayout(QVBoxLayout())
@@ -230,7 +230,7 @@ class LabelsEditorWidget(QFrame):
 
         self.btnEdit = QPushButton()
         self.btnEdit.setIcon(IconRegistry.plus_edit_icon())
-        self.btnEdit.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Maximum)
+        self.btnEdit.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Maximum)
         self.btnEdit.setStyleSheet('QPushButton::menu-indicator{width:0px;} QPushButton {padding:1 5 1 5;}')
 
         self._model = self._initModel()
@@ -245,11 +245,11 @@ class LabelsEditorWidget(QFrame):
         action.setDefaultWidget(self._popup)
         menu.addAction(action)
         self.btnEdit.setMenu(menu)
-        self.layout().addWidget(self.btnEdit, alignment=Qt.AlignTop)
+        self.layout().addWidget(self.btnEdit, alignment=Qt.AlignmentFlag.AlignTop)
 
         self._wdgLabels = LabelsWidget()
         self._wdgLabels.setStyleSheet('LabelsWidget {border: 1px solid black;}')
-        self._wdgLabels.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        self._wdgLabels.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.layout().addWidget(self._wdgLabels)
 
     def clear(self):

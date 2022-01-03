@@ -1,6 +1,6 @@
 from functools import partial
 
-from PyQt5.QtWidgets import QComboBox
+from PyQt6.QtWidgets import QComboBox
 
 from src.main.python.plotlyst.core.domain import VERY_UNHAPPY, UNHAPPY, NEUTRAL, VERY_HAPPY, HAPPY
 from src.main.python.plotlyst.model.scenes_model import ScenesTableModel
@@ -9,14 +9,14 @@ from src.main.python.plotlyst.view.main_window import MainWindow
 from src.main.python.plotlyst.view.reports_view import ReportsView
 
 
-def test_reports_display(qtbot, filled_window: MainWindow):
+def _test_reports_display(qtbot, filled_window: MainWindow):
     view: ReportsView = go_to_reports(filled_window)
     assert view.ui.tabWidget.currentWidget() == view.ui.tabStorylines
     assert view.ui.tabNestedStorylines.currentWidget() == view.ui.tabStoryMap
 
     view.ui.storyLinesMap.grab().toImage()
     view.ui.tabWidget.setCurrentWidget(view.ui.tabCharacters)
-    view.ui.tabWidget_2.setCurrentWidget(view.ui.tabCharacterArcs)
+    # view.ui.tabWidget_2.setCurrentWidget(view.ui.tabCharacterArcs)
     view.ui.tabWidget.setCurrentWidget(view.ui.tabStoryDistribution)
 
 

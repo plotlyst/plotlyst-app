@@ -18,9 +18,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PyQt5 import QtGui
-from PyQt5.QtCore import QModelIndex, QItemSelectionModel
-from PyQt5.QtWidgets import QTreeView
+from PyQt6 import QtGui
+from PyQt6.QtCore import QModelIndex, QItemSelectionModel
+from PyQt6.QtWidgets import QTreeView
 from overrides import overrides
 
 

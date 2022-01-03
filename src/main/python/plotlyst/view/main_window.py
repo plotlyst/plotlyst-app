@@ -21,9 +21,9 @@ import atexit
 from typing import List, Optional
 
 import qtawesome
-from PyQt5.QtCore import Qt, QThreadPool, QObject, QEvent
-from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QLineEdit, QTextEdit, QToolButton, QButtonGroup
+from PyQt6.QtCore import Qt, QThreadPool, QObject, QEvent
+from PyQt6.QtGui import QKeyEvent
+from PyQt6.QtWidgets import QMainWindow, QWidget, QApplication, QLineEdit, QTextEdit, QToolButton, QButtonGroup
 from fbs_runtime import platform
 from language_tool_python import LanguageTool
 from overrides import overrides
@@ -67,7 +67,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         if app_env.is_dev():
             self.resize(1200, 830)
         if app_env.is_prod():
-            self.setWindowState(Qt.WindowMaximized)
+            self.setWindowState(Qt.WindowState.WindowMaximized)
         self.novel = None
         self._current_text_widget = None
         self.manuscript_view: Optional[ManuscriptView] = None
@@ -164,14 +164,14 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
 
     @overrides
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             if self.stackMainPanels.currentWidget() is self.pageDistractionFree:
                 self._toggle_fullscreen(on=False)
         event.accept()
 
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if watched is self.wdgBottom and event.type() == QEvent.Leave:
+        if watched is self.wdgBottom and event.type() == QEvent.Type.Leave:
             self.wdgBottom.setHidden(True)
         return super(MainWindow, self).eventFilter(watched, event)
 
@@ -301,19 +301,19 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
 
     def _init_toolbar(self):
         self.outline_mode = QToolButton(self.toolBar)
-        self.outline_mode.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.outline_mode.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.outline_mode.setText('Plan')
         self.outline_mode.setCheckable(True)
         self.outline_mode.setIcon(IconRegistry.decision_icon(color='black'))
 
         self.manuscript_mode = QToolButton(self.toolBar)
-        self.manuscript_mode.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.manuscript_mode.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.manuscript_mode.setText('Write')
         self.manuscript_mode.setIcon(IconRegistry.edit_icon(color_on='darkBlue'))
         self.manuscript_mode.setCheckable(True)
 
         self.reports_mode = QToolButton(self.toolBar)
-        self.reports_mode.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.reports_mode.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.reports_mode.setText('Analyze')
         self.reports_mode.setIcon(IconRegistry.reports_icon())
         self.reports_mode.setCheckable(True)

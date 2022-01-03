@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import language_tool_python
-from PyQt5.QtCore import QRunnable
+from PyQt6.QtCore import QRunnable
 from overrides import overrides
 
 

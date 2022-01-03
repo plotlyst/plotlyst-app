@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 from typing import Optional, List
 
-from PyQt5.QtCore import QVariantAnimation, QVariant, pyqtSlot, QEasingCurve, QEventLoop, QTimer
-from PyQt5.QtGui import QIcon, QPalette, QColor
-from PyQt5.QtWidgets import QDialog, QApplication, QLabel
+from PyQt6.QtCore import QVariantAnimation, QVariant, pyqtSlot, QEasingCurve, QEventLoop, QTimer
+from PyQt6.QtGui import QIcon, QPalette, QColor
+from PyQt6.QtWidgets import QDialog, QApplication, QLabel
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Scene, Character, NpcCharacter, SceneBuilderElement
@@ -49,7 +49,7 @@ class SceneElementEditionDialog(QDialog, Ui_SceneElementEditionDialog):
         if not self.cbCharacter.count():
             self.cbCharacter.setHidden(True)
         result = self.exec()
-        if result == QDialog.Rejected:
+        if result == QDialog.DialogCode.Rejected:
             return None
         return SceneElementEditionResult(text=self.lineText.text(), character=self.cbCharacter.currentData())
 
@@ -91,7 +91,7 @@ class FadingLabel(QLabel):
     @pyqtSlot(QVariant)
     def changeColor(self, color):
         palette = self.palette()
-        palette.setColor(QPalette.WindowText, color)
+        palette.setColor(QPalette.ColorRole.WindowText, color)
         self.setPalette(palette)
 
     def _startFadeIn(self):
@@ -99,7 +99,7 @@ class FadingLabel(QLabel):
         self.animation.setStartValue(QColor(0, 0, 0, 0))
         self.animation.setEndValue(QColor(0, 0, 0, 255))
         self.animation.setDuration(200)
-        self.animation.setEasingCurve(QEasingCurve.InBack)
+        self.animation.setEasingCurve(QEasingCurve.Type.InBack)
         self.animation.start()
 
     def _startFadeOut(self):
@@ -107,7 +107,7 @@ class FadingLabel(QLabel):
         self.animation.setStartValue(QColor(0, 0, 0, 255))
         self.animation.setEndValue(QColor(0, 0, 0, 0))
         self.animation.setDuration(200)
-        self.animation.setEasingCurve(QEasingCurve.OutBack)
+        self.animation.setEasingCurve(QEasingCurve.Type.OutBack)
         self.animation.start()
 
     def startAnimation(self):

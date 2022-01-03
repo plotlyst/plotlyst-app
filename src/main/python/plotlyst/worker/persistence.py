@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 
-from PyQt5.QtCore import QTimer, QRunnable, QThreadPool, QObject
+from PyQt6.QtCore import QTimer, QRunnable, QThreadPool, QObject
 from overrides import overrides
 
 from src.main.python.plotlyst.core.client import client

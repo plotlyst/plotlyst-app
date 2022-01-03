@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer
 
 from src.main.python.plotlyst.core.client import client
 from src.main.python.plotlyst.test.common import go_to_home, patch_confirmed, create_novel, edit_novel_dialog, \
@@ -13,7 +13,7 @@ def test_delete_novel(qtbot, filled_window: MainWindow, monkeypatch):
 
     assert len(view.novel_cards) == 1
     card = view.novel_cards[0]
-    qtbot.mouseClick(card, Qt.LeftButton)
+    qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
 
     patch_confirmed(monkeypatch)
     view.ui.btnDelete.click()
@@ -26,7 +26,7 @@ def test_edit_novel(qtbot, filled_window: MainWindow):
 
     assert len(view.novel_cards) == 1
     card = view.novel_cards[0]
-    qtbot.mouseClick(card, Qt.LeftButton)
+    qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
     new_title = 'New title'
     QTimer.singleShot(40, lambda: edit_novel_dialog(new_title))
     view.ui.btnEdit.click()

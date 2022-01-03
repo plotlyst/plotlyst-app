@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Any
 
-from PyQt5.QtCore import QModelIndex, Qt
-from PyQt5.QtGui import QIcon
+from PyQt6.QtCore import QModelIndex, Qt
+from PyQt6.QtGui import QIcon
 from anytree import Node
 from overrides import overrides
 
@@ -68,17 +68,17 @@ class DocumentsTreeModel(TreeItemModel, ActionBasedTreeModel):
         return 3
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if role == self.NodeRole:
             return super(DocumentsTreeModel, self).data(index, role)
         if index.column() == 0:
             doc: Document = index.internalPointer().document
             char = doc.character(self.novel)
-            if role == Qt.DisplayRole:
+            if role == Qt.ItemDataRole.DisplayRole:
                 if char:
                     return char.name
                 return index.internalPointer().document.title
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 if char:
                     return QIcon(avatars.pixmap(char))
                 if doc.icon:
@@ -86,7 +86,7 @@ class DocumentsTreeModel(TreeItemModel, ActionBasedTreeModel):
             return super(DocumentsTreeModel, self).data(index, role)
         if index.column() > 0 and self._action_index and index.row() == self._action_index.row() \
                 and self._action_index.parent() == index.parent():
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 if index.column() == self.ColMenu:
                     return IconRegistry.dots_icon('grey')
                 if index.column() == self.ColPlus:

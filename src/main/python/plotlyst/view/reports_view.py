@@ -19,11 +19,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Optional
 
-from PyQt5.QtChart import QPieSeries, QChart, QChartView, QValueAxis, QSplineSeries, QBarSet, QStackedBarSeries, \
-    QBarCategoryAxis
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QColor
-from PyQt5.QtWidgets import QHeaderView
+# from PyQt6.QtChart import QPieSeries, QChart, QChartView, QValueAxis, QSplineSeries, QBarSet, QStackedBarSeries, \
+#     QBarCategoryAxis
+from PyQt6.QtCharts import QChart, QChartView, QPieSeries, QBarCategoryAxis, QStackedBarSeries, QBarSet, QValueAxis, \
+    QSplineSeries
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter, QColor
+from PyQt6.QtWidgets import QHeaderView
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Novel, Character
@@ -58,11 +60,11 @@ class ReportsView(AbstractNovelView):
         self.chart.legend().hide()
         self._update_characters_chart()
         self.chart.createDefaultAxes()
-        self.chart.setAnimationOptions(QChart.SeriesAnimations)
+        self.chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
         self.chart.setTitle("POV Distribution")
 
         chartview = QChartView(self.chart)
-        chartview.setRenderHint(QPainter.Antialiasing)
+        chartview.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         self.ui.tabCharacterSceneDistribution.layout().addWidget(chartview)
 
@@ -85,7 +87,8 @@ class ReportsView(AbstractNovelView):
         self.ui.tblScenes.setModel(self._scenes_proxy)
         for col in range(self.scenes_model.columnCount()):
             self.ui.tblScenes.hideColumn(col)
-        self.ui.tblScenes.horizontalHeader().setSectionResizeMode(ScenesTableModel.ColTitle, QHeaderView.Stretch)
+        self.ui.tblScenes.horizontalHeader().setSectionResizeMode(ScenesTableModel.ColTitle,
+                                                                  QHeaderView.ResizeMode.Stretch)
         self.ui.tblScenes.showColumn(ScenesTableModel.ColTitle)
         self.ui.tblScenes.showColumn(ScenesTableModel.ColArc)
         self.ui.tblScenes.setItemDelegate(ScenesViewDelegate())
@@ -165,10 +168,10 @@ class StorylinesDistribution(QChartView):
         self.novel = novel
         arc_chart = QChart()
         arc_chart.createDefaultAxes()
-        arc_chart.setAnimationOptions(QChart.SeriesAnimations)
+        arc_chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
         arc_chart.setTitle('Storylines and characters distribution')
         self.setChart(arc_chart)
-        self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.axis: Optional[QBarCategoryAxis] = None
 
         self.refresh()
@@ -195,7 +198,7 @@ class StorylinesDistribution(QChartView):
             series.append(set)
         self.axis = QBarCategoryAxis()
         self.axis.append(character_names)
-        self.chart().addAxis(self.axis, Qt.AlignBottom)
+        self.chart().addAxis(self.axis, Qt.AlignmentFlag.AlignBottom)
         series.attachAxis(self.axis)
         self.chart().addSeries(series)
 
@@ -207,9 +210,9 @@ class CharacterArc(QChartView):
         arc_chart = QChart()
         arc_chart.createDefaultAxes()
         arc_chart.legend().hide()
-        arc_chart.setAnimationOptions(QChart.AllAnimations)
+        arc_chart.setAnimationOptions(QChart.AnimationOption.AllAnimations)
         self.setChart(arc_chart)
-        self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.axis: Optional[QValueAxis] = None
 
     def refresh(self, character: Character):

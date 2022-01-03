@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import datetime
 from typing import Optional
 
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal, QUrl
-from PyQt5.QtMultimedia import QSoundEffect
-from PyQt5.QtWidgets import QWidget, QMenu, QWidgetAction
+from PyQt6.QtCore import QObject, QTimer, pyqtSignal, QUrl
+from PyQt6.QtMultimedia import QSoundEffect
+from PyQt6.QtWidgets import QWidget, QMenu, QWidgetAction
 
 from src.main.python.plotlyst.resources import resource_registry
 from src.main.python.plotlyst.view.common import retain_size_when_hidden

@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import qtawesome
-from PyQt5.QtWidgets import QDialog
+from PyQt6.QtWidgets import QDialog
 
 from src.main.python.plotlyst.view.generated.directory_picker_dialog_ui import Ui_DirectoryPickerDialog
 

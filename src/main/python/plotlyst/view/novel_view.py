@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import List, Optional
 
 import emoji
-from PyQt5.QtCore import QPropertyAnimation
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QHBoxLayout, QWidget, QHeaderView
+from PyQt6.QtCore import QPropertyAnimation
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QHBoxLayout, QWidget, QHeaderView
 from fbs_runtime import platform
 from overrides import overrides
 
@@ -94,7 +94,7 @@ class NovelView(AbstractNovelView):
         self.ui.tblConflicts.horizontalHeader().setSectionResizeMode(NovelConflictsModel.ColType,
                                                                      QHeaderView.ResizeToContents)
         self.ui.tblConflicts.horizontalHeader().setSectionResizeMode(NovelConflictsModel.ColPhrase,
-                                                                     QHeaderView.Stretch)
+                                                                     QHeaderView.ResizeMode.Stretch)
         self.ui.tblConflicts.selectionModel().selectionChanged.connect(self._conflict_selected)
         self.ui.tblConflicts.setItemDelegateForColumn(NovelConflictsModel.ColPhrase, TextItemDelegate())
         self.ui.btnEdit.clicked.connect(self._edit_conflict)

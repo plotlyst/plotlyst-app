@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Any
 
-from PyQt5.QtCore import QModelIndex, Qt
-from PyQt5.QtGui import QBrush, QColor
+from PyQt6.QtCore import QModelIndex, Qt
+from PyQt6.QtGui import QBrush, QColor
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import TemplateField, SelectionItem
@@ -55,8 +55,8 @@ class TemplateFieldSelectionModel(SelectionItemsModel):
 class TraitsFieldItemsSelectionModel(TemplateFieldSelectionModel):
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
-        if role == Qt.ForegroundRole:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+        if role == Qt.ItemDataRole.ForegroundRole:
             item = self._field.selections[index.row()]
             brush = QBrush()
             if item.meta.get('positive', True):

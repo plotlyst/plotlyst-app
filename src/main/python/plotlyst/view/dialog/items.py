@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import List
 
-from PyQt5.QtWidgets import QDialog
+from PyQt6.QtWidgets import QDialog
 
 from src.main.python.plotlyst.core.domain import SelectionItem
 from src.main.python.plotlyst.model.common import SelectionItemsModel
@@ -35,6 +35,6 @@ class ItemsEditorDialog(QDialog, Ui_ItemsEditorDialog):
 
     def display(self, ) -> List[SelectionItem]:
         result = self.exec()
-        if result == QDialog.Accepted:
+        if result == QDialog.DialogCode.Accepted:
             return self.model.items()
         return []

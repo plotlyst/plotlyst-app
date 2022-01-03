@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Any
 
-from PyQt5.QtCore import QModelIndex, Qt
+from PyQt6.QtCore import QModelIndex, Qt
 from anytree import Node
 from overrides import overrides
 
@@ -63,20 +63,20 @@ class LocationsTreeModel(TreeItemModel, ActionBasedTreeModel):
         return 2
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if role == self.NodeRole:
             return super(LocationsTreeModel, self).data(index, role)
         if index.column() == 0:
             location: Location = index.internalPointer().location
-            if role == Qt.DisplayRole:
+            if role == Qt.ItemDataRole.DisplayRole:
                 return index.internalPointer().location.name
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 if location.icon:
                     return IconRegistry.from_name(location.icon, location.icon_color)
             return super(LocationsTreeModel, self).data(index, role)
         if index.column() == 1 and self._action_index and index.row() == self._action_index.row() \
                 and self._action_index.parent() == index.parent():
-            if role == Qt.DecorationRole:
+            if role == Qt.ItemDataRole.DecorationRole:
                 return IconRegistry.plus_circle_icon('lightGrey')
 
     @overrides

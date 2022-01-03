@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import Optional
 
 import emoji
-from PyQt5.QtWidgets import QDialog
+from PyQt6.QtWidgets import QDialog
 from fbs_runtime import platform
 
 from src.main.python.plotlyst.core.domain import BackstoryEvent, NEUTRAL, VERY_HAPPY, VERY_UNHAPPY, UNHAPPY, HAPPY
@@ -90,7 +90,7 @@ class BackstoryEditorDialog(QDialog, Ui_BackstoryEditorDialog):
 
     def display(self) -> Optional[BackstoryEvent]:
         result = self.exec()
-        if result == QDialog.Rejected:
+        if result == QDialog.DialogCode.Rejected:
             return None
 
         emotion = NEUTRAL

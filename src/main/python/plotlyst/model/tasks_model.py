@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Any, List
 
-from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PyQt6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Task, Scene, Character
@@ -44,22 +44,22 @@ class TasksTableModel(QAbstractTableModel):
         return 3
 
     @overrides
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if not index.isValid():
             return
 
         if index.column() == self.ColRef:
             if self.tasks[index.row()].reference:
                 if isinstance(self.tasks[index.row()].reference, Scene):
-                    if role == Qt.DisplayRole:
+                    if role == Qt.ItemDataRole.DisplayRole:
                         return self.tasks[index.row()].reference.title
-                    if role == Qt.DecorationRole:
+                    if role == Qt.ItemDataRole.DecorationRole:
                         return IconRegistry.scene_icon()
                 if isinstance(self.tasks[index.row()].reference, Character):
-                    if role == Qt.DisplayRole:
+                    if role == Qt.ItemDataRole.DisplayRole:
                         return self.tasks[index.row()].reference.name
-                    if role == Qt.DecorationRole:
+                    if role == Qt.ItemDataRole.DecorationRole:
                         return IconRegistry.character_icon()
         if index.column() == self.ColMessage:
-            if role == Qt.DisplayRole:
+            if role == Qt.ItemDataRole.DisplayRole:
                 return self.tasks[index.row()].message

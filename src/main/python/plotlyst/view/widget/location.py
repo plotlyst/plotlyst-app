@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import Qt
 
 from src.main.python.plotlyst.core.domain import Location, ProfileTemplate, location_name_field, Novel
 from src.main.python.plotlyst.view.widget.template import ProfileTemplateView, LabelsSelectionWidget
@@ -35,7 +35,7 @@ class LocationProfileTemplateView(ProfileTemplateView):
             if widget.field.id == location_name_field.id:
                 self._name_widget = widget
 
-        self._name_widget.wdgEditor.setFocusPolicy(Qt.StrongFocus)
+        self._name_widget.wdgEditor.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self._name_widget.setFocus()
 
         self._name_widget.setValue(self.location.name)

@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Optional
 
-from PyQt5.QtCore import QEvent, pyqtSignal, Qt
-from PyQt5.QtWidgets import QFrame
+from PyQt6.QtCore import QEvent, pyqtSignal, Qt
+from PyQt6.QtWidgets import QFrame
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Novel, Comment, Scene, Event
@@ -90,7 +90,7 @@ class CommentsView(AbstractNovelView):
 
     def _addComment(self, comment: Comment, scene: Optional[Scene] = None) -> 'CommentWidget':
         comment_wdg = CommentWidget(self.novel, comment, scene)
-        self.ui.wdgComments.layout().addWidget(comment_wdg, alignment=Qt.AlignCenter)
+        self.ui.wdgComments.layout().addWidget(comment_wdg, alignment=Qt.AlignmentFlag.AlignCenter)
         comment_wdg.changed.connect(self._comment_changed)
         comment_wdg.removed.connect(self._comment_removed)
 

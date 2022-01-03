@@ -21,10 +21,10 @@ from functools import partial
 from typing import Iterable, List, Optional
 
 import emoji
-from PyQt5 import QtCore
-from PyQt5.QtCore import QItemSelection, Qt, pyqtSignal
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QToolButton, QButtonGroup, QFrame, QMenu, QSizePolicy
+from PyQt6 import QtCore
+from PyQt6.QtCore import QItemSelection, Qt, pyqtSignal
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QToolButton, QButtonGroup, QFrame, QMenu, QSizePolicy
 from fbs_runtime import platform
 from overrides import overrides
 
@@ -66,10 +66,10 @@ class CharactersScenesDistributionWidget(QWidget, Ui_CharactersScenesDistributio
         self._model = CharactersScenesDistributionTableModel(self.novel)
         self._scenes_proxy = DistributionFilterProxyModel()
         self._scenes_proxy.setSourceModel(self._model)
-        self._scenes_proxy.setSortCaseSensitivity(Qt.CaseInsensitive)
-        self._scenes_proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self._scenes_proxy.setSortCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self._scenes_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self._scenes_proxy.setSortRole(CharactersScenesDistributionTableModel.SortRole)
-        self._scenes_proxy.sort(CharactersScenesDistributionTableModel.IndexTags, Qt.DescendingOrder)
+        self._scenes_proxy.sort(CharactersScenesDistributionTableModel.IndexTags, Qt.SortOrder.DescendingOrder)
         self.tblSceneDistribution.horizontalHeader().setDefaultSectionSize(26)
         self.tblSceneDistribution.setModel(self._scenes_proxy)
         self.tblSceneDistribution.hideColumn(0)
@@ -177,7 +177,7 @@ class CharacterToolButton(QToolButton):
         self.character = character
         self.setIcon(QIcon(avatars.pixmap(self.character)))
         self.setCheckable(True)
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
 
 class CharacterSelectorWidget(QWidget):
@@ -422,12 +422,12 @@ class CharacterEmotionButton(QToolButton):
         super(CharacterEmotionButton, self).__init__(parent)
         self._value = NEUTRAL
         self._color = self.NEUTRAL_COLOR
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.setFixedSize(32, 32)
         menu = QMenu(self)
         self.setMenu(menu)
         menu.setMaximumWidth(64)
-        self.setPopupMode(QToolButton.InstantPopup)
+        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         if platform.is_windows():
             self._emoji_font = emoji_font(14)
         else:

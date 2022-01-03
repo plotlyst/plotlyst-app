@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Optional
 
-from PyQt5.QtCore import QModelIndex
-from PyQt5.QtWidgets import QHeaderView
+from PyQt6.QtCore import QModelIndex
+from PyQt6.QtWidgets import QHeaderView
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Novel, Location
@@ -40,7 +40,7 @@ class LocationsView(AbstractNovelView):
 
         self.model = LocationsTreeModel(self.novel)
         self.ui.treeLocations.setModel(self.model)
-        self.ui.treeLocations.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.ui.treeLocations.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.ui.treeLocations.setColumnWidth(1, 20)
         self.ui.treeLocations.clicked.connect(self._location_clicked)
         self.ui.treeLocations.expandAll()

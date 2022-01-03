@@ -1,8 +1,8 @@
 from unittest.mock import create_autospec
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import QPoint
-from PyQt5.QtGui import QMouseEvent
+from PyQt6 import QtCore
+from PyQt6.QtCore import QPoint
+from PyQt6.QtGui import QMouseEvent
 
 from src.main.python.plotlyst.core.domain import ProfileTemplate, fear_field, default_character_profiles
 from src.main.python.plotlyst.view.dialog.template import CharacterProfileEditorDialog
@@ -19,7 +19,7 @@ def new_diag(qtbot, template: ProfileTemplate) -> CharacterProfileEditorDialog:
 
 def drop(qtbot, diag: CharacterProfileEditorDialog):
     qtbot.mouseMove(diag.wdgEditor, QPoint(50, 50))
-    qtbot.mouseRelease(diag.wdgEditor, QtCore.Qt.LeftButton, delay=30)
+    qtbot.mouseRelease(diag.wdgEditor, QtCore.Qt.MouseButton.LeftButton, delay=30)
 
 
 def test_drop(qtbot):

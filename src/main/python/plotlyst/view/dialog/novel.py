@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 from typing import Optional
 
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDialog
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QDialog
 
 from src.main.python.plotlyst.core.domain import NovelDescriptor, Novel, Plot, PlotType, Character
 from src.main.python.plotlyst.view.generated.novel_creation_dialog_ui import Ui_NovelCreationDialog
@@ -43,7 +43,7 @@ class NovelEditionDialog(QDialog, Ui_NovelCreationDialog):
         if novel:
             self.lineTitle.setText(novel.title)
         result = self.exec()
-        if result == QDialog.Rejected:
+        if result == QDialog.DialogCode.Rejected:
             return None
         return self.lineTitle.text()
 
@@ -92,7 +92,7 @@ class PlotEditorDialog(QDialog, Ui_PlotEditorDialog):
 
     def display(self) -> Optional[PlotEditionResult]:
         result = self.exec()
-        if result == QDialog.Rejected:
+        if result == QDialog.DialogCode.Rejected:
             return None
         plot_type = PlotType.Main
         if self.rbInternalPlot.isChecked():

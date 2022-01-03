@@ -1,9 +1,9 @@
 from typing import List
 
-from PyQt5.QtChart import QPieSeries
-from PyQt5.QtCore import Qt, QModelIndex
-from PyQt5.QtGui import QBrush, QColor
-from PyQt5.QtWidgets import QMessageBox, QAction, QSpinBox
+from PyQt6.QtCharts import QPieSeries
+from PyQt6.QtCore import Qt, QModelIndex
+from PyQt6.QtGui import QBrush, QColor, QAction
+from PyQt6.QtWidgets import QMessageBox, QSpinBox
 
 from src.main.python.plotlyst.core.client import client
 from src.main.python.plotlyst.core.domain import SceneType
@@ -54,7 +54,7 @@ def test_scene_deletion(qtbot, filled_window: MainWindow, monkeypatch):
     assert view.ui.btnEdit.isEnabled()
     assert view.ui.btnDelete.isEnabled()
 
-    patch_confirmed(monkeypatch, QMessageBox.No)
+    patch_confirmed(monkeypatch, QMessageBox.StandardButton.No)
     view.ui.btnDelete.click()
     assert len(view.novel.scenes) == 2
     assert_data(view.tblModel, 'Scene 1', 0, ScenesTableModel.ColTitle)
@@ -186,7 +186,7 @@ def test_timeline_display(qtbot, filled_window: MainWindow):
     assert_data(view.timeline_view.model, 2, 1, ScenesTableModel.ColTime)
 
     # mimic drawing curves
-    filled_window.setWindowState(Qt.WindowNoState)
+    filled_window.setWindowState(Qt.WindowState.WindowNoState)
     filled_window.resize(300, 300)
 
     view.timeline_view.timeline_widget.grab().toImage()
@@ -209,10 +209,10 @@ def test_edit_day(qtbot, filled_window: MainWindow):
 
 def test_character_distribution_display(qtbot, filled_window: MainWindow):
     def assert_painted(index: QModelIndex):
-        assert index.data(role=Qt.BackgroundRole) == QBrush(QColor('darkblue'))
+        assert index.data(role=Qt.ItemDataRole.BackgroundRole) == QBrush(QColor('darkblue'))
 
     def assert_not_painted(index: QModelIndex):
-        assert index.data(role=Qt.BackgroundRole) is None
+        assert index.data(role=Qt.ItemDataRole.BackgroundRole) is None
 
     view: ScenesOutlineView = go_to_scenes(filled_window)
     view.ui.btnCharactersDistributionView.click()
@@ -232,13 +232,13 @@ def test_character_distribution_display(qtbot, filled_window: MainWindow):
 
     # click brushed scene cell
     click_on_item(qtbot, view.characters_distribution.tblSceneDistribution, 0, 2)
-    assert model.flags(model.index(3, 1)) == Qt.NoItemFlags
-    assert model.flags(model.index(4, 1)) == Qt.NoItemFlags
+    assert model.flags(model.index(3, 1)) == Qt.ItemFlag.NoItemFlags
+    assert model.flags(model.index(4, 1)) == Qt.ItemFlag.NoItemFlags
 
     # click empty area
     click_on_item(qtbot, view.characters_distribution.tblSceneDistribution, 3, 2)
-    assert model.flags(model.index(3, 1)) & Qt.ItemIsEnabled
-    assert model.flags(model.index(4, 1)) & Qt.ItemIsEnabled
+    assert model.flags(model.index(3, 1)) & Qt.ItemFlag.ItemIsEnabled
+    assert model.flags(model.index(4, 1)) & Qt.ItemFlag.ItemIsEnabled
 
     view.characters_distribution.btnGoals.click()
 
@@ -257,7 +257,7 @@ def test_add_scene_comment(qtbot, filled_window: MainWindow):
     view: ScenesOutlineView = go_to_scenes(filled_window)
 
     card = view.scene_cards[0]
-    qtbot.mouseClick(card, Qt.LeftButton)
+    qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
 
     filled_window.btnComments.click()
     assert filled_window.wdgSidebar.isVisible()

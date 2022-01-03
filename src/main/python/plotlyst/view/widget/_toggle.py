@@ -23,20 +23,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-# Based on https://github.com/pythonguis/python-qtwidgets
-
 from overrides import overrides
-from qtpy.QtCore import Qt, QPoint, QSize, QRectF, QPointF, QPropertyAnimation, QEasingCurve, \
+from qtpy.QtCore import Qt, QRect, QPoint, QSize, QRectF, QPointF, QPropertyAnimation, QEasingCurve, \
     Property, QSequentialAnimationGroup
 from qtpy.QtGui import QBrush, QColor, QPen, QPaintEvent, QPainter
 from qtpy.QtWidgets import QCheckBox
 
 
 class _Toggle(QCheckBox):
-    _transparent_pen = QPen(Qt.transparent)
+    # Based on https://github.com/pythonguis/python-qtwidgets
+    _transparent_pen = QPen(Qt.GlobalColor.transparent)
     _light_grey_pen = QPen(Qt.lightGray)
 
-    def __init__(self, parent=None, bar_color=Qt.gray, checked_color="#00B0FF", handle_color=Qt.white):
+    def __init__(self, parent=None, bar_color=Qt.GlobalColor.gray, checked_color="#00B0FF",
+                 handle_color=Qt.GlobalColor.white):
         super().__init__(parent)
         self._bar_brush = QBrush(bar_color)
         self._bar_checked_brush = QBrush(QColor(checked_color).lighter())
@@ -65,7 +65,7 @@ class _Toggle(QCheckBox):
         handleRadius = round(0.24 * contRect.height())
 
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         painter.setPen(self._transparent_pen)
         barRect = QRectF(
@@ -157,10 +157,10 @@ class AnimatedToggle(_Toggle):
         handleRadius = round(0.24 * contRect.height())
 
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         painter.setPen(self._transparent_pen)
-        barRect = QRectF(
+        barRect = QRect(
             0, 0,
             contRect.width() - handleRadius, 0.40 * contRect.height()
         )

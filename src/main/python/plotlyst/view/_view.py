@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from abc import abstractmethod
 from typing import List, Any, Optional
 
-from PyQt5.QtCore import QObject
-from PyQt5.QtWidgets import QWidget
+from PyQt6.QtCore import QObject
+from PyQt6.QtWidgets import QWidget
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import Novel

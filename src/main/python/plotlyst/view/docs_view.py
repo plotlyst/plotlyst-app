@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Optional
 
-from PyQt5.QtCore import QModelIndex, QRect, QPoint, Qt
-from PyQt5.QtGui import QSyntaxHighlighter, QTextDocument, QTextCharFormat, QTextBlockUserData
-from PyQt5.QtWidgets import QHeaderView, QMenu, QWidgetAction, QListView, QWidget
+from PyQt6.QtCore import QModelIndex, QRect, QPoint, Qt
+from PyQt6.QtGui import QSyntaxHighlighter, QTextDocument, QTextCharFormat, QTextBlockUserData
+from PyQt6.QtWidgets import QHeaderView, QMenu, QWidgetAction, QListView, QWidget
 from language_tool_python import LanguageTool
 from overrides import overrides
 
@@ -55,7 +55,7 @@ class DocumentsView(AbstractNovelView):
 
         self.model = DocumentsTreeModel(self.novel)
         self.ui.treeDocuments.setModel(self.model)
-        self.ui.treeDocuments.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.ui.treeDocuments.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.ui.treeDocuments.setColumnWidth(DocumentsTreeModel.ColMenu, 20)
         self.ui.treeDocuments.setColumnWidth(DocumentsTreeModel.ColPlus, 24)
         self.ui.treeDocuments.clicked.connect(self._doc_clicked)
@@ -148,7 +148,7 @@ class DocumentsView(AbstractNovelView):
 
         character_menu = builder.add_submenu('Characters', IconRegistry.character_icon())
         _view = QListView()
-        _view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        _view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         _view.clicked.connect(add_character)
         _view.setModel(CharactersTableModel(self.novel))
         action = QWidgetAction(character_menu)
@@ -226,12 +226,12 @@ class GrammarHighlighter(QSyntaxHighlighter):
     def __init__(self, document: QTextDocument, tool: Optional[LanguageTool] = None):
         super(GrammarHighlighter, self).__init__(document)
         self._misspelling_format = QTextCharFormat()
-        self._misspelling_format.setUnderlineColor(Qt.red)
-        self._misspelling_format.setUnderlineStyle(QTextCharFormat.WaveUnderline)
+        self._misspelling_format.setUnderlineColor(Qt.GlobalColor.red)
+        self._misspelling_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
 
         self._style_format = QTextCharFormat()
-        self._style_format.setUnderlineColor(Qt.blue)
-        self._style_format.setUnderlineStyle(QTextCharFormat.WaveUnderline)
+        self._style_format.setUnderlineColor(Qt.GlobalColor.blue)
+        self._style_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
 
         self._formats_per_issue = {'misspelling': self._misspelling_format, 'style': self._style_format}
 

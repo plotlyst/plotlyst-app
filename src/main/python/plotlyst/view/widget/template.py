@@ -22,10 +22,10 @@ from typing import Optional, List, Any, Dict, Set
 
 import emoji
 import qtawesome
-from PyQt5 import QtGui
-from PyQt5.QtCore import Qt, pyqtSignal, QByteArray, QBuffer, QIODevice, QObject, QEvent
-from PyQt5.QtGui import QDropEvent, QIcon, QMouseEvent, QDragEnterEvent, QImageReader, QImage, QDragMoveEvent
-from PyQt5.QtWidgets import QFrame, QHBoxLayout, QScrollArea, QWidget, QGridLayout, QLineEdit, QLayoutItem, \
+from PyQt6 import QtGui
+from PyQt6.QtCore import Qt, pyqtSignal, QByteArray, QBuffer, QIODevice, QObject, QEvent
+from PyQt6.QtGui import QDropEvent, QIcon, QMouseEvent, QDragEnterEvent, QImageReader, QImage, QDragMoveEvent
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QScrollArea, QWidget, QGridLayout, QLineEdit, QLayoutItem, \
     QToolButton, QLabel, QSpinBox, QComboBox, QButtonGroup, QFileDialog, QMessageBox, QSizePolicy, QVBoxLayout, \
     QSpacerItem, QTextEdit, QWidgetAction, QMenu, QListView, QPushButton
 from fbs_runtime import platform
@@ -52,7 +52,7 @@ class _ProfileTemplateBase(QWidget):
         self.layout = QVBoxLayout(self)
         self.scrollArea = QScrollArea(self)
         self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setFocusPolicy(Qt.NoFocus)
+        self.scrollArea.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.scrollAreaWidgetContents = QWidget()
         self.gridLayout = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout.setSpacing(4)
@@ -60,7 +60,7 @@ class _ProfileTemplateBase(QWidget):
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.layout.addWidget(self.scrollArea)
 
-        self._spacer_item = QSpacerItem(20, 50, QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self._spacer_item = QSpacerItem(20, 50, QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.widgets: List[TemplateFieldWidget] = []
         self._initGrid(editor_mode)
@@ -91,7 +91,7 @@ class _PlaceHolder(QFrame):
         self.btn = QToolButton()
         self.btn.setIcon(qtawesome.icon('ei.plus-sign', color='lightgrey'))
         self.btn.setText('<Drop here>')
-        self.btn.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.btn.setStyleSheet('''
                 background-color: rgb(255, 255, 255);
                 border: 0px;
@@ -120,7 +120,7 @@ class AvatarWidget(QWidget, Ui_AvatarWidget):
         self.btnUploadAvatar.setIcon(IconRegistry.upload_icon())
         self.btnUploadAvatar.clicked.connect(self._upload_avatar)
         self.avatarUpdated: bool = False
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
     def setCharacter(self, character: Character):
         self.character = character
@@ -155,7 +155,7 @@ class TextSelectionWidget(QPushButton):
     def __init__(self, field: TemplateField, help: Dict[Any, str], parent=None):
         super(TextSelectionWidget, self).__init__(parent)
         self.field = field
-        self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
 
         self.setText(self.placeholder_text)
         menu = QMenu(self)
@@ -199,7 +199,7 @@ class TextSelectionWidget(QPushButton):
         def __init__(self, field: TemplateField, help_: Dict[Any, str], parent=None):
             super().__init__(parent)
             self.setupUi(self)
-            self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+            self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
 
             self.field = field
             self.help = help_
@@ -286,7 +286,7 @@ class TraitSelectionWidget(LabelsSelectionWidget):
         _lstTraitsView.setMinimumHeight(300)
         _lstTraitsView.setModel(self._model)
         _lstTraitsView.setModelColumn(TemplateFieldSelectionModel.ColName)
-        _lstTraitsView.setViewMode(QListView.IconMode)
+        _lstTraitsView.setViewMode(QListView.ViewMode.IconMode)
 
         return _lstTraitsView
 
@@ -317,7 +317,7 @@ class ButtonSelectionWidget(QWidget):
             btn.setIcon(_icon(item))
             btn.setToolTip(item.text)
             btn.setCheckable(True)
-            btn.setCursor(Qt.PointingHandCursor)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
             self.buttons.append(btn)
             self.layout.addWidget(btn)
             self.group.addButton(btn, i)
@@ -352,16 +352,16 @@ class TemplateFieldWidget(QFrame):
         self.lblEmoji = QLabel()
         if self.field.emoji:
             self.updateEmoji(emoji.emojize(self.field.emoji))
-            self.layout.addWidget(self.lblEmoji, alignment=Qt.AlignTop)
+            self.layout.addWidget(self.lblEmoji, alignment=Qt.AlignmentFlag.AlignTop)
         elif editor_mode:
-            self.layout.addWidget(self.lblEmoji, alignment=Qt.AlignTop)
+            self.layout.addWidget(self.lblEmoji, alignment=Qt.AlignmentFlag.AlignTop)
 
         self.lblName = QLabel()
         self.lblName.setText(self.field.name)
         if self.field.type in [TemplateFieldType.LABELS, TemplateFieldType.SMALL_TEXT]:
-            label_alignment = Qt.AlignTop
+            label_alignment = Qt.AlignmentFlag.AlignTop
         else:
-            label_alignment = Qt.AlignVCenter
+            label_alignment = Qt.AlignmentFlag.AlignVCenter
         self.layout.addWidget(self.lblName, alignment=label_alignment)
 
         if not field.show_label:
@@ -489,20 +489,20 @@ class ProfileTemplateEditor(_ProfileTemplateBase):
             if item and isinstance(item.widget(), TemplateFieldWidget):
                 pos = self.gridLayout.getItemPosition(i)
                 item = self.gridLayout.itemAtPosition(pos[0], pos[1])
-                if item.alignment() & Qt.AlignRight:
+                if item.alignment() & Qt.AlignmentFlag.AlignRight:
                     h_alignment = HAlignment.RIGHT
-                elif item.alignment() & Qt.AlignLeft:
+                elif item.alignment() & Qt.AlignmentFlag.AlignLeft:
                     h_alignment = HAlignment.LEFT
-                elif item.alignment() & Qt.AlignHCenter:
+                elif item.alignment() & Qt.AlignmentFlag.AlignHCenter:
                     h_alignment = HAlignment.CENTER
-                elif item.alignment() & Qt.AlignJustify:
+                elif item.alignment() & Qt.AlignmentFlag.AlignJustify:
                     h_alignment = HAlignment.JUSTIFY
                 else:
                     h_alignment = HAlignment.DEFAULT
 
-                if item.alignment() & Qt.AlignTop:
+                if item.alignment() & Qt.AlignmentFlag.AlignTop:
                     v_alignment = VAlignment.TOP
-                elif item.alignment() & Qt.AlignBottom:
+                elif item.alignment() & Qt.AlignmentFlag.AlignBottom:
                     v_alignment = VAlignment.BOTTOM
                 else:
                     v_alignment = VAlignment.CENTER
@@ -569,7 +569,7 @@ class ProfileTemplateEditor(_ProfileTemplateBase):
 
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.MouseButtonRelease:
+        if event.type() == QEvent.Type.MouseButtonRelease:
             if isinstance(watched, (QToolButton, QPushButton)):
                 if isinstance(watched.parent(), AvatarWidget):
                     self._select(watched.parent().parent())
@@ -577,10 +577,10 @@ class ProfileTemplateEditor(_ProfileTemplateBase):
                     self._select(watched.parent())
             else:
                 self._select(watched)
-        elif event.type() == QEvent.DragEnter:
+        elif event.type() == QEvent.Type.DragEnter:
             self._target_to_drop = watched
             self.dragMoveEvent(event)
-        elif event.type() == QEvent.Drop:
+        elif event.type() == QEvent.Type.Drop:
             self.dropEvent(event)
             self._target_to_drop = None
         return super().eventFilter(watched, event)
@@ -691,7 +691,7 @@ class CharacterProfileTemplateView(ProfileTemplateView):
         if not self._avatar_widget:
             raise ValueError('Obligatory avatar field is missing from profile')
 
-        self._name_widget.wdgEditor.setFocusPolicy(Qt.StrongFocus)
+        self._name_widget.wdgEditor.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self._avatar_widget.setCharacter(self.character)
         if self._enneagram_widget:
             self._enneagram_widget.selectionChanged.connect(self._enneagram_changed)

@@ -21,9 +21,9 @@ import pickle
 from typing import Optional
 
 import emoji
-from PyQt5.QtCore import Qt, QMimeData, QObject, QEvent, QByteArray
-from PyQt5.QtGui import QDrag, QMouseEvent
-from PyQt5.QtWidgets import QDialog, QToolButton
+from PyQt6.QtCore import Qt, QMimeData, QObject, QEvent, QByteArray
+from PyQt6.QtGui import QDrag, QMouseEvent
+from PyQt6.QtWidgets import QDialog, QToolButton
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import age_field, gender_field, \
@@ -109,11 +109,11 @@ class CharacterProfileEditorDialog(Ui_CharacterProfileEditorDialog, QDialog):
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         self._dragged = watched
-        if event.type() == QEvent.MouseButtonPress:
+        if event.type() == QEvent.Type.MouseButtonPress:
             self.mousePressEvent(event)
-        elif event.type() == QEvent.MouseMove:
+        elif event.type() == QEvent.Type.MouseMove:
             self.mouseMoveEvent(event)
-        elif event.type() == QEvent.MouseButtonRelease:
+        elif event.type() == QEvent.Type.MouseButtonRelease:
             self.mouseReleaseEvent(event)
         return super().eventFilter(watched, event)
 
@@ -123,7 +123,7 @@ class CharacterProfileEditorDialog(Ui_CharacterProfileEditorDialog, QDialog):
 
     @overrides
     def mouseMoveEvent(self, event: QMouseEvent):
-        if event.buttons() & Qt.LeftButton and self._dragged and self._dragged.isEnabled():
+        if event.buttons() & Qt.MouseButton.LeftButton and self._dragged and self._dragged.isEnabled():
             drag = QDrag(self._dragged)
             pix = self._dragged.grab()
             if self._dragged is self.btnAge:
@@ -160,12 +160,12 @@ class CharacterProfileEditorDialog(Ui_CharacterProfileEditorDialog, QDialog):
             drag.setPixmap(pix)
             drag.setHotSpot(event.pos())
             drag.destroyed.connect(self._dragDestroyed)
-            drag.exec_()
+            drag.exec()
 
     def display(self) -> Optional[ProfileTemplate]:
         result = self.exec()
 
-        if result == QDialog.Rejected:
+        if result == QDialog.DialogCode.Rejected:
             return None
         if self._restore_requested:
             return default_character_profiles()[0]

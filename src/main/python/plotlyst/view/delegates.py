@@ -18,10 +18,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PyQt5 import QtGui
-from PyQt5.QtCore import Qt, QModelIndex, \
+from PyQt6 import QtGui
+from PyQt6.QtCore import Qt, QModelIndex, \
     QAbstractItemModel, QSize
-from PyQt5.QtWidgets import QWidget, QStyledItemDelegate, \
+from PyQt6.QtWidgets import QWidget, QStyledItemDelegate, \
     QStyleOptionViewItem, QTextEdit, QComboBox, QLineEdit, QSpinBox
 from overrides import overrides
 
@@ -59,8 +59,9 @@ class ScenesViewDelegate(QStyledItemDelegate):
     def _drawAvatar(self, painter: QtGui.QPainter, option: 'QStyleOptionViewItem', x: int, character: Character):
         if character.avatar:
             painter.drawPixmap(option.rect.x() + x, option.rect.y() + 8,
-                               avatars.pixmap(character).scaled(self.avatarSize, self.avatarSize, Qt.KeepAspectRatio,
-                                                                Qt.SmoothTransformation))
+                               avatars.pixmap(character).scaled(self.avatarSize, self.avatarSize,
+                                                                Qt.AspectRatioMode.KeepAspectRatio,
+                                                                Qt.TransformationMode.SmoothTransformation))
         else:
             painter.drawPixmap(option.rect.x() + x, option.rect.y() + 8,
                                avatars.name_initial_icon(character).pixmap(QSize(self.avatarSize, self.avatarSize)))
@@ -75,9 +76,9 @@ class ScenesViewDelegate(QStyledItemDelegate):
 
     @overrides
     def setEditorData(self, editor: QWidget, index: QModelIndex):
-        edit_data = index.data(Qt.EditRole)
+        edit_data = index.data(Qt.ItemDataRole.EditRole)
         if not edit_data:
-            edit_data = index.data(Qt.DisplayRole)
+            edit_data = index.data(Qt.ItemDataRole.DisplayRole)
         if isinstance(editor, QTextEdit) or isinstance(editor, QLineEdit):
             editor.setText(str(edit_data))
         elif isinstance(editor, QSpinBox):
@@ -106,7 +107,7 @@ class ScenesViewDelegate(QStyledItemDelegate):
     @overrides
     def setModelData(self, editor: QWidget, model: QAbstractItemModel, index: QModelIndex):
         if isinstance(editor, QComboBox):
-            model.setData(index, editor.currentData(Qt.UserRole))
+            model.setData(index, editor.currentData(Qt.ItemDataRole.UserRole))
         elif isinstance(editor, QSpinBox):
             model.setData(index, editor.value())
         else:

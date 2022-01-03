@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional
 
-from PyQt5.QtCore import QModelIndex, QTextBoundaryFinder, Qt
-from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QTextBlock, QColor
-from PyQt5.QtWidgets import QHeaderView, QTextEdit
+from PyQt6.QtCore import QModelIndex, QTextBoundaryFinder, Qt
+from PyQt6.QtGui import QSyntaxHighlighter, QTextCharFormat, QTextBlock, QColor
+from PyQt6.QtWidgets import QHeaderView, QTextEdit
 from overrides import overrides
 
 from src.main.python.plotlyst.core.client import json_client
@@ -54,7 +54,7 @@ class ManuscriptView(AbstractNovelView):
         self.ui.treeChapters.setModel(self.chaptersModel)
         self.ui.treeChapters.expandAll()
         self.chaptersModel.modelReset.connect(self.ui.treeChapters.expandAll)
-        self.ui.treeChapters.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.ui.treeChapters.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.ui.treeChapters.setColumnWidth(ChaptersTreeModel.ColPlus, 24)
         self.ui.treeChapters.clicked.connect(self._edit)
 
@@ -105,7 +105,7 @@ class SentenceHighlighter(QSyntaxHighlighter):
         self._hidden_format.setForeground(QColor('#dee2e6'))
 
         self._visible_format = QTextCharFormat()
-        self._visible_format.setForeground(Qt.black)
+        self._visible_format.setForeground(Qt.GlobalColor.black)
 
         self._prevBlock: Optional[QTextBlock] = None
         self._editor.cursorPositionChanged.connect(self.rehighlight)

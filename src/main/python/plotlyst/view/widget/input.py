@@ -22,12 +22,12 @@ from enum import Enum
 from functools import partial
 
 import fbs_runtime.platform
-from PyQt5 import QtGui
-from PyQt5.QtCore import Qt, QObject, QEvent, QTimer, QPoint, QSize
-from PyQt5.QtGui import QKeySequence, QFont, QTextCursor, QTextBlockFormat, QTextCharFormat, QTextFormat, \
-    QKeyEvent, QPaintEvent, QTextListFormat, QPainter, QBrush, QLinearGradient, QColor
-from PyQt5.QtWidgets import QTextEdit, QFrame, QPushButton, QStylePainter, QStyleOptionButton, QStyle, QToolBar, \
-    QAction, QActionGroup, QComboBox, QMenu, QVBoxLayout, QApplication, QToolButton, QHBoxLayout, QLabel
+from PyQt6 import QtGui
+from PyQt6.QtCore import Qt, QObject, QEvent, QTimer, QPoint, QSize
+from PyQt6.QtGui import QKeySequence, QFont, QTextCursor, QTextBlockFormat, QTextCharFormat, QTextFormat, \
+    QKeyEvent, QPaintEvent, QTextListFormat, QPainter, QBrush, QLinearGradient, QColor, QAction, QActionGroup
+from PyQt6.QtWidgets import QTextEdit, QFrame, QPushButton, QStylePainter, QStyleOptionButton, QStyle, QToolBar, \
+    QComboBox, QMenu, QVBoxLayout, QApplication, QToolButton, QHBoxLayout, QLabel
 from overrides import overrides
 
 from src.main.python.plotlyst.common import truncate_string
@@ -43,7 +43,7 @@ class AutoAdjustableTextEdit(QTextEdit):
         self._minHeight = height
         self.setAcceptRichText(False)
         self.setMaximumHeight(self._minHeight)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     @overrides
     def setText(self, text: str) -> None:
@@ -72,7 +72,7 @@ class _TextEditor(QTextEdit):
         for start, length, replacements in errors:
             if start <= cursor.positionInBlock() <= start + length:
                 if QApplication.overrideCursor() is None:
-                    QApplication.setOverrideCursor(Qt.PointingHandCursor)
+                    QApplication.setOverrideCursor(Qt.CursorShape.PointingHandCursor)
                 return
         QApplication.restoreOverrideCursor()
 
@@ -98,11 +98,11 @@ class _TextEditor(QTextEdit):
     # def paintEvent(self, event: QtGui.QPaintEvent) -> None:
     #     super(_TextEditor, self).paintEvent(event)
     #     painter = QPainter(self.viewport())
-    #     painter.setRenderHint(QPainter.Antialiasing)
+    #     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     #     painter.setPen(QPen(QColor('#02bcd4'), 20, Qt.SolidLine))
     #     painter.setBrush(QColor('#02bcd4'))
     #     # painter.begin()
-    #     # painter.setPen(QPen(Qt.black), 12, Qt.SolidLine)
+    #     # painter.setPen(QPen(Qt.GlobalColor.black), 12, Qt.SolidLine)
     #     self.textCursor().position()
     #     rect = self.cursorRect(self.textCursor())
     #     painter.drawText(rect.x(), rect.y(), 'Painted text')
@@ -110,8 +110,8 @@ class _TextEditor(QTextEdit):
 
     def _replaceWord(self, cursor: QTextCursor, replacement: str, start: int, length: int):
         block_pos = cursor.block().position()
-        cursor.setPosition(block_pos + start, QTextCursor.MoveAnchor)
-        cursor.setPosition(block_pos + start + length, QTextCursor.KeepAnchor)
+        cursor.setPosition(block_pos + start, QTextCursor.MoveMode.MoveAnchor)
+        cursor.setPosition(block_pos + start + length, QTextCursor.MoveMode.KeepAnchor)
         cursor.beginEditBlock()
         cursor.removeSelectedText()
         cursor.insertText(replacement)
@@ -181,40 +181,38 @@ class RichTextEditor(QFrame):
         self.cbHeading.currentIndexChanged.connect(self._setHeading)
 
         self.actionBold = QAction(IconRegistry.from_name('fa5s.bold'), '')
-        self.actionBold.triggered.connect(lambda x: self.textEditor.setFontWeight(QFont.Bold if x else QFont.Normal))
+        self.actionBold.triggered.connect(
+            lambda x: self.textEditor.setFontWeight(QFont.Weight.Bold if x else QFont.Weight.Normal))
         self.actionBold.setCheckable(True)
-        self.actionBold.setShortcut(QKeySequence.Bold)
+        self.actionBold.setShortcut(QKeySequence.StandardKey.Bold)
 
         self.actionItalic = QAction(IconRegistry.from_name('fa5s.italic'), '')
         self.actionItalic.triggered.connect(self.textEditor.setFontItalic)
         self.actionItalic.setCheckable(True)
-        self.actionItalic.setShortcut(QKeySequence.Italic)
+        self.actionItalic.setShortcut(QKeySequence.StandardKey.Italic)
 
         self.actionUnderline = QAction(IconRegistry.from_name('fa5s.underline'), '')
         self.actionUnderline.triggered.connect(self.textEditor.setFontUnderline)
         self.actionUnderline.setCheckable(True)
-        self.actionUnderline.setShortcut(QKeySequence.Underline)
+        self.actionUnderline.setShortcut(QKeySequence.StandardKey.Underline)
 
         self.actionAlignLeft = QAction(IconRegistry.from_name('fa5s.align-left'), '')
-        self.actionAlignLeft.triggered.connect(lambda: self.textEditor.setAlignment(Qt.AlignLeft))
+        self.actionAlignLeft.triggered.connect(lambda: self.textEditor.setAlignment(Qt.AlignmentFlag.AlignLeft))
         self.actionAlignLeft.setCheckable(True)
         self.actionAlignLeft.setChecked(True)
-        self.actionAlignLeft.setShortcut(QKeySequence.Underline)
         self.actionAlignCenter = QAction(IconRegistry.from_name('fa5s.align-center'), '')
-        self.actionAlignCenter.triggered.connect(lambda: self.textEditor.setAlignment(Qt.AlignCenter))
+        self.actionAlignCenter.triggered.connect(lambda: self.textEditor.setAlignment(Qt.AlignmentFlag.AlignCenter))
         self.actionAlignCenter.setCheckable(True)
-        self.actionAlignCenter.setShortcut(QKeySequence.Underline)
         self.actionAlignRight = QAction(IconRegistry.from_name('fa5s.align-right'), '')
-        self.actionAlignRight.triggered.connect(lambda: self.textEditor.setAlignment(Qt.AlignRight))
+        self.actionAlignRight.triggered.connect(lambda: self.textEditor.setAlignment(Qt.AlignmentFlag.AlignRight))
         self.actionAlignRight.setCheckable(True)
-        self.actionAlignRight.setShortcut(QKeySequence.Underline)
 
         self.actionInsertList = QAction(IconRegistry.from_name('fa5s.list'), '')
         self.actionInsertList.triggered.connect(
-            lambda: self.textEditor.textCursor().insertList(QTextListFormat.ListDisc))
+            lambda: self.textEditor.textCursor().insertList(QTextListFormat.Style.ListDisc))
         self.actionInsertNumberedList = QAction(IconRegistry.from_name('fa5s.list-ol'), '')
         self.actionInsertNumberedList.triggered.connect(
-            lambda: self.textEditor.textCursor().insertList(QTextListFormat.ListDecimal))
+            lambda: self.textEditor.textCursor().insertList(QTextListFormat.Style.ListDecimal))
 
         self.actionGroupAlignment = QActionGroup(self.toolbar)
         self.actionGroupAlignment.addAction(self.actionAlignLeft)
@@ -255,15 +253,15 @@ class RichTextEditor(QFrame):
     def setFormat(self, lineSpacing: int = 100, textIndent: int = 20):
         blockFmt = QTextBlockFormat()
         blockFmt.setTextIndent(textIndent)
-        blockFmt.setLineHeight(lineSpacing, QTextBlockFormat.ProportionalHeight)
+        blockFmt.setLineHeight(lineSpacing, QTextBlockFormat.LineHeightTypes.ProportionalHeight.value)
 
         cursor = self.textEditor.textCursor()
         cursor.clearSelection()
-        cursor.select(QTextCursor.Document)
+        cursor.select(QTextCursor.SelectionType.Document)
         cursor.mergeBlockFormat(blockFmt)
 
     def setFontPointSize(self, size: int):
-        self.textEditor.textCursor().select(QTextCursor.Document)
+        self.textEditor.textCursor().select(QTextCursor.SelectionType.Document)
         self.textEditor.setFontPointSize(size)
         font = self._lblPlaceholder.font()
         font.setPointSize(size)
@@ -277,16 +275,16 @@ class RichTextEditor(QFrame):
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if isinstance(event, QKeyEvent):
-            # if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Return:
+            # if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key_Return:
             #     if self._lblPlaceholder.isVisible():
             #         self.textEditor.textCursor().insertText(self._lblPlaceholder.text())
             #         self._lblPlaceholder.hide()
             #         return True
-            # elif event.type() == QEvent.KeyPress and self._lblPlaceholder.isVisible():
+            # elif event.type() == QEvent.Type.KeyPress and self._lblPlaceholder.isVisible():
             #     self._lblPlaceholder.hide()
 
             cursor = self.textEditor.textCursor()
-            if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
+            if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Tab:
                 _list = cursor.block().textList()
                 if _list and _list.count() > 1:
                     cursor.beginEditBlock()
@@ -297,30 +295,30 @@ class RichTextEditor(QFrame):
 
                     cursor.endEditBlock()
                     return True
-            if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Return:
+            if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Return:
                 level = cursor.blockFormat().headingLevel()
                 if level > 0:  # heading
                     cursor.insertBlock()
                     self.cbHeading.setCurrentIndex(0)
                     self._setHeading()
                     return True
-            if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Slash:
+            if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Slash:
                 if self.textEditor.textCursor().atBlockStart():
                     self._showCommands()
 
-            if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Space:
-                cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
+            if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Space:
+                cursor.movePosition(QTextCursor.MoveOperation.PreviousCharacter, QTextCursor.MoveMode.KeepAnchor)
                 if cursor.selectedText() == ' ':
                     self.textEditor.textCursor().deletePreviousChar()
                     self.textEditor.textCursor().insertText('.')
-            elif event.type() == QEvent.KeyPress and event.text().isalpha() and self._atSentenceStart(cursor):
+            elif event.type() == QEvent.Type.KeyPress and event.text().isalpha() and self._atSentenceStart(cursor):
                 self.textEditor.textCursor().insertText(event.text().upper())
                 return True
-            elif event.type() == QEvent.KeyPress and event.key() == Qt.Key_QuoteDbl:
+            elif event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_QuoteDbl:
                 self.textEditor.textCursor().insertText(event.text())
-                cursor.movePosition(QTextCursor.PreviousCharacter)
+                cursor.movePosition(QTextCursor.MoveOperation.PreviousCharacter)
                 self.textEditor.setTextCursor(cursor)
-            # elif event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
+            # elif event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key_Tab:
             #     self._lblPlaceholder.setText(' said ')
             #     self._lblPlaceholder.show()
             #     rect = self.textEditor.cursorRect(cursor)
@@ -333,7 +331,7 @@ class RichTextEditor(QFrame):
         if cursor.atBlockStart():
             return True
 
-        cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
+        cursor.movePosition(QTextCursor.MoveOperation.PreviousCharacter, QTextCursor.MoveMode.KeepAnchor)
         if cursor.selectedText() == '.':
             return True
         if cursor.atBlockStart() and cursor.selectedText() == '"':
@@ -341,20 +339,20 @@ class RichTextEditor(QFrame):
         if cursor.positionInBlock() == 1:
             return False
         elif cursor.selectedText() == ' ' or cursor.selectedText() == '"':
-            cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.MoveOperation.PreviousCharacter, QTextCursor.MoveMode.KeepAnchor)
             if cursor.selectedText().startswith('.'):
                 return True
 
         return False
 
     def _updateFormat(self):
-        self.actionBold.setChecked(self.textEditor.fontWeight() == QFont.Bold)
+        self.actionBold.setChecked(self.textEditor.fontWeight() == QFont.Weight.Bold)
         self.actionItalic.setChecked(self.textEditor.fontItalic())
         self.actionUnderline.setChecked(self.textEditor.fontUnderline())
 
-        self.actionAlignLeft.setChecked(self.textEditor.alignment() == Qt.AlignLeft)
-        self.actionAlignCenter.setChecked(self.textEditor.alignment() == Qt.AlignCenter)
-        self.actionAlignRight.setChecked(self.textEditor.alignment() == Qt.AlignRight)
+        self.actionAlignLeft.setChecked(self.textEditor.alignment() == Qt.AlignmentFlag.AlignLeft)
+        self.actionAlignCenter.setChecked(self.textEditor.alignment() == Qt.AlignmentFlag.AlignCenter)
+        self.actionAlignRight.setChecked(self.textEditor.alignment() == Qt.AlignmentFlag.AlignRight)
 
         self.cbHeading.blockSignals(True)
         cursor = self.textEditor.textCursor()
@@ -374,9 +372,9 @@ class RichTextEditor(QFrame):
         sizeAdjustment = 5 - headingLevel if headingLevel else 0
 
         charFormat = QTextCharFormat()
-        charFormat.setFontWeight(QFont.Bold if headingLevel else QFont.Normal)
-        charFormat.setProperty(QTextFormat.FontSizeAdjustment, sizeAdjustment)
-        cursor.select(QTextCursor.LineUnderCursor)
+        charFormat.setFontWeight(QFont.Weight.Bold if headingLevel else QFont.Weight.Normal)
+        charFormat.setProperty(QTextFormat.Property.FontSizeAdjustment, sizeAdjustment)
+        cursor.select(QTextCursor.SelectionType.LineUnderCursor)
         cursor.mergeCharFormat(charFormat)
         self.textEditor.mergeCurrentCharFormat(charFormat)
 
@@ -422,7 +420,8 @@ class RotatedButton(QPushButton):
             painter.rotate(-90)
             painter.translate(-1 * self.height(), 0)
         option.rect = option.rect.transposed()
-        painter.drawControl(QStyle.CE_PushButton, option)
+        painter.drawControl(QStyle.ControlElement.CE_PushButton, option)
+        painter.end()
 
     @overrides
     def sizeHint(self):
@@ -450,7 +449,7 @@ class _PowerBar(QFrame):
     @overrides
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         painter = QPainter(self)
-        painter.fillRect(self.rect(), Qt.white)
+        painter.fillRect(self.rect(), Qt.GlobalColor.white)
         gradient = QLinearGradient(0, 0, self.width(), self.height())
         gradient.setColorAt(0, QColor(self.startColor))
         gradient.setColorAt(1, QColor(self.endColor))
@@ -458,6 +457,8 @@ class _PowerBar(QFrame):
         painter.setBrush(brush)
 
         painter.fillRect(0, 0, self.value * 10, self.height(), brush)
+
+        painter.end()
 
     def increase(self):
         if self.value < self.steps:
@@ -479,7 +480,7 @@ class PowerBar(QFrame):
     def __init__(self, parent=None):
         super(PowerBar, self).__init__(parent)
 
-        self.setFrameStyle(QFrame.Box)
+        self.setFrameStyle(QFrame.Shape.Box)
         self.setLayout(QHBoxLayout())
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setSpacing(3)
@@ -501,14 +502,14 @@ class PowerBar(QFrame):
         button.setStyleSheet('border: 0px;')
         button.installEventFilter(self)
         button.setIconSize(QSize(14, 14))
-        button.setCursor(Qt.PointingHandCursor)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
 
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if isinstance(watched, QToolButton):
-            if event.type() == QEvent.Enter:
+            if event.type() == QEvent.Type.Enter:
                 watched.setIconSize(QSize(16, 16))
-            elif event.type() == QEvent.Leave:
+            elif event.type() == QEvent.Type.Leave:
                 watched.setIconSize(QSize(14, 14))
 
         return super(PowerBar, self).eventFilter(watched, event)
