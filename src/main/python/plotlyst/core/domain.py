@@ -728,9 +728,36 @@ save_the_cat = StoryStructure(title='Save the Cat',
                                                act=3, percentage=99),
                                      ])
 
-default_story_structures = [three_act_structure,
-                            weiland_10_beats,
-                            save_the_cat]
+story_circle = StoryStructure(title="Story circle",
+                              id=uuid.UUID('ede1a536-435c-4298-a43c-a931e353848b'),
+                              icon='mdi.chart-arc',
+                              beats=[StoryBeat(text='You',
+                                               id=uuid.UUID('ef7e76fa-c67a-49b1-9b28-e222482d1524'),
+                                               act=1, percentage=1),
+                                     StoryBeat(text='Need',
+                                               id=uuid.UUID('09503ff3-0d49-4c06-9189-45a2a236f5de'),
+                                               act=1, ends_act=True, percentage=13),
+                                     StoryBeat(text='Go',
+                                               id=uuid.UUID('bcd6f1a4-07d1-48b9-a41c-2642e49bb83b'),
+                                               act=2, ends_act=True, percentage=25),
+                                     StoryBeat(text='Search',
+                                               id=uuid.UUID('984f671a-d801-4e19-99de-291ae265b0e0'),
+                                               act=3, ends_act=True, percentage=37),
+                                     StoryBeat(text='Find',
+                                               id=uuid.UUID('86b002da-ed4f-4139-b8ab-064e62787ddb'),
+                                               act=4, ends_act=True, percentage=50),
+                                     StoryBeat(text='Take',
+                                               id=uuid.UUID('0bb73a18-2837-4b3d-a8c7-b11e007b215d'),
+                                               act=5, ends_act=True, percentage=62),
+                                     StoryBeat(text='Return',
+                                               id=uuid.UUID('7b5a55f6-47ed-4564-b19c-75e91bde7ce4'),
+                                               act=6, ends_act=True, percentage=75),
+                                     StoryBeat(text='Change',
+                                               id=uuid.UUID('5a41ee1f-6e17-404e-a773-a00309284afe'),
+                                               act=7, ends_act=True, percentage=88),
+                                     ])
+
+default_story_structures = [three_act_structure, weiland_10_beats, save_the_cat, story_circle]
 
 
 @dataclass

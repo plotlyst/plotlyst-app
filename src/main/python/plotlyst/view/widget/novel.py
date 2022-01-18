@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QSizePolicy, QFrame, QButtonGr
 from overrides import overrides
 
 from src.main.python.plotlyst.core.domain import StoryStructure, Novel, StoryBeat, \
-    three_act_structure, save_the_cat, weiland_10_beats, Character
+    three_act_structure, save_the_cat, weiland_10_beats, Character, story_circle
 from src.main.python.plotlyst.event.core import emit_event, EventListener, Event
 from src.main.python.plotlyst.event.handler import event_dispatcher
 from src.main.python.plotlyst.events import NovelStoryStructureUpdated
@@ -153,6 +153,7 @@ class StoryStructureSelector(QWidget, Ui_StoryStructureSelector):
         self.cb3act.clicked.connect(partial(self.structureClicked.emit, three_act_structure))
         self.cbWeiland10Beats.clicked.connect(partial(self.structureClicked.emit, weiland_10_beats))
         self.cbSaveTheCat.clicked.connect(partial(self.structureClicked.emit, save_the_cat))
+        self.cbStoryCircle.clicked.connect(partial(self.structureClicked.emit, story_circle))
         self.buttonGroup.buttonToggled.connect(self._btnToggled)
 
     def setNovel(self, novel: Novel):
@@ -348,9 +349,16 @@ class StoryStructureEditor(QWidget, Ui_StoryStructureSettings):
 
     def _structureSelectionChanged(self, structure: StoryStructure, toggled: bool):
         if toggled:
-            self.novel.story_structures.append(structure)
-            self._addStructure(structure)
+            if structure.id == story_circle.id:
+                print('circle add')
+                pass
+            else:
+                self.novel.story_structures.append(structure)
+                self._addStructure(structure)
         else:
+            if structure.id == story_circle.id:
+                print('circle remove')
+                return
             matched_structures = [x for x in self.novel.story_structures if x.id == structure.id]
             if matched_structures:
                 for st in matched_structures:
