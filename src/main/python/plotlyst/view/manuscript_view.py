@@ -34,6 +34,7 @@ from src.main.python.plotlyst.view._view import AbstractNovelView
 from src.main.python.plotlyst.view.common import set_opacity
 from src.main.python.plotlyst.view.generated.manuscript_view_ui import Ui_ManuscriptView
 from src.main.python.plotlyst.view.icons import IconRegistry
+from src.main.python.plotlyst.view.report.manuscript import SentenceVarietyChartView
 from src.main.python.plotlyst.view.widget.input import GrammarHighlighter
 from src.main.python.plotlyst.worker.grammar import language_tool_proxy
 
@@ -51,12 +52,17 @@ class ManuscriptView(AbstractNovelView):
 
         self.ui.textEdit.setTitleVisible(False)
         self.ui.textEdit.setToolbarVisible(False)
+        self.ui.wdgSentences.setHidden(True)
 
         self.ui.btnDistractionFree.setIcon(IconRegistry.from_name('fa5s.expand-alt'))
         self.ui.btnSpellCheckIcon.setIcon(IconRegistry.from_name('fa5s.spell-check'))
+        self.ui.btnAnalysis.setIcon(IconRegistry.from_name('mdi.google-analytics', color_on='darkBlue'))
         self.ui.cbSpellCheck.toggled.connect(self._spellcheck_toggled)
         self.ui.cbSpellCheck.clicked.connect(self._spellcheck_clicked)
         self._spellcheck_toggled(self.ui.btnSpellCheckIcon.isChecked())
+
+        self.chartSentences = SentenceVarietyChartView()
+        self.ui.wdgSentences.layout().addWidget(self.chartSentences)
 
         self.chaptersModel = ChaptersTreeModel(self.novel)
         self.ui.treeChapters.setModel(self.chaptersModel)
@@ -76,11 +82,12 @@ class ManuscriptView(AbstractNovelView):
         self.chaptersModel.modelReset.emit()
 
     def restore_editor(self, editor: QTextEdit):
-        self.ui.pageText.layout().insertWidget(1, editor)
+        self.ui.pageText.layout().insertWidget(2, editor)
 
     def _edit(self, index: QModelIndex):
-        def set_wc():
+        def set_statistics():
             self.ui.lblWordCount.setText(f'<html><b>{self.ui.textEdit.statistics().word_count}</b> words')
+            self.chartSentences.setText(self.ui.textEdit.textEditor.toPlainText())
 
         node = index.data(ChaptersTreeModel.NodeRole)
         if isinstance(node, SceneNode):
@@ -95,12 +102,13 @@ class ManuscriptView(AbstractNovelView):
             self.ui.stackedWidget.setCurrentWidget(self.ui.pageText)
             self.highlighter.setCheckEnabled(False)
             self.ui.textEdit.setText(self._current_doc.content, self._current_doc.title)
+            self.chartSentences.setText(self.ui.textEdit.textEditor.toPlainText())
 
             self.ui.textEdit.setMargins(30, 30, 30, 30)
             self.ui.textEdit.setFormat(130)
             self.ui.textEdit.setFontPointSize(16)
-            set_wc()
-            self.ui.textEdit.textEditor.textChanged.connect(set_wc)
+            set_statistics()
+            self.ui.textEdit.textEditor.textChanged.connect(set_statistics)
 
             if self.ui.cbSpellCheck.isChecked():
                 self.highlighter.setCheckEnabled(True)
