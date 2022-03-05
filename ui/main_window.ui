@@ -788,6 +788,7 @@ background-color: rgb(39, 39, 39);
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionExport"/>
     <addaction name="actionRestart"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -903,6 +904,11 @@ background-color: rgb(39, 39, 39);
   <action name="actionCharacterTemplateEditor">
    <property name="text">
     <string>Character template editor</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export</string>
    </property>
   </action>
  </widget>

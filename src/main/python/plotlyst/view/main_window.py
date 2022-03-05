@@ -309,6 +309,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             self.actionRestart.triggered.connect(lambda: QApplication.instance().exit(EXIT_CODE_RESTART))
 
         self.actionAbout.triggered.connect(lambda: AboutDialog().exec())
+        self.actionExport.setIcon(IconRegistry.export_icon())
         self.actionIncreaseFontSize.setIcon(IconRegistry.increase_font_size_icon())
         self.actionIncreaseFontSize.triggered.connect(self._increase_font_size)
         self.actionDecreaseFontSize.setIcon(IconRegistry.decrease_font_size_icon())

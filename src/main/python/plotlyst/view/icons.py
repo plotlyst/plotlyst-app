@@ -210,6 +210,10 @@ class IconRegistry:
         return qtawesome.icon('fa5.chart-bar', color_on='darkBlue')
 
     @staticmethod
+    def export_icon() -> QIcon:
+        return qtawesome.icon('mdi.file-export-outline', color_on='darkBlue')
+
+    @staticmethod
     def notes_icon() -> QIcon:
         return qtawesome.icon('mdi.notebook', color_on='darkBlue')
 
