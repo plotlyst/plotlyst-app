@@ -943,6 +943,11 @@ class DocumentStatistics:
 
 
 @dataclass
+class DocumentHistory:
+    id: uuid.UUID = field(default_factory=uuid.uuid4)
+
+
+@dataclass
 class Document(CharacterBased):
     title: str
     id: uuid.UUID = field(default_factory=uuid.uuid4)
@@ -951,6 +956,7 @@ class Document(CharacterBased):
     character_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
     scene_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
     data_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+    history_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
     icon: str = field(default='', metadata=config(exclude=exclude_if_empty))
     icon_color: str = field(default='black', metadata=config(exclude=exclude_if_black))
     statistics: Optional[DocumentStatistics] = field(default=None, metadata=config(exclude=exclude_if_empty))
