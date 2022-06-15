@@ -493,7 +493,7 @@ class JsonClient:
                      plots=novel_info.plots, characters=characters,
                      scenes=scenes, chapters=chapters, locations=novel_info.locations, stages=novel_info.stages,
                      story_structures=novel_info.story_structures, character_profiles=novel_info.character_profiles,
-                     location_profiles=novel_info.location_profiles,
+                     location_profiles=default_location_profiles(),
                      conflicts=conflicts, goals=[x for x in novel_info.goals if str(x.id) in goal_ids], tags=tags_dict,
                      documents=novel_info.documents, premise=novel_info.premise, synopsis=novel_info.synopsis,
                      prefs=novel_info.prefs)

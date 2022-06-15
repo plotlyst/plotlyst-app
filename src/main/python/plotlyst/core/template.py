@@ -408,7 +408,7 @@ def default_character_profiles() -> List[ProfileTemplate]:
                             elements=fields)]
 
 
-sight_field = TemplateField('Sight', type=TemplateFieldType.LABELS,
+sight_field = TemplateField('Sight', type=TemplateFieldType.SMALL_TEXT,
                             id=uuid.UUID('935e6595-27ae-426e-8b41-b315e9160ad9'),
                             emoji=':eyes:',
                             placeholder='Sight')
@@ -418,20 +418,20 @@ location_name_field = TemplateField(name='Name', type=TemplateFieldType.TEXT, em
                                     id=uuid.UUID('84f9bdee-c817-4caa-9e65-666cd0c4a546'), required=True,
                                     highlighted=True, show_label=False)
 
-smell_field = TemplateField('Smell', type=TemplateFieldType.LABELS,
+smell_field = TemplateField('Smell', type=TemplateFieldType.SMALL_TEXT,
                             id=uuid.UUID('50245a33-599b-49c6-9746-094f12b4d667'),
                             emoji=':nose:',
                             placeholder='Smell')
-noise_field = TemplateField('Noise', type=TemplateFieldType.LABELS,
+noise_field = TemplateField('Noise', type=TemplateFieldType.SMALL_TEXT,
                             id=uuid.UUID('76659d94-8753-4945-8d5c-e811189e3b49'),
                             emoji=':speaker_high_volume:',
                             placeholder='Noise')
 
-animals_field = TemplateField('Animals', type=TemplateFieldType.LABELS,
+animals_field = TemplateField('Animals', type=TemplateFieldType.SMALL_TEXT,
                               id=uuid.UUID('3aa9cc09-312c-492a-bc19-6914bb1eeba6'),
                               emoji=':paw_prints:',
                               placeholder='Animals')
-nature_field = TemplateField('Nature', type=TemplateFieldType.LABELS,
+nature_field = TemplateField('Nature', type=TemplateFieldType.SMALL_TEXT,
                              id=uuid.UUID('ab54bf84-1b69-4bb4-b1b4-c04ad2dd58b1'),
                              emoji=':shamrock:',
                              placeholder='Nature')
