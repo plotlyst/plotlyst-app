@@ -18,15 +18,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from typing import Optional
-
 from PyQt5.QtCore import QModelIndex, QTimer, Qt
 from PyQt5.QtWidgets import QHeaderView, QApplication
 from overrides import overrides
 from qthandy import opaque, incr_font, bold, btn_popup, margins, transparent
 
-from src.main.python.plotlyst.core.client import json_client
-from src.main.python.plotlyst.core.domain import Novel, Document, DocumentStatistics, Scene
+from src.main.python.plotlyst.core.domain import Novel, Document
 from src.main.python.plotlyst.event.core import emit_event, emit_critical, emit_info
 from src.main.python.plotlyst.events import NovelUpdatedEvent, SceneChangedEvent, OpenDistractionFreeMode, \
     ChapterChangedEvent, SceneDeletedEvent, ExitDistractionFreeMode
@@ -38,7 +35,8 @@ from src.main.python.plotlyst.view.common import OpacityEventFilter
 from src.main.python.plotlyst.view.generated.manuscript_view_ui import Ui_ManuscriptView
 from src.main.python.plotlyst.view.icons import IconRegistry, avatars
 from src.main.python.plotlyst.view.widget.chart import ManuscriptLengthChart
-from src.main.python.plotlyst.view.widget.manuscript import ManuscriptContextMenuWidget, DistractionFreeManuscriptEditor
+from src.main.python.plotlyst.view.widget.manuscript import ManuscriptContextMenuWidget, \
+    DistractionFreeManuscriptEditor, ManuscriptTextEdit
 
 
 class ManuscriptView(AbstractNovelView):
@@ -47,13 +45,8 @@ class ManuscriptView(AbstractNovelView):
         super().__init__(novel, [NovelUpdatedEvent, SceneChangedEvent, ChapterChangedEvent, SceneDeletedEvent])
         self.ui = Ui_ManuscriptView()
         self.ui.setupUi(self.widget)
-        self._current_scene: Optional[Scene] = None
-        self._current_doc: Optional[Document] = None
         self.ui.splitter.setSizes([100, 500])
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageOverview)
-
-        self.ui.textEdit.setTitleVisible(False)
-        self.ui.textEdit.setToolbarVisible(False)
 
         self.ui.btnTitle.setText(self.novel.title)
 
@@ -101,9 +94,8 @@ class ManuscriptView(AbstractNovelView):
         self.ui.wdgTopAnalysis.setHidden(True)
         self.ui.wdgSideAnalysis.setHidden(True)
 
-        self.ui.textEdit.textEdit.textChanged.connect(self._save)
-        self.ui.textEdit.textEdit.textChanged.connect(self._text_changed)
-        self.ui.textEdit.textEdit.selectionChanged.connect(self._text_selection_changed)
+        self.ui.textEdit.textChanged.connect(self._text_changed)
+        self.ui.textEdit.selectionChanged.connect(self._text_selection_changed)
         self.ui.btnDistractionFree.clicked.connect(self._enter_distraction_free)
 
         self._update_story_goal()
@@ -132,6 +124,7 @@ class ManuscriptView(AbstractNovelView):
 
         self.ui.wdgBottom.layout().addWidget(self.ui.lblWordCount, alignment=Qt.AlignCenter)
         self.ui.lblWordCount.setStyleSheet('color: black')
+        self.ui.lblWordCount.setVisible(True)
         self.ui.wdgEditor.layout().insertWidget(0, self.ui.textEdit)
         self.ui.wdgReadability.cbAdverbs.setChecked(False)
 
@@ -142,28 +135,15 @@ class ManuscriptView(AbstractNovelView):
 
     def _edit(self, index: QModelIndex):
         node = index.data(ChaptersTreeModel.NodeRole)
+        self.ui.textEdit.setGrammarCheckEnabled(False)
+        self.ui.stackedWidget.setCurrentWidget(self.ui.pageText)
+
         if isinstance(node, SceneNode):
             if not node.scene.manuscript:
                 node.scene.manuscript = Document('', scene_id=node.scene.id)
                 self.repo.update_scene(node.scene)
-            self._current_scene = node.scene
-            self._current_doc = node.scene.manuscript
 
-            if not self._current_doc.loaded:
-                json_client.load_document(self.novel, self._current_doc)
-
-            self.ui.stackedWidget.setCurrentWidget(self.ui.pageText)
-            self.ui.textEdit.setGrammarCheckEnabled(False)
-            self.ui.textEdit.setText(self._current_doc.content, self._current_doc.title)
-
-            self.ui.textEdit.setMargins(30, 30, 30, 30)
-            self.ui.textEdit.textEdit.setFormat(130, textIndent=20)
-            self.ui.textEdit.textEdit.setFontPointSize(16)
-            self._text_changed()
-
-            if self.ui.cbSpellCheck.isChecked():
-                self.ui.textEdit.setGrammarCheckEnabled(True)
-                self.ui.textEdit.asyncCheckGrammer()
+            self.ui.textEdit.setScene(node.scene)
 
             if node.scene.title:
                 self.ui.lineSceneTitle.setText(node.scene.title)
@@ -183,48 +163,49 @@ class ManuscriptView(AbstractNovelView):
                 self.ui.btnSceneType.setVisible(True)
             else:
                 self.ui.btnSceneType.setHidden(True)
+        elif isinstance(node, ChapterNode):
+            scenes = self.novel.scenes_in_chapter(node.chapter)
+            for scene in scenes:
+                if not scene.manuscript:
+                    scene.manuscript = Document('', scene_id=scene.id)
+                    self.repo.update_scene(scene)
+            if scenes:
+                self.ui.textEdit.setChapterScenes(scenes)
+            else:
+                self.ui.stackedWidget.setCurrentWidget(self.ui.pageEmpty)
+
+            self.ui.lineSceneTitle.setText(node.chapter.title_index(self.novel))
+            self.ui.btnPov.setHidden(True)
+            self.ui.btnSceneType.setHidden(True)
+
+        if self.ui.stackedWidget.currentWidget() == self.ui.pageText:
+            self.ui.textEdit.setMargins(30, 30, 30, 30)
+            self._text_changed()
+
+            if self.ui.cbSpellCheck.isChecked():
+                self.ui.textEdit.setGrammarCheckEnabled(True)
+                self.ui.textEdit.asyncCheckGrammer()
 
             if self.ui.btnAnalysis.isChecked():
-                self.ui.wdgReadability.checkTextDocument(self.ui.textEdit.textEdit.document())
-
-        elif isinstance(node, ChapterNode):
-            self._current_scene = None
-            self._current_doc = None
-            self.ui.stackedWidget.setCurrentWidget(self.ui.pageEmpty)
+                self.ui.wdgReadability.checkTextDocuments(self.ui.textEdit.documents())
 
     def _text_changed(self):
         wc = self.ui.textEdit.statistics().word_count
         self.ui.lblWordCount.setWordCount(wc)
-        if self._current_doc.statistics is None:
-            self._current_doc.statistics = DocumentStatistics()
+        self._update_story_goal()
+        self.ui.wdgReadability.setTextDocumentsUpdated(self.ui.textEdit.documents())
 
-        if self._current_doc.statistics.wc != wc:
-            self._current_doc.statistics.wc = wc
-            self.repo.update_scene(self._current_scene)
-            self._update_story_goal()
-        self.ui.wdgReadability.setTextDocumentUpdated(self.ui.textEdit.textEdit.document())
-
-    def _text_selection_changed(self):
-        fragment = self.ui.textEdit.textEdit.textCursor().selection()
+    def _text_selection_changed(self, editor: ManuscriptTextEdit):
+        fragment = editor.textCursor().selection()
         if fragment:
             self.ui.lblWordCount.calculateSecondaryWordCount(fragment.toPlainText())
         else:
             self.ui.lblWordCount.clearSecondaryWordCount()
 
-    def _save(self):
-        if not self._current_doc:
-            return
-        self._current_doc.content = self.ui.textEdit.textEdit.toHtml()
-        self.repo.update_doc(self.novel, self._current_doc)
-
     def _scene_title_edited(self, text: str):
-        if self._current_scene:
-            self._current_scene.title = text
-            self.repo.update_scene(self._current_scene)
+        pass
 
     def _homepage(self):
-        self._current_scene = None
-        self._current_doc = None
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageOverview)
         self.ui.treeChapters.clearSelection()
 
@@ -253,7 +234,7 @@ class ManuscriptView(AbstractNovelView):
         if not checked:
             return
 
-        self.ui.wdgReadability.checkTextDocument(self.ui.textEdit.textEdit.document())
+        self.ui.wdgReadability.checkTextDocuments(self.ui.textEdit.documents())
 
     def _adverb_highlight_toggled(self, toggled: bool):
         if toggled:

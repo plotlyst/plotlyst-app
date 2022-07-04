@@ -28,10 +28,10 @@ from PyQt5.QtCore import Qt, QRectF, QModelIndex, QRect, QPoint, QObject, QEvent
 from PyQt5.QtGui import QPixmap, QPainterPath, QPainter, QFont, QColor, QIcon, QDrag
 from PyQt5.QtWidgets import QWidget, QSizePolicy, QColorDialog, QAbstractItemView, \
     QMenu, QAction, QAbstractButton, \
-    QStackedWidget, QAbstractScrollArea, QLineEdit, QHeaderView
+    QStackedWidget, QAbstractScrollArea, QLineEdit, QHeaderView, QScrollArea, QFrame
 from fbs_runtime import platform
 from overrides import overrides
-from qthandy import opaque
+from qthandy import opaque, hbox
 
 from src.main.python.plotlyst.env import app_env
 
@@ -288,3 +288,20 @@ def autoresize_col(view: QAbstractItemView, col: int):
 
 def stretch_col(view: QAbstractItemView, col: int):
     view.horizontalHeader().setSectionResizeMode(col, QHeaderView.Stretch)
+
+
+def scrolled(parent: QWidget, frameless: bool = False) -> Tuple[QScrollArea, QWidget]:
+    scrollArea = QScrollArea(parent)
+    scrollArea.setFocusPolicy(Qt.NoFocus)
+    scrollArea.setWidgetResizable(True)
+
+    widget = QWidget(scrollArea)
+    scrollArea.setWidget(widget)
+    if not parent.layout():
+        hbox(parent, 0, 0)
+    parent.layout().addWidget(scrollArea)
+
+    if frameless:
+        scrollArea.setFrameStyle(QFrame.NoFrame)
+
+    return scrollArea, widget

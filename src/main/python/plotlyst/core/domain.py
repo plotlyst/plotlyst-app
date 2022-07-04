@@ -227,6 +227,9 @@ class Chapter:
     def sid(self) -> str:
         return str(self.id)
 
+    def title_index(self, novel: 'Novel') -> str:
+        return f'Chapter {novel.chapters.index(self) + 1}'
+
 
 @dataclass
 class CharacterArc:

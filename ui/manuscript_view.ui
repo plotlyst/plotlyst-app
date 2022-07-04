@@ -209,7 +209,7 @@ background-color: rgb(39, 39, 39);
        <number>0</number>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="pageText">
        <property name="styleSheet">
