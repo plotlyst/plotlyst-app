@@ -20,14 +20,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import Optional
 
 from PyQt5.QtCore import QModelIndex, Qt, QSize
-from PyQt5.QtWidgets import QHeaderView, QWidgetAction, QListView, QWidget
+from PyQt5.QtWidgets import QHeaderView, QWidgetAction, QListView
 from fbs_runtime import platform
 from overrides import overrides
-from qthandy import vspacer, clear_layout
+from qthandy import clear_layout
 
 from src.main.python.plotlyst.core.client import json_client
 from src.main.python.plotlyst.core.domain import Novel, Document, Character, DocumentType, \
-    Causality, CausalityItem
+    Causality, CausalityItem, MiceQuotient
 from src.main.python.plotlyst.core.text import parse_structure_to_richtext
 from src.main.python.plotlyst.events import SceneChangedEvent, SceneDeletedEvent
 from src.main.python.plotlyst.model.characters_model import CharactersTableModel
@@ -36,11 +36,11 @@ from src.main.python.plotlyst.model.docs_model import DocumentsTreeModel, Docume
 from src.main.python.plotlyst.view._view import AbstractNovelView
 from src.main.python.plotlyst.view.common import PopupMenuBuilder
 from src.main.python.plotlyst.view.dialog.utility import IconSelectorDialog
-from src.main.python.plotlyst.view.generated.docs_sidebar_widget_ui import Ui_DocumentsSidebarWidget
+from src.main.python.plotlyst.view.doc.mice import MiceQuotientDoc
 from src.main.python.plotlyst.view.generated.notes_view_ui import Ui_NotesView
 from src.main.python.plotlyst.view.icons import IconRegistry, avatars
 from src.main.python.plotlyst.view.widget.causality import CauseAndEffectDiagram
-from src.main.python.plotlyst.view.widget.input import RotatedButton, DocumentTextEditor
+from src.main.python.plotlyst.view.widget.input import DocumentTextEditor
 
 
 class DocumentsView(AbstractNovelView):
@@ -51,7 +51,7 @@ class DocumentsView(AbstractNovelView):
         self.ui.setupUi(self.widget)
         self._current_doc: Optional[Document] = None
 
-        self.ui.splitter.setSizes([100, 500])
+        self.ui.splitter.setSizes([150, 500])
 
         self.model = DocumentsTreeModel(self.novel)
         self.ui.treeDocuments.setModel(self.model)
@@ -85,7 +85,14 @@ class DocumentsView(AbstractNovelView):
             doc.data = casuality
             doc.data_id = casuality.id
             self.repo.update_doc(self.novel, doc)
-        if doc_type == DocumentType.STORY_STRUCTURE:
+        elif doc_type == DocumentType.MICE:
+            doc.title = 'MICE Threads'
+            doc.icon = 'mdi.rodent'
+            doc.icon_color = '#6c757d'
+            doc.data = MiceQuotient()
+            doc.data_id = doc.data.id
+            self.repo.update_doc(self.novel, doc)
+        elif doc_type == DocumentType.STORY_STRUCTURE:
             doc.title = self.novel.active_story_structure.title
             doc.icon = self.novel.active_story_structure.icon
             doc.icon_color = self.novel.active_story_structure.icon_color
@@ -147,11 +154,14 @@ class DocumentsView(AbstractNovelView):
         action.setDefaultWidget(_view)
         character_menu.addAction(action)
 
-        builder.add_action('Reversed Cause and Effect', IconRegistry.reversed_cause_and_effect_icon(),
-                           lambda: self._add_doc(index, doc_type=DocumentType.REVERSED_CAUSE_AND_EFFECT))
-        struc = self.novel.active_story_structure
-        builder.add_action(struc.title, IconRegistry.from_name(struc.icon, color=struc.icon_color),
-                           lambda: self._add_doc(index, doc_type=DocumentType.STORY_STRUCTURE))
+        builder.add_action('MICE threads', IconRegistry.from_name('mdi.rodent', '#6c757d'),
+                           lambda: self._add_doc(index, doc_type=DocumentType.MICE))
+
+        # builder.add_action('Reversed Cause and Effect', IconRegistry.reversed_cause_and_effect_icon(),
+        #                    lambda: self._add_doc(index, doc_type=DocumentType.REVERSED_CAUSE_AND_EFFECT))
+        # struc = self.novel.active_story_structure
+        # builder.add_action(struc.title, IconRegistry.from_name(struc.icon, color=struc.icon_color),
+        #                    lambda: self._add_doc(index, doc_type=DocumentType.STORY_STRUCTURE))
 
         builder.popup()
 
@@ -189,13 +199,16 @@ class DocumentsView(AbstractNovelView):
                 self.textEditor.asyncCheckGrammer()
         else:
             self.ui.stackedEditor.setCurrentWidget(self.ui.customEditorPage)
-            while self.ui.customEditorPage.layout().count():
-                item = self.ui.customEditorPage.layout().takeAt(0)
-                item.widget().deleteLater()
+            clear_layout(self.ui.customEditorPage)
             if self._current_doc.type == DocumentType.REVERSED_CAUSE_AND_EFFECT:
                 widget = CauseAndEffectDiagram(self._current_doc.data, reversed_=True)
                 widget.model.changed.connect(self._save)
-                self.ui.customEditorPage.layout().addWidget(widget)
+            elif self._current_doc.type == DocumentType.MICE:
+                widget = MiceQuotientDoc(self._current_doc, self._current_doc.data)
+                widget.changed.connect(self._save)
+            else:
+                return
+            self.ui.customEditorPage.layout().addWidget(widget)
 
     def _change_icon(self, index: QModelIndex):
         result = IconSelectorDialog().display()
@@ -220,26 +233,3 @@ class DocumentsView(AbstractNovelView):
                 self._current_doc.title = new_title
                 emit_column_changed_in_tree(self.model, 0, QModelIndex())
                 self.repo.update_novel(self.novel)
-
-
-class DocumentsSidebar(QWidget, AbstractNovelView, Ui_DocumentsSidebarWidget):
-
-    def __init__(self, novel: Novel, parent=None):
-        super(DocumentsSidebar, self).__init__(parent)
-        self.novel = novel
-        self.setupUi(self)
-        self._updateDocs()
-
-    @overrides
-    def refresh(self):
-        self._updateDocs()
-
-    def _updateDocs(self):
-        while self.scrollAreaWidgetContents.layout().count():
-            item = self.scrollAreaWidgetContents.layout().takeAt(0)
-            item.widget().deleteLater()
-        for doc in self.novel.documents:
-            btn = RotatedButton()
-            btn.setText(doc.title)
-            self.scrollAreaWidgetContents.layout().addWidget(btn)
-        self.scrollAreaWidgetContents.layout().addWidget(vspacer())

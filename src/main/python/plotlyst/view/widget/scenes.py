@@ -29,7 +29,8 @@ from PyQt5.QtCore import Qt, QObject, QEvent, QSize, pyqtSignal, QModelIndex
 from PyQt5.QtGui import QDragEnterEvent, QResizeEvent, QCursor, QColor, QDropEvent, QMouseEvent, QBrush, QIcon
 from PyQt5.QtGui import QPaintEvent, QPainter, QPen, QPainterPath
 from PyQt5.QtWidgets import QSizePolicy, QWidget, QFrame, QToolButton, QSplitter, \
-    QPushButton, QHeaderView, QTreeView, QMenu, QWidgetAction, QTextEdit, QLabel, QAbstractButton
+    QPushButton, QHeaderView, QTreeView, QMenu, QWidgetAction, QTextEdit, QLabel, QAbstractButton, QTableView, \
+    QAbstractItemView
 from overrides import overrides
 from qtanim import fade_out
 from qthandy import busy, margins, vspacer, btn_popup_menu
@@ -47,10 +48,11 @@ from src.main.python.plotlyst.event.core import emit_critical, emit_event
 from src.main.python.plotlyst.events import ChapterChangedEvent, SceneChangedEvent
 from src.main.python.plotlyst.model.chapters_model import ChaptersTreeModel, ChapterNode, SceneNode
 from src.main.python.plotlyst.model.novel import NovelTagsTreeModel, TagNode
+from src.main.python.plotlyst.model.scenes_model import ScenesTableModel
 from src.main.python.plotlyst.service.cache import acts_registry
 from src.main.python.plotlyst.service.persistence import RepositoryPersistenceManager
 from src.main.python.plotlyst.view.common import OpacityEventFilter, DisabledClickEventFilter, PopupMenuBuilder, \
-    DragEventFilter, hmax, pointy, action
+    DragEventFilter, hmax, pointy, action, stretch_col
 from src.main.python.plotlyst.view.generated.scene_beat_item_widget_ui import Ui_SceneBeatItemWidget
 from src.main.python.plotlyst.view.generated.scene_filter_widget_ui import Ui_SceneFilterWidget
 from src.main.python.plotlyst.view.generated.scene_ouctome_selector_ui import Ui_SceneOutcomeSelectorWidget
@@ -59,12 +61,12 @@ from src.main.python.plotlyst.view.generated.scenes_view_preferences_widget_ui i
 from src.main.python.plotlyst.view.icons import IconRegistry
 from src.main.python.plotlyst.view.layout import group
 from src.main.python.plotlyst.view.widget.button import WordWrappedPushButton, SecondaryActionToolButton, \
-    FadeOutButtonGroup
+    FadeOutButtonGroup, SecondaryActionPushButton
 from src.main.python.plotlyst.view.widget.characters import CharacterConflictSelector, CharacterGoalSelector
 from src.main.python.plotlyst.view.widget.chart import SceneStructureEmotionalArcChart
 from src.main.python.plotlyst.view.widget.input import RotatedButtonOrientation, RotatedButton, MenuWithDescription
 from src.main.python.plotlyst.view.widget.labels import SelectionItemLabel, ScenePlotValueLabel, \
-    PlotLabel, PlotValueLabel
+    PlotLabel, PlotValueLabel, SceneLabel
 from src.main.python.plotlyst.view.widget.tree_view import ActionBasedTreeView
 
 
@@ -330,6 +332,67 @@ class SceneTagSelector(QWidget):
         node = index.data(NovelTagsTreeModel.NodeRole)
         if isinstance(node, TagNode):
             self._tagsModel.toggle(node.tag)
+
+
+class SceneSelector(QWidget):
+    sceneSelected = pyqtSignal(Scene)
+
+    def __init__(self, novel: Novel, text: str = '', parent=None):
+        super(SceneSelector, self).__init__(parent)
+        self.novel = novel
+        self.scene: Optional[Scene] = None
+
+        self.label: Optional[SceneLabel] = None
+
+        hbox(self)
+        self.btnSelect = SecondaryActionPushButton(self)
+        self.btnSelect.setText(text)
+        italic(self.btnSelect)
+        self.btnSelect.setIcon(IconRegistry.scene_icon())
+        self.layout().addWidget(self.btnSelect)
+
+        self._lstScenes = QTableView()
+        self._lstScenes.verticalHeader().setHidden(True)
+        self._lstScenes.horizontalHeader().setHidden(True)
+        self._lstScenes.verticalHeader().setDefaultSectionSize(20)
+        self._lstScenes.horizontalHeader().setDefaultSectionSize(24)
+        self._lstScenes.setShowGrid(False)
+        self._lstScenes.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._lstScenes.clicked.connect(self._selected)
+        pointy(self._lstScenes)
+        self.menu = btn_popup(self.btnSelect, self._lstScenes)
+        self.menu.aboutToShow.connect(self._beforePopup)
+
+    def setScene(self, scene: Scene):
+        self.scene = scene
+        if self.label is None:
+            self.label = SceneLabel(self.scene)
+            self.layout().addWidget(self.label)
+            self.label.clicked.connect(self.menu.show)
+        else:
+            self.label.setScene(scene)
+
+        self.btnSelect.setHidden(True)
+
+    @busy
+    def _beforePopup(self):
+        self._scenesModel = ScenesTableModel(self.novel)
+
+        self._lstScenes.setModel(self._scenesModel)
+        for col in range(self._scenesModel.columnCount()):
+            self._lstScenes.hideColumn(col)
+        self._lstScenes.showColumn(ScenesTableModel.ColPov)
+        self._lstScenes.showColumn(ScenesTableModel.ColType)
+        self._lstScenes.showColumn(ScenesTableModel.ColTitle)
+        self._lstScenes.horizontalHeader().swapSections(ScenesTableModel.ColType, ScenesTableModel.ColTitle)
+
+        stretch_col(self._lstScenes, ScenesTableModel.ColTitle)
+
+    def _selected(self, index: QModelIndex):
+        scene = index.data(ScenesTableModel.SceneRole)
+        self.setScene(scene)
+        self.btnSelect.menu().hide()
+        self.sceneSelected.emit(scene)
 
 
 class SceneFilterWidget(QFrame, Ui_SceneFilterWidget):

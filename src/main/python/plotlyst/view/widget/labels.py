@@ -28,10 +28,12 @@ from qthandy import hbox, FlowLayout, vline, vbox, clear_layout, transparent, bt
 
 from src.main.python.plotlyst.common import truncate_string
 from src.main.python.plotlyst.core.domain import Character, Conflict, SelectionItem, Novel, ScenePlotReference, \
-    CharacterGoal, PlotValue
+    CharacterGoal, PlotValue, Scene
+from src.main.python.plotlyst.env import app_env
 from src.main.python.plotlyst.model.common import SelectionItemsModel
 from src.main.python.plotlyst.view.common import text_color_with_bg_color, VisibilityToggleEventFilter
 from src.main.python.plotlyst.view.icons import set_avatar, IconRegistry, avatars
+from src.main.python.plotlyst.view.widget.display import Icon
 from src.main.python.plotlyst.view.widget.input import RemovalButton
 from src.main.python.plotlyst.view.widget.items_editor import ItemsEditorWidget
 
@@ -256,6 +258,30 @@ class CharacterGoalLabel(SelectionItemLabel):
     @overrides
     def _borderColor(self):
         return 'darkBlue'
+
+
+class SceneLabel(Label):
+    def __init__(self, scene: Scene, parent=None):
+        super(SceneLabel, self).__init__(parent)
+
+        self.btnTypeIcon = Icon()
+
+        self.lblTitle = QLabel(self)
+        self.layout().addWidget(self.btnTypeIcon)
+        self.layout().addWidget(self.lblTitle)
+
+        self.setScene(scene)
+
+        self.setStyleSheet(f'''
+                            SceneLabel {{
+                                border: 1px solid black;
+                                border-radius: 8px; padding: 2px;
+                                }}
+                            ''')
+
+    def setScene(self, scene: Scene):
+        self.btnTypeIcon.setIcon(IconRegistry.scene_type_icon(scene))
+        self.lblTitle.setText(scene.title_or_index(app_env.novel))
 
 
 class LabelsEditorWidget(QFrame):

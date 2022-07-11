@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MiceQuotientDoc</class>
+ <widget class="QWidget" name="MiceQuotientDoc">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>366</width>
+    <height>285</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item alignment="Qt::AlignHCenter">
+    <widget class="IconText" name="btnTitle">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>MICE Quotient</string>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>38</width>
+       <height>38</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignTop">
+    <widget class="QWidget" name="wdgButtons" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>9</number>
+      </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="SecondaryActionPushButton" name="btnMilieu">
+        <property name="toolTip">
+         <string>Add new Milieu thread</string>
+        </property>
+        <property name="text">
+         <string>Milieu</string>
+        </property>
+        <property name="iconName" stdset="0">
+         <string>fa5s.map-marked-alt</string>
+        </property>
+        <property name="iconColor" stdset="0">
+         <string>#2d6a4f</string>
+        </property>
+        <property name="checkedColor" stdset="0">
+         <string>#2d6a4f</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="SecondaryActionPushButton" name="btnInquiry">
+        <property name="toolTip">
+         <string>Add new Inquiry thread</string>
+        </property>
+        <property name="text">
+         <string>Inquiry</string>
+        </property>
+        <property name="iconName" stdset="0">
+         <string>ei.question</string>
+        </property>
+        <property name="iconColor" stdset="0">
+         <string>#7b2cbf</string>
+        </property>
+        <property name="checkedColor" stdset="0">
+         <string>#7b2cbf</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="SecondaryActionPushButton" name="btnCharacter">
+        <property name="toolTip">
+         <string>Add new Character thread</string>
+        </property>
+        <property name="text">
+         <string>Character</string>
+        </property>
+        <property name="iconName" stdset="0">
+         <string>fa5s.user</string>
+        </property>
+        <property name="iconColor" stdset="0">
+         <string>darkBlue</string>
+        </property>
+        <property name="checkedColor" stdset="0">
+         <string>darkBlue</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="SecondaryActionPushButton" name="btnEvent">
+        <property name="toolTip">
+         <string>Add new Event thread</string>
+        </property>
+        <property name="text">
+         <string>Event</string>
+        </property>
+        <property name="iconName" stdset="0">
+         <string>fa5s.meteor</string>
+        </property>
+        <property name="iconColor" stdset="0">
+         <string>#d90429</string>
+        </property>
+        <property name="checkedColor" stdset="0">
+         <string>#d90429</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="wdgThreads">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>348</width>
+        <height>198</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>SecondaryActionPushButton</class>
+   <extends>QPushButton</extends>
+   <header>src.main.python.plotlyst.view.widget.button</header>
+  </customwidget>
+  <customwidget>
+   <class>IconText</class>
+   <extends>QPushButton</extends>
+   <header>src.main.python.plotlyst.view.widget.display</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

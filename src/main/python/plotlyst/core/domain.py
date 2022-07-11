@@ -357,6 +357,23 @@ class CharacterBased(ABC):
         return self._character
 
 
+class SceneBased(ABC):
+
+    def set_scene(self, scene: Optional['Scene']):
+        if scene is None:
+            self.scene_id = None
+        else:
+            self.scene_id = scene.id
+
+    def scene(self, novel: 'Novel') -> Optional['Scene']:
+        if not self.scene_id:
+            return None
+        if not self._scene:
+            for s in novel.scenes:
+                if s.id == self.scene_id:
+                    return s
+
+
 @dataclass
 class Plot(SelectionItem, CharacterBased):
     id: uuid.UUID = field(default_factory=uuid.uuid4)
@@ -917,6 +934,43 @@ class Causality:
     items: List['CausalityItem'] = field(default_factory=list)
 
 
+class MiceType(Enum):
+    CHARACTER = 0
+    INQUIRY = 1
+    MILIEU = 2
+    EVENT = 3
+
+
+@dataclass
+class MiceThread:
+    type: MiceType
+    text: str = ''
+    id: uuid.UUID = field(default_factory=uuid.uuid4)
+    beginning_scene_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+    ending_scene_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+
+    def beginning_scene(self, novel: 'Novel') -> Optional['Scene']:
+        if not self.beginning_scene_id:
+            return None
+        for s in novel.scenes:
+            if s.id == self.beginning_scene_id:
+                return s
+
+    def ending_scene(self, novel: 'Novel') -> Optional['Scene']:
+        if not self.ending_scene_id:
+            return None
+        for s in novel.scenes:
+            if s.id == self.ending_scene_id:
+                return s
+
+
+@dataclass_json(undefined=Undefined.EXCLUDE)
+@dataclass
+class MiceQuotient:
+    id: uuid.UUID = field(default_factory=uuid.uuid4)
+    threads: List[MiceThread] = field(default_factory=list)
+
+
 class DocumentType(Enum):
     DOCUMENT = 0
     CHARACTER_BACKSTORY = 1
@@ -925,6 +979,7 @@ class DocumentType(Enum):
     SNOWFLAKE = 4
     CHARACTER_ARC = 5
     STORY_STRUCTURE = 6
+    MICE = 7
 
 
 @dataclass
@@ -938,7 +993,7 @@ class DocumentStatistics:
 
 
 @dataclass
-class Document(CharacterBased):
+class Document(CharacterBased, SceneBased):
     title: str
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     type: DocumentType = DocumentType.DOCUMENT
@@ -960,17 +1015,6 @@ class Document(CharacterBased):
         self.data: Any = None
         self._character: Optional[Character] = None
         self._scene: Optional[Scene] = None
-
-    def scene(self, novel: 'Novel') -> Optional[Scene]:
-        if not self.scene_id:
-            return None
-        if not self._scene:
-            for s in novel.scenes:
-                if s.id == self.scene_id:
-                    self._scene = s
-                    break
-
-        return self._scene
 
 
 def default_documents() -> List[Document]:

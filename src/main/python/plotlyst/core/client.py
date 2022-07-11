@@ -38,7 +38,7 @@ from src.main.python.plotlyst.core.domain import Novel, Character, Scene, Chapte
     Plot, ScenePlotReference, SceneType, SceneStructureAgenda, \
     Location, three_act_structure, SceneStoryBeat, Tag, default_general_tags, TagType, \
     default_tag_types, LanguageSettings, ImportOrigin, NovelPreferences, Goal, CharacterGoal, \
-    CharacterPreferences, TagReference, ScenePlotReferenceData
+    CharacterPreferences, TagReference, ScenePlotReferenceData, MiceQuotient
 from src.main.python.plotlyst.core.template import Role, default_location_profiles, exclude_if_empty
 
 
@@ -358,6 +358,8 @@ class JsonClient:
             data_str: str = self.__load_doc_data(novel, document.data_id)
             if document.type in [DocumentType.CAUSE_AND_EFFECT, DocumentType.REVERSED_CAUSE_AND_EFFECT]:
                 document.data = Causality.from_json(data_str)
+            elif document.type == DocumentType.MICE:
+                document.data = MiceQuotient.from_json(data_str)
         document.loaded = True
 
     @busy
@@ -627,7 +629,7 @@ class JsonClient:
             doc_file_path = novel_doc_dir.joinpath(self.__doc_file(doc.id))
             with atomic_write(doc_file_path, overwrite=True) as f:
                 f.write(doc.content)
-        elif doc.type == DocumentType.REVERSED_CAUSE_AND_EFFECT or doc.type == DocumentType.CAUSE_AND_EFFECT:
+        elif doc.type in [DocumentType.REVERSED_CAUSE_AND_EFFECT, DocumentType.CAUSE_AND_EFFECT, DocumentType.MICE]:
             self.__persist_json_by_id(novel_doc_dir, doc.data.to_json(), doc.data_id)
 
     def __persist_info(self, dir, info: Any):

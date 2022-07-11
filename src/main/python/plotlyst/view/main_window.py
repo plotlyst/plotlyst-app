@@ -49,7 +49,7 @@ from src.main.python.plotlyst.view.comments_view import CommentsView
 from src.main.python.plotlyst.view.dialog.about import AboutDialog
 from src.main.python.plotlyst.view.dialog.manuscript import ManuscriptPreviewDialog
 from src.main.python.plotlyst.view.dialog.template import customize_character_profile
-from src.main.python.plotlyst.view.docs_view import DocumentsView, DocumentsSidebar
+from src.main.python.plotlyst.view.docs_view import DocumentsView
 from src.main.python.plotlyst.view.generated.main_window_ui import Ui_MainWindow
 from src.main.python.plotlyst.view.home_view import HomeView
 from src.main.python.plotlyst.view.icons import IconRegistry
@@ -193,9 +193,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.comments_view = CommentsView(self.novel)
         self.pageComments.layout().addWidget(self.comments_view.widget)
         self.wdgSidebar.setCurrentWidget(self.pageComments)
-
-        self.docs_view = DocumentsSidebar(self.novel)
-        self.wdgDocs.layout().addWidget(self.docs_view)
 
         self.notes_view = DocumentsView(self.novel)
 
