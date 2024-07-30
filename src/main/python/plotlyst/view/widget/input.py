@@ -386,7 +386,6 @@ class TextEditBase(EnhancedTextEdit):
         self._wdgGrammarPopup: Optional[GrammarPopup] = None
         self._replacementInfo: Optional[ReplacementInfo] = None
 
-
     def statistics(self) -> TextStatistics:
         wc = 0
         for i in range(self.document().blockCount()):
@@ -512,6 +511,17 @@ class TextEditBase(EnhancedTextEdit):
         cursor.endEditBlock()
 
 
+class TextEditorBase(RichTextEditor):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._wdgFind.lineEditSearch().setProperty('rounded', True)
+        self._wdgFind.lineEditSearch().setProperty('white-bg', True)
+        self._wdgFind.lineEditReplace().setProperty('rounded', True)
+        self._wdgFind.lineEditReplace().setProperty('white-bg', True)
+
+        self._wdgFind.setProperty('relaxed-white-bg', True)
+
+
 class DocumentTextEdit(TextEditBase):
     grammarCheckToggled = pyqtSignal(bool)
 
@@ -572,7 +582,7 @@ class CapitalizationEventFilter(QObject):
         return False
 
 
-class DocumentTextEditor(RichTextEditor):
+class DocumentTextEditor(TextEditorBase):
     titleChanged = pyqtSignal(str)
     iconChanged = pyqtSignal(str, str)
 

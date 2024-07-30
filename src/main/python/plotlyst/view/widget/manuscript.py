@@ -38,7 +38,7 @@ from qthandy import retain_when_hidden, translucent, clear_layout, gc, margins, 
     underline, transparent, italic, decr_icon, pointy, vspacer
 from qthandy.filter import OpacityEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, group
-from qttextedit import RichTextEditor, TextBlockState, remove_font, OBJECT_REPLACEMENT_CHARACTER, DashInsertionMode
+from qttextedit import TextBlockState, remove_font, OBJECT_REPLACEMENT_CHARACTER, DashInsertionMode
 from qttextedit.api import AutoCapitalizationMode
 from qttextedit.util import EN_DASH, EM_DASH
 from textstat import textstat
@@ -65,7 +65,7 @@ from plotlyst.view.generated.timer_setup_widget_ui import Ui_TimerSetupWidget
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.display import WordsDisplay, IconText
-from plotlyst.view.widget.input import TextEditBase, GrammarHighlighter, GrammarHighlightStyle, Toggle
+from plotlyst.view.widget.input import TextEditBase, GrammarHighlighter, GrammarHighlightStyle, Toggle, TextEditorBase
 
 
 class TimerSetupWidget(QWidget, Ui_TimerSetupWidget):
@@ -672,7 +672,7 @@ class SceneSeparatorTextObject(QObject, QTextObjectInterface):
                 painter.drawText(rect, f'~{self.sceneTitle(scene_id)}~')
 
 
-class ManuscriptTextEditor(RichTextEditor):
+class ManuscriptTextEditor(TextEditorBase):
     textChanged = pyqtSignal()
     selectionChanged = pyqtSignal()
     sceneTitleChanged = pyqtSignal(Scene)
