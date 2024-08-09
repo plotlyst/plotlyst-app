@@ -23,18 +23,23 @@ from typing import Optional
 
 import qtanim
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QPainter, QWheelEvent, QMouseEvent, QColor, QIcon, QResizeEvent, QNativeGestureEvent, QFont
+from PyQt6.QtGui import QPainter, QWheelEvent, QMouseEvent, QColor, QIcon, QResizeEvent, QNativeGestureEvent, QFont, \
+    QUndoStack, QKeySequence
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsItem, QFrame, \
     QToolButton, QApplication, QWidget
 from overrides import overrides
 from qthandy import sp, incr_icon, vbox
 from qthandy.filter import DragEventFilter
+from qtpy import sip
 
+from plotlyst.common import BLACK_COLOR
 from plotlyst.core.domain import Diagram, GraphicsItemType, Character
 from plotlyst.view.common import shadow, tool_btn, frame, ExclusiveOptionalButtonGroup, \
     TooltipPositionEventFilter, label
+from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.graphics import CharacterItem, ConnectorItem
+from plotlyst.view.widget.graphics.commands import GraphicsItemCommand, TextEditingCommand
 from plotlyst.view.widget.graphics.editor import ZoomBar, ConnectorToolbar, TextLineEditorPopup, CharacterToolbar, \
     NoteToolbar, IconItemToolbar
 from plotlyst.view.widget.graphics.items import NodeItem, EventItem, NoteItem, IconItem
@@ -150,6 +155,20 @@ class NetworkGraphicsView(BaseGraphicsView):
         shadow(self._controlsNavBar)
         vbox(self._controlsNavBar, 5, 6)
 
+        self._btnUndo = tool_btn(IconRegistry.from_name('mdi.undo', BLACK_COLOR), transparent_=True, tooltip='Undo')
+        self._btnUndo.setShortcut(QKeySequence.StandardKey.Undo)
+        self._btnUndo.setDisabled(True)
+        self._btnRedo = tool_btn(IconRegistry.from_name('mdi.redo', BLACK_COLOR), transparent_=True, tooltip='Redo')
+        self._btnRedo.setShortcut(QKeySequence.StandardKey.Redo)
+        self._btnRedo.setDisabled(True)
+        self.undoStack = QUndoStack()
+        self.undoStack.setUndoLimit(100)
+        self.undoStack.canUndoChanged.connect(self._btnUndo.setEnabled)
+        self.undoStack.canRedoChanged.connect(self._btnRedo.setEnabled)
+        self._btnUndo.clicked.connect(self._undo)
+        self._btnRedo.clicked.connect(self._redo)
+        self._scene.setUndoStack(self.undoStack)
+
         self._connectorEditor: Optional[ConnectorToolbar] = None
         self._characterEditor: Optional[CharacterToolbar] = None
         self._noteEditor: Optional[NoteToolbar] = None
@@ -242,6 +261,8 @@ class NetworkGraphicsView(BaseGraphicsView):
         return NetworkScene()
 
     def _selectionChanged(self):
+        if sip.isdeleted(self._scene):
+            return
         if len(self._scene.selectedItems()) == 1:
             self._hideItemToolbar()
             self._showItemToolbar(self._scene.selectedItems()[0])
@@ -274,7 +295,8 @@ class NetworkGraphicsView(BaseGraphicsView):
 
     def _editCharacterItem(self, item: CharacterItem):
         def select(character: Character):
-            item.setCharacter(character)
+            command = GraphicsItemCommand(item, item.setCharacter, item.character(), character)
+            self.undoStack.push(command)
 
         popup = self._characterSelectorMenu()
         popup.selected.connect(select)
@@ -283,7 +305,7 @@ class NetworkGraphicsView(BaseGraphicsView):
 
     def _editEventItem(self, item: EventItem):
         def setText(text: str):
-            item.setText(text)
+            self.undoStack.push(TextEditingCommand(item, text))
 
         popup = TextLineEditorPopup(item.text(), item.textRect(), parent=self)
         font = QFont(item.font())
@@ -332,3 +354,11 @@ class NetworkGraphicsView(BaseGraphicsView):
 
     def _characterSelectorMenu(self) -> CharacterSelectorMenu:
         pass
+
+    def _undo(self):
+        self._hideItemToolbar()
+        self.undoStack.undo()
+
+    def _redo(self):
+        self._hideItemToolbar()
+        self.undoStack.redo()

@@ -23,9 +23,9 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Optional, List
 
-from PyQt6.QtCore import Qt, QTimer, QRectF, QPointF, QPoint, QRect
+from PyQt6.QtCore import Qt, QRectF, QPointF, QPoint, QRect
 from PyQt6.QtGui import QPainter, QPen, QPainterPath, QColor, QIcon, QPolygonF, QBrush, QFontMetrics, QImage, QFont, \
-    QTextDocument
+    QTextDocument, QUndoStack
 from PyQt6.QtWidgets import QAbstractGraphicsShapeItem, QGraphicsItem, QGraphicsPathItem, QGraphicsSceneMouseEvent, \
     QStyleOptionGraphicsItem, QWidget, \
     QGraphicsSceneHoverEvent, QGraphicsPolygonItem, QApplication, QGraphicsOpacityEffect, QGraphicsTextItem
@@ -39,6 +39,7 @@ from plotlyst.env import app_env
 from plotlyst.service.image import LoadedImage
 from plotlyst.view.common import shadow, calculate_resized_dimensions, text_color_with_bg_qcolor
 from plotlyst.view.icons import IconRegistry, avatars
+from plotlyst.view.widget.graphics.commands import PosChangedCommand, ResizeItemCommand
 
 
 def v_center(ref_height: int, item_height: int) -> int:
@@ -78,12 +79,17 @@ class ResizeIconItem(QAbstractGraphicsShapeItem):
         self._keepAspectRatio = False
         self._icon = IconRegistry.from_name('mdi.resize-bottom-right', 'grey')
         self._activated = False
+        self._posCommandEnabled = True
+        self._previousPos: Optional[QPointF] = None
         self.setAcceptHoverEvents(True)
 
         self.setCursor(Qt.CursorShape.SizeFDiagCursor)
         self.setFlag(
             QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
             QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
+
+    def networkScene(self) -> 'NetworkScene':
+        return self.scene()
 
     def setRatio(self, ratio: float):
         self._ratio = ratio
@@ -107,17 +113,34 @@ class ResizeIconItem(QAbstractGraphicsShapeItem):
     def hoverLeaveEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         self.parentItem().setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
 
+    def posCommandEnabled(self) -> bool:
+        return self._posCommandEnabled
+
+    def setPosCommandEnabled(self, enabled: bool):
+        self._posCommandEnabled = enabled
+
     @overrides
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged and self._activated:
             if self._keepAspectRatio:
                 value.setY(value.x() / self._ratio)
                 self.setPos(value)
+
+            self.networkScene().itemResizedEvent(self)
             self.parentItem().rearrangeSize(value)
         return super().itemChange(change, value)
 
+    def updatePos(self):
+        if self._posCommandEnabled:
+            stack: QUndoStack = self.networkScene().undoStack()
+            stack.push(ResizeItemCommand(self, self._previousPos, self.pos()))
+
+        self._previousPos = self.pos()
+
     def activate(self):
         self._activated = True
+        if self._previousPos is None:
+            self._previousPos = self.pos()
 
     def deactivate(self):
         self._activated = False
@@ -446,7 +469,7 @@ class ConnectorItem(QGraphicsPathItem):
     def setConnector(self, connector: Connector):
         self._connector = None
         self.setPenStyle(connector.pen)
-        self.setPenWidth(connector.width)
+        self.setSize(connector.width)
         self.setStartArrowEnabled(connector.start_arrow_enabled)
         self.setEndArrowEnabled(connector.end_arrow_enabled)
         if connector.color:
@@ -490,10 +513,10 @@ class ConnectorItem(QGraphicsPathItem):
         self.rearrange()
         self.networkScene().connectorChangedEvent(self)
 
-    def penWidth(self) -> int:
+    def size(self) -> int:
         return self.pen().width()
 
-    def setPenWidth(self, width: int):
+    def setSize(self, width: int):
         pen = self.pen()
         pen.setWidth(width)
         self.setPen(pen)
@@ -553,10 +576,13 @@ class ConnectorItem(QGraphicsPathItem):
     def icon(self) -> Optional[str]:
         return self._icon
 
-    def setIcon(self, icon: str):
+    def setIcon(self, icon: Optional[str]):
         self._icon = icon
-        self._iconBadge.setIcon(IconRegistry.from_name(self._icon, self._color.name()), self._color)
-        self._iconBadge.setVisible(True)
+        if self._icon:
+            self._iconBadge.setIcon(IconRegistry.from_name(self._icon, self._color.name()), self._color)
+            self._iconBadge.setVisible(True)
+        else:
+            self._iconBadge.setVisible(False)
         self.rearrange()
 
         if self._connector:
@@ -716,9 +742,8 @@ class NodeItem(QAbstractGraphicsShapeItem):
             QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
         self.setAcceptHoverEvents(True)
 
-        self._posChangedTimer = QTimer()
-        self._posChangedTimer.setInterval(1000)
-        self._posChangedTimer.timeout.connect(self._posChangedOnTimeout)
+        self._posCommandEnabled = True
+        self._previousPos: QPointF = self.pos()
 
     def node(self) -> Node:
         return self._node
@@ -743,10 +768,15 @@ class NodeItem(QAbstractGraphicsShapeItem):
         for socket in self._sockets:
             socket.removeConnectors()
 
+    def posCommandEnabled(self) -> bool:
+        return self._posCommandEnabled
+
+    def setPosCommandEnabled(self, enabled: bool):
+        self._posCommandEnabled = enabled
+
     @overrides
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
-            self._posChangedTimer.start()
             self._onPosChanged()
         elif change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
             self._onSelection(value)
@@ -762,18 +792,22 @@ class NodeItem(QAbstractGraphicsShapeItem):
 
     def _onPosChanged(self):
         self.rearrangeConnectors()
-        self.networkScene().itemChangedEvent(self)
+        self.networkScene().itemMovedEvent(self)
 
     def _onSelection(self, selected: bool):
         pass
 
-    def _posChangedOnTimeout(self):
-        self._posChangedTimer.stop()
+    def updatePos(self):
+        if self._posCommandEnabled:
+            stack: QUndoStack = self.networkScene().undoStack()
+            stack.push(PosChangedCommand(self, self._previousPos, self.pos()))
         self._node.x = self.scenePos().x()
         self._node.y = self.scenePos().y()
         scene = self.networkScene()
         if scene:
             scene.nodeChangedEvent(self._node)
+
+        self._previousPos = self.pos()
 
 
 class CircleShapedNodeItem(NodeItem):
@@ -790,6 +824,9 @@ class CircleShapedNodeItem(NodeItem):
 
         self._socket = FilledSocketItem(0, self)
         self._socket.setVisible(False)
+
+    def size(self) -> int:
+        return self._node.size
 
     def setSize(self, value: int):
         self._node.size = value
@@ -907,6 +944,9 @@ class CharacterItem(CircleShapedNodeItem):
         self.update()
         self.networkScene().nodeChangedEvent(self._node)
 
+    def text(self) -> str:
+        return self._node.text
+
     def setText(self, text: str):
         self._node.text = text
         self._refreshLabel()
@@ -961,7 +1001,10 @@ class IconItem(CircleShapedNodeItem):
 
     def setIcon(self, icon: str):
         self._node.icon = icon
-        self._icon = IconRegistry.from_name(self._node.icon, self._node.color)
+        if icon:
+            self._icon = IconRegistry.from_name(self._node.icon, self._node.color)
+        else:
+            self._icon = IconRegistry.from_name('fa5s.icons', 'grey')
         self.update()
         self.networkScene().nodeChangedEvent(self._node)
 
@@ -1091,7 +1134,10 @@ class EventItem(NodeItem):
 
     def setIcon(self, icon: str):
         self._node.icon = icon
-        self._icon = IconRegistry.from_name(self._node.icon, self._node.color)
+        if icon:
+            self._icon = IconRegistry.from_name(self._node.icon, self._node.color)
+        else:
+            self._icon = None
         self._refresh()
         self.networkScene().nodeChangedEvent(self._node)
 
@@ -1274,6 +1320,9 @@ class NoteItem(NodeItem):
     def text(self) -> str:
         return self._node.text
 
+    def height(self) -> int:
+        return self._node.height
+
     def setText(self, text: str, height: int):
         self._node.text = text
         self._textRect.setHeight(height)
@@ -1281,6 +1330,9 @@ class NoteItem(NodeItem):
 
         self.networkScene().nodeChangedEvent(self._node)
         self._refresh()
+
+    def transparent(self) -> bool:
+        return self._node.transparent
 
     def setTransparent(self, transparent: bool):
         self._node.transparent = transparent

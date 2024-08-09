@@ -20,12 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Dict
+from typing import Optional, Dict, Set, Union
 
 import qtanim
 from PyQt6.QtCore import Qt, pyqtSignal, QPointF, QPoint, QObject
 from PyQt6.QtGui import QTransform, \
-    QKeyEvent, QKeySequence, QCursor, QImage
+    QKeyEvent, QKeySequence, QCursor, QImage, QUndoStack
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsSceneMouseEvent, QApplication, \
     QGraphicsSceneDragDropEvent
 from overrides import overrides
@@ -35,7 +35,8 @@ from plotlyst.core.domain import Node, Diagram, GraphicsItemType, Connector, Pla
 from plotlyst.service.image import LoadedImage
 from plotlyst.view.widget.graphics import NodeItem, CharacterItem, PlaceholderSocketItem, ConnectorItem, \
     AbstractSocketItem, EventItem
-from plotlyst.view.widget.graphics.items import NoteItem, ImageItem, IconItem, CircleShapedNodeItem
+from plotlyst.view.widget.graphics.commands import ItemAdditionCommand, ItemRemovalCommand
+from plotlyst.view.widget.graphics.items import NoteItem, ImageItem, IconItem, CircleShapedNodeItem, ResizeIconItem
 
 
 @dataclass
@@ -54,6 +55,9 @@ class NetworkScene(QGraphicsScene):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._diagram: Optional[Diagram] = None
+        self._undoStack: Optional[QUndoStack] = None
+        self._macroUndo: bool = False
+        self._movedItems: Set[QGraphicsItem] = set()
         self._linkMode: bool = False
         self._additionDescriptor: Optional[ItemDescriptor] = None
         self._copyDescriptor: Optional[ItemDescriptor] = None
@@ -61,6 +65,12 @@ class NetworkScene(QGraphicsScene):
 
         self._placeholder: Optional[PlaceholderSocketItem] = None
         self._connectorPlaceholder: Optional[ConnectorItem] = None
+
+    def undoStack(self) -> QUndoStack:
+        return self._undoStack
+
+    def setUndoStack(self, stack: QUndoStack):
+        self._undoStack = stack
 
     def setDiagram(self, diagram: Diagram):
         self._diagram = diagram
@@ -131,7 +141,7 @@ class NetworkScene(QGraphicsScene):
             sourceNode.node().id,
             targetNode.node().id,
             self._connectorPlaceholder.source().angle(), target.angle(),
-            pen=connectorItem.penStyle(), width=connectorItem.penWidth()
+            pen=connectorItem.penStyle(), width=connectorItem.size()
         )
         if connectorItem.icon():
             connector.icon = connectorItem.icon()
@@ -142,6 +152,9 @@ class NetworkScene(QGraphicsScene):
 
         self.addItem(connectorItem)
         self.endLink()
+
+        self._undoStack.push(ItemAdditionCommand(self, connectorItem))
+
         sourceNode.setSelected(False)
         connectorItem.setSelected(True)
 
@@ -159,8 +172,7 @@ class NetworkScene(QGraphicsScene):
             else:
                 self.clearSelection()
         elif event.key() == Qt.Key.Key_Delete or event.key() == Qt.Key.Key_Backspace:
-            for item in self.selectedItems():
-                self._removeItem(item)
+            self._removeItems()
         elif event.matches(QKeySequence.StandardKey.Copy) and len(self.selectedItems()) == 1:
             self._copy(self.selectedItems()[0])
         elif event.matches(QKeySequence.StandardKey.Paste):
@@ -194,6 +206,14 @@ class NetworkScene(QGraphicsScene):
 
     @overrides
     def mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
+        if self._movedItems:
+            for item in self._movedItems:
+                item.updatePos()
+            if self._macroUndo:
+                self._undoStack.endMacro()
+                self._macroUndo = False
+            self._movedItems.clear()
+
         if self.linkMode():
             if event.button() & Qt.MouseButton.RightButton:
                 self.endLink()
@@ -231,8 +251,18 @@ class NetworkScene(QGraphicsScene):
         self._addNewItem(event.scenePos(), event.mimeData().reference())
         event.accept()
 
-    def itemChangedEvent(self, item: NodeItem):
+    def itemMovedEvent(self, item: NodeItem):
+        if item.posCommandEnabled():
+            self._movedItems.add(item)
+            if len(self.selectedItems()) > 1 and not self._macroUndo:
+                self._undoStack.beginMacro('Move items')
+                self._macroUndo = True
+
         self.itemMoved.emit(item)
+
+    def itemResizedEvent(self, item: ResizeIconItem):
+        if item.posCommandEnabled():
+            self._movedItems.add(item)
 
     def nodeChangedEvent(self, node: Node):
         self._save()
@@ -249,6 +279,31 @@ class NetworkScene(QGraphicsScene):
 
     def connectorChangedEvent(self, connector: ConnectorItem):
         self._save()
+
+    def addNetworkItem(self, item: Union[NodeItem, ConnectorItem], connectors=None):
+        def addConnectorItem(connectorItem: ConnectorItem):
+            if connectorItem.scene():
+                return
+            connectorItem.source().addConnector(connectorItem)
+            connectorItem.target().addConnector(connectorItem)
+            self._diagram.data.connectors.append(connectorItem.connector())
+            self.addItem(connectorItem)
+
+        if isinstance(item, NodeItem):
+            self._diagram.data.nodes.append(item.node())
+            self.addItem(item)
+            if connectors:
+                for connector in connectors:
+                    addConnectorItem(connector)
+        elif isinstance(item, ConnectorItem):
+            addConnectorItem(item)
+        self._save()
+
+    def removeNetworkItem(self, item: Union[NodeItem, ConnectorItem]):
+        self._removeItem(item)
+
+    def removeConnectorItem(self, connector: ConnectorItem):
+        self._removeItem(connector)
 
     @staticmethod
     def toCharacterNode(scenePos: QPointF) -> Node:
@@ -286,6 +341,20 @@ class NetworkScene(QGraphicsScene):
         node.y = node.y - ImageItem.Margin
         return node
 
+    def _removeItems(self):
+        macro = len(self.selectedItems()) > 1
+        if macro:
+            self._undoStack.beginMacro('Remove items')
+        for item in self.selectedItems():
+            connectors = None
+            if isinstance(item, NodeItem):
+                connectors = item.connectors()
+
+            self._removeItem(item)
+            self._undoStack.push(ItemRemovalCommand(self, item, connectors))
+        if macro:
+            self._undoStack.endMacro()
+
     def _removeItem(self, item: QGraphicsItem):
         if isinstance(item, NodeItem):
             for connectorItem in item.connectors():
@@ -294,13 +363,14 @@ class NetworkScene(QGraphicsScene):
                     self.removeItem(connectorItem)
                 except ValueError:
                     pass  # connector might have been already removed if a node was deleted first
-            item.clearConnectors()
+            # item.clearConnectors()
             if self._diagram:
                 self._diagram.data.nodes.remove(item.node())
         elif isinstance(item, ConnectorItem):
             self._clearUpConnectorItem(item)
 
-        self.removeItem(item)
+        if item.scene():
+            self.removeItem(item)
         self._save()
 
     def _clearUpConnectorItem(self, item: ConnectorItem):
@@ -362,6 +432,8 @@ class NetworkScene(QGraphicsScene):
 
         self._diagram.data.nodes.append(item.node())
         self._save()
+
+        self._undoStack.push(ItemAdditionCommand(self, item))
 
         return item
 

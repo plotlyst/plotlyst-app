@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import Optional
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QUndoStack
 from overrides import overrides
 from qthandy import vline
 from qtmenu import GridMenuWidget
@@ -68,7 +68,7 @@ class CharacterNetworkView(NetworkGraphicsView):
         # self._btnAddSticker.setDisabled(True)
         # self._btnAddSticker.setToolTip('Feature is not yet available')
 
-        self._connectorEditor = RelationConnectorToolbar(self)
+        self._connectorEditor = RelationConnectorToolbar(self.undoStack, self)
         self._connectorEditor.setVisible(False)
 
     @overrides
@@ -138,8 +138,8 @@ class RelationSelector(GridMenuWidget):
 
 
 class RelationConnectorToolbar(ConnectorToolbar):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, undoStack: QUndoStack, parent=None):
+        super().__init__(undoStack, parent)
         self._btnRelationType = RelationsButton()
 
         self._relationSelector: Optional[RelationSelector] = None
