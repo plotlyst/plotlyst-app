@@ -66,6 +66,7 @@ class CharacterTopicsEditor(QWidget):
         vbox(self, 0, 0)
         self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignLeft)
         self._scrollarea, self._wdgCenter = scrolled(self, frameless=True)
+        self._wdgCenter.setProperty('relaxed-white-bg', True)
         vbox(self._wdgCenter)
         self._wdgCenter.layout().addWidget(self._wdgTopics)
         self._wdgCenter.layout().addWidget(vspacer())

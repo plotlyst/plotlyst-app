@@ -386,8 +386,8 @@ class TopicWidget(QWidget):
                                   tooltip=topic.description, transparent_=True)
 
         self.textEdit = AutoAdjustableTextEdit(height=60)
-        self.textEdit.setProperty('rounded', True)
-        self.textEdit.setProperty('white-bg', True)
+        self.textEdit.setProperty('transparent', True)
+        # self.textEdit.setProperty('white-bg', True)
         self.textEdit.setAutoFormatting(QTextEdit.AutoFormattingFlag.AutoAll)
         self.textEdit.setTabChangesFocus(True)
         self.textEdit.setPlaceholderText(self._topic.description)
