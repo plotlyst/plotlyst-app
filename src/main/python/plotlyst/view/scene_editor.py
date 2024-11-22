@@ -89,7 +89,7 @@ class SceneEditor(QObject, EventListener):
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabInformation,
                      IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
-        set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
+        # set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
 
         self.ui.btnStageCharacterLabel.setIcon(IconRegistry.character_icon(color_on='black'))
         underline(self.ui.btnStageCharacterLabel)
@@ -242,7 +242,7 @@ class SceneEditor(QObject, EventListener):
         # self.ui.wdgSceneStructure.setScene(self.novel, self.scene)
         # self.tag_selector.setScene(self.scene)
         self._functionsEditor.setScene(self.scene)
-        # self._agencyEditor.setScene(self.scene)
+        self._agencyEditor.setScene(self.scene)
         # self._curiosityEditor.setScene(self.scene)
         # self._informationEditor.setScene(self.scene)
         self._progressEditor.setScene(self.scene)
