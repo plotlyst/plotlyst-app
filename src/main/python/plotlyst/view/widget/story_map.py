@@ -27,7 +27,7 @@ from qthandy import line
 
 from plotlyst.common import BLACK_COLOR
 from plotlyst.core.client import json_client
-from plotlyst.core.domain import Character, GraphicsItemType, NODE_SUBTYPE_TOOL, NODE_SUBTYPE_COST
+from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_TOOL, NODE_SUBTYPE_COST
 from plotlyst.core.domain import Node
 from plotlyst.core.domain import Novel
 from plotlyst.service.image import LoadedImage, upload_image, load_image
@@ -54,10 +54,6 @@ class EventsMindMapScene(NetworkScene):
     #         item = self.selectedItems()[0]
     #         if isinstance(item, (EventItem, NoteItem)):
     #             self.editItem.emit(item)
-
-    @overrides
-    def _character(self, node: Node) -> Optional[Character]:
-        return node.character(self._novel) if node.character_id else None
 
     @overrides
     def _load(self):

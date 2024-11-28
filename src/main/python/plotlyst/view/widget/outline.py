@@ -34,7 +34,7 @@ from qthandy.filter import DragEventFilter, DropEventFilter
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, OutlineItem, LayoutType
 from plotlyst.env import app_env
-from plotlyst.view.common import fade_out_and_gc, to_rgba_str, shadow
+from plotlyst.view.common import fade_out_and_gc, shadow
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.input import RemovalButton
 
@@ -180,6 +180,7 @@ class OutlineItemWidget(QWidget):
 
     def _textChanged(self):
         self.item.text = self._text.toPlainText()
+        self.changed.emit()
 
 
 class _SceneBeatPlaceholderButton(QPushButton):

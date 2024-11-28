@@ -24,7 +24,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QPointF
 from PyQt6.QtGui import QIcon, QEnterEvent, QPaintEvent, QPainter, QBrush, QColor
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, incr_icon, bold, spacer, retain_when_hidden, margins, transparent
+from qthandy import vbox, incr_icon, bold, spacer, retain_when_hidden, margins, transparent, hbox, sp
 from qthandy.filter import VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
@@ -35,7 +35,7 @@ from plotlyst.core.domain import Novel, PlotType, PlotProgressionItem, \
 from plotlyst.core.template import antagonist_role
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import frame, fade_out_and_gc, action
+from plotlyst.view.common import frame, fade_out_and_gc, action, shadow
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.button import apply_button_palette_color
@@ -45,6 +45,7 @@ from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import IconText
 from plotlyst.view.widget.input import RemovalButton
 from plotlyst.view.widget.outline import OutlineItemWidget, OutlineTimelineWidget
+from plotlyst.view.widget.plot.allies import AlliesGraphicsView, AlliesSupportingSlider, AlliesEmotionalSlider
 
 storyline_progression_steps_descriptions = {
     PlotType.Main: {
@@ -174,6 +175,8 @@ class PlotEventsTimeline(OutlineTimelineWidget):
 
 
 class DynamicPlotPrincipleWidget(OutlineItemWidget):
+    characterChanged = pyqtSignal(Character)
+
     def __init__(self, novel: Novel, principle: DynamicPlotPrinciple, parent=None,
                  nameAlignment=Qt.AlignmentFlag.AlignCenter):
         self.novel = novel
@@ -224,7 +227,29 @@ class DynamicPlotPrincipleWidget(OutlineItemWidget):
 
     def _characterSelected(self, character: Character):
         self.principle.character_id = str(character.id)
+        self.characterChanged.emit(character)
         RepositoryPersistenceManager.instance().update_novel(self.novel)
+
+
+class AllyPlotPrincipleWidget(DynamicPlotPrincipleWidget):
+    def __init__(self, novel: Novel, principle: DynamicPlotPrinciple, parent=None,
+                 nameAlignment=Qt.AlignmentFlag.AlignCenter):
+        super().__init__(novel, principle, parent, nameAlignment)
+        if self.principle.node is None:
+            self._btnName.setText('Ally/Enemy')
+
+    def updateAlly(self):
+        self._btnName.setIcon(IconRegistry.from_name(self.principle.type.icon(), self._color()))
+        self._initStyle(name=self.principle.type.display_name(), desc=self.principle.type.placeholder())
+        qcolor = QColor(self._color())
+        qcolor.setAlpha(125)
+        shadow(self._text, color=qcolor)
+
+    @overrides
+    def _color(self) -> str:
+        if self.principle.node is None:
+            return 'grey'
+        return super()._color()
 
 
 class DynamicPlotMultiPrincipleWidget(DynamicPlotPrincipleWidget):
@@ -326,13 +351,16 @@ class DynamicPlotPrincipleSelectorMenu(MenuWidget):
 
 
 class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
+    principleAdded = pyqtSignal(DynamicPlotPrinciple)
+    principleRemoved = pyqtSignal(DynamicPlotPrinciple)
+    characterChanged = pyqtSignal(DynamicPlotPrinciple, Character)
+
     def __init__(self, novel: Novel, group: DynamicPlotPrincipleGroup, parent=None):
         super().__init__(parent, paintTimeline=False, layout=LayoutType.FLOW)
         self.layout().setSpacing(1)
         self.novel = novel
         self.group = group
-        self._hasMenu = self.group.type in [DynamicPlotPrincipleGroupType.ESCALATION,
-                                            DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES]
+        self._hasMenu = self.group.type in [DynamicPlotPrincipleGroupType.ESCALATION]
         if self._hasMenu:
             self._menu = DynamicPlotPrincipleSelectorMenu(self.group.type)
             self._menu.selected.connect(self._insertPrinciple)
@@ -365,10 +393,20 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
             if isinstance(wdg, DynamicPlotPrincipleWidget):
                 wdg.refreshCharacters()
 
+    def updatePrinciple(self, principle: DynamicPlotPrinciple):
+        for wdg in self._beatWidgets:
+            if isinstance(wdg, AllyPlotPrincipleWidget):
+                if wdg.principle == principle:
+                    wdg.updateAlly()
+                    return
+
     @overrides
     def _newBeatWidget(self, item: DynamicPlotPrinciple) -> OutlineItemWidget:
         if self.group.type in [DynamicPlotPrincipleGroupType.SUSPECTS, DynamicPlotPrincipleGroupType.CAST]:
             wdg = DynamicPlotMultiPrincipleWidget(self.novel, item, self.group.type)
+        elif self.group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
+            wdg = AllyPlotPrincipleWidget(self.novel, item)
+            wdg.characterChanged.connect(partial(self.characterChanged.emit, item))
         else:
             wdg = DynamicPlotPrincipleWidget(self.novel, item)
         wdg.removed.connect(self._beatRemoved)
@@ -406,6 +444,8 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
             self._insertPrinciple(DynamicPlotPrincipleType.SUSPECT)
         elif self.group.type == DynamicPlotPrincipleGroupType.CAST:
             self._insertPrinciple(DynamicPlotPrincipleType.CREW_MEMBER)
+        elif self.group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
+            self._insertPrinciple(DynamicPlotPrincipleType.ALLY)
 
     def _insertPrinciple(self, principleType: DynamicPlotPrincipleType):
         item = DynamicPlotPrinciple(type=principleType)
@@ -413,27 +453,33 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
         widget = self._newBeatWidget(item)
         self._insertWidget(item, widget)
 
+        self.principleAdded.emit(item)
 
-class DynamicPlotPrinciplesGroupWidget(QWidget):
+    def _beatRemoved(self, wdg: OutlineItemWidget, teardownFunction=None):
+        principle = wdg.item
+        super()._beatRemoved(wdg, teardownFunction)
+
+        self.principleRemoved.emit(principle)
+
+
+class BasePlotPrinciplesGroupWidget(QWidget):
     remove = pyqtSignal()
 
-    def __init__(self, novel: Novel, principleGroup: DynamicPlotPrincipleGroup, parent=None):
+    def __init__(self, principleGroup: DynamicPlotPrincipleGroup, parent=None):
         super().__init__(parent)
         self.group = principleGroup
         self.frame = frame()
         self.frame.setObjectName('frame')
-        vbox(self.frame, 0, 0)
+        hbox(self.frame, 0, 0)
         self.setStyleSheet(f'''
-                           #frame {{
-                                border: 1px solid lightgrey;
-                                border-radius: 8px;
-                                background: {BG_MUTED_COLOR};
-                           }}
-                           ''')
+                                   #frame {{
+                                        border: 1px solid lightgrey;
+                                        border-radius: 8px;
+                                        background: {BG_MUTED_COLOR};
+                                   }}
+                                   ''')
 
         vbox(self)
-        self._wdgPrinciples = DynamicPlotPrinciplesWidget(novel, self.group)
-        self._wdgPrinciples.setStructure(self.group.principles)
 
         self._title = IconText()
         self._title.setText(self.group.type.display_name())
@@ -447,12 +493,69 @@ class DynamicPlotPrinciplesGroupWidget(QWidget):
         self.installEventFilter(VisibilityToggleEventFilter(self.btnRemove, self))
         self.btnRemove.clicked.connect(self.remove)
 
-        self.frame.layout().addWidget(self._wdgPrinciples)
         self.layout().addWidget(group(self._title, spacer(), self.btnRemove))
         self.layout().addWidget(self.frame)
 
+
+class DynamicPlotPrinciplesGroupWidget(BasePlotPrinciplesGroupWidget):
+
+    def __init__(self, novel: Novel, principleGroup: DynamicPlotPrincipleGroup, parent=None):
+        super().__init__(principleGroup, parent)
+        self._wdgPrinciples = DynamicPlotPrinciplesWidget(novel, self.group)
+        self._wdgPrinciples.setStructure(self.group.principles)
+        self.frame.layout().addWidget(self._wdgPrinciples)
+
     def refreshCharacters(self):
         self._wdgPrinciples.refreshCharacters()
+
+
+class AlliesPrinciplesGroupWidget(BasePlotPrinciplesGroupWidget):
+
+    def __init__(self, novel: Novel, principleGroup: DynamicPlotPrincipleGroup, parent=None):
+        super().__init__(principleGroup, parent)
+        self.novel = novel
+
+        self._wdgPrinciples = DynamicPlotPrinciplesWidget(novel, self.group)
+        self._wdgPrinciples.setStructure(self.group.principles)
+
+        self._supporterSlider = AlliesSupportingSlider()
+        self._emotionSlider = AlliesEmotionalSlider()
+
+        self._leftEditor = QWidget()
+        sp(self._leftEditor).h_max()
+        vbox(self._leftEditor, spacing=0)
+        self._toolbar = frame()
+        self._toolbar.setProperty('relaxed-white-bg', True)
+        self._toolbar.setProperty('rounded-on-top', True)
+        hbox(self._toolbar)
+        self._toolbar.layout().addWidget(self._supporterSlider)
+        self._toolbar.layout().addWidget(self._emotionSlider)
+
+        self.view = AlliesGraphicsView(self.novel, self.group)
+
+        self._leftEditor.layout().addWidget(self._toolbar)
+        self._leftEditor.layout().addWidget(self.view)
+
+        margins(self.frame, 15, 5, 20, 20)
+        self.frame.layout().addWidget(self._leftEditor, alignment=Qt.AlignmentFlag.AlignTop)
+        self.frame.layout().addWidget(self._wdgPrinciples)
+
+        self._wdgPrinciples.principleAdded.connect(self.view.addNewAlly)
+        self._wdgPrinciples.principleRemoved.connect(self.view.removeAlly)
+        self._wdgPrinciples.characterChanged.connect(self.view.updateAlly)
+
+        self.view.alliesScene().posChanged.connect(self._posChanged)
+        self.view.alliesScene().allyChanged.connect(self._allyChanged)
+
+        self._supporterSlider.setPrinciples(self.group.principles)
+        self._emotionSlider.setPrinciples(self.group.principles)
+
+    def _posChanged(self, _: DynamicPlotPrinciple):
+        self._supporterSlider.setPrinciples(self.group.principles)
+        self._emotionSlider.setPrinciples(self.group.principles)
+
+    def _allyChanged(self, principle: DynamicPlotPrinciple):
+        self._wdgPrinciples.updatePrinciple(principle)
 
 
 class DynamicPlotPrinciplesEditor(QWidget):
@@ -473,7 +576,7 @@ class DynamicPlotPrinciplesEditor(QWidget):
             if item.widget() and isinstance(item.widget(), DynamicPlotPrinciplesGroupWidget):
                 item.widget().refreshCharacters()
 
-    def addGroup(self, groupType: DynamicPlotPrincipleGroupType) -> DynamicPlotPrinciplesGroupWidget:
+    def addNewGroup(self, groupType: DynamicPlotPrincipleGroupType) -> DynamicPlotPrinciplesGroupWidget:
         group = DynamicPlotPrincipleGroup(groupType)
         if groupType == DynamicPlotPrincipleGroupType.ELEMENTS_OF_WONDER:
             group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.WONDER))
@@ -482,9 +585,6 @@ class DynamicPlotPrinciplesEditor(QWidget):
             group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.MONSTER))
         elif groupType == DynamicPlotPrincipleGroupType.ESCALATION:
             group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.TURN))
-        elif groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.ALLY))
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.ENEMY))
         elif groupType == DynamicPlotPrincipleGroupType.SUSPECTS:
             group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.SUSPECT))
         elif groupType == DynamicPlotPrincipleGroupType.CAST:
@@ -497,7 +597,10 @@ class DynamicPlotPrinciplesEditor(QWidget):
         return wdg
 
     def _addGroup(self, group: DynamicPlotPrincipleGroup) -> DynamicPlotPrinciplesGroupWidget:
-        wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
+        if group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
+            wdg = AlliesPrinciplesGroupWidget(self.novel, group)
+        else:
+            wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
         wdg.remove.connect(partial(self._removeGroup, wdg))
         self.layout().addWidget(wdg)
 

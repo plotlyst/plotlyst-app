@@ -764,6 +764,8 @@ class NodeItem(QAbstractGraphicsShapeItem):
     def __init__(self, node: Node, parent=None):
         super().__init__(parent)
         self._node = node
+        self._confinedRect: Optional[QRectF] = None
+        self._editOnDoubleClickEnabled: bool = True
 
         self.setPos(node.x, node.y)
         self._sockets: List[AbstractSocketItem] = []
@@ -805,9 +807,23 @@ class NodeItem(QAbstractGraphicsShapeItem):
     def setPosCommandEnabled(self, enabled: bool):
         self._posCommandEnabled = enabled
 
+    def setDoubleClickEditEnabled(self, enabled: bool):
+        self._editOnDoubleClickEnabled = enabled
+
+    def setConfinedRect(self, rect: QRectF):
+        self._confinedRect = rect
+
     @overrides
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+            if self._confinedRect is not None:
+                new_pos = value
+                new_pos.setX(max(self._confinedRect.left(), min(self._confinedRect.right(), new_pos.x())))
+                new_pos.setY(max(self._confinedRect.top(), min(self._confinedRect.bottom(), new_pos.y())))
+                self.setPos(new_pos)
+                self._onPosChanged()
+                return new_pos
+
             self._onPosChanged()
         elif change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
             self._onSelection(value)
@@ -956,6 +972,7 @@ class CharacterItem(CircleShapedNodeItem):
     def __init__(self, character: Character, node: Node, parent=None):
         super(CharacterItem, self).__init__(node, parent)
         self._character = character
+        self._labelEnabled: bool = True
 
         self._label = QGraphicsTextItem(self._character.name, self)
         font = self._label.font()
@@ -983,6 +1000,15 @@ class CharacterItem(CircleShapedNodeItem):
         self._refreshLabel()
         self.networkScene().nodeChangedEvent(self._node)
 
+    def labelItem(self) -> QGraphicsTextItem:
+        return self._label
+
+    def setLabelVisible(self, visible: bool):
+        self._label.setVisible(visible)
+
+    def updateLabel(self):
+        self._refreshLabel()
+
     @overrides
     def paint(self, painter: QPainter, option: 'QStyleOptionGraphicsItem', widget: Optional[QWidget] = ...) -> None:
         super().paint(painter, option, widget)
@@ -995,7 +1021,8 @@ class CharacterItem(CircleShapedNodeItem):
 
     @overrides
     def mouseDoubleClickEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        self.networkScene().editItemEvent(self)
+        if self._editOnDoubleClickEnabled:
+            self.networkScene().editItemEvent(self)
 
     @overrides
     def _recalculate(self):
@@ -1054,7 +1081,8 @@ class IconItem(CircleShapedNodeItem):
 
     @overrides
     def mouseDoubleClickEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        self.networkScene().editItemEvent(self)
+        if self._editOnDoubleClickEnabled:
+            self.networkScene().editItemEvent(self)
 
 
 class EventItem(NodeItem):

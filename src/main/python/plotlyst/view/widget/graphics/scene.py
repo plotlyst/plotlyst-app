@@ -31,7 +31,8 @@ from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsSceneMouseEv
 from overrides import overrides
 
 from plotlyst.core.domain import Node, Diagram, GraphicsItemType, Connector, PlaceholderCharacter, \
-    Character, to_node
+    to_node
+from plotlyst.service.cache import entities_registry
 from plotlyst.service.image import LoadedImage
 from plotlyst.view.widget.graphics import NodeItem, CharacterItem, PlaceholderSocketItem, ConnectorItem, \
     AbstractSocketItem, EventItem
@@ -437,7 +438,7 @@ class NetworkScene(QGraphicsScene):
 
     def _addNode(self, node: Node) -> NodeItem:
         if node.type == GraphicsItemType.CHARACTER:
-            character = self._character(node)
+            character = entities_registry.character(str(node.character_id)) if node.character_id else None
             if character is None:
                 character = PlaceholderCharacter('Character')
             item = CharacterItem(character, node)
@@ -459,10 +460,6 @@ class NetworkScene(QGraphicsScene):
 
     @abstractmethod
     def _save(self):
-        pass
-
-    @abstractmethod
-    def _character(self, node: Node) -> Optional[Character]:
         pass
 
     def _uploadImage(self) -> Optional[LoadedImage]:

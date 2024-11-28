@@ -1133,6 +1133,7 @@ class DynamicPlotPrinciple(OutlineItem):
     type: DynamicPlotPrincipleType = DynamicPlotPrincipleType.TWIST
     elements: List['DynamicPlotPrinciple'] = field(default_factory=list)
     character_id: str = ''
+    node: Optional['Node'] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
 
 class DynamicPlotPrincipleGroupType(Enum):
@@ -3555,6 +3556,16 @@ class Node(CharacterBased):
 
     def __post_init__(self):
         self._character: Optional[Character] = None
+
+    @overrides
+    def __eq__(self, other: 'Node'):
+        if isinstance(other, Node):
+            return self.id == other.id
+        return False
+
+    @overrides
+    def __hash__(self):
+        return hash(str(self.id))
 
 
 def to_node(x: float, y: float, type: GraphicsItemType, subtype: str = '', default_size: int = 12) -> Node:

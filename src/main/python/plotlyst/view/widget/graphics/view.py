@@ -50,6 +50,8 @@ from plotlyst.view.widget.utility import IconSelectorDialog
 class BaseGraphicsView(QGraphicsView):
     def __init__(self, parent=None):
         super(BaseGraphicsView, self).__init__(parent)
+        self._rubberBandEnabled: bool = True
+        self._scalingEnabled: bool = True
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self._moveOriginX = 0
@@ -59,6 +61,16 @@ class BaseGraphicsView(QGraphicsView):
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         self.setRenderHint(QPainter.RenderHint.LosslessImageRendering)
+
+    def setRubberBandEnabled(self, enabled: bool):
+        self._rubberBandEnabled = enabled
+        if self._rubberBandEnabled:
+            self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        else:
+            self.setDragMode(QGraphicsView.DragMode.NoDrag)
+
+    def setScalingEnabled(self, enabled: bool):
+        self._scalingEnabled = enabled
 
     @overrides
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -84,7 +96,7 @@ class BaseGraphicsView(QGraphicsView):
 
     @overrides
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if self.dragMode() != QGraphicsView.DragMode.RubberBandDrag:
+        if self._rubberBandEnabled and self.dragMode() != QGraphicsView.DragMode.RubberBandDrag:
             self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         super().mouseReleaseEvent(event)
 
@@ -117,8 +129,9 @@ class BaseGraphicsView(QGraphicsView):
         return frame_
 
     def _scale(self, scale: float):
-        self._scaledFactor += scale
-        self.scale(1.0 + scale, 1.0 + scale)
+        if self._scalingEnabled:
+            self._scaledFactor += scale
+            self.scale(1.0 + scale, 1.0 + scale)
 
     def _popupAbove(self, widget: QWidget, refItem: QGraphicsItem):
         item_w = refItem.sceneBoundingRect().width()

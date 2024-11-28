@@ -139,6 +139,29 @@ QSlider::add-page:horizontal[emotion_10=true] {
 QSlider::sub-page:horizontal[emotion_10=true] {
     background: #2d6a4f;
 }
+
+QSlider::add-page:horizontal[ally-enemy=true] {
+    background: #9e1946;
+}
+QSlider::sub-page:horizontal[ally-enemy=true] {
+    background: #266dd3;
+}
+QSlider::handle:horizontal[ally-enemy=true] {
+    background: #266dd3;
+    border: 1px solid #266dd3;
+}
+
+QSlider::add-page:horizontal[relationship=true] {
+    background: #ef0000;
+}
+QSlider::sub-page:horizontal[relationship=true] {
+    background: #00ca94;
+}
+QSlider::handle:horizontal[relationship=true] {
+    background: #00ca94;
+    border: 1px solid #00ca94;
+}
+
 '''
 
 

@@ -92,6 +92,14 @@ QFrame[rounded=true] {{
     border-radius: 6px;
 }}
 
+QFrame[rounded-on-top=true] {{
+    border: 1px solid lightgrey;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+}}
+
 QFrame[revision-badge=true] {{
     border: 3px solid #622675;
     background: {BG_SECONDARY_COLOR};

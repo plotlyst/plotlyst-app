@@ -27,7 +27,7 @@ from qtmenu import GridMenuWidget
 
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Diagram, Relation, Node
-from plotlyst.core.domain import Novel, Character, GraphicsItemType
+from plotlyst.core.domain import Novel, GraphicsItemType
 from plotlyst.service.image import LoadedImage, upload_image, load_image
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import action
@@ -44,10 +44,6 @@ class RelationsEditorScene(NetworkScene):
         self._novel = novel
 
         self.repo = RepositoryPersistenceManager.instance()
-
-    @overrides
-    def _character(self, node: Node) -> Optional[Character]:
-        return node.character(self._novel) if node.character_id else None
 
     @overrides
     def _load(self):

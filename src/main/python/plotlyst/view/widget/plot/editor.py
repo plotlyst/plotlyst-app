@@ -459,7 +459,7 @@ class PlotWidget(QFrame, Ui_PlotWidget, EventListener):
         GenrePrincipleSelectorDialog.popup(self.plot, object)
 
     def _addDynamicGroup(self, groupType: DynamicPlotPrincipleGroupType):
-        wdg = self._dynamicPrinciplesEditor.addGroup(groupType)
+        wdg = self._dynamicPrinciplesEditor.addNewGroup(groupType)
         wdg.show()
         self.scrollArea.ensureWidgetVisible(wdg, 50, 150)
 
