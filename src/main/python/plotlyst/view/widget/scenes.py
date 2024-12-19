@@ -17,6 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from enum import Enum
 from functools import partial
 from typing import List
 from typing import Optional
@@ -297,11 +298,17 @@ class SceneFilterWidget(QWidget):
         self.layout().addWidget(self.wdgActs, 1, 1, alignment=Qt.AlignmentFlag.AlignLeft)
 
 
+class ScenePreferencesTabType(Enum):
+    CARDS = 0
+    TABLE = 1
+
+
 class ScenesPreferencesWidget(QWidget, Ui_ScenesViewPreferences):
     DEFAULT_CARD_WIDTH: int = 175
     settingToggled = pyqtSignal(NovelSetting, bool)
     cardWidthChanged = pyqtSignal(int)
     cardRatioChanged = pyqtSignal(CardSizeRatio)
+    tabChanged = pyqtSignal(ScenePreferencesTabType)
 
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -360,11 +367,19 @@ class ScenesPreferencesWidget(QWidget, Ui_ScenesViewPreferences):
         set_tab_icon(self.tabWidget, self.tabCards, IconRegistry.cards_icon())
         set_tab_icon(self.tabWidget, self.tabTable, IconRegistry.table_icon())
 
+        self.tabWidget.currentChanged.connect(self._tabChanged)
+
     def showCardsTab(self):
         self.tabWidget.setCurrentWidget(self.tabCards)
 
     def showTableTab(self):
         self.tabWidget.setCurrentWidget(self.tabTable)
+
+    def _tabChanged(self, index: int):
+        if self.tabWidget.widget(index) is self.tabCards:
+            self.tabChanged.emit(ScenePreferencesTabType.CARDS)
+        elif self.tabWidget.widget(index) is self.tabTable:
+            self.tabChanged.emit(ScenePreferencesTabType.TABLE)
 
 
 class SceneNotesEditor(DocumentTextEditor):

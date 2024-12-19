@@ -110,6 +110,7 @@ class CharacterAvatarLabel(QToolButton):
         super(CharacterAvatarLabel, self).__init__(parent)
         transparent(self)
         self.setIcon(avatars.avatar(character))
+        self.setToolTip(character.name)
         self.setIconSize(QSize(size, size))
 
 
