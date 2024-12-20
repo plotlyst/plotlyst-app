@@ -50,6 +50,7 @@ from plotlyst.view.style.text import apply_text_color
 from plotlyst.view.widget.button import DotsMenuButton
 from plotlyst.view.widget.display import Icon, PopupDialog, DotsDragIcon
 from plotlyst.view.widget.input import AutoAdjustableTextEdit, AutoAdjustableLineEdit, MarkdownPopupTextEditorToolbar
+from plotlyst.view.widget.story_map import EventsMindMapView
 from plotlyst.view.widget.timeline import TimelineWidget, BackstoryCard, TimelineTheme
 from plotlyst.view.widget.topic import TopicSelectionDialog
 from plotlyst.view.widget.utility import IconSelectorDialog, ColorSelectorButton
@@ -191,6 +192,8 @@ class WorldBuildingEntityElementWidget(QWidget):
             return TimelineElementEditor(novel, element, palette, parent)
         elif element.type == WorldBuildingEntityElementType.Conceits:
             return ConceitsElementEditor(novel, element, palette, parent)
+        elif element.type == WorldBuildingEntityElementType.Mindmap:
+            return MindmapElementEditor(novel, element, palette, parent)
         else:
             raise ValueError(f'Unsupported WorldBuildingEntityElement type {element.type}')
 
@@ -880,6 +883,21 @@ class ConceitsElementEditor(WorldBuildingEntityElementWidget):
                     return
 
 
+class MindmapElementEditor(WorldBuildingEntityElementWidget):
+    def __init__(self, novel: Novel, element: WorldBuildingEntityElement, palette: WorldBuildingPalette, parent=None):
+        super().__init__(novel, element, parent)
+        self._palette = palette
+
+        self._mindmapView = EventsMindMapView(self.novel)
+        self._mindmapView.setMinimumHeight(600)
+        self.layout().addWidget(self._mindmapView)
+
+        self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
+
+        self.btnDrag.raise_()
+
+
 class SectionElementEditor(WorldBuildingEntityElementWidget):
     WORLD_BLOCK_MIMETYPE = 'application/world-block'
     WORLD_SECTION_MIMETYPE = 'application/world-section'
@@ -997,6 +1015,8 @@ class MainBlockAdditionMenu(MenuWidget):
                               slot=lambda: self.newBlockSelected.emit(WorldBuildingEntityElementType.Image)))
         self.addAction(action('Timeline', IconRegistry.from_name('mdi.timeline'),
                               slot=lambda: self.newBlockSelected.emit(WorldBuildingEntityElementType.Timeline)))
+        self.addAction(action('Mind map', IconRegistry.from_name('ri.mind-map'),
+                              slot=lambda: self.newBlockSelected.emit(WorldBuildingEntityElementType.Mindmap)))
 
         if app_env.is_plus():
             otherMenu = MenuWidget()
