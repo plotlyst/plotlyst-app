@@ -163,8 +163,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -191,8 +191,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -238,8 +238,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -266,8 +266,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -294,8 +294,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -339,8 +339,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>24</width>
+                  <height>24</height>
                  </size>
                 </property>
                </widget>
@@ -451,8 +451,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>858</width>
-            <height>477</height>
+            <width>703</width>
+            <height>485</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -609,8 +609,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>327</width>
-             <height>550</height>
+             <width>467</width>
+             <height>545</height>
             </rect>
            </property>
            <property name="sizePolicy">
@@ -693,8 +693,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>325</width>
-             <height>594</height>
+             <width>100</width>
+             <height>30</height>
             </rect>
            </property>
            <property name="relaxed-white-bg" stdset="0">

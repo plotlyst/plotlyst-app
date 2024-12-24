@@ -262,6 +262,7 @@ class Icon(QToolButton, _AbstractIcon):
     def __init__(self, parent=None):
         super(Icon, self).__init__(parent)
         transparent(self)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
     @overrides
     def _setIcon(self):

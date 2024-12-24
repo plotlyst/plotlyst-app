@@ -175,4 +175,8 @@ def apply_slider_color(wdg: QWidget, color: Union[str, QColor, Qt.GlobalColor]):
                 QSlider::sub-page:horizontal {{
                     background: {color};
                 }}
+                QSlider::handle:horizontal {{
+                    background: {color};
+                    border: 1px solid {color};
+                }}
             ''')

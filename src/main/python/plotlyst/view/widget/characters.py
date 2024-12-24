@@ -208,7 +208,8 @@ class CharacterSelectorMenu(ScrollableMenuWidget):
         self.clear()
 
         for char in self.characters():
-            charAction = action(char.name, avatars.avatar(char), slot=partial(self.selected.emit, char), parent=self)
+            charAction = action(char.displayed_name(), avatars.avatar(char), slot=partial(self.selected.emit, char),
+                                parent=self)
             font = charAction.font()
             if not char.name:
                 charAction.setText('Character')
@@ -326,7 +327,8 @@ class CharacterLinkWidget(QWidget):
         self._menu.clear()
         for character in characters:
             self._menu.addAction(
-                action(character.name, avatars.avatar(character), partial(self._characterClicked, character)))
+                action(character.displayed_name(), avatars.avatar(character),
+                       partial(self._characterClicked, character)))
 
     def _clearLabel(self):
         if self.label is not None:

@@ -581,7 +581,7 @@ class TextEditBase(EnhancedTextEdit):
         cursor.beginEditBlock()
         cursor.select(QTextCursor.SelectionType.WordUnderCursor)
         cursor.removeSelectedText()
-        cursor.insertText(character.name)
+        cursor.insertText(character.displayed_name())
         cursor.endEditBlock()
 
 

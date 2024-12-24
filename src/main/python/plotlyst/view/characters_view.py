@@ -53,6 +53,7 @@ from plotlyst.view.widget.character.comp import CharacterComparisonWidget, \
 from plotlyst.view.widget.character.comp import CharactersTreeView
 from plotlyst.view.widget.character.network import CharacterNetworkView
 from plotlyst.view.widget.character.prefs import CharactersPreferencesWidget
+from plotlyst.view.widget.character.profile import CharacterOnboardingPopup
 from plotlyst.view.widget.characters import CharactersProgressWidget
 from plotlyst.view.widget.tour.core import CharacterNewButtonTourEvent, TourEvent, \
     CharacterCardTourEvent, CharacterPerspectivesTourEvent, CharacterPerspectiveCardsTourEvent, \
@@ -342,11 +343,13 @@ class CharactersView(AbstractNovelView):
         for personality in [NovelSetting.Character_enneagram, NovelSetting.Character_mbti,
                             NovelSetting.Character_love_style, NovelSetting.Character_work_style]:
             character.prefs.settings[personality.value] = self.novel.prefs.toggled(personality)
+
         self.novel.characters.append(character)
         self.repo.insert_character(self.novel, character)
         card = self.__init_card_widget(character)
         self.ui.cards.addCard(card)
-        self._edit_character(character)
+        if CharacterOnboardingPopup.popup(character):
+            self._edit_character(character)
 
     @busy
     def _on_delete(self, checked: bool):

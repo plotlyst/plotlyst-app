@@ -127,6 +127,14 @@ btn_style_transparent = """
     }
 """
 
+btn_style_plain = """
+    QPushButton[plain=true] {
+        border: 1px hidden black;
+        background-color: rgba(0, 0, 0, 0);
+        padding: 8px;
+    }
+"""
+
 btn_style_secondary_field_attribute = """
     QPushButton[secondary-field-attribute=true] {
         border: 1px hidden black;
@@ -566,6 +574,7 @@ style = "\n".join([
     btn_style_deconstructive,
     btn_style_cancel,
     btn_style_transparent,
+    btn_style_plain,
     btn_style_secondary_field_attribute,
     btn_style_top_level_nav,
     btn_style_main_side_nav,

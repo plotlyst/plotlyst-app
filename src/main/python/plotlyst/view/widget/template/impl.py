@@ -112,7 +112,7 @@ class TraitSelectionWidget(LabelsSelectionWidget):
             hbox(self.wdgLists)
             self.wdgLists.layout().addWidget(self.lstPositiveTraitsView)
             self.wdgLists.layout().addWidget(self.lstNegativeTraitsView)
-            self.wdgMain.layout().addWidget(self.lineFilter, alignment=Qt.AlignmentFlag.AlignRight)
+            self.wdgMain.layout().addWidget(self.lineFilter, alignment=Qt.AlignmentFlag.AlignLeft)
             self.wdgMain.layout().addWidget(self.wdgLists)
 
             self.positiveProxy = TraitsProxyModel()

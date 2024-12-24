@@ -85,7 +85,7 @@ class CharacterLabel(Label):
         self.btnAvatar.setIconSize(QSize(24, 24))
         self.btnAvatar.clicked.connect(self.clicked.emit)
         self.layout().addWidget(self.btnAvatar)
-        self.layout().addWidget(QLabel(truncate_string(character.name)))
+        self.layout().addWidget(QLabel(truncate_string(character.displayed_name())))
 
         role = self.character.role
         if role:

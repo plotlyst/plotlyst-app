@@ -36,7 +36,7 @@ from PyQt6.QtWidgets import QWidget, QSizePolicy, QColorDialog, QAbstractItemVie
     QLabel, QGraphicsObject, QTextEdit
 from fbs_runtime import platform
 from overrides import overrides
-from qthandy import hbox, vbox, margins, gc, transparent, spacer, sp, pointy, incr_font
+from qthandy import hbox, vbox, margins, gc, transparent, spacer, sp, pointy, incr_font, decr_font
 from qthandy.filter import DisabledClickEventFilter
 
 from plotlyst.common import WHITE_COLOR
@@ -486,7 +486,7 @@ def frame(parent=None):
 def label(text: str = '', bold: Optional[bool] = None, italic: Optional[bool] = None, underline: Optional[bool] = None,
           description: Optional[bool] = None, wordWrap: Optional[bool] = None, h1: Optional[bool] = None,
           h2: Optional[bool] = None, h3: Optional[bool] = None, h4: Optional[bool] = None, h5: Optional[bool] = None,
-          color=None,
+          color=None, decr_font_diff: int = 0,
           parent=None) -> QLabel:
     lbl = QLabel(text, parent)
     font = lbl.font()
@@ -513,6 +513,9 @@ def label(text: str = '', bold: Optional[bool] = None, italic: Optional[bool] = 
 
     if color:
         lbl.setStyleSheet(f'color: {color};')
+
+    if decr_font_diff:
+        decr_font(lbl, decr_font_diff)
 
     if wordWrap:
         lbl.setWordWrap(wordWrap)

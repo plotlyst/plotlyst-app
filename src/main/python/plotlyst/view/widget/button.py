@@ -86,20 +86,20 @@ class _SecondaryActionButton(QAbstractButton):
         self._iconName: str = ''
         self._iconColor: str = 'black'
         self._checkedColor: str = 'black'
-        self._padding: int = 2
+        self._padding: int = 4
         self.initStyleSheet()
         pointy(self)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Maximum)
-        self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7))
+        self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7, ignoreCheckedButton=True))
 
-    def initStyleSheet(self, border_color: str = 'grey', border_style: str = 'dashed', color: str = 'grey',
+    def initStyleSheet(self, border_color: str = 'grey', border_style: str = 'solid', color: str = 'grey',
                        bg_color: Optional[str] = None, border_radius: int = 6):
         bg_style = ''
         if bg_color:
             bg_style = f'background: {bg_color};'
         self.setStyleSheet(f'''
                 {self.__class__.__name__} {{
-                    border: 2px {border_style} {border_color};
+                    border: 1px {border_style} {border_color};
                     border-radius: {border_radius}px;
                     color: {color};
                     {bg_style}
@@ -657,3 +657,33 @@ class SelectorToggleButton(QToolButton):
         else:
             qtanim.glow(self, radius=0, startRadius=8, color=QColor('grey'), reverseAnimation=False,
                         teardown=lambda: self.setGraphicsEffect(None))
+
+
+class _RoleFilterButton(QToolButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        transparent(self)
+        pointy(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+        self.installEventFilter(OpacityEventFilter(self))
+
+
+class MajorRoleFilterButton(_RoleFilterButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setIcon(IconRegistry.major_character_icon())
+        self.setToolTip('Filter for Major characters')
+
+
+class SecondaryRoleFilterButton(_RoleFilterButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setIcon(IconRegistry.secondary_character_icon())
+        self.setToolTip('Filter for Secondary characters')
+
+
+class MinorRoleFilterButton(_RoleFilterButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setIcon(IconRegistry.minor_character_icon())
+        self.setToolTip('Filter for Minor characters')

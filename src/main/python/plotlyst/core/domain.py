@@ -282,8 +282,8 @@ GENDERLESS = 'genderless'
 
 @dataclass
 class AvatarPreferences:
-    use_image: bool = True
-    use_initial: bool = False
+    use_image: bool = False
+    use_initial: bool = True
     use_role: bool = False
     use_custom_icon: bool = False
     icon: str = field(default='', metadata=config(exclude=exclude_if_empty))
@@ -625,6 +625,7 @@ class Character:
     flaws: List[CharacterMultiAttribute] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     strengths: List[StrengthWeaknessAttribute] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     personality: CharacterPersonality = field(default_factory=CharacterPersonality)
+    alias: str = field(default='', metadata=config(exclude=exclude_if_empty))
 
     def enneagram(self) -> Optional[SelectionItem]:
         if self.prefs.toggled(NovelSetting.Character_enneagram):
@@ -641,6 +642,9 @@ class Character:
         # for value in self.template_values:
         #     if value.id == mbti_field.id:
         #         return mbti_choices.get(value.value)
+
+    def displayed_name(self) -> str:
+        return self.alias if self.alias else self.name
 
     def is_major(self):
         return self.role and self.role.is_major()

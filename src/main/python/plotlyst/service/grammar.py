@@ -106,6 +106,8 @@ class Dictionary(EventListener):
         self.words.clear()
         for character in self.novel.characters:
             self.words.add(character.name)
+            if character.alias:
+                self.words.add(character.alias)
         for location in self.novel.locations:
             self._add_locations(location)
 

@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Any, List
+from unittest.mock import patch
 
 from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtCore import Qt, QPoint, QAbstractItemModel, QCoreApplication, QTimer
@@ -182,7 +183,8 @@ def create_novel(window: MainWindow, title: str):
 def create_character(qtbot, window: MainWindow, name: str):
     characters: CharactersView = go_to_characters(window)
 
-    characters.ui.btnNew.click()
+    with patch("plotlyst.view.widget.character.profile.CharacterOnboardingPopup.popup", return_value=True):
+        characters.ui.btnNew.click()
     assert characters.editor
 
     type_text(qtbot, characters.editor.ui.lineName, name)

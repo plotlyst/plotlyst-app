@@ -168,7 +168,7 @@ class CharacterCard(Ui_CharacterCard, Card):
 
     @overrides
     def refresh(self):
-        self.textName.setText(self.character.name)
+        self.textName.setText(self.character.displayed_name())
         self.textName.setAlignment(Qt.AlignmentFlag.AlignCenter)
         set_avatar(self.lblPic, self.character, size=118)
 
