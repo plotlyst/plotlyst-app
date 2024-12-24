@@ -33,7 +33,7 @@ from qthandy.filter import DragEventFilter
 from qtpy import sip
 
 from plotlyst.common import BLACK_COLOR
-from plotlyst.core.domain import Diagram, GraphicsItemType, Character
+from plotlyst.core.domain import Diagram, GraphicsItemType, Character, Palette
 from plotlyst.view.common import shadow, tool_btn, frame, ExclusiveOptionalButtonGroup, \
     TooltipPositionEventFilter, label
 from plotlyst.view.icons import IconRegistry
@@ -48,8 +48,9 @@ from plotlyst.view.widget.utility import IconSelectorDialog
 
 
 class BaseGraphicsView(QGraphicsView):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, palette: Optional[Palette] = None):
         super(BaseGraphicsView, self).__init__(parent)
+        self._palette = palette
         self._rubberBandEnabled: bool = True
         self._scalingEnabled: bool = True
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
@@ -129,8 +130,15 @@ class BaseGraphicsView(QGraphicsView):
 
     def _roundedFrame(self) -> QFrame:
         frame_ = frame(self)
-        frame_.setProperty('relaxed-white-bg', True)
-        frame_.setProperty('rounded', True)
+        if self._palette:
+            frame_.setStyleSheet(f'''QFrame {{
+                background: {self._palette.bg_color};
+                border: 1px solid lightgrey;
+                border-radius: 6px;
+            }}''')
+        else:
+            frame_.setProperty('relaxed-white-bg', True)
+            frame_.setProperty('rounded', True)
         return frame_
 
     def _scale(self, scale: float):
@@ -151,16 +159,18 @@ class BaseGraphicsView(QGraphicsView):
 
 
 class NetworkGraphicsView(BaseGraphicsView):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        # self.setBackgroundBrush(QColor('#e9ecef'))
-        self.setBackgroundBrush(QColor('#F2F2F2'))
-        # self.setBackgroundBrush(QColor(RELAXED_WHITE_COLOR))
+    def __init__(self, parent=None, palette: Optional[Palette] = None):
+        super().__init__(parent, palette)
+        if palette:
+            self.setBackgroundBrush(QColor(palette.bg_color))
+        else:
+            self.setBackgroundBrush(QColor('#F2F2F2'))
         self._diagram: Optional[Diagram] = None
         self._scene = self._initScene()
         self.setScene(self._scene)
+        self.setFrameShape(QFrame.Shape.NoFrame)
 
-        self._wdgZoomBar = ZoomBar(self)
+        self._wdgZoomBar = ZoomBar(self, palette)
         self._wdgZoomBar.zoomed.connect(self._scale)
 
         self._helpLabel = label('Click on the canvas', italic=True, description=True, parent=self)
@@ -169,7 +179,7 @@ class NetworkGraphicsView(BaseGraphicsView):
 
         self._controlsNavBar = self._roundedFrame()
         sp(self._controlsNavBar).h_max()
-        shadow(self._controlsNavBar)
+        shadow(self._controlsNavBar, color=QColor(palette.tertiary_color) if palette else Qt.GlobalColor.lightGray)
         vbox(self._controlsNavBar, 5, 6)
 
         self._btnUndo = tool_btn(IconRegistry.from_name('mdi.undo', BLACK_COLOR), transparent_=True, tooltip='Undo')

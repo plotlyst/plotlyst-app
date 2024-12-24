@@ -2152,6 +2152,7 @@ class WorldBuildingEntityElementType(Enum):
     Highlight = 9
     Main_Section = 10
     Conceits = 11
+    Mindmap = 12
 
 
 @dataclass
@@ -3557,6 +3558,14 @@ def default_tags() -> Dict[TagType, List[Tag]]:
             tags[t] = []
 
     return tags
+
+
+@dataclass
+class Palette:
+    bg_color: str
+    primary_color: str
+    secondary_color: str
+    tertiary_color: str
 
 
 @dataclass

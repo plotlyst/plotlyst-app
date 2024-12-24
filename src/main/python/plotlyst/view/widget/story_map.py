@@ -27,7 +27,7 @@ from qthandy import line
 
 from plotlyst.common import BLACK_COLOR
 from plotlyst.core.client import json_client
-from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_TOOL, NODE_SUBTYPE_COST
+from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_TOOL, NODE_SUBTYPE_COST, Palette
 from plotlyst.core.domain import Node
 from plotlyst.core.domain import Novel
 from plotlyst.service.image import LoadedImage, upload_image, load_image
@@ -74,9 +74,9 @@ class EventsMindMapScene(NetworkScene):
 
 class EventsMindMapView(NetworkGraphicsView):
 
-    def __init__(self, novel: Novel, parent=None):
+    def __init__(self, novel: Novel, parent=None, palette: Optional[Palette] = None):
         self._novel = novel
-        super().__init__(parent)
+        super().__init__(parent, palette)
         self._btnAddEvent = self._newControlButton(
             IconRegistry.from_name('mdi6.shape-square-rounded-plus'), 'Add new event', GraphicsItemType.EVENT)
         self._btnAddNote = self._newControlButton(
@@ -97,7 +97,7 @@ class EventsMindMapView(NetworkGraphicsView):
         # self._btnAddSticker.setDisabled(True)
         # self._btnAddSticker.setToolTip('Feature is not yet available')
 
-        self._wdgSecondaryEventSelector = EventSelectorWidget(self)
+        self._wdgSecondaryEventSelector = EventSelectorWidget(self, palette)
         self._wdgSecondaryEventSelector.setVisible(False)
         self._wdgSecondaryEventSelector.selected.connect(self._startAddition)
         self._wdgSecondaryStickerSelector = StickerSelectorWidget(self)
@@ -107,17 +107,17 @@ class EventsMindMapView(NetworkGraphicsView):
         # self._stickerEditor = StickerEditor(self)
         # self._stickerEditor.setVisible(False)
 
-        self._itemEditor = EventItemToolbar(self.undoStack, self)
+        self._itemEditor = EventItemToolbar(self.undoStack, self, palette)
         self._itemEditor.setVisible(False)
 
-        self._connectorEditor = ConnectorToolbar(self.undoStack, self)
+        self._connectorEditor = ConnectorToolbar(self.undoStack, self, palette)
         self._connectorEditor.setVisible(False)
-        self._characterEditor = CharacterToolbar(self.undoStack, self)
+        self._characterEditor = CharacterToolbar(self.undoStack, self, palette)
         self._characterEditor.changeCharacter.connect(self._editCharacterItem)
         self._characterEditor.setVisible(False)
-        self._noteEditor = NoteToolbar(self.undoStack, self)
+        self._noteEditor = NoteToolbar(self.undoStack, self, palette)
         self._noteEditor.setVisible(False)
-        self._iconEditor = IconItemToolbar(self.undoStack, self)
+        self._iconEditor = IconItemToolbar(self.undoStack, self, palette)
         self._iconEditor.setVisible(False)
 
         self._arrangeSideBars()

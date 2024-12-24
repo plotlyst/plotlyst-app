@@ -35,7 +35,7 @@ from qttextedit.ops import Heading2Operation, Heading3Operation, Heading1Operati
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_DISTURBANCE, NODE_SUBTYPE_CONFLICT, \
     NODE_SUBTYPE_GOAL, NODE_SUBTYPE_BACKSTORY, \
-    NODE_SUBTYPE_INTERNAL_CONFLICT, Node
+    NODE_SUBTYPE_INTERNAL_CONFLICT, Node, Palette
 from plotlyst.env import app_env
 from plotlyst.view.common import shadow, tool_btn, ExclusiveOptionalButtonGroup
 from plotlyst.view.icons import IconRegistry
@@ -51,13 +51,20 @@ class ZoomBar(QFrame):
     zoomed = pyqtSignal(float)
     reset = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, palette: Optional[Palette] = None):
         super().__init__(parent)
         self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setProperty('relaxed-white-bg', True)
-        self.setProperty('rounded', True)
+        if palette:
+            self.setStyleSheet(f'''QFrame {{
+                            background: {palette.bg_color};
+                            border: 1px solid lightgrey;
+                            border-radius: 6px;
+                        }}''')
+        else:
+            self.setProperty('relaxed-white-bg', True)
+            self.setProperty('rounded', True)
+        shadow(self, color=QColor(palette.tertiary_color) if palette else Qt.GlobalColor.lightGray)
 
-        shadow(self)
         hbox(self, 2, spacing=6)
         margins(self, left=10, right=10)
 
@@ -89,11 +96,18 @@ class ZoomBar(QFrame):
 class SecondarySelectorWidget(QFrame):
     selected = pyqtSignal(GraphicsItemType, str)
 
-    def __init__(self, parent=None, optional: bool = False):
+    def __init__(self, parent=None, optional: bool = False, palette: Optional[Palette] = None):
         super().__init__(parent)
-        self.setProperty('relaxed-white-bg', True)
-        self.setProperty('rounded', True)
-        shadow(self)
+        if palette:
+            self.setStyleSheet(f'''QFrame {{
+                            background: {palette.bg_color};
+                            border: 1px solid lightgrey;
+                            border-radius: 6px;
+                        }}''')
+        else:
+            self.setProperty('relaxed-white-bg', True)
+            self.setProperty('rounded', True)
+        shadow(self, color=QColor(palette.tertiary_color) if palette else Qt.GlobalColor.lightGray)
         self._grid = grid(self, h_spacing=5, v_spacing=3)
         margins(self, left=5, right=5)
 
@@ -129,14 +143,21 @@ class SecondarySelectorWidget(QFrame):
 
 
 class BaseItemToolbar(QWidget):
-    def __init__(self, undoStack: QUndoStack, parent=None):
+    def __init__(self, undoStack: QUndoStack, parent=None, palette: Optional[Palette] = None):
         super().__init__(parent)
         self.undoStack = undoStack
         vbox(self, spacing=5)
         self._toolbar = QFrame(self)
-        self._toolbar.setProperty('relaxed-white-bg', True)
-        self._toolbar.setProperty('rounded', True)
-        shadow(self._toolbar)
+        if palette:
+            self._toolbar.setStyleSheet(f'''QFrame {{
+                            background: {palette.bg_color};
+                            border: 1px solid lightgrey;
+                            border-radius: 6px;
+                        }}''')
+        else:
+            self._toolbar.setProperty('relaxed-white-bg', True)
+            self._toolbar.setProperty('rounded', True)
+        shadow(self._toolbar, color=QColor(palette.tertiary_color) if palette else Qt.GlobalColor.lightGray)
 
         hbox(self._toolbar, 5, spacing=6)
         self.layout().addWidget(self._toolbar)
@@ -194,7 +215,8 @@ class TextLineEditorPopup(MenuWidget):
 
 class TextNoteEditorPopup(MenuWidget):
 
-    def __init__(self, undoStack: QUndoStack, item: NoteItem, parent=None, placeholder: str = 'Begin typing'):
+    def __init__(self, undoStack: QUndoStack, item: NoteItem, parent=None, placeholder: str = 'Begin typing',
+                 palette: Optional[Palette] = None):
         super().__init__(parent)
         self.undoStack = undoStack
         self._item = item
@@ -237,8 +259,8 @@ class TextNoteEditorPopup(MenuWidget):
 
 
 class EventSelectorWidget(SecondarySelectorWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent=None, palette: Optional[Palette] = None):
+        super().__init__(parent, palette=palette)
         self._grid.addWidget(QLabel('Events'), 0, 0, 1, 3)
 
         self._btnGeneral = self.addItemTypeButton(GraphicsItemType.EVENT,
@@ -285,8 +307,8 @@ class EventSelectorWidget(SecondarySelectorWidget):
 class CharacterToolbar(BaseItemToolbar):
     changeCharacter = pyqtSignal(CharacterItem)
 
-    def __init__(self, undoStack: QUndoStack, parent=None):
-        super().__init__(undoStack, parent)
+    def __init__(self, undoStack: QUndoStack, parent=None, palette: Optional[Palette] = None):
+        super().__init__(undoStack, parent, palette)
         self._item: Optional[CharacterItem] = None
 
         self._btnCharacter = tool_btn(IconRegistry.character_icon(), 'Change character', transparent_=True)
@@ -331,8 +353,8 @@ class CharacterToolbar(BaseItemToolbar):
 
 
 class PaintedItemBasedToolbar(BaseItemToolbar):
-    def __init__(self, undoStack: QUndoStack, parent=None):
-        super().__init__(undoStack, parent)
+    def __init__(self, undoStack: QUndoStack, parent=None, palette: Optional[Palette] = None):
+        super().__init__(undoStack, parent, palette)
         self._item: Optional[Any] = None
 
         self._btnColor = tool_btn(IconRegistry.from_name('fa5s.circle', color='darkBlue'), 'Change style',
@@ -385,8 +407,8 @@ class PaintedItemBasedToolbar(BaseItemToolbar):
 
 
 class ConnectorToolbar(PaintedItemBasedToolbar):
-    def __init__(self, undoStack: QUndoStack, parent=None):
-        super().__init__(undoStack, parent)
+    def __init__(self, undoStack: QUndoStack, parent=None, palette: Optional[Palette] = None):
+        super().__init__(undoStack, parent, palette)
 
         self._btnText = tool_btn(IconRegistry.from_name('mdi.format-text'), 'Change displayed text', transparent_=True)
         self._menuText = MenuWidget(self._btnText)
@@ -477,8 +499,8 @@ class ConnectorToolbar(PaintedItemBasedToolbar):
 
 
 class NoteToolbar(PaintedItemBasedToolbar):
-    def __init__(self, undoStack: QUndoStack, parent=None):
-        super().__init__(undoStack, parent)
+    def __init__(self, undoStack: QUndoStack, parent=None, palette: Optional[Palette] = None):
+        super().__init__(undoStack, parent, palette)
 
         # self._btnColor.setToolTip('Background color')
         # self._btnTopFrame = tool_btn(IconRegistry.from_name('ri.layout-top-line'), tooltip='Top frame color',
@@ -514,8 +536,8 @@ class NoteToolbar(PaintedItemBasedToolbar):
 
 
 class IconItemToolbar(PaintedItemBasedToolbar):
-    def __init__(self, undoStack: QUndoStack, parent=None):
-        super().__init__(undoStack, parent)
+    def __init__(self, undoStack: QUndoStack, parent=None, palette: Optional[Palette] = None):
+        super().__init__(undoStack, parent, palette)
 
         self._sbSize = AvatarSizeEditor()
         self._sbSize.valueChanged.connect(self._sizeChanged)
@@ -539,8 +561,8 @@ class IconItemToolbar(PaintedItemBasedToolbar):
 
 
 class EventItemToolbar(PaintedItemBasedToolbar):
-    def __init__(self, undoStack: QUndoStack, parent=None):
-        super().__init__(undoStack, parent)
+    def __init__(self, undoStack: QUndoStack, parent=None, palette: Optional[Palette] = None):
+        super().__init__(undoStack, parent, palette)
         self._btnType = tool_btn(IconRegistry.from_name('mdi.square-rounded-outline'), 'Change type', transparent_=True)
         self._sbFont = FontSizeSpinBox()
         self._sbFont.fontChanged.connect(self._fontChanged)

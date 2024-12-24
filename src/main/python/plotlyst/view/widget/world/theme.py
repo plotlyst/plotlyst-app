@@ -20,10 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass
 
+from plotlyst.core.domain import Palette
+
 
 @dataclass
-class WorldBuildingPalette:
-    bg_color: str
-    primary_color: str
-    secondary_color: str
-    tertiary_color: str
+class WorldBuildingPalette(Palette):
+    pass
