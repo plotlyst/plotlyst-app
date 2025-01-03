@@ -185,10 +185,10 @@ places = [
     "mdi.earth", "mdi.eiffel-tower", "mdi.space-station",
 ]
 objects = [
-    'mdi.sword', 'mdi.sword-cross',
+    'mdi.sword', 'mdi.sword-cross', 'fa5s.crown',
     'mdi.bell', 'mdi.candle', 'mdi.flashlight', 'mdi.candycane', 'mdi.cash', 'mdi.cash-100', 'mdi.cart-variant',
     'mdi.cash-register', 'mdi.fountain', 'mdi.halloween', 'mdi.handcuffs', 'mdi.hanger', 'mdi.hook', 'mdi.kettle',
-    'mdi.kettle-pour-over', 'mdi.lipstick', 'mdi.oar', 'mdi.ornament', 'mdi.ornament-variant', 'mdi.ring',
+    'mdi.kettle-pour-over', 'mdi.lipstick', 'mdi.oar', 'mdi.ornament', 'mdi.ornament-variant', 'mdi.ring', 'fa5s.ring',
     'mdi.necklace', 'mdi.purse',
     'mdi.keg', 'mdi.kettlebell', 'mdi.key', 'mdi.key-chain', 'mdi.key-chain-variant',
     "fa5.calendar", "fa5.calendar-alt", "fa5.clock", "fa5.compass", 'fa5s.map-signs', 'fa5s.scroll',
@@ -313,7 +313,7 @@ symbols = [
     'fa5s.yin-yang', 'mdi.all-inclusive', 'mdi.christianity', 'mdi.drama-masks', 'mdi.flag', 'mdi.flag-triangle',
     'mdi.flag-checkered', 'mdi.license', 'mdi.power-sleep', 'mdi.pulse',
     "fa5.bell", "fa5.bell-slash", "fa5.comment", "fa5.copyright", "fa5.comments", "fa5.comment-dots",
-    "fa5.dot-circle", "fa5.eye", "fa5.eye-slash", 'mdi.pin',
+    "fa5.dot-circle", "fa5.eye", "fa5.eye-slash", 'mdi.eye-circle', 'mdi.eye-circle-outline', 'mdi.pin',
     'mdi.heart', 'mdi.heart-broken', 'mdi.heart-broken-outline', 'mdi.heart-circle', 'mdi.heart-circle-outline',
     'mdi.heart-box', 'mdi.heart-box-outline', 'mdi.heart-cog', 'mdi.heart-cog-outline', 'mdi.heart-flash',
     'mdi.heart-half', 'mdi.heart-half-full', 'mdi.heart-half-outline', 'mdi.heart-multiple',

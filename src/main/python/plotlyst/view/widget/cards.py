@@ -25,21 +25,24 @@ import qtanim
 from PyQt6 import QtGui
 from PyQt6.QtCore import pyqtSignal, QSize, Qt, QEvent, QPoint, QMimeData, QTimer
 from PyQt6.QtGui import QDragEnterEvent, QDragMoveEvent, QColor, QAction, QIcon
-from PyQt6.QtWidgets import QFrame, QApplication, QToolButton
+from PyQt6.QtWidgets import QFrame, QApplication, QToolButton, QTextBrowser
 from overrides import overrides
-from qthandy import clear_layout, retain_when_hidden, transparent, flow, translucent, gc, incr_icon
-from qthandy.filter import DragEventFilter, DropEventFilter
+from qthandy import clear_layout, retain_when_hidden, transparent, flow, translucent, gc, incr_icon, vbox, pointy, \
+    incr_font
+from qthandy.filter import DragEventFilter, DropEventFilter, OpacityEventFilter
 
-from plotlyst.common import act_color, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Character, Scene, Novel, NovelSetting, CardSizeRatio
+from plotlyst.common import act_color, PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
+from plotlyst.core.domain import Character, Scene, Novel, NovelSetting, CardSizeRatio, NovelDescriptor
 from plotlyst.core.help import enneagram_help, mbti_help
 from plotlyst.service.cache import acts_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import fade, fade_in, fade_out
+from plotlyst.view.common import fade, fade_in, fade_out, tool_btn, push_btn
 from plotlyst.view.generated.character_card_ui import Ui_CharacterCard
 from plotlyst.view.generated.scene_card_ui import Ui_SceneCard
 from plotlyst.view.icons import IconRegistry, set_avatar, avatars
 from plotlyst.view.style.button import apply_button_palette_color
+from plotlyst.view.widget.button import DotsMenuButton
+from plotlyst.view.widget.display import Icon
 from plotlyst.view.widget.labels import CharacterAvatarLabel
 
 
@@ -123,7 +126,7 @@ class Card(QFrame):
         border_size = self._borderSize(selected)
         background_color = self._bgColor(selected)
         self.setStyleSheet(f'''
-           QFrame[mainFrame=true] {{
+           Card {{
                border: {border_size}px solid {border_color};
                border-radius: 15px;
                background-color: {background_color};
@@ -343,6 +346,124 @@ class SceneCard(Ui_SceneCard, Card):
 
         self.btnBeat.setGeometry(w - self.btnBeat.sizeHint().width(), 0, self.btnBeat.sizeHint().width(),
                                  self.btnBeat.sizeHint().height() + 5)
+
+
+class NovelCard(Card):
+    def __init__(self, novel: NovelDescriptor, parent=None):
+        super().__init__(parent)
+        self.novel = novel
+
+        self.btnSettings = DotsMenuButton(self)
+        self.btnSettings.setGeometry(135, 5, 20, 20)
+
+        self.textTitle = QTextBrowser()
+        transparent(self.textTitle)
+        incr_font(self.textTitle, 4)
+        self.textTitle.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textTitle.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textTitle.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        self.textTitle.setContentsMargins(0, 0, 0, 0)
+        self.textTitle.document().setDocumentMargin(0)
+
+        self.icon = Icon()
+        self.icon.setIconSize(QSize(32, 32))
+        translucent(self.icon, 0.8)
+
+        self.btnOpen = push_btn(IconRegistry.book_icon(RELAXED_WHITE_COLOR, RELAXED_WHITE_COLOR), 'Open',
+                                properties=['positive', 'confirm'])
+
+        vbox(self, margin=5)
+        # self.layout().addWidget(self.btnSettings, alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout().addWidget(self.icon, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.textTitle)
+        self.layout().addWidget(self.btnOpen, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.btnSettings.setHidden(True)
+        self.btnOpen.setHidden(True)
+
+        self._setStyleSheet()
+        self.refresh()
+
+    @overrides
+    def enterEvent(self, event: QEvent) -> None:
+        super().enterEvent(event)
+        fade_in(self.btnSettings)
+        fade_in(self.btnOpen)
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        super().leaveEvent(event)
+        self.btnSettings.setHidden(True)
+        self.btnOpen.setHidden(True)
+
+    @overrides
+    def mimeType(self) -> str:
+        return 'application/novel-card'
+
+    @overrides
+    def data(self) -> Any:
+        return self.novel
+
+    @overrides
+    def copy(self) -> 'Card':
+        return NovelCard(self.novel)
+
+    @overrides
+    def refresh(self):
+        super().refresh()
+        self.textTitle.setText(self.novel.title)
+        self.textTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if self.novel.icon:
+            self.icon.setIcon(IconRegistry.from_name(self.novel.icon))
+        else:
+            self.icon.setIcon(IconRegistry.book_icon())
+
+
+class PlaceholderCard(Card):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(False)
+        self._dragEnabled = False
+        vbox(self)
+        pointy(self)
+
+        self.btnPlus = tool_btn(IconRegistry.plus_icon('lightgrey'), transparent_=True)
+        self.btnPlus.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.btnPlus.setIconSize(QSize(124, 124))
+        self.btnPlus.clicked.connect(self.selected)
+
+        self.layout().addWidget(self.btnPlus, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.5, enterOpacity=0.6))
+
+        self._setStyleSheet()
+
+    @overrides
+    def enterEvent(self, event: QEvent) -> None:
+        pass
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        pass
+
+    @overrides
+    def mimeType(self) -> str:
+        pass
+
+    @overrides
+    def data(self) -> Any:
+        pass
+
+    @overrides
+    def copy(self) -> 'Card':
+        pass
+
+    @overrides
+    def _setStyleSheet(self, selected: bool = False):
+        self.setStyleSheet('''
+                   Card {
+                       border: 2px dotted grey;
+                       border-radius: 15px;
+                   }''')
 
 
 class CardFilter:

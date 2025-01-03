@@ -3186,6 +3186,10 @@ class ImportOrigin:
     last_mod_time: int = 0
 
 
+class StoryType(Enum):
+    Novel = 0
+    Series = 1
+
 @dataclass
 class NovelDescriptor:
     title: str
@@ -3197,6 +3201,9 @@ class NovelDescriptor:
     icon_color: str = field(default='black', metadata=config(exclude=exclude_if_black))
     tutorial: bool = False
     creation_date: Optional[datetime] = None
+    story_type: StoryType = field(default=StoryType.Novel)
+    short_synopsis: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    parent: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
     def __post_init__(self):
         if self.creation_date is None:
@@ -3904,6 +3911,10 @@ class Novel(NovelDescriptor):
         novel.plots.append(plot)
 
         return novel
+
+    @staticmethod
+    def new_series(title: str = '') -> 'Novel':
+        return Novel(title, icon='ph.books', story_type=StoryType.Series)
 
     def insert_scene_after(self, scene: Scene, chapter: Optional[Chapter] = None) -> Scene:
         i = self.scenes.index(scene)

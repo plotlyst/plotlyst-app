@@ -50,6 +50,10 @@ QWidget[bg=true] {{
     background-color: {BG_PRIMARY_COLOR};
 }}
 
+QWidget[muted-bg=true] {{
+    background-color: {BG_MUTED_COLOR};
+}}
+
 QWidget[darker-bg=true] {{
     background-color: {BG_MUTED_COLOR};
 }}
@@ -64,6 +68,11 @@ QWidget[relaxed-white-bg=true] {{
 
 QWidget[banner-bg=true] {{
     background-color: #2B0548;
+}}
+
+QWidget[large-rounded-on-top=true] {{
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
 }}
 
 QWidget[transparent=true] {{

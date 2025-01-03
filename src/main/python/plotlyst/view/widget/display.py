@@ -23,8 +23,9 @@ from typing import Optional, Any, Tuple, List
 
 import emoji
 from PyQt6.QtCharts import QChartView
-from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal
+from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF
 from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent
+from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
     QApplication
 from overrides import overrides
@@ -37,6 +38,7 @@ from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
 from plotlyst.env import app_env
+from plotlyst.resources import resource_registry
 from plotlyst.view.common import emoji_font, insert_before_the_end, \
     ButtonPressResizeEventFilter, restyle, label, frame, tool_btn, push_btn, action, open_url
 from plotlyst.view.icons import IconRegistry
@@ -359,7 +361,6 @@ class PopupDialog(QDialog):
         self.frame.setProperty('white-bg', True)
         self.frame.setProperty('large-rounded', True)
         vbox(self.frame, 15, 10)
-        # margins(self.frame, bottom=15)
         self.layout().addWidget(self.frame)
         self.setMinimumSize(200, 150)
 
@@ -537,3 +538,17 @@ class ReferencesButton(QPushButton):
     def addRefs(self, refs: List[Tuple[str, str]]):
         for ref in refs:
             self._menu.addAction(action(ref[0], slot=partial(open_url, ref[1])))
+
+
+class DividerWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.svg_renderer = QSvgRenderer(resource_registry.divider1)
+        self.setMinimumSize(400, 55)
+
+    @overrides
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setOpacity(0.8)
+        rect = QRectF(0, 0, self.width(), self.height())
+        self.svg_renderer.render(painter, rect)

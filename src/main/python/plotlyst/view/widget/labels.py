@@ -22,18 +22,19 @@ from typing import Union, List, Iterable, Set
 
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QMouseEvent
-from PyQt6.QtWidgets import QWidget, QLabel, QFrame, QToolButton, QSizePolicy
+from PyQt6.QtWidgets import QWidget, QLabel, QFrame, QToolButton, QSizePolicy, QPushButton
 from overrides import overrides
-from qthandy import hbox, vline, vbox, clear_layout, transparent, flow, incr_font
+from qthandy import hbox, vline, vbox, clear_layout, transparent, flow, incr_font, translucent, italic
 from qthandy.filter import VisibilityToggleEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import truncate_string, RELAXED_WHITE_COLOR, RED_COLOR, PLOTLYST_TERTIARY_COLOR
+from plotlyst.common import truncate_string, RELAXED_WHITE_COLOR, RED_COLOR, PLOTLYST_TERTIARY_COLOR, \
+    PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR
 from plotlyst.core.domain import Character, Conflict, SelectionItem, Novel, ScenePlotReference, \
-    CharacterGoal, PlotValue, Scene, GoalReference
+    CharacterGoal, PlotValue, Scene, GoalReference, NovelDescriptor
 from plotlyst.env import app_env
 from plotlyst.model.common import SelectionItemsModel
-from plotlyst.view.common import text_color_with_bg_color, tool_btn
+from plotlyst.view.common import text_color_with_bg_color, tool_btn, ButtonPressResizeEventFilter
 from plotlyst.view.icons import set_avatar, IconRegistry, avatars
 from plotlyst.view.widget.display import Icon
 from plotlyst.view.widget.input import RemovalButton
@@ -299,6 +300,30 @@ class SceneLabel(Label):
     def setScene(self, scene: Scene):
         self.btnTypeIcon.setIcon(IconRegistry.scene_type_icon(scene))
         self.lblTitle.setText(scene.title_or_index(app_env.novel))
+
+
+class SeriesLabel(QPushButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet(f'''SeriesLabel {{
+                    border: 1px solid {PLOTLYST_MAIN_COLOR};
+                    border-radius: 14px;
+                    padding-left: 8px;
+                    padding-right: 8px;
+                    padding-top: 4px;
+                    padding-bottom: 4px;
+                    color: {PLOTLYST_MAIN_COLOR};
+                }}''')
+        translucent(self, 0.7)
+        italic(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+
+    def setSeries(self, series: NovelDescriptor):
+        self.setText(series.title)
+        if series.icon:
+            self.setIcon(IconRegistry.from_name(series.icon, PLOTLYST_SECONDARY_COLOR))
+        else:
+            self.setIcon(IconRegistry.series_icon(PLOTLYST_SECONDARY_COLOR))
 
 
 class EmotionLabel(Label):

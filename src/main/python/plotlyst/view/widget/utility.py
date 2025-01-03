@@ -297,10 +297,10 @@ class IconSelectorDialog(PopupDialog):
 class IconSelectorButton(SecondaryActionToolButton):
     iconSelected = pyqtSignal(str, QColor)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, selectedIconSize: int = 32, defaultIconSize: int = 24):
         super(IconSelectorButton, self).__init__(parent)
-        self._selectedIconSize = QSize(32, 32)
-        self._defaultIconSize = QSize(24, 24)
+        self._selectedIconSize = QSize(selectedIconSize, selectedIconSize)
+        self._defaultIconSize = QSize(defaultIconSize, defaultIconSize)
 
         self._selected: bool = False
         self.installEventFilter(ButtonPressResizeEventFilter(self))

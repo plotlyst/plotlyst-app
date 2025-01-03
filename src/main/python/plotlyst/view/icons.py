@@ -179,7 +179,11 @@ class IconRegistry:
 
     @staticmethod
     def book_icon(color='black', color_on=PLOTLYST_SECONDARY_COLOR) -> QIcon:
-        return qtawesome.icon('fa5s.book-open', color_on=color_on, color=color)
+        return IconRegistry.from_name('fa5s.book-open', color_on=color_on, color=color)
+
+    @staticmethod
+    def series_icon(color='black', color_on=PLOTLYST_SECONDARY_COLOR) -> QIcon:
+        return IconRegistry.from_name('ph.books', color_on=color_on, color=color)
 
     @staticmethod
     def synopsis_icon(**kwargs) -> QIcon:

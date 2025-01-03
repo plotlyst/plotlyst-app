@@ -22,19 +22,20 @@ from typing import List, Optional
 from PyQt6.QtCore import pyqtSignal, QSize, Qt
 from PyQt6.QtGui import QPixmap, QColor
 from overrides import overrides
-from qthandy import transparent, incr_font, italic, busy, retain_when_hidden, incr_icon
-from qthandy.filter import VisibilityToggleEventFilter, InstantTooltipEventFilter, OpacityEventFilter
+from qthandy import italic, busy, vspacer, margins
+from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import NAV_BAR_BUTTON_DEFAULT_COLOR, \
     NAV_BAR_BUTTON_CHECKED_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.client import client
-from plotlyst.core.domain import NovelDescriptor
+from plotlyst.core.domain import NovelDescriptor, StoryType
 from plotlyst.core.help import home_page_welcome_text
 from plotlyst.event.core import emit_global_event, Event
 from plotlyst.event.handler import global_event_dispatcher
 from plotlyst.events import NovelDeletedEvent, NovelUpdatedEvent
 from plotlyst.resources import resource_registry
+from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import flush_or_fail
 from plotlyst.service.tour import TourService
 from plotlyst.view._view import AbstractView
@@ -43,17 +44,16 @@ from plotlyst.view.common import link_buttons_to_pages, ButtonPressResizeEventFi
 from plotlyst.view.generated.home_view_ui import Ui_HomeView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.roadmap_view import RoadmapView
-from plotlyst.view.style.base import apply_border_image
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.confirm import confirmed
-from plotlyst.view.widget.library import ShelvesTreeView, StoryCreationDialog
+from plotlyst.view.widget.library import ShelvesTreeView, StoryCreationDialog, NovelDisplayCard, SeriesDisplayCard, \
+    NovelSelectorPopup
 from plotlyst.view.widget.tour import Tutorial
 from plotlyst.view.widget.tour.content import tutorial_titles, tutorial_descriptions
 from plotlyst.view.widget.tour.core import LibraryTourEvent, NewStoryButtonTourEvent, \
     NewStoryDialogOpenTourEvent, TutorialNovelSelectTourEvent, NovelDisplayTourEvent, tutorial_novel, \
     NovelOpenButtonTourEvent, TutorialNovelCloseTourEvent
 from plotlyst.view.widget.tree import TreeSettings
-from plotlyst.view.widget.utility import IconSelectorButton
 
 
 class HomeView(AbstractView):
@@ -124,47 +124,35 @@ class HomeView(AbstractView):
         self.ui.btnFirstStory.installEventFilter(OpacityEventFilter(self.ui.btnFirstStory, leaveOpacity=0.7))
         self.ui.btnFirstStory.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnFirstStory))
 
-        self.ui.btnActivate.setIcon(IconRegistry.book_icon(color='white', color_on='white'))
-        self.ui.btnActivate.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnActivate))
-        self.ui.btnActivate.setIconSize(QSize(28, 28))
-        self.ui.btnActivate.clicked.connect(lambda: self.loadNovel.emit(self._selected_novel))
+        self.novelDisplayCard = NovelDisplayCard()
+        self.ui.pageNovelDisplay.layout().addWidget(self.novelDisplayCard)
+        self.ui.pageNovelDisplay.layout().addWidget(vspacer())
+        self.novelDisplayCard.btnActivate.clicked.connect(lambda: self.loadNovel.emit(self._selected_novel))
+        self.novelDisplayCard.lineNovelTitle.textEdited.connect(self._title_edited)
+        self.novelDisplayCard.lineSubtitle.textEdited.connect(self._subtitle_edited)
+        self.novelDisplayCard.textSynopsis.textChanged.connect(self._short_synopsis_edited)
+        self.novelDisplayCard.iconSelector.iconSelected.connect(self._icon_changed)
+
+        self.seriesDisplayCard = SeriesDisplayCard()
+        self.ui.scrollAreaSeries.layout().addWidget(self.seriesDisplayCard)
+        self.ui.scrollAreaSeries.layout().addWidget(vspacer())
+        self.seriesDisplayCard.lineNovelTitle.textEdited.connect(self._title_edited)
+        self.seriesDisplayCard.iconSelector.iconSelected.connect(self._icon_changed)
+        self.seriesDisplayCard.attachNovel.connect(self._attach_novel_to_series)
+        self.seriesDisplayCard.openNovel.connect(self.loadNovel)
+
         self.ui.btnAddNewStoryMain.setIcon(IconRegistry.plus_icon(color='white'))
         self.ui.btnAddNewStoryMain.clicked.connect(self._add_new_novel)
         self.ui.btnAddNewStoryMain.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnAddNewStoryMain))
 
-        self.ui.iconImportOrigin.setIcon(IconRegistry.from_name('mdi.alpha-s-circle-outline', color='#410253'))
-        self.ui.iconImportOrigin.setToolTip('Synced from Scrivener')
-        self.ui.iconImportOrigin.installEventFilter(InstantTooltipEventFilter(self.ui.iconImportOrigin))
-        incr_icon(self.ui.iconImportOrigin, 8)
-
-        self.ui.wdgTitle.setFixedHeight(150)
-        apply_border_image(self.ui.wdgTitle, resource_registry.frame1)
-
-        transparent(self.ui.lineNovelTitle)
-        self.ui.lineNovelTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        incr_font(self.ui.lineNovelTitle, 10)
-        self.ui.lineNovelTitle.textEdited.connect(self._title_edited)
-        self.ui.btnNovelSettings.setIcon(IconRegistry.dots_icon(vertical=True))
-        retain_when_hidden(self.ui.btnNovelSettings)
-        self.ui.btnNovelSettings.setHidden(True)
-
-        transparent(self.ui.lineSubtitle)
-        italic(self.ui.lineSubtitle)
-        incr_font(self.ui.lineSubtitle, 2)
-        transparent(self.ui.iconSubtitle)
-        self.ui.lineSubtitle.textEdited.connect(self._subtitle_edited)
-        self.ui.iconSubtitle.setIcon(IconRegistry.from_name('mdi.send'))
-        self._iconSelector = IconSelectorButton()
-        self._iconSelector.iconSelected.connect(self._icon_changed)
-        self.ui.wdgSubtitleParent.layout().insertWidget(0, self._iconSelector)
-
-        menu = MenuWidget(self.ui.btnNovelSettings)
+        menu = MenuWidget(self.novelDisplayCard.btnNovelSettings)
         menu.addAction(action('Delete', IconRegistry.trash_can_icon(), lambda: self._on_delete()))
 
         self._btnAddNew = push_btn(IconRegistry.plus_icon(RELAXED_WHITE_COLOR), tooltip='Add a new story',
                                    properties=['base', 'positive'])
         self._btnAddNew.clicked.connect(self._add_new_novel)
         self._shelvesTreeView = ShelvesTreeView(settings=TreeSettings(font_incr=2))
+        margins(self._shelvesTreeView.centralWidget(), bottom=45)
         self.ui.splitterLibrary.setSizes([150, 500])
         self.ui.wdgShelvesParent.layout().addWidget(wrap(self._btnAddNew, margin_left=10, margin_top=10),
                                                     alignment=Qt.AlignmentFlag.AlignLeft)
@@ -175,9 +163,6 @@ class HomeView(AbstractView):
         self._shelvesTreeView.newNovelRequested.connect(self._add_new_novel)
         self._shelvesTreeView.novelDeletionRequested.connect(self._on_delete)
         self._shelvesTreeView.novelOpenRequested.connect(self.loadNovel)
-
-        self.ui.pageNovelDisplay.installEventFilter(
-            VisibilityToggleEventFilter(self.ui.btnNovelSettings, self.ui.pageNovelDisplay))
 
         self.ui.btnAddNewStoryMain.setIconSize(QSize(24, 24))
 
@@ -230,24 +215,20 @@ class HomeView(AbstractView):
                 if novel.id == event.novel.id:
                     novel.title = event.novel.title
             if self._selected_novel and self._selected_novel.id == event.novel.id:
-                self.ui.lineNovelTitle.setText(self._selected_novel.title)
+                self.novelDisplayCard.lineNovelTitle.setText(self._selected_novel.title)
             self.refresh()
         elif isinstance(event, LibraryTourEvent):
             self._tour_service.addWidget(self.ui.btnLibrary, event)
         elif isinstance(event, NewStoryButtonTourEvent):
             self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageEmpty)
             self._tour_service.addWidget(self.ui.btnAddNewStoryMain, event)
-        # elif isinstance(event, NewStoryDialogOpenTourEvent):
-        #     dialog = StoryCreationDialog(self.widget.window())
-        #     dialog.show()
-        #     QTimer.singleShot(100, self._tour_service.next)
         elif isinstance(event, TutorialNovelSelectTourEvent):
             self._novel_selected(tutorial_novel)
             self._tour_service.next()
         elif isinstance(event, NovelDisplayTourEvent):
             self._tour_service.addWidget(self.ui.pageNovelDisplay, event)
         elif isinstance(event, NovelOpenButtonTourEvent):
-            self._tour_service.addWidget(self.ui.btnActivate, event)
+            self._tour_service.addWidget(self.novelDisplayCard.btnActivate, event)
         elif isinstance(event, TutorialNovelCloseTourEvent):
             self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageEmpty)
         else:
@@ -262,19 +243,22 @@ class HomeView(AbstractView):
     def refresh(self):
         self._shelvesTreeView.setNovels(self._novels)
 
+        series = [x for x in self._novels if x.story_type == StoryType.Series]
+        entities_registry.set_series(series)
+
     def _novel_selected(self, novel: NovelDescriptor):
+        self._selected_novel = None
+
+        if novel.story_type == StoryType.Novel:
+            self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageNovelDisplay)
+            self.novelDisplayCard.setNovel(novel)
+            self._selected_novel = novel
+        elif novel.story_type == StoryType.Series:
+            self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageSeriesDisplay)
+            self.seriesDisplayCard.setNovel(novel)
+            self.seriesDisplayCard.setChildren(self._shelvesTreeView.childrenNovels(novel))
+
         self._selected_novel = novel
-
-        self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageNovelDisplay)
-
-        self.ui.lineNovelTitle.setText(novel.title)
-        self.ui.lineSubtitle.setText(novel.subtitle)
-        if novel.icon:
-            self._iconSelector.selectIcon(novel.icon, novel.icon_color)
-        else:
-            self._iconSelector.reset()
-
-        self.ui.iconImportOrigin.setVisible(novel.is_scrivener_sync())
 
     def _add_new_novel(self):
         @busy
@@ -297,7 +281,7 @@ class HomeView(AbstractView):
 
             self.refresh()
             self._shelvesTreeView.selectNovel(novel)
-            if len(self._novels) == 1:
+            if len(self._novels) == 1 and self._novels[0].story_type == StoryType.Novel:
                 self.loadNovel.emit(novel)
 
     def _title_edited(self, title: str):
@@ -311,6 +295,11 @@ class HomeView(AbstractView):
         self._selected_novel.subtitle = subtitle
         self.repo.update_project_novel(self._selected_novel)
 
+    def _short_synopsis_edited(self):
+        if self._selected_novel:
+            self._selected_novel.short_synopsis = self.novelDisplayCard.textSynopsis.toPlainText()
+            self.repo.update_project_novel(self._selected_novel)
+
     def _icon_changed(self, icon: str, color: QColor):
         self._selected_novel.icon = icon
         self._selected_novel.icon_color = color.name()
@@ -321,11 +310,11 @@ class HomeView(AbstractView):
 
     def _novel_changed_in_browser(self, novel: NovelDescriptor):
         if self._selected_novel and self._selected_novel.id == novel.id:
-            self.ui.lineNovelTitle.setText(self._selected_novel.title)
+            self.novelDisplayCard.lineNovelTitle.setText(self._selected_novel.title)
             if novel.icon:
-                self._iconSelector.selectIcon(novel.icon, novel.icon_color)
+                self.novelDisplayCard.iconSelector.selectIcon(novel.icon, novel.icon_color)
             else:
-                self._iconSelector.reset()
+                self.novelDisplayCard.iconSelector.reset()
         self.repo.update_project_novel(novel)
 
         emit_global_event(NovelUpdatedEvent(self, self._selected_novel))
@@ -343,6 +332,15 @@ class HomeView(AbstractView):
                 self._selected_novel = None
                 self.reset()
             self.refresh()
+
+    def _attach_novel_to_series(self):
+        if self._selected_novel and self._selected_novel.story_type == StoryType.Series:
+            novel = NovelSelectorPopup.popup(self._novels)
+            if novel and novel.parent != self._selected_novel.id:
+                novel.parent = self._selected_novel.id
+                self.repo.update_project_novel(novel)
+                self.refresh()
+                self._shelvesTreeView.selectNovel(self._selected_novel)
 
     def _tutorial_selected(self, tutorial: Tutorial):
         if tutorial.is_container():

@@ -24,19 +24,20 @@ from typing import Optional, List, Dict, Any, Set
 
 from PyQt6.QtCore import Qt, pyqtSignal, QObject, QEvent, QSize, QPointF, QMimeData
 from PyQt6.QtGui import QIcon, QResizeEvent
-from PyQt6.QtWidgets import QScrollArea, QFrame, QSizePolicy, QToolButton
+from PyQt6.QtWidgets import QScrollArea, QFrame, QSizePolicy, QToolButton, QDialog
 from PyQt6.QtWidgets import QWidget, QLabel
 from overrides import overrides
 from qthandy import vbox, hbox, bold, margins, clear_layout, transparent, retain_when_hidden, incr_font, pointy, \
-    translucent, gc
+    translucent, gc, sp
 from qthandy.filter import DragEventFilter, DropEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import ALT_BACKGROUND_COLOR, PLOTLYST_TERTIARY_COLOR
-from plotlyst.view.common import ButtonPressResizeEventFilter, action, fade_out_and_gc
+from plotlyst.view.common import ButtonPressResizeEventFilter, action, fade_out_and_gc, push_btn, label
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.layout import group
 from plotlyst.view.widget.button import EyeToggle
-from plotlyst.view.widget.display import Icon
+from plotlyst.view.widget.display import Icon, PopupDialog
 from plotlyst.view.widget.input import TextInputDialog
 from plotlyst.view.widget.utility import IconSelectorDialog
 
@@ -230,9 +231,12 @@ class ContainerNode(BaseTreeWidget):
         if settings:
             incr_font(self._lblTitle, settings.font_incr)
 
-        if not readOnly:
-            self._icon.installEventFilter(self)
-            self._wdgTitle.installEventFilter(self)
+        if readOnly:
+            self.setPlusButtonEnabled(not readOnly)
+            self.setMenuEnabled(not readOnly)
+
+        self._icon.installEventFilter(self)
+        self._wdgTitle.installEventFilter(self)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -518,3 +522,41 @@ class ItemBasedTreeView(TreeView):
     def _removeFromParentEntity(self, item: Any, node: ItemBasedNode):
         parent: ItemBasedNode = node.parent().parent()
         parent.item().children.remove(item)
+
+
+class ItemBasedTreeSelectorPopup(PopupDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._selectedElement: Optional[Any] = None
+
+        self.treeView = self._initTreeView()
+        self.treeView.setMinimumSize(300, 400)
+        self.treeView.setMaximumSize(500, 500)
+        sp(self.treeView).v_exp().h_exp()
+
+        self.btnSelect = push_btn(text='Select', properties=['confirm', 'positive'])
+        self.btnSelect.setDisabled(True)
+        self.btnSelect.clicked.connect(self.accept)
+        self.btnClose = push_btn(text='Cancel', properties=['confirm', 'cancel'])
+        self.btnClose.clicked.connect(self.reject)
+
+        self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        self.frame.layout().addWidget(label(self._title(), h4=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.treeView)
+        self.frame.layout().addWidget(group(self.btnClose, self.btnSelect), alignment=Qt.AlignmentFlag.AlignRight)
+
+    def display(self) -> Optional[Any]:
+        result = self.exec()
+        if result == QDialog.DialogCode.Accepted:
+            return self._selectedElement
+
+    @abstractmethod
+    def _initTreeView(self) -> TreeView:
+        pass
+
+    def _title(self) -> str:
+        return 'Select an item'
+
+    def _selected(self, item: Any):
+        self._selectedElement = item
+        self.btnSelect.setEnabled(True)

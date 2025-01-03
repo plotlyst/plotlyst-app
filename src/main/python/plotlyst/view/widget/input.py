@@ -132,7 +132,7 @@ class AutoAdjustableLineEdit(QLineEdit):
             width = max(text_width + self._padding, self._defaultWidth)
             if self._maxWidth:
                 width = min(width, self._maxWidth)
-            self.setMaximumWidth(width)
+            self.setFixedWidth(width)
         else:
             self.setFixedWidth(self._defaultWidth)
 
