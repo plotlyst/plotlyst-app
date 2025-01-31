@@ -669,3 +669,15 @@ def dominant_color(pixmap: QPixmap) -> QColor:
     color_counter = Counter(colors)
     dominant_rgb = color_counter.most_common(1)[0][0]
     return QColor(dominant_rgb)
+
+
+def columns(margin: int = 2, spacing: int = 3) -> QWidget:
+    wdg = QWidget()
+    hbox(wdg, margin, spacing)
+    return wdg
+
+
+def rows(margin: int = 2, spacing: int = 3) -> QWidget:
+    wdg = QWidget()
+    vbox(wdg, margin, spacing)
+    return wdg

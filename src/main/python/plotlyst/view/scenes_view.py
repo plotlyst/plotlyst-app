@@ -27,7 +27,8 @@ from PyQt6.QtCore import Qt, QModelIndex, \
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QWidget, QHeaderView
 from overrides import overrides
-from qthandy import incr_font, translucent, clear_layout, busy, bold, sp, transparent, incr_icon, retain_when_hidden
+from qthandy import incr_font, translucent, clear_layout, busy, bold, sp, transparent, incr_icon, retain_when_hidden, \
+    margins
 from qthandy.filter import InstantTooltipEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -63,6 +64,7 @@ from plotlyst.view.widget.display import ChartView
 from plotlyst.view.widget.input import RotatedButtonOrientation
 from plotlyst.view.widget.novel import StoryStructureSelectorMenu
 from plotlyst.view.widget.progress import SceneStageProgressCharts
+from plotlyst.view.widget.scene.story_grid import ScenesGridWidget, ScenesGridToolbar
 from plotlyst.view.widget.scene.story_map import StoryMap, StoryMapDisplayMode
 from plotlyst.view.widget.scenes import SceneFilterWidget, \
     ScenesPreferencesWidget, ScenesDistributionWidget, ScenePreferencesTabType
@@ -186,6 +188,7 @@ class ScenesOutlineView(AbstractNovelView):
         self._actFilter.reset.connect(self._proxy.resetActsFilter)
 
         self.ui.btnCardsView.setIcon(IconRegistry.cards_icon())
+        self.ui.btnTimelineView.setIcon(IconRegistry.from_name('mdi.timeline', color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnTableView.setIcon(IconRegistry.table_icon())
         self.ui.btnStoryStructure.setIcon(IconRegistry.story_structure_icon(color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnStoryStructureSelector.setIcon(IconRegistry.from_name('mdi.chevron-down'))
@@ -232,6 +235,14 @@ class ScenesOutlineView(AbstractNovelView):
         self.ui.cards.cardDoubleClicked.connect(self._on_edit)
         self.ui.cards.cardEntered.connect(lambda x: self.ui.wdgStoryStructure.highlightScene(x.scene))
         self.ui.cards.cardCustomContextMenuRequested.connect(self._show_card_menu)
+
+        self._storyGrid = ScenesGridWidget(self.novel)
+        self._storyGridToolbar  = ScenesGridToolbar()
+        self._storyGridToolbar.orientationChanged.connect(self._storyGrid.setOrientation)
+        self.ui.pageStoryGrid.layout().addWidget(self._storyGridToolbar, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        self.ui.pageStoryGrid.layout().addWidget(self._storyGrid)
+        margins(self.ui.pageStoryGrid, left=35)
+        margins(self._storyGridToolbar, top=15, bottom=10)
 
         self.ui.btnPreferences.setIcon(IconRegistry.preferences_icon())
         self.prefs_widget = ScenesPreferencesWidget(self.novel)
@@ -387,6 +398,9 @@ class ScenesOutlineView(AbstractNovelView):
             self.ui.stackScenes.setCurrentWidget(self.ui.pageCards)
             self.ui.tblScenes.clearSelection()
             self.prefs_widget.showCardsTab()
+        elif self.ui.btnTimelineView.isChecked():
+            self.ui.stackScenes.setCurrentWidget(self.ui.pageStoryGrid)
+            self.ui.tblScenes.clearSelection()
         elif self.ui.btnStorymap.isChecked():
             self.ui.stackScenes.setCurrentWidget(self.ui.pageStorymap)
             self.ui.tblScenes.clearSelection()
