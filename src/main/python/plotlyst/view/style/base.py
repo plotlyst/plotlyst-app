@@ -59,7 +59,7 @@ QWidget[darker-bg=true] {{
 }}
 
 QWidget[white-bg=true] {{
-    background-color: #f8f9fa;
+    background-color: #FcFcFc;
 }}
 
 QWidget[relaxed-white-bg=true] {{
@@ -110,7 +110,7 @@ QFrame[highlighted-bg=true] {{
 }}
 
 QFrame[white-bg=true] {{
-    background-color: #f8f9fa;
+    background-color: #FcFcFc;
 }}
 
 QFrame[rounded=true] {{

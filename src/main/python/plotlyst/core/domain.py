@@ -2519,6 +2519,7 @@ class TemplateStoryStructureType(Enum):
     PACE = 5
     TENSION = 6
     TRANSFORMATION = 7
+    CUSTOM = 8
 
 
 class StoryStructureDisplayType(Enum):

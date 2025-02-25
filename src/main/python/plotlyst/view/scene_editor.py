@@ -27,7 +27,7 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QTableView
 from overrides import overrides
 from qtanim import fade_in
-from qthandy import underline, incr_font, margins, pointy, hbox, clear_layout, busy, vbox
+from qthandy import underline, incr_font, margins, pointy, hbox, clear_layout, busy, vbox, retain_when_hidden
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -116,6 +116,7 @@ class SceneEditor(QObject, EventListener):
         self.ui.wdgPov.setFixedSize(170, 170)
 
         self._progressEditor = SceneProgressEditor()
+        retain_when_hidden(self._progressEditor)
         self._progressEditor.progressCharged.connect(self._update_outcome)
         self._structureSelector = StructureBeatSelectorButton(self.novel)
         self._structureSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Structure))
@@ -128,7 +129,7 @@ class SceneEditor(QObject, EventListener):
 
         self.ui.wdgTop.layout().addWidget(self.wdgProgression)
 
-        self.wdgProgression.setVisible(app_env.profile().get('scene-progression', False))
+        self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
         self.ui.middleLine.setVisible(app_env.profile().get('license_type', 'FREE') != 'FREE')
 
         self.ui.textNotes.setTitleVisible(False)

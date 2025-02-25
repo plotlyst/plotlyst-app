@@ -24,15 +24,16 @@ from functools import partial
 from typing import Optional, List, Tuple, Set
 
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize
+from PyQt6.QtGui import QWheelEvent
 from PyQt6.QtWidgets import QWidget, QPushButton, QDialog, QScrollArea, QLabel, QButtonGroup, QStackedWidget, \
-    QApplication
+    QApplication, QDoubleSpinBox
 from overrides import overrides
 from qthandy import vspacer, spacer, transparent, bold, vbox, incr_font, \
-    hbox, margins, pointy, incr_icon, busy, flow, vline
+    hbox, margins, pointy, incr_icon, busy, flow, vline, line, decr_font, sp
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import WHITE_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
+from plotlyst.common import WHITE_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, MAX_NUMBER_OF_ACTS
 from plotlyst.core.domain import StoryStructure, Novel, StoryBeat, \
     three_act_structure, heros_journey, hook_beat, motion_beat, \
     disturbance_beat, normal_world_beat, characteristic_moment_beat, midpoint, midpoint_ponr, midpoint_mirror, \
@@ -41,13 +42,15 @@ from plotlyst.core.domain import StoryStructure, Novel, StoryBeat, \
     midpoint_re_dedication, second_plot_points, second_plot_point_aha, second_plot_point, midpoint_hero_ordeal, \
     midpoint_hero_mirror, second_plot_point_hero_road_back, second_plot_point_hero_ordeal, hero_reward, \
     hero_false_victory, pace_driven_structure, TemplateStoryStructureType, tension_driven_structure, \
-    transformation_driven_structure
-from plotlyst.view.common import ExclusiveOptionalButtonGroup, push_btn, label
+    transformation_driven_structure, StoryStructureDisplayType
+from plotlyst.view.common import ExclusiveOptionalButtonGroup, push_btn, label, scroll_area, frame
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
+from plotlyst.view.widget.button import SmallToggleButton
 from plotlyst.view.widget.display import IconText, ReferencesButton, PopupDialog
-from plotlyst.view.widget.input import Toggle
+from plotlyst.view.widget.input import Toggle, DecoratedLineEdit
+from plotlyst.view.widget.list import ListView, ListItemWidget
 from plotlyst.view.widget.structure.beat import BeatsPreview
 from plotlyst.view.widget.structure.outline import StoryStructureTimelineWidget
 
@@ -650,6 +653,243 @@ class _StorySpineStructureEditor(_AbstractStructureEditor):
             description=True, wordWrap=True))
 
 
+class PercentageSpinBox(QDoubleSpinBox):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimum(1)
+        self.setMaximum(99)
+
+    @overrides
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        event.ignore()
+
+
+class CustomBeatItemWidget(ListItemWidget):
+    def __init__(self, beat: StoryBeat, parent=None):
+        super().__init__(beat, parent)
+        self.beat = beat
+        self.structure: Optional[StoryStructure] = None
+        self._frozen = False
+        self._lineEdit.setText(beat.description)
+        self._lineEdit.setPlaceholderText('Beat description')
+        decr_font(self._lineEdit)
+
+        self.sbPercentage = PercentageSpinBox()
+        self.sbPercentage.setValue(self.beat.percentage)
+        self.sbPercentage.valueChanged.connect(self._percentageEdited)
+
+        self._titleEdit = DecoratedLineEdit(iconEditable=True, autoAdjustable=False)
+        self._titleEdit.setMaximumWidth(150)
+        self._titleEdit.setText(beat.text)
+        self._titleEdit.setIcon(IconRegistry.from_name(beat.icon, beat.icon_color))
+        self._titleEdit.iconChanged.connect(self._iconChanged)
+        self._titleEdit.lineEdit.textEdited.connect(self._nameChanged)
+
+        self.actToggle = SmallToggleButton()
+        self.actToggle.setChecked(self.beat.ends_act)
+        self.actToggle.clicked.connect(self._actChanged)
+
+        self.layout().insertWidget(1, self._titleEdit)
+        self.layout().insertWidget(2, self.sbPercentage)
+        self.layout().insertWidget(3, self.actToggle)
+
+        self.setMaximumWidth(1000)
+
+    def setStructure(self, structure: StoryStructure):
+        self.structure = structure
+        self.togglePercentage(self.structure.display_type == StoryStructureDisplayType.Proportional_timeline)
+        self.toggleActsEnabled()
+
+    def togglePercentage(self, toggled: bool):
+        self.sbPercentage.setVisible(toggled)
+
+    def toggleActsEnabled(self):
+        self.actToggle.setEnabled(self.structure.acts < MAX_NUMBER_OF_ACTS or self.actToggle.isChecked())
+
+    def updateBeatPercentage(self):
+        self._frozen = True
+        self.sbPercentage.setValue(self.beat.percentage)
+        self._frozen = False
+
+    @overrides
+    def _textChanged(self, text: str):
+        super()._textChanged(text)
+        self.beat.description = text
+
+    def _nameChanged(self, text: str):
+        self.beat.text = text
+
+    def _iconChanged(self, icon: str, color: str):
+        self.beat.icon = icon
+        self.beat.icon_color = color
+        self.changed.emit()
+
+    def _percentageEdited(self, percentage: float):
+        if self._frozen:
+            return
+        self.beat.percentage = percentage
+        self.changed.emit()
+
+    def _actChanged(self, toggled: bool):
+        self.beat.ends_act = toggled
+        if toggled:
+            self.structure.increaseAct()
+        else:
+            self.structure.decreaseAct()
+
+        self.structure.update_acts()
+        self.changed.emit()
+
+
+class _CustomBeatsList(ListView):
+    changed = pyqtSignal()
+
+    def __init__(self, structure: StoryStructure, parent=None):
+        super().__init__(parent)
+        self.structure = structure
+        transparent(self)
+
+        self._btnAdd.setText('Add a new beat')
+        self._btnAdd.setIcon(IconRegistry.plus_icon('grey'))
+
+        for beat in structure.sorted_beats():
+            wdg = self.addItem(beat)
+            self._initListItemWidget(wdg)
+
+    def togglePercentage(self, toggled: bool):
+        for i in range(self.layout().count()):
+            item = self.layout().itemAt(i)
+            if item.widget() and isinstance(item.widget(), CustomBeatItemWidget):
+                item.widget().togglePercentage(toggled)
+
+    def updateBeatPercentages(self):
+        for i in range(self.layout().count()):
+            item = self.layout().itemAt(i)
+            if item.widget() and isinstance(item.widget(), CustomBeatItemWidget):
+                item.widget().updateBeatPercentage()
+
+    @overrides
+    def _listItemWidgetClass(self):
+        return CustomBeatItemWidget
+
+    @overrides
+    def _addNewItem(self):
+        beat = StoryBeat('Beat', icon='mdi.lightning-bolt-outline', icon_color='grey',
+                         custom=True)
+        self.structure.beats.append(beat)
+        wdg = self.addItem(beat)
+        self._initListItemWidget(wdg)
+        self.changed.emit()
+
+    @overrides
+    def _deleteItemWidget(self, widget: ListItemWidget):
+        super()._deleteItemWidget(widget)
+        self.structure.beats.remove(widget.item())
+        self.changed.emit()
+
+    def _initListItemWidget(self, wdg: CustomBeatItemWidget):
+        wdg.setStructure(self.structure)
+        wdg.changed.connect(self._changed)
+
+    def _changed(self):
+        self.changed.emit()
+        for i in range(self.layout().count()):
+            item = self.layout().itemAt(i)
+            if item.widget() and isinstance(item.widget(), CustomBeatItemWidget):
+                item.widget().toggleActsEnabled()
+
+
+class _CustomStoryStructureEditor(_AbstractStructureEditor):
+    def __init__(self, novel: Novel, structure: StoryStructure, parent=None, newStructure: bool = True):
+        super().__init__(novel, structure, parent, newStructure)
+
+        self._scroll.setHidden(True)
+
+        vbox(self.wdgCustom, spacing=15)
+        margins(self.wdgCustom, top=20)
+        self.wdgCustom.layout().addWidget(label(
+            "Create your custom story structure template by defining each beat with a name, icon, and description. If 'Proportional timeline' is toggled, set each beat's percentage in the narrative.",
+            description=True, wordWrap=True))
+        self.togglePercentage = Toggle()
+        self.togglePercentage.setChecked(
+            self._structure.display_type == StoryStructureDisplayType.Proportional_timeline)
+        lbl = push_btn(IconRegistry.from_name('fa5s.percent'), text='Proportional timeline', transparent_=True,
+                       tooltip="Consider where the beats will be placed in the narrative")
+        lbl.clicked.connect(self.togglePercentage.animateClick)
+        self.wdgCustom.layout().addWidget(group(lbl, self.togglePercentage, spacing=0, margin=0),
+                                          alignment=Qt.AlignmentFlag.AlignLeft)
+        self.togglePercentage.toggled.connect(self._percentageToggled)
+
+        self.wdgEditor = frame()
+        self.wdgEditor.setProperty('bg', True)
+        self.wdgEditor.setProperty('large-rounded', True)
+        vbox(self.wdgEditor, spacing=10)
+        margins(self.wdgEditor, top=20)
+        self.layout().addWidget(self.wdgEditor)
+
+        self._titleEdit = DecoratedLineEdit(iconEditable=True, autoAdjustable=True, pickIconColor=False)
+        self._titleEdit.setText(structure.title)
+        incr_font(self._titleEdit.lineEdit, 2)
+        incr_icon(self._titleEdit.icon, 2)
+        self._titleEdit.setIcon(IconRegistry.from_name(structure.icon, structure.icon_color))
+        self._titleEdit.lineEdit.textEdited.connect(self._titleEdited)
+        self._titleEdit.iconChanged.connect(self._iconChanged)
+
+        self.wdgTitleEdit = QWidget()
+        hbox(self.wdgTitleEdit, 10).addWidget(self._titleEdit)
+
+        scroll = scroll_area(frameless=True)
+        transparent(scroll)
+        self._beatsList = _CustomBeatsList(structure)
+        scroll.setWidget(self._beatsList)
+        self._beatsList.changed.connect(lambda: self.wdgPreview.setStructure(novel, self._structure))
+
+        self.wdgEditor.layout().addWidget(self.wdgTitleEdit, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        lblBeat = self.__labelHeader('Name', 120)
+        self.lblPercentage = self.__labelHeader('%', 65)
+        self.lblPercentage.setVisible(self.togglePercentage.isChecked())
+        lblAct = self.__labelHeader('Act', 50)
+        lblDescription = self.__labelHeader('Description', 800)
+
+        spacer_ = spacer()
+        sp(spacer_).h_preferred()
+        self.wdgEditor.layout().addWidget(
+            group(lblBeat, self.lblPercentage, lblAct, lblDescription, spacer_, margin_left=40))
+
+        self.wdgEditor.layout().addWidget(scroll)
+
+        self.wdgPreview.beatMoved.connect(self._beatsList.updateBeatPercentages)
+        self.wdgPreview.actsResized.connect(self._beatsList.updateBeatPercentages)
+
+    def _titleEdited(self, title: str):
+        self._structure.title = title
+        self.wdgTitle.setText(title)
+
+    def _iconChanged(self, icon: str, color: str):
+        self._structure.icon = icon
+        self._structure.icon_color = color
+        self.wdgTitle.setIcon(IconRegistry.from_name(icon, color))
+
+    def _percentageToggled(self, toggled: bool):
+        if toggled:
+            self._structure.display_type = StoryStructureDisplayType.Proportional_timeline
+        else:
+            self._structure.display_type = StoryStructureDisplayType.Sequential_timeline
+
+        self.lblPercentage.setVisible(toggled)
+        self.wdgPreview.setStructure(self._novel, self._structure)
+        self._beatsList.togglePercentage(toggled)
+
+    def __labelHeader(self, text: str, maxWidth: int) -> QLabel:
+        lbl = label(text, description=True)
+        sp(lbl).h_exp()
+        lbl.setMaximumWidth(maxWidth)
+        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        return lbl
+
+
 class _TwistsAndTurnsStructureEditor(_AbstractStructureEditor):
     def __init__(self, novel: Novel, structure: StoryStructure, parent=None, newStructure: bool = True):
         super().__init__(novel, structure, parent, newStructure)
@@ -719,11 +959,14 @@ class StoryStructureSelectorDialog(PopupDialog):
         vbox(self.pageTwists)
         self.pageCore = QWidget()
         vbox(self.pageCore)
+        self.pageCustom = QWidget()
+        vbox(self.pageCustom)
         self.stackedWidget.addWidget(self.pageThreeAct)
         self.stackedWidget.addWidget(self.pageHerosJourney)
         self.stackedWidget.addWidget(self.pageStorySpine)
         self.stackedWidget.addWidget(self.pageTwists)
         self.stackedWidget.addWidget(self.pageCore)
+        self.stackedWidget.addWidget(self.pageCustom)
 
         self.btnConfirm = push_btn(icon=IconRegistry.from_name('fa5s.check', RELAXED_WHITE_COLOR),
                                    text='Add structure',
@@ -741,18 +984,24 @@ class StoryStructureSelectorDialog(PopupDialog):
                                       text='Story spine', properties=['main-side-nav'], checkable=True)
         self.btnCore = push_btn(IconRegistry.from_name('mdi.lightning-bolt-outline', color_on=WHITE_COLOR),
                                 text='Core narrative beats', properties=['main-side-nav'], checkable=True)
+
+        self.btnCustom = push_btn(IconRegistry.from_name('mdi6.bridge', color_on=WHITE_COLOR),
+                                  text='Custom structure', properties=['main-side-nav'], checkable=True)
         # self.btnFiveAct.setIcon(IconRegistry.from_name('mdi.numeric-5-box-outline', color_on=WHITE_COLOR))
         # self.btnSaveTheCat.setIcon(IconRegistry.from_name('fa5s.cat', color_on=WHITE_COLOR))
         self.wdgTypesContainer.layout().addWidget(self.btnCore)
         self.wdgTypesContainer.layout().addWidget(self.btnThreeAct)
         self.wdgTypesContainer.layout().addWidget(self.btnHerosJourney)
         self.wdgTypesContainer.layout().addWidget(self.btnStorySpine)
+        self.wdgTypesContainer.layout().addWidget(line())
+        self.wdgTypesContainer.layout().addWidget(self.btnCustom)
         self.wdgTypesContainer.layout().addWidget(vspacer())
         self.buttonGroup = QButtonGroup()
         self.buttonGroup.addButton(self.btnThreeAct)
         self.buttonGroup.addButton(self.btnHerosJourney)
         self.buttonGroup.addButton(self.btnStorySpine)
         self.buttonGroup.addButton(self.btnCore)
+        self.buttonGroup.addButton(self.btnCustom)
         self.buttonGroup.buttonClicked.connect(self._structureChanged)
 
         self.lineSeparator = vline()
@@ -818,6 +1067,13 @@ class StoryStructureSelectorDialog(PopupDialog):
             self.__initEditor(heros_journey, self.pageHerosJourney, _HerosJourneyStructureEditor)
         elif self.btnStorySpine.isChecked():
             self.__initEditor(story_spine, self.pageStorySpine, _StorySpineStructureEditor)
+        elif self.btnCustom.isChecked():
+            structure = StoryStructure(title="Story Structure",
+                                       icon='mdi6.bridge',
+                                       template_type=TemplateStoryStructureType.CUSTOM,
+                                       display_type=StoryStructureDisplayType.Proportional_timeline,
+                                       acts=0)
+            self.__initEditor(structure, self.pageCustom, _CustomStoryStructureEditor)
         else:
             return
 
@@ -852,3 +1108,5 @@ class StoryStructureSelectorDialog(PopupDialog):
         elif structure.template_type in [TemplateStoryStructureType.PACE, TemplateStoryStructureType.TENSION,
                                          TemplateStoryStructureType.TRANSFORMATION]:
             return self.pageCore, _CoreStructureEditor
+        elif structure.template_type == TemplateStoryStructureType.CUSTOM:
+            return self.pageCustom, _CustomStoryStructureEditor
