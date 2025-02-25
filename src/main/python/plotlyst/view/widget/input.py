@@ -1470,7 +1470,7 @@ class TextEditBubbleWidget(QFrame):
 
 
 class SearchField(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, ignoreCapitalization: bool = False):
         super().__init__(parent)
         hbox(self, 0, 0)
         self.btnIcon = tool_btn(IconRegistry.from_name('mdi.magnify'), transparent_=True, pointy_=False)
@@ -1479,6 +1479,8 @@ class SearchField(QWidget):
         self.lineSearch.setClearButtonEnabled(True)
         self.lineSearch.setProperty('rounded', True)
         self.lineSearch.setProperty('white-bg', True)
+        if ignoreCapitalization:
+            self.lineSearch.setProperty(IGNORE_CAPITALIZATION_PROPERTY, True)
 
         self.btnIcon.clicked.connect(self.lineSearch.setFocus)
 

@@ -49,6 +49,7 @@ from plotlyst.view.widget.manuscript import SprintWidget, \
     ManuscriptProgressCalendar, ManuscriptDailyProgress, ManuscriptProgressCalendarLegend, ManuscriptProgressWidget
 from plotlyst.view.widget.manuscript.editor import ManuscriptEditor, DistFreeControlsBar, DistFreeDisplayBar
 from plotlyst.view.widget.manuscript.export import ManuscriptExportPopup
+from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
 from plotlyst.view.widget.scene.editor import SceneMiniEditor
 from plotlyst.view.widget.tree import TreeSettings
@@ -85,6 +86,7 @@ class ManuscriptView(AbstractNovelView):
         self.ui.btnGoals.setIcon(IconRegistry.goal_icon('black', PLOTLYST_MAIN_COLOR))
         self.ui.btnReadability.setIcon(IconRegistry.from_name('fa5s.glasses', 'black', PLOTLYST_MAIN_COLOR))
         self.ui.btnProgress.setIcon(IconRegistry.from_name('mdi.calendar-month-outline', 'black', PLOTLYST_MAIN_COLOR))
+        self.ui.btnFind.setIcon(IconRegistry.from_name('fa5s.search', 'black', PLOTLYST_MAIN_COLOR, hflip=True))
         self.ui.btnExport.setIcon(IconRegistry.from_name('mdi.file-export-outline', 'black', PLOTLYST_MAIN_COLOR))
         self.ui.btnExport.installEventFilter(
             OpacityEventFilter(self.ui.btnExport, enterOpacity=0.7, ignoreCheckedButton=True))
@@ -104,6 +106,7 @@ class ManuscriptView(AbstractNovelView):
         self._btnGroupSideBar.addButton(self.ui.btnSceneInfo)
         self._btnGroupSideBar.addButton(self.ui.btnGoals)
         self._btnGroupSideBar.addButton(self.ui.btnProgress)
+        self._btnGroupSideBar.addButton(self.ui.btnFind)
         self._btnGroupSideBar.addButton(self.ui.btnSettings)
         for btn in self._btnGroupSideBar.buttons():
             btn.installEventFilter(OpacityEventFilter(btn, enterOpacity=0.7, ignoreCheckedButton=True))
@@ -113,6 +116,7 @@ class ManuscriptView(AbstractNovelView):
         link_buttons_to_pages(self.ui.stackSide,
                               [(self.ui.btnSceneInfo, self.ui.pageInfo), (self.ui.btnGoals, self.ui.pageGoal),
                                (self.ui.btnProgress, self.ui.pageProgress),
+                               (self.ui.btnFind, self.ui.pageFind),
                                (self.ui.btnSettings, self.ui.pageSettings)])
 
         bold(self.ui.lblWordCount)
@@ -136,6 +140,10 @@ class ManuscriptView(AbstractNovelView):
         self.ui.pageProgress.layout().addWidget(self._progressCalendar)
         self.ui.pageProgress.layout().addWidget(ManuscriptProgressCalendarLegend())
         self.ui.pageProgress.layout().addWidget(vspacer())
+
+        self.wdgFind = ManuscriptFindWidget(self.novel)
+        self.ui.pageFind.layout().addWidget(self.wdgFind)
+        self.wdgFind.wdgResults.matchClicked.connect(self._navigate)
 
         self._btnDistractionFree = tool_btn(IconRegistry.expand_icon(), 'Enter distraction-free mode',
                                             transparent_=True)
@@ -456,3 +464,10 @@ class ManuscriptView(AbstractNovelView):
         diff = self.ui.scrollEditor.verticalScrollBar().maximum() - value
         if 0 < diff < 40:
             scroll_to_bottom(self.ui.scrollEditor)
+
+    def _navigate(self, context: dict):
+        self.ui.treeChapters.selectScene(context['scene'])
+        self._editScene(context['scene'])
+        self.textEditor.jumpTo(context['start'], context['end'])
+        # print(pos)
+        # self.ui.scrollEditor.ensureVisible(pos.x(), pos.y())

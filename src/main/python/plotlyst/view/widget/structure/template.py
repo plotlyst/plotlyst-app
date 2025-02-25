@@ -24,8 +24,7 @@ from functools import partial
 from typing import Optional, List, Tuple, Set
 
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize
-from PyQt6.QtWidgets import QWidget, QPushButton, QDialog, QScrollArea, QLabel, QButtonGroup, QStackedWidget, \
-    QApplication
+from PyQt6.QtWidgets import QWidget, QPushButton, QDialog, QScrollArea, QLabel, QButtonGroup, QStackedWidget
 from overrides import overrides
 from qthandy import vspacer, spacer, transparent, bold, vbox, incr_font, \
     hbox, margins, pointy, incr_icon, busy, flow, vline
@@ -781,23 +780,11 @@ class StoryStructureSelectorDialog(PopupDialog):
 
         self.frame.layout().addWidget(self.wdgCenter)
 
-        self.setMinimumSize(self._adjustedSize())
+        self.setMinimumSize(self._adjustedSize(0.95, 0.8, 800, 600))
 
     @overrides
     def sizeHint(self) -> QSize:
-        return self._adjustedSize()
-
-    def _adjustedSize(self) -> QSize:
-        window = QApplication.activeWindow()
-        if window:
-            size = QSize(int(window.size().width() * 0.95), int(window.size().height() * 0.8))
-        else:
-            return QSize(800, 600)
-
-        size.setWidth(max(size.width(), 800))
-        size.setHeight(max(size.height(), 600))
-
-        return size
+        return self._adjustedSize(0.95, 0.8, 800, 600)
 
     def structure(self) -> StoryStructure:
         if self.btnCore.isChecked():

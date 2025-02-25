@@ -458,7 +458,7 @@ class ManuscriptEditor(QWidget, EventListener):
     progressChanged = pyqtSignal(DocumentProgress)
     sceneTitleChanged = pyqtSignal(Scene)
     sceneSeparatorClicked = pyqtSignal(Scene)
-    cursorPositionChanged = pyqtSignal(int, int)
+    cursorPositionChanged = pyqtSignal(int, int, int, int)
     cleared = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -473,6 +473,7 @@ class ManuscriptEditor(QWidget, EventListener):
         self._font = self.defaultFont()
         self._characterWidth: int = 40
         self._settings: Optional[ManuscriptEditorSettingsWidget] = None
+        self._lockCursorMove: bool = False
 
         vbox(self, 0, 0)
 
@@ -706,6 +707,18 @@ class ManuscriptEditor(QWidget, EventListener):
             if textedit.textCursor().hasSelection():
                 return textedit.textCursor().selection()
 
+    def jumpTo(self, start: int, end: int):
+        if self._textedits:
+            textedit = self._textedits[0]
+            cursor = textedit.textCursor()
+            self._lockCursorMove = True
+            cursor.setPosition(start)
+            cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+            textedit.setTextCursor(cursor)
+            self._lockCursorMove = False
+
+            QTimer.singleShot(50, lambda: self._cursorPositionChanged(textedit, marginY=300))
+
     def _textChanged(self, textedit: ManuscriptTextEdit, scene: Scene):
         if scene.manuscript.statistics is None:
             scene.manuscript.statistics = DocumentStatistics()
@@ -739,13 +752,15 @@ class ManuscriptEditor(QWidget, EventListener):
 
         return True
 
-    def _cursorPositionChanged(self, textedit: ManuscriptTextEdit):
+    def _cursorPositionChanged(self, textedit: ManuscriptTextEdit, marginX: int = 50, marginY: int = 50):
+        if self._lockCursorMove:
+            return
         rect = textedit.cursorRect(textedit.textCursor())
         pos = QPoint(rect.x(), rect.y())
         parent_pos = textedit.mapToParent(pos)
         parent_pos = self.wdgEditor.mapToParent(parent_pos)
 
-        self.cursorPositionChanged.emit(parent_pos.x(), parent_pos.y())
+        self.cursorPositionChanged.emit(parent_pos.x(), parent_pos.y(), marginX, marginY)
 
     def _initTextEdit(self, scene: Scene) -> ManuscriptTextEdit:
         _textedit = ManuscriptTextEdit()
