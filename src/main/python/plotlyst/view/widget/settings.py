@@ -486,7 +486,8 @@ class NovelSettingsWidget(QWidget, EventListener):
         self._addSettingToggle(NovelSetting.Management, enabled=app_env.profile().get('tasks', False))
 
         self.layout().addWidget(label('Advanced settings', h4=True), alignment=Qt.AlignmentFlag.AlignLeft)
-        wdgScenesOrg = self._addSettingToggle(NovelSetting.Scenes_organization, insertLine=False)
+        wdgScenesOrg = self._addSettingToggle(NovelSetting.Scenes_organization, insertLine=False,
+                                              enabled=not novel.is_readonly())
         margins(wdgScenesOrg, bottom=20)
 
         self.layout().addWidget(vspacer())
