@@ -40,13 +40,15 @@ from plotlyst.events import NovelPanelCustomizationEvent, \
     NovelWorldBuildingToggleEvent, NovelManuscriptToggleEvent, NovelDocumentsToggleEvent, NovelManagementToggleEvent, \
     NovelEmotionTrackingToggleEvent, NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, \
     NovelPovTrackingToggleEvent, NovelCharacterEnneagramToggleEvent, NovelCharacterMbtiToggleEvent, \
-    NovelCharacterLoveStyleToggleEvent, NovelCharacterWorkStyleToggleEvent, NovelScenesOrganizationToggleEvent
-from plotlyst.service.persistence import RepositoryPersistenceManager
+    NovelCharacterLoveStyleToggleEvent, NovelCharacterWorkStyleToggleEvent, NovelScenesOrganizationToggleEvent, \
+    ScenesOrganizationResetEvent
+from plotlyst.service.persistence import RepositoryPersistenceManager, reset_scenes_organization
 from plotlyst.view.common import label, ButtonPressResizeEventFilter
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.button import SmallToggleButton
+from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import Icon
 from plotlyst.view.widget.input import Toggle
 
@@ -500,7 +502,10 @@ class NovelSettingsWidget(QWidget, EventListener):
                           parent: Optional[NovelSettingToggle] = None, enabled: bool = True,
                           insertLine: bool = True) -> NovelSettingToggle:
         toggle = NovelSettingToggle(self._novel, setting, enabled=enabled)
-        toggle.settingToggled.connect(self._toggled)
+        if setting == NovelSetting.Scenes_organization:
+            toggle.settingToggled.connect(partial(self._scenesOrganizationToggled, toggle))
+        else:
+            toggle.settingToggled.connect(self._toggled)
         toggle.setEnabled(enabled)
         self._settings[setting] = toggle
         if parent:
@@ -514,3 +519,16 @@ class NovelSettingsWidget(QWidget, EventListener):
 
     def _toggled(self, setting: NovelSetting, toggled: bool):
         toggle_setting(self, self._novel, setting, toggled)
+
+    def _scenesOrganizationToggled(self, toggle: NovelSettingToggle, setting: NovelSetting, toggled: bool):
+        if not toggled and self._novel.chapters:
+            if asked(
+                    "Are you sure you want to write and manage chapters directly? Your scenes will be transformed into chapters, and your current chapters will be removed.",
+                    "Turn off scenes"):
+                reset_scenes_organization(self._novel)
+                emit_event(self._novel, ScenesOrganizationResetEvent(self))
+            else:
+                toggle.setChecked(True)
+                return
+
+        self._toggled(setting, toggled)

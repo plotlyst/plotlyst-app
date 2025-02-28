@@ -44,7 +44,7 @@ from plotlyst.core.sprint import TimerModel
 from plotlyst.env import app_env
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
-from plotlyst.events import SceneDeletedEvent, SceneChangedEvent
+from plotlyst.events import SceneDeletedEvent, SceneChangedEvent, ScenesOrganizationResetEvent
 from plotlyst.service.manuscript import daily_progress, daily_overall_progress
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import tool_btn, fade_in, fade
@@ -535,6 +535,9 @@ class ManuscriptEditor(QWidget, EventListener):
                     gc(removedTextedit)
                 self._scenes.remove(event.scene)
                 self.textChanged.emit()
+        elif isinstance(event, ScenesOrganizationResetEvent):
+            self.clear()
+            self.cleared.emit()
 
     @overrides
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
@@ -573,7 +576,8 @@ class ManuscriptEditor(QWidget, EventListener):
         title_font.setFamily(self._font.family())
         self.textTitle.setFont(title_font)
 
-        event_dispatchers.instance(self._novel).register(self, SceneDeletedEvent, SceneChangedEvent)
+        event_dispatchers.instance(self._novel).register(self, SceneDeletedEvent, SceneChangedEvent,
+                                                         ScenesOrganizationResetEvent)
 
     def setScene(self, scene: Scene):
         self.clear()

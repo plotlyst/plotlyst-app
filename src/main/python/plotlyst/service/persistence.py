@@ -348,3 +348,14 @@ def delete_character(novel: Novel, character: Character, forced: bool = False) -
         return True
 
     return False
+
+
+def reset_scenes_organization(novel: Novel):
+    repo = RepositoryPersistenceManager.instance()
+    for scene in novel.scenes:
+        if scene.chapter:
+            scene.chapter = None
+            repo.update_scene(scene)
+
+    novel.chapters.clear()
+    repo.update_novel(novel)
