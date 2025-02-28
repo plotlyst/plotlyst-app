@@ -378,6 +378,9 @@ class ManuscriptTextEdit(TextEditBase):
     def setSentenceHighlighterEnabled(self, enabled: bool):
         self._sentenceHighlighter.setSentenceHighlightEnabled(enabled)
 
+    def setHighlights(self, highlights: list):
+        self.highlighter.setHighlights(highlights)
+
     def scene(self) -> Optional[Scene]:
         return self._scene
 
@@ -476,6 +479,7 @@ class ManuscriptEditor(QWidget, EventListener):
         self._maxContentWidth = 0
         self._settings: Optional[ManuscriptEditorSettingsWidget] = None
         self._lockCursorMove: bool = False
+        self._lockTextChanged: bool = False
 
         self._find: Optional[ManuscriptFindWidget] = None
 
@@ -679,6 +683,7 @@ class ManuscriptEditor(QWidget, EventListener):
 
         for textedit in self._textedits:
             matches = self._find.sceneMathes(textedit.scene())
+            textedit.setHighlights(matches)
 
     def setNightMode(self, mode: bool):
         for lbl in self._sceneLabels:
@@ -745,13 +750,14 @@ class ManuscriptEditor(QWidget, EventListener):
             cursor = textedit.textCursor()
             self._lockCursorMove = True
             cursor.setPosition(start)
-            cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
             textedit.setTextCursor(cursor)
             self._lockCursorMove = False
 
             QTimer.singleShot(50, lambda: self._cursorPositionChanged(textedit, marginY=300))
 
     def _textChanged(self, textedit: ManuscriptTextEdit, scene: Scene):
+        if self._lockTextChanged:
+            return
         if scene.manuscript.statistics is None:
             scene.manuscript.statistics = DocumentStatistics()
 
@@ -767,7 +773,7 @@ class ManuscriptEditor(QWidget, EventListener):
         self.textChanged.emit()
 
         if self._find.isActive():
-            QTimer.singleShot(25, lambda: self._find.updateScene(scene))
+            QTimer.singleShot(25, lambda: self._updateFind(scene))
 
     def _updateProgress(self, scene: Scene, wc: int) -> bool:
         if scene.manuscript.statistics.wc == wc:
@@ -876,3 +882,12 @@ class ManuscriptEditor(QWidget, EventListener):
         if self._scene:
             self._scene.title = title
             self.sceneTitleChanged.emit(self._scene)
+
+    def _updateFind(self, scene: Scene):
+        matches = self._find.updateScene(scene)
+        for textedit in self._textedits:
+            if textedit.scene() == scene:
+                self._lockTextChanged = True
+                textedit.setHighlights(matches)
+                self._lockTextChanged = False
+                break
