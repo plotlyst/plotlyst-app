@@ -611,10 +611,13 @@ class ChargeButton(SecondaryActionToolButton):
 
 
 class SelectorToggleButton(QToolButton):
-    def __init__(self, button_style: Qt.ToolButtonStyle = Qt.ToolButtonStyle.ToolButtonTextUnderIcon):
+    def __init__(self, button_style: Qt.ToolButtonStyle = Qt.ToolButtonStyle.ToolButtonTextUnderIcon,
+                 minWidth: int = 100, animated: bool = True):
         super().__init__()
+        self._animated = animated
 
-        self.setMinimumWidth(100)
+        if minWidth:
+            self.setMinimumWidth(minWidth)
         self.installEventFilter(ButtonPressResizeEventFilter(self))
         self.setCheckable(True)
         self.setToolButtonStyle(button_style)
@@ -624,11 +627,10 @@ class SelectorToggleButton(QToolButton):
         if app_env.is_mac() and button_style == Qt.ToolButtonStyle.ToolButtonTextUnderIcon:
             incr_font(self)
 
-        # Configure style based on button_style
         if button_style == Qt.ToolButtonStyle.ToolButtonTextBesideIcon:
             radius = 6
             padding = 6
-        else:  # Default for ToolButtonTextUnderIcon
+        else:
             radius = 10
             padding = 2
 
@@ -646,7 +648,8 @@ class SelectorToggleButton(QToolButton):
                     }}
                     ''')
 
-        self.toggled.connect(self._toggled)
+        if self._animated:
+            self.toggled.connect(self._toggled)
 
     def _toggled(self, toggled: bool):
         if toggled:

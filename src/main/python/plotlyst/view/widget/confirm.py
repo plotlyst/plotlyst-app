@@ -44,6 +44,7 @@ class BaseDialog(PopupDialog):
         self.title = label(title, h4=True, wordWrap=True)
         sp(self.title).v_max()
         self.text = label(message, wordWrap=True, description=True)
+        self.text.setMinimumWidth(300)
         self.wdgText.layout().addWidget(self.title)
         self.wdgText.layout().addWidget(self.text)
 
