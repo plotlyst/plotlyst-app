@@ -508,7 +508,10 @@ class ManuscriptEditor(QWidget, EventListener):
     def event_received(self, event: Event):
         if isinstance(event, SceneChangedEvent):
             if self._scene == event.scene:
-                self.textTitle.setText(self._scene.title)
+                if self._novel.prefs.is_scenes_organization():
+                    self.textTitle.setText(self._scene.title)
+                else:
+                    self.textTitle.setText(self._scene.title_or_index(self._novel))
             for sceneLbl in self._sceneLabels:
                 if sceneLbl.scene == event.scene:
                     sceneLbl.refresh()
