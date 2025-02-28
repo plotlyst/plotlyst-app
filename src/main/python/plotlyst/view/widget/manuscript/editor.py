@@ -309,13 +309,13 @@ class ManuscriptTextEdit(TextEditBase):
                 focus_chain = parent.findChildren(QTextEdit)
                 if focus_chain:
                     if (self is focus_chain[0] and move_up) or (self is focus_chain[-1] and move_down):
+                        super(ManuscriptTextEdit, self).keyPressEvent(event)
                         return
 
                     current_index = focus_chain.index(self)
                     next_textedit = (
                         focus_chain[current_index - 1] if move_up else focus_chain[current_index + 1]
                     )
-
                     if next_textedit:
                         next_textedit.setFocus()
 
