@@ -55,7 +55,7 @@ setting_titles: Dict[NovelSetting, str] = {
     NovelSetting.Mindmap: 'Mindmap',
     NovelSetting.Storylines: 'Storylines',
     NovelSetting.Characters: 'Characters',
-    NovelSetting.Scenes: 'Scenes',
+    NovelSetting.Scenes: 'Narrative manager',
     NovelSetting.Scenes_organization: 'Work with scenes',
     NovelSetting.Track_emotion: 'Track character emotions',
     NovelSetting.Track_motivation: 'Track character motivation',
@@ -74,7 +74,7 @@ setting_descriptions: Dict[NovelSetting, str] = {
     NovelSetting.Structure: "Follow a story structure to help you with your story's pacing and escalation",
     NovelSetting.Storylines: "Create separate storylines for plot, character's change, subplots, or relationship plots",
     NovelSetting.Characters: "Create a cast of characters with different roles, personalities, backstories, goals, and relationships among them",
-    NovelSetting.Scenes: "Create scene cards for outlining or revision purposes to have characters, conflicts, or storylines associated to them",
+    NovelSetting.Scenes: "Manage scenes and chapters in different perspectives, and link characters, structure beats, or storylines to them",
     NovelSetting.Scenes_organization: "Organize your novel into scenes. If turned off, you will work with chapters only.",
     NovelSetting.Track_emotion: "Track and visualize how characters' emotions shift between positive and negative throughout the scenes",
     NovelSetting.Track_motivation: "Track and visualize how characters' motivation change throughout the scenes",
@@ -135,7 +135,7 @@ def setting_icon(setting: NovelSetting, color=PLOTLYST_SECONDARY_COLOR, color_on
     elif setting == NovelSetting.Scenes:
         return IconRegistry.scene_icon(color=color, color_on=color_on)
     elif setting == NovelSetting.Scenes_organization:
-        return IconRegistry.from_name('mdi6.movie-filter', color=color, color_on=color_on)
+        return IconRegistry.from_name('mdi6.movie-filter-outline', color=color, color_on=color_on)
     elif setting == NovelSetting.Track_emotion:
         return IconRegistry.emotion_icon(color=color, color_on=color_on)
     elif setting == NovelSetting.Track_motivation:
