@@ -29,7 +29,7 @@ from qtmenu import MenuWidget
 from plotlyst.common import NAV_BAR_BUTTON_DEFAULT_COLOR, \
     NAV_BAR_BUTTON_CHECKED_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.client import client
-from plotlyst.core.domain import NovelDescriptor, StoryType
+from plotlyst.core.domain import NovelDescriptor, StoryType, Novel
 from plotlyst.core.help import home_page_welcome_text
 from plotlyst.event.core import emit_global_event, Event
 from plotlyst.event.handler import global_event_dispatcher
@@ -287,8 +287,14 @@ class HomeView(AbstractView):
         def flush():
             flush_or_fail()
 
-        novel = StoryCreationDialog.popup()
+        novel: Optional[Novel] = StoryCreationDialog.popup()
         if novel:
+            if not novel.prefs.is_scenes_organization():
+                for scene in novel.scenes:
+                    scene.chapter = None
+                    scene.title = ''
+                novel.chapters.clear()
+
             self.repo.insert_novel(novel)
             self._novels.append(novel)
             flush()

@@ -64,8 +64,10 @@ class ManuscriptExportPopup(PopupDialog):
         chapterForms = Forms('Chapter titles')
         self.wdgEditor.layout().addWidget(chapterForms)
         self.chapterSceneTitle = chapterForms.addSetting("First scene's title")
-        self.chapterScenePov = chapterForms.addSetting("First POV's name")
+        self.chapterScenePov = chapterForms.addSetting("POV character's name")
+        chapterForms.setRowVisible(0, self.novel.prefs.is_scenes_organization())
         exclusive_buttons(self.wdgEditor, self.chapterSceneTitle, self.chapterScenePov, optional=True)
+
         self.chapterSceneTitle.clicked.connect(self._sceneTitleSettingToggled)
         self.chapterScenePov.clicked.connect(self._sceneTitleSettingToggled)
 

@@ -349,9 +349,6 @@
                      <property name="cursor">
                       <cursorShape>PointingHandCursor</cursorShape>
                      </property>
-                     <property name="toolTip">
-                      <string>Select which characters are active in this scene</string>
-                     </property>
                      <property name="text">
                       <string>Characters</string>
                      </property>
@@ -535,8 +532,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>438</width>
-                    <height>309</height>
+                    <width>371</width>
+                    <height>282</height>
                    </rect>
                   </property>
                   <property name="relaxed-white-bg" stdset="0">
@@ -646,8 +643,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>434</width>
-                        <height>281</height>
+                        <width>367</width>
+                        <height>254</height>
                        </rect>
                       </property>
                       <property name="relaxed-white" stdset="0">
@@ -844,6 +841,11 @@
  <layoutfunction spacing="0" margin="0"/>
  <customwidgets>
   <customwidget>
+   <class>ScenesTreeView</class>
+   <extends>QTreeView</extends>
+   <header>plotlyst.view.widget.scene</header>
+  </customwidget>
+  <customwidget>
    <class>DocumentTextEditor</class>
    <extends>QWidget</extends>
    <header>plotlyst.view.widget.input</header>
@@ -857,11 +859,6 @@
    <class>ReturnButton</class>
    <extends>QPushButton</extends>
    <header>plotlyst.view.widget.button</header>
-  </customwidget>
-  <customwidget>
-   <class>ScenesTreeView</class>
-   <extends>QTreeView</extends>
-   <header>plotlyst.view.widget.scene</header>
   </customwidget>
   <customwidget>
    <class>LabelsWidget</class>

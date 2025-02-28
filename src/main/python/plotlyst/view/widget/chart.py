@@ -162,9 +162,9 @@ class PolarChart(PolarBaseChart):
 
         for i, item in enumerate(items):
             if item.icon:
-                self._angular_axis.append(f'{icon_to_html_img(IconRegistry.from_name(item.icon))}{item.text}', i+1)
+                self._angular_axis.append(f'{icon_to_html_img(IconRegistry.from_name(item.icon))}{item.text}', i + 1)
             else:
-                self._angular_axis.append(item.text, i+1)
+                self._angular_axis.append(item.text, i + 1)
 
             value = math.log1p(item.value) if self._logarithmicScale else item.value
             # upper_series.append(i, value / 3)
@@ -411,7 +411,8 @@ class ManuscriptLengthChart(BaseChart):
 
     def refresh(self, novel: Novel):
         self.reset()
-        self.setTitle(f'<b>Manuscript length per {"scenes" if self._byScenes else "chapters"}</b>')
+        unit = "scenes" if self._byScenes and novel.prefs.is_scenes_organization() else "chapters"
+        self.setTitle(f'<b>Manuscript length per {unit}</b>')
 
         self.setMinimumWidth(max(len(self._xData(novel)), 15) * 35)
         if self._byScenes:
