@@ -42,7 +42,7 @@ from plotlyst.events import SceneChangedEvent, SceneDeletedEvent, NovelStoryStru
     CharacterDeletedEvent, \
     NovelAboutToSyncEvent, NovelSyncEvent, NovelStoryStructureActivationRequest, NovelPanelCustomizationEvent, \
     NovelStorylinesToggleEvent, NovelStructureToggleEvent, NovelPovTrackingToggleEvent, SceneAddedEvent, \
-    SceneStoryBeatChangedEvent, ActiveSceneStageChanged
+    SceneStoryBeatChangedEvent, ActiveSceneStageChanged, NovelScenesOrganizationToggleEvent
 from plotlyst.events import SceneOrderChangedEvent
 from plotlyst.model.common import SelectionItemsModel
 from plotlyst.model.novel import NovelStagesModel
@@ -125,7 +125,8 @@ class ScenesOutlineView(AbstractNovelView):
                          [NovelStoryStructureUpdated, CharacterChangedEvent, SceneAddedEvent, SceneChangedEvent,
                           SceneDeletedEvent,
                           SceneOrderChangedEvent, NovelAboutToSyncEvent, NovelStorylinesToggleEvent,
-                          NovelStructureToggleEvent, NovelPovTrackingToggleEvent, SceneStoryBeatChangedEvent])
+                          NovelStructureToggleEvent, NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent,
+                          SceneStoryBeatChangedEvent])
         self.ui = Ui_ScenesView()
         self.ui.setupUi(self.widget)
 
@@ -181,9 +182,9 @@ class ScenesOutlineView(AbstractNovelView):
         self.ui.treeChapters.sceneDoubleClicked.connect(self._switch_to_editor)
 
         self.ui.wgtChapters.setVisible(self.ui.btnChaptersToggle.isChecked())
-        self.ui.btnNewWithMenu.setVisible(self.ui.btnChaptersToggle.isChecked())
         self.ui.btnChaptersToggle.setIcon(IconRegistry.chapter_icon())
         self.ui.btnChaptersToggle.setChecked(self.novel.prefs.panels.scene_chapters_sidebar_toggled)
+        self._handle_scenes_organization()
         self.ui.btnChaptersToggle.clicked.connect(self._hide_chapters_clicked)
         self.ui.wgtChapters.setVisible(self.ui.btnChaptersToggle.isChecked())
 
@@ -354,6 +355,8 @@ class ScenesOutlineView(AbstractNovelView):
                     event.toggled and self.ui.btnStoryStructure.isChecked() and len(self.novel.story_structures) > 1)
             elif isinstance(event, NovelPovTrackingToggleEvent):
                 self.ui.tblScenes.setColumnHidden(self.tblModel.ColPov, not event.toggled)
+            elif isinstance(event, NovelScenesOrganizationToggleEvent):
+                self._handle_scenes_organization_event()
             return
 
         super(ScenesOutlineView, self).event_received(event)
@@ -468,6 +471,12 @@ class ScenesOutlineView(AbstractNovelView):
             if toggled and self.selected_card:
                 self.ui.treeChapters.selectScene(self.selected_card.scene)
 
+        if self.novel.prefs.is_scenes_organization():
+            self.ui.btnNew.setHidden(toggled)
+            self.ui.btnNewWithMenu.setVisible(toggled)
+        else:
+            self.ui.btnNew.setVisible(True)
+            self.ui.btnNewWithMenu.setHidden(True)
         qtanim.toggle_expansion(self.ui.wgtChapters, toggled, teardown=select_scene)
 
         if self.novel.prefs.panels.scene_chapters_sidebar_toggled != toggled:
@@ -808,6 +817,16 @@ class ScenesOutlineView(AbstractNovelView):
 
         for card in self.ui.cards.cards():
             card.refreshBeat()
+
+    def _handle_scenes_organization_event(self):
+        self._handle_scenes_organization()
+        for card in self.ui.cards:
+            card.quickRefresh()
+
+    def _handle_scenes_organization(self):
+        scenes_organized = self.novel.prefs.is_scenes_organization()
+        self.ui.btnNewWithMenu.setVisible(scenes_organized and self.ui.btnChaptersToggle.isChecked())
+        self.ui.btnNew.setVisible(not scenes_organized or not self.ui.btnChaptersToggle.isChecked())
 
     def _story_map_mode_clicked(self):
         if self.ui.btnStoryMapDisplay.isChecked():

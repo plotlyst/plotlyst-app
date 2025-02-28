@@ -1279,38 +1279,6 @@
  <resources/>
  <connections>
   <connection>
-   <sender>btnChaptersToggle</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>btnNew</receiver>
-   <slot>setHidden(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>67</x>
-     <y>45</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>119</x>
-     <y>48</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>btnChaptersToggle</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>btnNewWithMenu</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>81</x>
-     <y>51</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>174</x>
-     <y>54</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>
    <receiver>cbStoryMapDetailed</receiver>
@@ -1328,7 +1296,7 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="btnGroupViews"/>
   <buttongroup name="btnGroupStoryMapView"/>
+  <buttongroup name="btnGroupViews"/>
  </buttongroups>
 </ui>
