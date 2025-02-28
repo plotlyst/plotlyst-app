@@ -830,8 +830,12 @@ class ScenesOutlineView(AbstractNovelView):
 
     def _handle_scenes_organization(self):
         scenes_organized = self.novel.prefs.is_scenes_organization()
+        unit = 'scene' if scenes_organized else 'chapter'
         self.ui.btnNewWithMenu.setVisible(scenes_organized and self.ui.btnChaptersToggle.isChecked())
         self.ui.btnNew.setVisible(not scenes_organized or not self.ui.btnChaptersToggle.isChecked())
+        self.ui.btnNew.setToolTip(f'Add new {unit}')
+        self.ui.btnEdit.setToolTip(f'Edit selected {unit}')
+        self.ui.btnDelete.setToolTip(f'Delete {unit}')
 
     def _story_map_mode_clicked(self):
         if self.ui.btnStoryMapDisplay.isChecked():

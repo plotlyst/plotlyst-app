@@ -187,7 +187,7 @@
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="toolTip">
-             <string>Character-scene distribution view</string>
+             <string>Distribution view</string>
             </property>
             <property name="text">
              <string/>
@@ -339,7 +339,7 @@
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="toolTip">
-             <string>Add new scene</string>
+             <string>Add new scene or chapter</string>
             </property>
             <property name="text">
              <string/>
@@ -478,7 +478,7 @@
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Customize view&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Customize view</string>
             </property>
             <property name="text">
              <string/>
