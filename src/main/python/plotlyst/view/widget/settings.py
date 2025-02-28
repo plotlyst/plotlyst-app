@@ -181,6 +181,9 @@ class Forms(QWidget):
         self._layout.addRow(label(text, description=True), toggle)
         return toggle
 
+    def setRowVisible(self, row: int, visible: bool):
+        self._layout.setRowVisible(row, visible)
+
 
 class SimpleToggleSetting(QWidget):
     def __init__(self, text: str, parent=None, checked: bool = False, alignLeft: bool = False,
