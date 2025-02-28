@@ -274,7 +274,8 @@ def delete_plot(novel: Novel, plot: Plot):
 
 
 def delete_scene(novel: Novel, scene: Scene, forced: bool = False) -> bool:
-    title = f'Are you sure you want to delete the scene "{scene.title_or_index(novel)}"?'
+    unit = 'scene' if novel.prefs.is_scenes_organization() else 'chapter'
+    title = f'Are you sure you want to delete the {unit} "{scene.title_or_index(novel)}"?'
     msg = f'<html>This action cannot be undone.'
     if scene.manuscript and scene.manuscript.statistics and scene.manuscript.statistics.wc:
         msg = f'<html><ul><li>This action cannot be undone.</li>'

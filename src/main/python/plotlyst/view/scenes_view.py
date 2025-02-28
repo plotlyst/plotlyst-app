@@ -84,6 +84,7 @@ class ScenesTitle(QWidget, Ui_ScenesTitle, EventListener):
         self.btnSequel.setIcon(IconRegistry.reaction_scene_icon())
         translucent(self.btnScene, 0.6)
         translucent(self.btnSequel, 0.6)
+        self.refreshTitle()
 
         flag = app_env.profile().get('scene-purpose', False)
         self.btnScene.setVisible(flag)
@@ -113,6 +114,9 @@ class ScenesTitle(QWidget, Ui_ScenesTitle, EventListener):
         self.btnSequel.setText(f'{len([x for x in self.novel.scenes if x.purpose == ScenePurposeType.Reaction])}')
 
         self.refreshDistributionChart()
+
+    def refreshTitle(self):
+        self.lblTitle.setText('Scenes' if self.novel.prefs.is_scenes_organization() else 'Chapters')
 
     def refreshDistributionChart(self):
         self._chartDistribution.refresh(self.novel)
@@ -820,7 +824,8 @@ class ScenesOutlineView(AbstractNovelView):
 
     def _handle_scenes_organization_event(self):
         self._handle_scenes_organization()
-        for card in self.ui.cards:
+        self.title.refreshTitle()
+        for card in self.ui.cards.cards():
             card.quickRefresh()
 
     def _handle_scenes_organization(self):

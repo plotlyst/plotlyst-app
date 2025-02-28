@@ -2052,7 +2052,8 @@ class Scene:
         return self.__is_outcome(SceneOutcome.MOTION)
 
     def title_or_index(self, novel: 'Novel') -> str:
-        return self.title if self.title else f'Scene {novel.scenes.index(self) + 1}'
+        prefix = 'Scene' if novel.prefs.is_scenes_organization() else 'Chapter'
+        return self.title if self.title else f'{prefix} {novel.scenes.index(self) + 1}'
 
     def calculate_plot_progress(self):
         self.plot_pos_progress = 0

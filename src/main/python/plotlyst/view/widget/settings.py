@@ -135,7 +135,7 @@ def setting_icon(setting: NovelSetting, color=PLOTLYST_SECONDARY_COLOR, color_on
     elif setting == NovelSetting.Scenes:
         return IconRegistry.scene_icon(color=color, color_on=color_on)
     elif setting == NovelSetting.Scenes_organization:
-        return IconRegistry.chapter_icon(color=color, color_on=color_on)
+        return IconRegistry.from_name('mdi6.movie-filter', color=color, color_on=color_on)
     elif setting == NovelSetting.Track_emotion:
         return IconRegistry.emotion_icon(color=color, color_on=color_on)
     elif setting == NovelSetting.Track_motivation:
