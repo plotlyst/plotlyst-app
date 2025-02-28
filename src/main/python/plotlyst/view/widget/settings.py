@@ -40,7 +40,7 @@ from plotlyst.events import NovelPanelCustomizationEvent, \
     NovelWorldBuildingToggleEvent, NovelManuscriptToggleEvent, NovelDocumentsToggleEvent, NovelManagementToggleEvent, \
     NovelEmotionTrackingToggleEvent, NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, \
     NovelPovTrackingToggleEvent, NovelCharacterEnneagramToggleEvent, NovelCharacterMbtiToggleEvent, \
-    NovelCharacterLoveStyleToggleEvent, NovelCharacterWorkStyleToggleEvent
+    NovelCharacterLoveStyleToggleEvent, NovelCharacterWorkStyleToggleEvent, NovelScenesOrganizationToggleEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import label, ButtonPressResizeEventFilter
 from plotlyst.view.icons import IconRegistry
@@ -56,6 +56,7 @@ setting_titles: Dict[NovelSetting, str] = {
     NovelSetting.Storylines: 'Storylines',
     NovelSetting.Characters: 'Characters',
     NovelSetting.Scenes: 'Scenes',
+    NovelSetting.Scenes_organization: 'Work with scenes',
     NovelSetting.Track_emotion: 'Track character emotions',
     NovelSetting.Track_motivation: 'Track character motivation',
     NovelSetting.Track_conflict: 'Track character conflicts',
@@ -73,7 +74,8 @@ setting_descriptions: Dict[NovelSetting, str] = {
     NovelSetting.Structure: "Follow a story structure to help you with your story's pacing and escalation",
     NovelSetting.Storylines: "Create separate storylines for plot, character's change, subplots, or relationship plots",
     NovelSetting.Characters: "Create a cast of characters with different roles, personalities, backstories, goals, and relationships among them",
-    NovelSetting.Scenes: "Create scene cards for early outlining or later revision purposes to have characters, conflicts, or storylines associated to the scenes",
+    NovelSetting.Scenes: "Create scene cards for outlining or revision purposes to have characters, conflicts, or storylines associated to them",
+    NovelSetting.Scenes_organization: "Organize your novel into scenes. If turned off, you will work with chapters only.",
     NovelSetting.Track_emotion: "Track and visualize how characters' emotions shift between positive and negative throughout the scenes",
     NovelSetting.Track_motivation: "Track and visualize how characters' motivation change throughout the scenes",
     NovelSetting.Track_conflict: 'Track the frequency and the type of conflicts the characters face',
@@ -103,6 +105,7 @@ setting_events: Dict[NovelSetting, NovelPanelCustomizationEvent] = {
     NovelSetting.Character_love_style: NovelCharacterLoveStyleToggleEvent,
     NovelSetting.Character_work_style: NovelCharacterWorkStyleToggleEvent,
     NovelSetting.Scenes: NovelScenesToggleEvent,
+    NovelSetting.Scenes_organization: NovelScenesOrganizationToggleEvent,
     NovelSetting.Track_emotion: NovelEmotionTrackingToggleEvent,
     NovelSetting.Track_motivation: NovelMotivationTrackingToggleEvent,
     NovelSetting.Track_conflict: NovelConflictTrackingToggleEvent,
@@ -131,6 +134,8 @@ def setting_icon(setting: NovelSetting, color=PLOTLYST_SECONDARY_COLOR, color_on
         return IconRegistry.from_name('fa5s.briefcase', color=color, color_on=color_on)
     elif setting == NovelSetting.Scenes:
         return IconRegistry.scene_icon(color=color, color_on=color_on)
+    elif setting == NovelSetting.Scenes_organization:
+        return IconRegistry.chapter_icon(color=color, color_on=color_on)
     elif setting == NovelSetting.Track_emotion:
         return IconRegistry.emotion_icon(color=color, color_on=color_on)
     elif setting == NovelSetting.Track_motivation:
@@ -360,7 +365,7 @@ class NovelPanelSettingsWidget(QWidget):
     def setNovel(self, novel: Novel):
         self._novel = novel
         for toggle in self._settings.values():
-            if not  toggle.isEnabled():
+            if not toggle.isEnabled():
                 continue
             toggle.setChecked(self._novel.prefs.toggled(toggle.setting()))
 
@@ -456,6 +461,7 @@ class NovelSettingsWidget(QWidget, EventListener):
 
         vbox(self, spacing=10)
         self._settings: Dict[NovelSetting, NovelSettingToggle] = {}
+
         self._addSettingToggle(NovelSetting.Structure)
         self._addSettingToggle(NovelSetting.Storylines, enabled=app_env.profile().get('storylines', False))
 
@@ -472,10 +478,15 @@ class NovelSettingsWidget(QWidget, EventListener):
         # self._addSettingToggle(NovelSetting.Track_emotion, wdgScenes)
         # self._addSettingToggle(NovelSetting.Track_motivation, wdgScenes)
         # self._addSettingToggle(NovelSetting.Track_conflict, wdgScenes)
-        self._addSettingToggle(NovelSetting.World_building, enabled=app_env.profile().get('world-building', False))
         self._addSettingToggle(NovelSetting.Manuscript)
         self._addSettingToggle(NovelSetting.Documents)
+        self._addSettingToggle(NovelSetting.World_building, enabled=app_env.profile().get('world-building', False))
         self._addSettingToggle(NovelSetting.Management, enabled=app_env.profile().get('tasks', False))
+
+        self.layout().addWidget(label('Advanced settings', h4=True), alignment=Qt.AlignmentFlag.AlignLeft)
+        wdgScenesOrg = self._addSettingToggle(NovelSetting.Scenes_organization, insertLine=False)
+        margins(wdgScenesOrg, bottom=20)
+
         self.layout().addWidget(vspacer())
 
         event_dispatchers.instance(self._novel).register(self, *panel_events)
@@ -486,8 +497,8 @@ class NovelSettingsWidget(QWidget, EventListener):
             self._settings[event.setting].setChecked(event.toggled)
 
     def _addSettingToggle(self, setting: NovelSetting,
-                          parent: Optional[NovelSettingToggle] = None,
-                          enabled: bool = True) -> NovelSettingToggle:
+                          parent: Optional[NovelSettingToggle] = None, enabled: bool = True,
+                          insertLine: bool = True) -> NovelSettingToggle:
         toggle = NovelSettingToggle(self._novel, setting, enabled=enabled)
         toggle.settingToggled.connect(self._toggled)
         toggle.setEnabled(enabled)
@@ -496,7 +507,8 @@ class NovelSettingsWidget(QWidget, EventListener):
             parent.addChild(toggle)
         else:
             self.layout().addWidget(toggle)
-            self.layout().addWidget(line())
+            if insertLine:
+                self.layout().addWidget(line())
 
         return toggle
 
