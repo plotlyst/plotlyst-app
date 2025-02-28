@@ -195,10 +195,15 @@ class NovelCustomizationWizard(QWidget):
         vbox(self.pagePanels)
         self.pagePersonality = QWidget()
         vbox(self.pagePersonality, spacing=5)
+        margins(self.pagePersonality, left=15, right=15)
+        self.pageScenes = QWidget()
+        vbox(self.pageScenes)
+        margins(self.pageScenes, left=15, right=15)
         self.pageManuscript = QWidget()
         vbox(self.pageManuscript)
         self.stack.addWidget(self.pagePanels)
         self.stack.addWidget(self.pagePersonality)
+        self.stack.addWidget(self.pageScenes)
         self.stack.addWidget(self.pageManuscript)
 
         self.wdgPanelSettings = NovelPanelSettingsWidget()
@@ -245,22 +250,30 @@ class NovelCustomizationWizard(QWidget):
             label('You can always change these settings later', description=True, decr_font_diff=1),
             alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.pagePersonality.layout().addWidget(label('Character personality types', h3=True),
+        self.pagePersonality.layout().addWidget(label('Character Personality Types', h3=True),
                                                 alignment=Qt.AlignmentFlag.AlignCenter)
         self.pagePersonality.layout().addWidget(line())
         self.pagePersonality.layout().addWidget(label(
             "Which common personality types and styles would you like to track for your characters? (can be changed later)",
             description=True, wordWrap=True))
-        margins(self.pagePersonality, left=15, right=15)
-        self._addPersonalitySetting(NovelSetting.Character_enneagram)
-        self._addPersonalitySetting(NovelSetting.Character_mbti)
-        self._addPersonalitySetting(NovelSetting.Character_work_style)
-        self._addPersonalitySetting(NovelSetting.Character_love_style)
+        self._addNovelSetting(NovelSetting.Character_enneagram, self.pagePersonality)
+        self._addNovelSetting(NovelSetting.Character_mbti, self.pagePersonality)
+        self._addNovelSetting(NovelSetting.Character_work_style, self.pagePersonality)
+        self._addNovelSetting(NovelSetting.Character_love_style, self.pagePersonality)
         self.pagePersonality.layout().addWidget(vspacer())
+
+        self.pageScenes.layout().addWidget(label('Scene and Chapter Settings', h3=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.pageScenes.layout().addWidget(label(
+            "Would you like to write scenes and arrange them inside chapters, or work with chapters only? (can be changed later)",
+            description=True, wordWrap=True))
+        self.pageScenes.layout().addWidget(line())
+        self._addNovelSetting(NovelSetting.Scenes_organization, self.pageScenes)
+        self._addNovelSetting(NovelSetting.Track_pov, self.pageScenes)
+        self.pageScenes.layout().addWidget(vspacer())
 
         self.langSetting = ManuscriptLanguageSettingWidget(self._novel)
         self.langSetting.setMaximumWidth(MAXIMUM_SIZE)
-        self.pageManuscript.layout().addWidget(label('Manuscript language', h3=True),
+        self.pageManuscript.layout().addWidget(label('Manuscript Language', h3=True),
                                                alignment=Qt.AlignmentFlag.AlignCenter)
         self.pageManuscript.layout().addWidget(line())
         self.pageManuscript.layout().addWidget(label(
@@ -283,12 +296,12 @@ class NovelCustomizationWizard(QWidget):
     def hasMore(self) -> bool:
         return self.stack.currentIndex() < self.stack.count() - 1
 
-    def _addPersonalitySetting(self, personality: NovelSetting):
+    def _addNovelSetting(self, personality: NovelSetting, page: QWidget):
         toggle = NovelSettingToggle(self._novel, personality)
-        toggle.settingToggled.connect(self._personalityToggled)
-        self.pagePersonality.layout().addWidget(toggle)
+        toggle.settingToggled.connect(self._settingToggled)
+        page.layout().addWidget(toggle)
 
-    def _personalityToggled(self, setting: NovelSetting, toggled: bool):
+    def _settingToggled(self, setting: NovelSetting, toggled: bool):
         self._novel.prefs.settings[setting.value] = toggled
 
     def _updateCounter(self):

@@ -75,7 +75,7 @@ setting_descriptions: Dict[NovelSetting, str] = {
     NovelSetting.Storylines: "Create separate storylines for plot, character's change, subplots, or relationship plots",
     NovelSetting.Characters: "Create a cast of characters with different roles, personalities, backstories, goals, and relationships among them",
     NovelSetting.Scenes: "Manage scenes and chapters in different perspectives, and link characters, structure beats, or storylines to them",
-    NovelSetting.Scenes_organization: "Organize your novel into scenes. If turned off, you will work with chapters only.",
+    NovelSetting.Scenes_organization: "Organize your novel into scenes and chapters. Otherwise if turned off, you will write and manage chapters only.",
     NovelSetting.Track_emotion: "Track and visualize how characters' emotions shift between positive and negative throughout the scenes",
     NovelSetting.Track_motivation: "Track and visualize how characters' motivation change throughout the scenes",
     NovelSetting.Track_conflict: 'Track the frequency and the type of conflicts the characters face',
@@ -463,7 +463,6 @@ class NovelSettingsWidget(QWidget, EventListener):
         self._settings: Dict[NovelSetting, NovelSettingToggle] = {}
 
         self._addSettingToggle(NovelSetting.Structure)
-        self._addSettingToggle(NovelSetting.Storylines, enabled=app_env.profile().get('storylines', False))
 
         wdgCharacters = self._addSettingToggle(NovelSetting.Characters)
         self._addSettingToggle(NovelSetting.Character_enneagram, wdgCharacters)
@@ -480,6 +479,7 @@ class NovelSettingsWidget(QWidget, EventListener):
         # self._addSettingToggle(NovelSetting.Track_conflict, wdgScenes)
         self._addSettingToggle(NovelSetting.Manuscript)
         self._addSettingToggle(NovelSetting.Documents)
+        self._addSettingToggle(NovelSetting.Storylines, enabled=app_env.profile().get('storylines', False))
         self._addSettingToggle(NovelSetting.World_building, enabled=app_env.profile().get('world-building', False))
         self._addSettingToggle(NovelSetting.Management, enabled=app_env.profile().get('tasks', False))
 

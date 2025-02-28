@@ -757,5 +757,5 @@ class StoryCreationDialog(PopupDialog):
     def __newNovel(self) -> Novel:
         return Novel.new_novel(self.lineTitle.text() if self.lineTitle.text() else 'My new novel')
 
-    def __newSeries(self) -> NovelDescriptor:
+    def __newSeries(self) -> Novel:
         return Novel.new_series(self.lineSeriesTitle.text() if self.lineSeriesTitle.text() else 'My new series')
