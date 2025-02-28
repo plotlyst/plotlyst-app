@@ -25,14 +25,14 @@ from PyQt6.QtGui import QShowEvent, QTextDocument, QTextCursor, QSyntaxHighlight
     QMouseEvent, QTextBlockUserData, QTextBlockFormat
 from PyQt6.QtWidgets import QWidget, QTextBrowser
 from overrides import overrides
-from qthandy import incr_font, vbox, busy, transparent, decr_icon
+from qthandy import vbox, busy, transparent, decr_icon, decr_font, margins
 
 from plotlyst.common import PLOTLYST_TERTIARY_COLOR, PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Scene
 from plotlyst.core.text import wc
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import DelayedSignalSlotConnector, label, push_btn
+from plotlyst.view.common import DelayedSignalSlotConnector, push_btn, label
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.widget.button import SelectorToggleButton
@@ -111,33 +111,34 @@ class ManuscriptFindWidget(QWidget):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self.novel = novel
-        vbox(self, spacing=5)
+        vbox(self, 1, spacing=2)
+        margins(self, top=0)
         self._term: str = ''
         self._results: Dict[Scene, list] = {}
 
         self.search = SearchField(ignoreCapitalization=True)
-        incr_font(self.search.lineSearch)
+        decr_icon(self.search.lineSearch)
         DelayedSignalSlotConnector(self.search.lineSearch.textEdited, self._search, delay=500, parent=self)
 
         self.btnCase = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonIconOnly, minWidth=40, animated=False)
         self.btnCase.setIcon(IconRegistry.from_name('msc.case-sensitive', 'grey', 'black'))
         self.btnCase.setToolTip('Toggle case sensitivity')
-        decr_icon(self.btnCase)
+        decr_icon(self.btnCase, 4)
         self.btnCase.clicked.connect(self._settingChanged)
 
         self.btnWord = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonIconOnly, minWidth=40, animated=False)
         self.btnWord.setIcon(IconRegistry.from_name('msc.whole-word', 'grey', 'black'))
         self.btnWord.setToolTip('Match whole word only')
-        decr_icon(self.btnWord)
+        decr_icon(self.btnWord, 4)
         self.btnWord.clicked.connect(self._settingChanged)
 
         self.replace = SearchField(ignoreCapitalization=True)
-        incr_font(self.replace.lineSearch)
+        decr_font(self.replace.lineSearch)
         self.replace.lineSearch.setPlaceholderText('Replace with...')
         self.replace.btnIcon.setIcon(IconRegistry.from_name('mdi.find-replace'))
 
         self.btnReplace = push_btn(IconRegistry.from_name('mdi.find-replace', RELAXED_WHITE_COLOR), 'Replace all',
-                                   properties=['confirm', 'positive'])
+                                   properties=['base', 'positive'])
         self.btnReplace.setDisabled(True)
         self.btnReplace.clicked.connect(self._replace)
 
