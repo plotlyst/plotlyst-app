@@ -42,7 +42,7 @@ from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneChangedEvent, NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, NovelPanelCustomizationEvent, \
-    NovelPovTrackingToggleEvent
+    NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import DelayedSignalSlotConnector, action, wrap, label, scrolled, \
     ButtonPressResizeEventFilter, push_btn, tool_btn, insert_before_the_end, fade_out_and_gc
@@ -82,7 +82,6 @@ class SceneMiniEditor(QWidget, EventListener):
         self._textSynopsis = QTextEdit()
         self._textSynopsis.setProperty('white-bg', True)
         self._textSynopsis.setProperty('large-rounded', True)
-        self._textSynopsis.setPlaceholderText('Write a short summary of this scene')
         self._textSynopsis.setMaximumSize(200, 150)
 
         self._layout = vbox(self)
@@ -92,13 +91,15 @@ class SceneMiniEditor(QWidget, EventListener):
         self._layout.addWidget(self._textSynopsis)
         self._layout.addWidget(vspacer())
 
+        self._handle_scenes_organization()
+
         DelayedSignalSlotConnector(self._textSynopsis.textChanged, self._save, parent=self)
 
         self._charSelector.setVisible(self._novel.prefs.toggled(NovelSetting.Track_pov))
 
         self._repo = RepositoryPersistenceManager.instance()
         dispatcher = event_dispatchers.instance(self._novel)
-        dispatcher.register(self, SceneChangedEvent, NovelPovTrackingToggleEvent)
+        dispatcher.register(self, SceneChangedEvent, NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent)
 
     def setScene(self, scene: Scene):
         self.setScenes([scene])
@@ -151,11 +152,17 @@ class SceneMiniEditor(QWidget, EventListener):
                 self._freeze = False
         elif isinstance(event, NovelPovTrackingToggleEvent):
             self._charSelector.setVisible(event.toggled)
+        elif isinstance(event, NovelScenesOrganizationToggleEvent):
+            self._handle_scenes_organization()
 
     def _povChanged(self, character: Character):
         self._currentScene.pov = character
         self._repo.update_scene(self._currentScene)
         emit_event(self._novel, SceneChangedEvent(self, self._currentScene))
+
+    def _handle_scenes_organization(self):
+        unit = 'scene' if self._novel.prefs.is_scenes_organization() else 'chapter'
+        self._textSynopsis.setPlaceholderText(f'Briefly summarize this {unit}')
 
     def _save(self):
         if self._freeze:

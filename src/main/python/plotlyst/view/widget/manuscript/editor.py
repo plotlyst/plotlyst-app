@@ -579,8 +579,12 @@ class ManuscriptEditor(QWidget, EventListener):
         self.clear()
         self._scene = scene
 
-        self.textTitle.setText(self._scene.title)
-        self.textTitle.setPlaceholderText('Scene title')
+        if self._novel.prefs.is_scenes_organization():
+            self.textTitle.setText(self._scene.title)
+            self.textTitle.setPlaceholderText('Scene title')
+        else:
+            self.textTitle.setText(self._scene.title_or_index(self._novel))
+            self.textTitle.setPlaceholderText('Chapter title')
         self.textTitle.setReadOnly(False)
 
         wdg = self._initTextEdit(scene)
