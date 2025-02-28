@@ -2052,7 +2052,8 @@ class Scene:
         return self.__is_outcome(SceneOutcome.MOTION)
 
     def title_or_index(self, novel: 'Novel') -> str:
-        return self.title if self.title else f'Scene {novel.scenes.index(self) + 1}'
+        prefix = 'Scene' if novel.prefs.is_scenes_organization() else 'Chapter'
+        return self.title if self.title else f'{prefix} {novel.scenes.index(self) + 1}'
 
     def calculate_plot_progress(self):
         self.plot_pos_progress = 0
@@ -3939,6 +3940,7 @@ class NovelSetting(Enum):
     CHARACTER_TABLE_OCCUPATION = 'character_table_occupation'
     CHARACTER_TABLE_ENNEAGRAM = 'character_table_enneagram'
     CHARACTER_TABLE_MBTI = 'character_table_mbti'
+    Scenes_organization = 'scenes_organization'
 
     def scene_card_setting(self) -> bool:
         return self.name.startswith('SCENE_CARD')
@@ -3960,6 +3962,9 @@ class NovelPreferences:
 
     def setting(self, setting: NovelSetting, default: Any) -> Any:
         return self.settings.get(setting.value, default)
+
+    def is_scenes_organization(self) -> bool:
+        return self.settings.get(NovelSetting.Scenes_organization.value, True)
 
 
 @dataclass

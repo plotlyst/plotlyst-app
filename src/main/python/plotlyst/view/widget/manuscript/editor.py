@@ -44,7 +44,7 @@ from plotlyst.core.sprint import TimerModel
 from plotlyst.env import app_env
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
-from plotlyst.events import SceneDeletedEvent, SceneChangedEvent
+from plotlyst.events import SceneDeletedEvent, SceneChangedEvent, ScenesOrganizationResetEvent
 from plotlyst.service.manuscript import daily_progress, daily_overall_progress
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import tool_btn, fade_in, fade
@@ -508,7 +508,10 @@ class ManuscriptEditor(QWidget, EventListener):
     def event_received(self, event: Event):
         if isinstance(event, SceneChangedEvent):
             if self._scene == event.scene:
-                self.textTitle.setText(self._scene.title)
+                if self._novel.prefs.is_scenes_organization():
+                    self.textTitle.setText(self._scene.title)
+                else:
+                    self.textTitle.setText(self._scene.title_or_index(self._novel))
             for sceneLbl in self._sceneLabels:
                 if sceneLbl.scene == event.scene:
                     sceneLbl.refresh()
@@ -535,6 +538,9 @@ class ManuscriptEditor(QWidget, EventListener):
                     gc(removedTextedit)
                 self._scenes.remove(event.scene)
                 self.textChanged.emit()
+        elif isinstance(event, ScenesOrganizationResetEvent):
+            self.clear()
+            self.cleared.emit()
 
     @overrides
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
@@ -573,14 +579,19 @@ class ManuscriptEditor(QWidget, EventListener):
         title_font.setFamily(self._font.family())
         self.textTitle.setFont(title_font)
 
-        event_dispatchers.instance(self._novel).register(self, SceneDeletedEvent, SceneChangedEvent)
+        event_dispatchers.instance(self._novel).register(self, SceneDeletedEvent, SceneChangedEvent,
+                                                         ScenesOrganizationResetEvent)
 
     def setScene(self, scene: Scene):
         self.clear()
         self._scene = scene
 
-        self.textTitle.setText(self._scene.title)
-        self.textTitle.setPlaceholderText('Scene title')
+        if self._novel.prefs.is_scenes_organization():
+            self.textTitle.setText(self._scene.title)
+            self.textTitle.setPlaceholderText('Scene title')
+        else:
+            self.textTitle.setText(self._scene.title_or_index(self._novel))
+            self.textTitle.setPlaceholderText('Chapter title')
         self.textTitle.setReadOnly(False)
 
         wdg = self._initTextEdit(scene)

@@ -33,7 +33,8 @@ from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterChangedEvent, SceneChangedEvent, SceneDeletedEvent, \
-    CharacterDeletedEvent, NovelSyncEvent, StorylineCreatedEvent, StorylineRemovedEvent, NovelStoryStructureUpdated
+    CharacterDeletedEvent, NovelSyncEvent, StorylineCreatedEvent, StorylineRemovedEvent, NovelStoryStructureUpdated, \
+    NovelScenesOrganizationToggleEvent
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import link_buttons_to_pages, scrolled
 from plotlyst.view.generated.reports_view_ui import Ui_ReportsView
@@ -175,7 +176,7 @@ class ArcReportPage(ReportPage):
 class ManuscriptReportPage(ReportPage):
     def __init__(self, novel: Novel, parent=None):
         super(ManuscriptReportPage, self).__init__(novel, parent)
-        self._dispatcher.register(self, SceneChangedEvent, SceneDeletedEvent)
+        self._dispatcher.register(self, SceneChangedEvent, SceneDeletedEvent, NovelScenesOrganizationToggleEvent)
         self._wc_cache: List[int] = []
 
     @overrides

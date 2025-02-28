@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from overrides import overrides
+from qthandy import retain_when_hidden
 
 from plotlyst.core.domain import Novel
 from plotlyst.view.generated.report.manuscript_report_ui import Ui_ManuscriptReport
@@ -32,14 +33,19 @@ class ManuscriptReport(AbstractReport, Ui_ManuscriptReport):
         super(ManuscriptReport, self).__init__(novel, parent)
         self.chart_manuscript = ManuscriptLengthChart()
         self.chartChaptersLength.setChart(self.chart_manuscript)
-        self.cbScenesToggle.toggled.connect(self.setDisplayByScenes)
+        self.cbScenesToggle.clicked.connect(self._displayByScenesClicked)
+        retain_when_hidden(self.wdgTop)
 
         self.refresh()
 
     @overrides
     def refresh(self):
+        if not self.novel.prefs.is_scenes_organization():
+            self.cbScenesToggle.setChecked(True)
+            self.chart_manuscript.setDisplayByScenes(True)
+        self.wdgTop.setVisible(self.novel.prefs.is_scenes_organization())
         self.chart_manuscript.refresh(self.novel)
 
-    def setDisplayByScenes(self, display: bool):
-        self.chart_manuscript.setDisplayByScenes(display)
+    def _displayByScenesClicked(self, toggled: bool):
+        self.chart_manuscript.setDisplayByScenes(toggled)
         self.chart_manuscript.refresh(self.novel)

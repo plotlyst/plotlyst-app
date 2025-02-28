@@ -130,6 +130,40 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="btnAddScene">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>130</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="toolTip">
+             <string>Add new scene</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="shortcut">
+             <string>Ctrl+N</string>
+            </property>
+            <property name="positive" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="base" stdset="0">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <spacer name="horizontalSpacer_5">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -528,8 +562,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>100</width>
-                      <height>30</height>
+                      <width>98</width>
+                      <height>16</height>
                      </rect>
                     </property>
                     <property name="relaxed-white-bg" stdset="0">
@@ -881,7 +915,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>98</width>
+             <width>80</width>
              <height>70</height>
             </rect>
            </property>

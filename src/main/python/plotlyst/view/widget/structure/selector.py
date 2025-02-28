@@ -72,7 +72,8 @@ class StructureBeatSelectorMenu(ScrollableMenuWidget):
     def _fillUp(self):
         self.clear()
 
-        self.addSection('Associate this scene to a story structure beat')
+        unit = 'scene' if self.novel.prefs.is_scenes_organization() else 'chapter'
+        self.addSection(f'Associate this {unit} to a story structure beat')
         self.addSeparator()
 
         act = 1

@@ -56,45 +56,34 @@ def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: 
             return
 
     html: str = ''
-    for i, chapter in enumerate(novel.chapters):
-        scenes = novel.scenes_in_chapter(chapter)
-        chapter_heading = chapter_title(chapter, scenes, sceneTitle, povTitle)
-        html += f'<h1>{chapter_heading}</h1>'
-        first_paragraph = True
-        for j, scene in enumerate(scenes):
+    if novel.prefs.is_scenes_organization():
+        for i, chapter in enumerate(novel.chapters):
+            scenes = novel.scenes_in_chapter(chapter)
+            chapter_heading = chapter_title(chapter, scenes, sceneTitle, povTitle)
+            html += f'<h1>{chapter_heading}</h1>'
+            first_paragraph = True
+            for j, scene in enumerate(scenes):
+                if not scene.manuscript:
+                    continue
+
+                md_content = _prepare_scene_for_export(scene, first_paragraph)
+
+                scene_html = pypandoc.convert_text(md_content, to='html', format='md')
+                html += scene_html
+    else:
+        for i, scene in enumerate(novel.scenes):
+            if povTitle and scene.pov:
+                title = scene.pov.displayed_name()
+            else:
+                title = scene.title_or_index(novel)
+
+            html += f'<h1>{title}</h1>'
+            first_paragraph = True
+
             if not scene.manuscript:
                 continue
 
-            text_doc = QTextDocument()
-            text_doc.setHtml(scene.manuscript.content)
-
-            block: QTextBlock = text_doc.begin()
-            md_content: str = ''
-            while block.isValid():
-                text = block.text()
-                if not text:
-                    first_paragraph = True
-                    block_content = ''
-                elif text == '***' or text == '###':
-                    block_content = '<div custom-style="Text Aligned Center">***</div>'
-                    first_paragraph = True
-                else:
-                    cursor = QTextCursor(block)
-                    cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
-                    block_content = cursor.selection().toMarkdown()
-
-                    if block.blockFormat().alignment() & Qt.AlignmentFlag.AlignCenter:
-                        block_content = f'<div custom-style="Text Aligned Center">{block_content}</div>'
-                    elif block.blockFormat().alignment() & Qt.AlignmentFlag.AlignRight:
-                        block_content = f'<div custom-style="Text Aligned Right">{block_content}</div>'
-
-                    if first_paragraph:
-                        block_content = f'<div custom-style="First Paragraph">{block_content}</div>'
-                        first_paragraph = False
-
-                md_content += block_content
-
-                block = block.next()
+            md_content = _prepare_scene_for_export(scene, first_paragraph)
 
             scene_html = pypandoc.convert_text(md_content, to='html', format='md')
             html += scene_html
@@ -103,6 +92,39 @@ def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: 
     pypandoc.convert_text(html, to='docx', format='html', extra_args=spec_args, outputfile=target_path)
 
     ask_to_open_file(target_path)
+
+
+def _prepare_scene_for_export(scene: Scene, first_paragraph: bool) -> str:
+    text_doc = QTextDocument()
+    text_doc.setHtml(scene.manuscript.content)
+    block: QTextBlock = text_doc.begin()
+    md_content: str = ''
+    while block.isValid():
+        text = block.text()
+        if not text:
+            first_paragraph = True
+            block_content = ''
+        elif text == '***' or text == '###':
+            block_content = '<div custom-style="Text Aligned Center">***</div>'
+            first_paragraph = True
+        else:
+            cursor = QTextCursor(block)
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+            block_content = cursor.selection().toMarkdown()
+
+            if block.blockFormat().alignment() & Qt.AlignmentFlag.AlignCenter:
+                block_content = f'<div custom-style="Text Aligned Center">{block_content}</div>'
+            elif block.blockFormat().alignment() & Qt.AlignmentFlag.AlignRight:
+                block_content = f'<div custom-style="Text Aligned Right">{block_content}</div>'
+
+            if first_paragraph:
+                block_content = f'<div custom-style="First Paragraph">{block_content}</div>'
+                first_paragraph = False
+
+        md_content += block_content
+
+        block = block.next()
+    return md_content
 
 
 def export_manuscript_to_pdf(novel: Novel, manuscript: QTextDocument):
@@ -160,49 +182,72 @@ def format_manuscript(novel: Novel, sceneTitle: bool = False, povTitle: bool = F
 
     cursor: QTextCursor = document.rootFrame().firstCursorPosition()
 
-    for i, chapter in enumerate(novel.chapters):
-        cursor.insertBlock(chapter_title_block_format, chapter_title_char_format)
+    if novel.prefs.is_scenes_organization():
+        for i, chapter in enumerate(novel.chapters):
+            cursor.insertBlock(chapter_title_block_format, chapter_title_char_format)
 
-        scenes = novel.scenes_in_chapter(chapter)
-        chapterTitle = chapter_title(chapter, scenes, sceneTitle, povTitle)
-        cursor.insertText(chapterTitle)
+            scenes = novel.scenes_in_chapter(chapter)
+            chapterTitle = chapter_title(chapter, scenes, sceneTitle, povTitle)
+            cursor.insertText(chapterTitle)
 
-        cursor.insertBlock(default_block_format)
+            cursor.insertBlock(default_block_format)
 
-        first_paragraph = True
-        for j, scene in enumerate(scenes):
+            first_paragraph = True
+            for j, scene in enumerate(scenes):
+                if not scene.manuscript:
+                    continue
+
+                _format_scene(cursor, default_block_format, first_block_format, first_paragraph, scene)
+                if j == len(scenes) - 1 and i != len(novel.chapters) - 1:
+                    cursor.insertBlock(page_break_format)
+    else:
+        for i, scene in enumerate(novel.scenes):
+            cursor.insertBlock(chapter_title_block_format, chapter_title_char_format)
+            if povTitle and scene.pov:
+                title = scene.pov.displayed_name()
+            else:
+                title = scene.title_or_index(novel)
+            cursor.insertText(title)
+
+            cursor.insertBlock(default_block_format)
+
+            first_paragraph = True
             if not scene.manuscript:
                 continue
 
-            scene_text_doc = QTextDocument()
-            scene_text_doc.setHtml(scene.manuscript.content)
-            block = scene_text_doc.begin()
-            while block.isValid():
-                if first_paragraph:
-                    first_paragraph = False
-                    block_format = first_block_format
-                else:
-                    block_format = default_block_format
-
-                block_format.setAlignment(block.blockFormat().alignment())
-                cursor.insertBlock(block_format)
-
-                block_cursor = QTextCursor(block)
-                block_cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
-
-                text = block.text()
-                if not text or text == '###' or text == '***':
-                    first_paragraph = True
-                    cursor.insertText(text)
-                else:
-                    cursor.insertMarkdown(block_cursor.selection().toMarkdown())
-
-                block = block.next()
-
-            if j == len(scenes) - 1 and i != len(novel.chapters) - 1:
+            _format_scene(cursor, default_block_format, first_block_format, first_paragraph, scene)
+            if i != len(novel.scenes) - 1:
                 cursor.insertBlock(page_break_format)
 
     return document
+
+
+def _format_scene(cursor: QTextCursor, default_block_format: QTextBlockFormat, first_block_format: QTextBlockFormat,
+                  first_paragraph: bool, scene: Scene):
+    scene_text_doc = QTextDocument()
+    scene_text_doc.setHtml(scene.manuscript.content)
+    block = scene_text_doc.begin()
+    while block.isValid():
+        if first_paragraph:
+            first_paragraph = False
+            block_format = first_block_format
+        else:
+            block_format = default_block_format
+
+        block_format.setAlignment(block.blockFormat().alignment())
+        cursor.insertBlock(block_format)
+
+        block_cursor = QTextCursor(block)
+        block_cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+
+        text = block.text()
+        if not text or text == '###' or text == '***':
+            first_paragraph = True
+            cursor.insertText(text)
+        else:
+            cursor.insertMarkdown(block_cursor.selection().toMarkdown())
+
+        block = block.next()
 
 
 def chapter_title(chapter: Chapter, scenes: List[Scene], sceneTitle: bool = False, povTitle: bool = False) -> str:

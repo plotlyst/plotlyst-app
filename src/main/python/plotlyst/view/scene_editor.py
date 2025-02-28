@@ -39,7 +39,7 @@ from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import NovelAboutToSyncEvent, SceneStoryBeatChangedEvent, \
     NovelStorylinesToggleEvent, NovelStructureToggleEvent, NovelPovTrackingToggleEvent, SceneChangedEvent, \
-    NovelSyncEvent
+    NovelSyncEvent, NovelScenesOrganizationToggleEvent
 from plotlyst.model.characters_model import CharactersSceneAssociationTableModel
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import emoji_font, set_tab_icon, \
@@ -128,7 +128,6 @@ class SceneEditor(QObject, EventListener):
 
         self.ui.textNotes.setTitleVisible(False)
         self.ui.textNotes.setToolbarVisible(False)
-        self.ui.textNotes.setPlaceholderText('Write some additional notes for this scene')
         self.ui.textNotes.textEdit.setDocumentMargin(20)
 
         self.tblCharacters = QTableView()
@@ -207,7 +206,9 @@ class SceneEditor(QObject, EventListener):
         dispatcher = event_dispatchers.instance(self.novel)
         dispatcher.register(self, NovelAboutToSyncEvent, NovelSyncEvent, NovelStorylinesToggleEvent,
                             NovelStructureToggleEvent,
-                            NovelPovTrackingToggleEvent)
+                            NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent)
+
+        self._handle_scenes_organization()
 
     @overrides
     def event_received(self, event: Event):
@@ -223,6 +224,8 @@ class SceneEditor(QObject, EventListener):
             self._structureSelector.setVisible(event.toggled)
         elif isinstance(event, NovelPovTrackingToggleEvent):
             self.ui.wdgPov.setVisible(event.toggled)
+        elif isinstance(event, NovelScenesOrganizationToggleEvent):
+            self._handle_scenes_organization()
 
     def close_event(self):
         if self.scene is not None:
@@ -441,3 +444,11 @@ class SceneEditor(QObject, EventListener):
     def _scene_selected(self, scene: Scene):
         self._save_scene()
         QTimer.singleShot(10, lambda: self.set_scene(scene))
+
+    def _handle_scenes_organization(self):
+        unit = 'scene' if self.novel.prefs.is_scenes_organization() else 'chapter'
+        self.ui.lineTitle.setPlaceholderText(f'{unit.capitalize()} title')
+        self.ui.textSynopsis.setPlaceholderText(f'Briefly summarize this {unit}')
+        self.ui.textNotes.setPlaceholderText(f'Write some additional notes for this {unit}')
+        self._btnPlotSelector.setToolTip(f'Link storylines to this {unit}')
+        self.ui.btnStageCharacterLabel.setToolTip(f'Select which characters are active in this {unit}')

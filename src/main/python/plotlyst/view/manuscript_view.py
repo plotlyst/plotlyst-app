@@ -26,13 +26,14 @@ from qthandy import translucent, bold, margins, spacer, transparent, vspacer, de
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_MAIN_COLOR
+from plotlyst.common import PLOTLYST_MAIN_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, Document, Chapter, DocumentProgress
 from plotlyst.core.domain import Scene
 from plotlyst.env import app_env
 from plotlyst.event.core import emit_global_event, emit_critical, emit_info, Event, emit_event
 from plotlyst.events import SceneChangedEvent, OpenDistractionFreeMode, \
-    ExitDistractionFreeMode, NovelSyncEvent, CloseNovelEvent, SceneOrderChangedEvent, SceneAddedEvent
+    ExitDistractionFreeMode, NovelSyncEvent, CloseNovelEvent, SceneOrderChangedEvent, SceneAddedEvent, \
+    NovelScenesOrganizationToggleEvent
 from plotlyst.resources import ResourceType
 from plotlyst.service.grammar import language_tool_proxy
 from plotlyst.service.persistence import flush_or_fail
@@ -58,7 +59,8 @@ from plotlyst.view.widget.tree import TreeSettings
 class ManuscriptView(AbstractNovelView):
 
     def __init__(self, novel: Novel):
-        super().__init__(novel, event_types=[SceneOrderChangedEvent, SceneAddedEvent])
+        super().__init__(novel,
+                         event_types=[SceneOrderChangedEvent, SceneAddedEvent, NovelScenesOrganizationToggleEvent])
         self.ui = Ui_ManuscriptView()
         self.ui.setupUi(self.widget)
         self.ui.splitter.setSizes([150, 500])
@@ -67,7 +69,9 @@ class ManuscriptView(AbstractNovelView):
 
         self.ui.lblWc.setAlignment(Qt.AlignmentFlag.AlignRight)
 
-        self.ui.btnAdd.setIcon(IconRegistry.plus_icon('white'))
+        self.ui.btnAdd.setIcon(IconRegistry.plus_icon(RELAXED_WHITE_COLOR))
+        self.ui.btnAddScene.setIcon(IconRegistry.plus_icon(RELAXED_WHITE_COLOR))
+        self.ui.btnAddScene.clicked.connect(self.ui.treeChapters.addScene)
 
         self.ui.btnManuscript.setIcon(IconRegistry.manuscript_icon(color_on='black'))
         bold(self.ui.btnManuscript)
@@ -180,6 +184,8 @@ class ManuscriptView(AbstractNovelView):
         self._addSceneMenu.addAction(
             action('Add chapter', IconRegistry.chapter_icon(), self.ui.treeChapters.addChapter))
 
+        self._handle_scenes_organization()
+
         self._settingsWidget = ManuscriptEditorSettingsWidget(novel)
         self._settingsWidget.langSelectionWidget.languageChanged.connect(self._language_changed)
         self.ui.scrollSettings.layout().addWidget(self._settingsWidget)
@@ -233,6 +239,9 @@ class ManuscriptView(AbstractNovelView):
         elif isinstance(event, SceneAddedEvent):
             if event.scene.chapter and event.scene.chapter == self.textEditor.chapter():
                 self._editChapter(self.textEditor.chapter())
+            return
+        elif isinstance(event, NovelScenesOrganizationToggleEvent):
+            self._handle_scenes_organization()
             return
         super(ManuscriptView, self).event_received(event)
 
@@ -459,3 +468,7 @@ class ManuscriptView(AbstractNovelView):
         diff = self.ui.scrollEditor.verticalScrollBar().maximum() - value
         if 0 < diff < 40:
             scroll_to_bottom(self.ui.scrollEditor)
+
+    def _handle_scenes_organization(self):
+        self.ui.btnAdd.setVisible(self.novel.prefs.is_scenes_organization())
+        self.ui.btnAddScene.setVisible(not self.novel.prefs.is_scenes_organization())

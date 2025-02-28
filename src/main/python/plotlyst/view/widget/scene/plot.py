@@ -222,7 +222,8 @@ class ScenePlotSelectorMenu(MenuWidget):
             return
         self.clear()
         occupied_plot_ids = self._occupiedPlotIds()
-        self.addSection('Link storylines to this scene')
+        self.addSection(
+            f'Link storylines to this {"scene" if self._novel.prefs.is_scenes_organization() else "chapter"}')
         self.addSeparator()
         for plot in self._novel.plots:
             action_ = action(plot.text, IconRegistry.from_name(plot.icon, plot.icon_color),
