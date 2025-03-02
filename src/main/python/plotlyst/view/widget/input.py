@@ -29,7 +29,7 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QObject, QEvent, QTimer, QPoint, QSize, pyqtSignal, QModelIndex, QItemSelectionModel
 from PyQt6.QtGui import QFont, QTextCursor, QTextCharFormat, QKeyEvent, QPaintEvent, QPainter, QBrush, QLinearGradient, \
     QColor, QSyntaxHighlighter, \
-    QTextDocument, QTextBlockUserData, QIcon, QResizeEvent, QFocusEvent, QTextBlockFormat
+    QTextDocument, QTextBlockUserData, QIcon, QResizeEvent, QFocusEvent
 from PyQt6.QtWidgets import QTextEdit, QFrame, QPushButton, QStylePainter, QStyleOptionButton, QStyle, QMenu, \
     QApplication, QToolButton, QLineEdit, QWidgetAction, QListView, QSpinBox, QWidget, QLabel, QDialog
 from language_tool_python import LanguageTool
@@ -720,7 +720,7 @@ class DocumentTextEditor(TextEditorBase):
         self.textEdit.setProperty('transparent', True)
         self.textEdit.setBlockFormat(lineSpacing=110, margin_bottom=10, margin_top=10)
         self.textEdit.setAutoFormatting(QTextEdit.AutoFormattingFlag.AutoAll)
-        self.textEdit.setPlaceholderText("Begin writing, or press '/' for commands...")
+        self.textEdit.setBlockPlaceholderEnabled(True)
 
         self.setWidthPercentage(90)
 

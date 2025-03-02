@@ -613,6 +613,7 @@ class ManuscriptEditor(QWidget, EventListener):
 
         for scene in scenes:
             wdg = self._initTextEdit(scene)
+            wdg.setPlaceholderText('Write this scene...')
 
             sceneLbl = SceneSeparator(scene)
             sceneLbl.clicked.connect(partial(self.sceneSeparatorClicked.emit, scene))
@@ -771,7 +772,7 @@ class ManuscriptEditor(QWidget, EventListener):
         _textedit.selectionChanged.connect(self.selectionChanged)
         _textedit.setProperty('borderless', True)
 
-        _textedit.setPlaceholderText('Write this scene...')
+        _textedit.setPlaceholderText('Begin writing your story...')
         _textedit.setSidebarEnabled(False)
         _textedit.setReadOnly(self._novel.is_readonly())
         _textedit.setDocumentMargin(0)
