@@ -380,7 +380,6 @@ class LabelsEditorWidget(QFrame):
         self.layout().addWidget(self.btnEdit, alignment=Qt.AlignmentFlag.AlignTop)
 
         self._wdgLabels = LabelsWidget()
-        self._wdgLabels.setStyleSheet('LabelsWidget {border: 1px solid black;}')
         self._wdgLabels.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.layout().addWidget(self._wdgLabels)
 
