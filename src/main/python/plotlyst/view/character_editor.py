@@ -386,7 +386,6 @@ class CharacterEditor(QObject, EventListener):
         self.ui.btnMoreGender.setText('«' if toggled else '»')
 
     def _avatar_updated(self):
-        self.ui.wdgBackstory.refreshCharacter()
         if self.character.prefs.avatar.use_role and self.character.role is None:
             qtanim.shake(self.ui.btnRole)
 

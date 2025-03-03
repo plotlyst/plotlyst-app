@@ -627,6 +627,7 @@ class Character:
     personality: CharacterPersonality = field(default_factory=CharacterPersonality)
     alias: str = field(default='', metadata=config(exclude=exclude_if_empty))
     origin_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+    origin: List['WorldBuildingEntity'] = field(default_factory=list)
 
     def enneagram(self) -> Optional[SelectionItem]:
         if self.prefs.toggled(NovelSetting.Character_enneagram):
