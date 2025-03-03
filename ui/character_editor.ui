@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1206</width>
+    <width>920</width>
     <height>630</height>
    </rect>
   </property>
@@ -472,7 +472,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>858</width>
+            <width>652</width>
             <height>477</height>
            </rect>
           </property>
@@ -516,7 +516,7 @@
        <enum>Qt::ClickFocus</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tabTopics">
        <property name="relaxed-white-bg" stdset="0">
@@ -630,7 +630,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>327</width>
+             <width>247</width>
              <height>550</height>
             </rect>
            </property>
@@ -678,28 +678,25 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tabGoals">
-       <property name="relaxed-white-bg" stdset="0">
-        <bool>true</bool>
-       </property>
+      <widget class="QWidget" name="tabOrigin">
        <attribute name="title">
-        <string>Plan</string>
+        <string>Origin</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <property name="spacing">
-         <number>3</number>
+         <number>0</number>
         </property>
         <property name="leftMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="topMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="rightMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="bottomMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <item>
          <widget class="QScrollArea" name="scrollArea_2">
@@ -709,16 +706,16 @@
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaPlans">
+          <widget class="QWidget" name="scrollAreaOriginContents">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>96</width>
-             <height>26</height>
+             <width>249</width>
+             <height>598</height>
             </rect>
            </property>
-           <property name="relaxed-white-bg" stdset="0">
+           <property name="bg-image" stdset="0">
             <bool>true</bool>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_11">
@@ -726,17 +723,38 @@
              <number>3</number>
             </property>
             <property name="leftMargin">
-             <number>2</number>
+             <number>10</number>
             </property>
             <property name="topMargin">
-             <number>2</number>
+             <number>15</number>
             </property>
             <property name="rightMargin">
-             <number>2</number>
+             <number>10</number>
             </property>
             <property name="bottomMargin">
-             <number>2</number>
+             <number>15</number>
             </property>
+            <item>
+             <widget class="QWidget" name="wdgCenterEditor" native="true">
+              <layout class="QVBoxLayout" name="verticalLayout_12">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+              </layout>
+             </widget>
+            </item>
            </layout>
           </widget>
          </widget>

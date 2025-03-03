@@ -23,6 +23,7 @@ from typing import Optional
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, QObject, QTimer, Qt
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QAbstractButton, QLineEdit, QCompleter
 from overrides import overrides
 from qthandy import translucent, bold, italic, incr_font
@@ -31,7 +32,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.client import json_client
-from plotlyst.core.domain import Novel, Character, Document, FEMALE, SelectionItem
+from plotlyst.core.domain import Novel, Character, Document, FEMALE, SelectionItem, WorldBuildingEntity
 from plotlyst.core.template import protagonist_role
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event
@@ -40,7 +41,7 @@ from plotlyst.events import NovelAboutToSyncEvent
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.service.tour import TourService
-from plotlyst.view.common import set_tab_icon, ButtonPressResizeEventFilter, set_tab_visible, action
+from plotlyst.view.common import set_tab_icon, ButtonPressResizeEventFilter, set_tab_visible, action, to_rgba_str
 from plotlyst.view.generated.character_editor_ui import Ui_CharacterEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_bg_image, apply_white_menu
@@ -54,6 +55,8 @@ from plotlyst.view.widget.tour.core import CharacterEditorTourEvent, \
     CharacterEditorNameLineEditTourEvent, TourEvent, CharacterEditorNameFilledTourEvent, \
     CharacterEditorAvatarDisplayTourEvent, CharacterEditorAvatarMenuTourEvent, CharacterEditorBackButtonTourEvent, \
     CharacterEditorAvatarMenuCloseTourEvent
+from plotlyst.view.widget.world.editor import WorldBuildingEntityEditor
+from plotlyst.view.widget.world.theme import WorldBuildingPalette
 
 
 class CharacterEditor(QObject, EventListener):
@@ -154,10 +157,8 @@ class CharacterEditor(QObject, EventListener):
                      IconRegistry.topics_icon(color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBigFive, IconRegistry.big_five_icon(PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabNotes, IconRegistry.document_edition_icon())
-        set_tab_icon(self.ui.tabAttributes, self.ui.tabGoals, IconRegistry.goal_icon('black', PLOTLYST_SECONDARY_COLOR))
 
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBigFive, False)
-        set_tab_visible(self.ui.tabAttributes, self.ui.tabGoals, False)
 
         self.ui.wdgAvatar.btnAvatar.setToolTip('Character avatar. Click to add an image')
         self.ui.wdgAvatar.avatarUpdated.connect(self._avatar_updated)
@@ -171,10 +172,23 @@ class CharacterEditor(QObject, EventListener):
         self.wdgTopicsEditor = CharacterTopicsEditor()
         self.ui.tabTopics.layout().addWidget(self.wdgTopicsEditor)
 
+        self._palette = WorldBuildingPalette(bg_color='#ede0d4', primary_color='#510442', secondary_color='#DABFA7',
+                                             tertiary_color='#E3D0BD')
+        self.originEditor = WorldBuildingEntityEditor(self.novel, self._palette)
+        trans_bg_color = to_rgba_str(QColor(self._palette.bg_color), 245)
+        self.ui.wdgCenterEditor.setStyleSheet(f'''
+                        #wdgCenterEditor {{
+                            background: {trans_bg_color};
+                            border-radius: 12px;
+                        }}
+                        ''')
+        self.ui.wdgCenterEditor.layout().addWidget(self.originEditor)
+
         self.profile = CharacterProfileEditor(self.novel)
         self.ui.wdgProfile.layout().addWidget(self.profile)
 
         apply_bg_image(self.ui.scrollAreaBackstoryContents, resource_registry.cover1)
+        apply_bg_image(self.ui.scrollAreaOriginContents, resource_registry.cover1)
 
         self.ui.btnClose.clicked.connect(self._save)
 
@@ -238,6 +252,7 @@ class CharacterEditor(QObject, EventListener):
         self.ui.wdgAvatar.setUploadPopupMenu()
         self.wdgTopicsEditor.setCharacter(self.character)
         self.ui.wdgBackstory.setCharacter(self.character)
+        self.originEditor.setEntity(WorldBuildingEntity('Test', side_visible=False))
         self.profile.setCharacter(self.character)
         if self.character.document and self.character.document.loaded:
             self.ui.textEdit.setText(self.character.document.content, self.character.name, title_read_only=True)

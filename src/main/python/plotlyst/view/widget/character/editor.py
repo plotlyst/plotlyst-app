@@ -922,6 +922,7 @@ class CharacterTimelineWidget(TimelineWidget):
 
     def setCharacter(self, character: Character):
         self.character = character
+        self.refresh()
 
     @overrides
     def events(self) -> List[BackstoryEvent]:
