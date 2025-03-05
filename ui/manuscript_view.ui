@@ -423,12 +423,6 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
             <property name="maximumSize">
              <size>
               <width>200</width>
@@ -529,6 +523,25 @@
                  </property>
                 </layout>
                </widget>
+               <widget class="QWidget" name="pageFind">
+                <layout class="QVBoxLayout" name="verticalLayout_4">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>2</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                </layout>
+               </widget>
                <widget class="QWidget" name="pageSettings">
                 <layout class="QVBoxLayout" name="verticalLayout_18">
                  <property name="spacing">
@@ -562,7 +575,7 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>98</width>
+                      <width>84</width>
                       <height>16</height>
                      </rect>
                     </property>
@@ -736,6 +749,34 @@
                </property>
                <property name="toolTip">
                 <string>Readability</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>28</width>
+                 <height>28</height>
+                </size>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <property name="transparent-circle-bg-on-hover" stdset="0">
+                <bool>true</bool>
+               </property>
+               <property name="large" stdset="0">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="btnFind">
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>Find and replace</string>
                </property>
                <property name="text">
                 <string/>
