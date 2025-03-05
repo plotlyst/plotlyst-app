@@ -216,11 +216,6 @@ class CharactersView(AbstractNovelView):
         self._progress.characterClicked.connect(self._edit_character)
         self._progress.refresh()
 
-        if not app_env.profile().get('backstory', False):
-            self._progressOverlay = PremiumOverlayWidget(self.ui.pageProgressView, 'Character progress tracking',
-                                                         icon='mdi.progress-check',
-                                                         alt_link='https://plotlyst.com/docs/characters/')
-
         if not app_env.profile().get('network', False):
             self._networkOverlay = PremiumOverlayWidget(self.ui.pageRelationsView, 'Character network',
                                                         icon='ph.share-network-bold',
