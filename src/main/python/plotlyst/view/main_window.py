@@ -34,7 +34,8 @@ from qttextedit.ops import DEFAULT_FONT_FAMILIES
 from textstat import textstat
 
 from plotlyst.common import NAV_BAR_BUTTON_DEFAULT_COLOR, \
-    NAV_BAR_BUTTON_CHECKED_COLOR, PLOTLYST_MAIN_COLOR, PLACEHOLDER_TEXT_COLOR, PLOTLYST_TERTIARY_COLOR, BLACK_COLOR
+    NAV_BAR_BUTTON_CHECKED_COLOR, PLOTLYST_MAIN_COLOR, PLACEHOLDER_TEXT_COLOR, PLOTLYST_TERTIARY_COLOR, BLACK_COLOR, \
+    DEFAULT_PREMIUM_LINK
 from plotlyst.core.client import client
 from plotlyst.core.domain import Novel, NovelPanel, ScenesView, NovelSetting, NovelDescriptor
 from plotlyst.core.text import sentence_count
@@ -601,6 +602,10 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             lambda: open_url('https://www.facebook.com/people/Plotlyst/61557773998679/'))
         self.actionYoutube.triggered.connect(lambda: open_url('https://www.youtube.com/@Plotlyst'))
         self.actionPinterest.triggered.connect(lambda: open_url('https://pinterest.com/Plotlyst'))
+
+        self.actionPurchase.setIcon(IconRegistry.from_name('ei.shopping-cart'))
+        self.actionPurchase.triggered.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
+        self.actionPurchase.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
 
         if not app_env.is_mac():
             self.actionAbout.setIcon(IconRegistry.from_name('fa5s.info'))

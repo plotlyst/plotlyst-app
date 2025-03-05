@@ -22,15 +22,16 @@ from typing import List, Optional
 from PyQt6.QtCore import pyqtSignal, QSize, Qt, QEvent, QObject
 from PyQt6.QtGui import QPixmap, QColor
 from overrides import overrides
-from qthandy import busy, vspacer, margins, pointy
+from qthandy import busy, vspacer, margins, pointy, retain_when_hidden
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import NAV_BAR_BUTTON_DEFAULT_COLOR, \
-    NAV_BAR_BUTTON_CHECKED_COLOR, RELAXED_WHITE_COLOR
+    NAV_BAR_BUTTON_CHECKED_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK
 from plotlyst.core.client import client
 from plotlyst.core.domain import NovelDescriptor, StoryType, Novel
 from plotlyst.core.help import home_page_welcome_text
+from plotlyst.env import app_env
 from plotlyst.event.core import emit_global_event, Event
 from plotlyst.event.handler import global_event_dispatcher
 from plotlyst.events import NovelDeletedEvent, NovelUpdatedEvent
@@ -72,6 +73,7 @@ class HomeView(AbstractView):
         self.ui.lblBanner.setPixmap(
             QPixmap(resource_registry.banner).scaled(180, 60, Qt.AspectRatioMode.KeepAspectRatio,
                                                      Qt.TransformationMode.SmoothTransformation))
+        self.ui.btnPurchase.setIcon(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR))
         self.ui.btnJoinDiscord.setIcon(IconRegistry.from_name('fa5b.discord', RELAXED_WHITE_COLOR))
         self.ui.btnTwitter.setIcon(IconRegistry.from_name('fa5b.twitter', RELAXED_WHITE_COLOR))
         self.ui.btnInstagram.setIcon(IconRegistry.from_name('fa5b.instagram', RELAXED_WHITE_COLOR))
@@ -80,6 +82,7 @@ class HomeView(AbstractView):
         self.ui.btnFacebook.setIcon(IconRegistry.from_name('fa5b.facebook', RELAXED_WHITE_COLOR))
         self.ui.btnYoutube.setIcon(IconRegistry.from_name('fa5b.youtube', RELAXED_WHITE_COLOR))
         self.ui.btnPinterest.setIcon(IconRegistry.from_name('fa5b.pinterest', RELAXED_WHITE_COLOR))
+        self.ui.btnPurchase.installEventFilter(OpacityEventFilter(self.ui.btnPurchase, leaveOpacity=0.8))
         self.ui.btnJoinDiscord.installEventFilter(OpacityEventFilter(self.ui.btnJoinDiscord, leaveOpacity=0.8))
         self.ui.btnTwitter.installEventFilter(OpacityEventFilter(self.ui.btnTwitter, leaveOpacity=0.8))
         self.ui.btnInstagram.installEventFilter(OpacityEventFilter(self.ui.btnInstagram, leaveOpacity=0.8))
@@ -88,6 +91,7 @@ class HomeView(AbstractView):
         self.ui.btnFacebook.installEventFilter(OpacityEventFilter(self.ui.btnFacebook, leaveOpacity=0.8))
         self.ui.btnYoutube.installEventFilter(OpacityEventFilter(self.ui.btnYoutube, leaveOpacity=0.8))
         self.ui.btnPinterest.installEventFilter(OpacityEventFilter(self.ui.btnPinterest, leaveOpacity=0.8))
+        self.ui.btnPurchase.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnPurchase))
         self.ui.btnJoinDiscord.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnJoinDiscord))
         self.ui.btnTwitter.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnTwitter))
         self.ui.btnInstagram.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnInstagram))
@@ -97,6 +101,7 @@ class HomeView(AbstractView):
         self.ui.btnYoutube.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnYoutube))
         self.ui.btnPinterest.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnPinterest))
         self.ui.btnJoinDiscord.clicked.connect(lambda: open_url('https://discord.com/invite/9HZWnvNzM6'))
+        self.ui.btnPurchase.clicked.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
         self.ui.btnTwitter.clicked.connect(lambda: open_url('https://twitter.com/plotlyst'))
         self.ui.btnInstagram.clicked.connect(lambda: open_url('https://www.instagram.com/plotlyst'))
         self.ui.btnThreads.clicked.connect(lambda: open_url('https://threads.net/@plotlyst'))
@@ -106,9 +111,13 @@ class HomeView(AbstractView):
         self.ui.btnYoutube.clicked.connect(lambda: open_url('https://www.youtube.com/@Plotlyst'))
         self.ui.btnPinterest.clicked.connect(lambda: open_url('https://pinterest.com/Plotlyst'))
 
+        self.ui.btnPurchase.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
+        retain_when_hidden(self.ui.btnPurchase)
+
         self.ui.btnYoutube.setHidden(True)
         self.ui.btnPinterest.setHidden(True)
 
+        self.ui.btnPurchase.setStyleSheet(f'color: {RELAXED_WHITE_COLOR}; border: 1px hidden black;')
         apply_button_palette_color(self.ui.btnJoinDiscord, RELAXED_WHITE_COLOR)
         pointy(self.ui.lblBanner)
         self.ui.lblBanner.installEventFilter(OpacityEventFilter(self.ui.lblBanner, leaveOpacity=1.0, enterOpacity=0.8))

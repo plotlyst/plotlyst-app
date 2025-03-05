@@ -1046,6 +1046,7 @@
     <addaction name="actionFeatureRequest"/>
     <addaction name="actionRoadmap"/>
     <addaction name="separator"/>
+    <addaction name="actionPurchase"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -1324,6 +1325,11 @@
   <action name="actionPatronRecognitionBuilder">
    <property name="text">
     <string>Patron Recognition Builder</string>
+   </property>
+  </action>
+  <action name="actionPurchase">
+   <property name="text">
+    <string>Purchase</string>
    </property>
   </action>
  </widget>
