@@ -37,6 +37,7 @@ from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
+from plotlyst.view.widget.display import PremiumMessagePopup
 from plotlyst.view.widget.tree import TreeView, ContainerNode, TreeSettings
 
 
@@ -48,8 +49,7 @@ class DocumentAdditionMenu(MenuWidget):
         self._novel = novel
 
         self.addAction(action('Document', IconRegistry.document_edition_icon(), self._documentSelected))
-        if app_env.profile().get('mindmap'):
-            self.addAction(action('Mind map', IconRegistry.from_name('ri.mind-map'), self._mindmapSelected))
+        self.addAction(action('Mind map', IconRegistry.from_name('ri.mind-map'), self._mindmapSelected))
         self.addSeparator()
         self.addAction(action('Link PDF', IconRegistry.from_name('fa5.file-pdf'), self._openPdf))
         self.addSeparator()
@@ -86,10 +86,13 @@ class DocumentAdditionMenu(MenuWidget):
         self.documentTriggered.emit(doc)
 
     def _mindmapSelected(self):
-        doc = Document('Mindmap', type=DocumentType.MIND_MAP, icon='ri.mind-map', diagram=Diagram(''))
-        doc.diagram.data = DiagramData()
-        doc.diagram.loaded = True
-        self.documentTriggered.emit(doc)
+        if app_env.profile().get('mindmap', False):
+            doc = Document('Mindmap', type=DocumentType.MIND_MAP, icon='ri.mind-map', diagram=Diagram(''))
+            doc.diagram.data = DiagramData()
+            doc.diagram.loaded = True
+            self.documentTriggered.emit(doc)
+        else:
+            PremiumMessagePopup.popup('Mindmap', 'ri.mind-map', 'https://plotlyst.com/docs/characters/')
 
     def _premiseSelected(self):
         doc = Document('Premise', type=DocumentType.PREMISE, icon='mdi.flower')

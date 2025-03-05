@@ -575,15 +575,11 @@ class CopiedTextMessage(QLabel):
         qtanim.fade_in(self, 150, teardown=finish)
 
 
-class PremiumMessageWidget(QFrame):
+class _PremiumMessageWidgetBase(QWidget):
     def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
                  parent=None):
         super().__init__(parent)
-        vbox(self, 15, 8)
-        self.setProperty('white-bg', True)
-        self.setProperty('large-rounded', True)
-        sp(self).h_max().v_max()
-
+        vbox(self, 0, 8)
         self.btnUpgrade = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
                                    'Purchase',
                                    tooltip='Upgrade Plotlyst',
@@ -612,6 +608,30 @@ class PremiumMessageWidget(QFrame):
             btnLink.clicked.connect(lambda: open_url(alt_link))
             self.layout().addWidget(btnLink, alignment=Qt.AlignmentFlag.AlignRight)
         self.layout().addWidget(wrap(self.btnUpgrade, margin_top=10), alignment=Qt.AlignmentFlag.AlignCenter)
+
+
+class PremiumMessageWidget(QFrame):
+    def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 parent=None):
+        super().__init__(parent)
+        vbox(self, 15, 8)
+        self.setProperty('white-bg', True)
+        self.setProperty('large-rounded', True)
+        sp(self).h_max().v_max()
+
+        self.layout().addWidget(_PremiumMessageWidgetBase(feature, icon, alt_link, main_link))
+
+
+class PremiumMessagePopup(PopupDialog):
+    def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 parent=None):
+        super().__init__(parent)
+
+        self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        self.frame.layout().addWidget(_PremiumMessageWidgetBase(feature, icon, alt_link, main_link))
+
+    def display(self):
+        self.exec()
 
 
 class PremiumOverlayWidget(QFrame):
