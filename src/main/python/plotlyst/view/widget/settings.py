@@ -23,11 +23,11 @@ from typing import Dict, Optional, List
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent
-from PyQt6.QtGui import QIcon, QColor
+from PyQt6.QtGui import QIcon, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QPushButton, QToolButton, QGridLayout, QFormLayout
 from overrides import overrides
 from qthandy import transparent, sp, vbox, hbox, vspacer, incr_font, pointy, grid, margins, line, spacer, translucent
-from qthandy.filter import OpacityEventFilter
+from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, DEFAULT_PREMIUM_LINK, RELAXED_WHITE_COLOR
@@ -43,9 +43,8 @@ from plotlyst.events import NovelPanelCustomizationEvent, \
     NovelCharacterLoveStyleToggleEvent, NovelCharacterWorkStyleToggleEvent, NovelScenesOrganizationToggleEvent, \
     ScenesOrganizationResetEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager, reset_scenes_organization
-from plotlyst.view.common import label, ButtonPressResizeEventFilter, push_btn, open_url
+from plotlyst.view.common import label, ButtonPressResizeEventFilter, push_btn, open_url, action
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.button import SmallToggleButton
 from plotlyst.view.widget.confirm import asked
@@ -311,7 +310,7 @@ class NovelPanelCustomizationToggle(QToolButton):
         self.installEventFilter(OpacityEventFilter(self, ignoreCheckedButton=True))
 
         self.setStyleSheet(f'''
-            QToolButton {{
+            QToolButton:enabled {{
                 color: grey;
                 background: lightgrey;
                 border: 1px solid lightgrey;
@@ -320,6 +319,12 @@ class NovelPanelCustomizationToggle(QToolButton):
             QToolButton:checked {{
                 color: black;
                 background: {PLOTLYST_TERTIARY_COLOR};
+            }}
+            QToolButton:disabled {{
+                border: 0px;
+                color: black;
+                opacity: 0.8;
+                background-color: rgba(0, 0, 0, 0);
             }}
         ''')
 
@@ -363,12 +368,15 @@ class NovelPanelSettingsWidget(QWidget):
         self._addSetting(NovelSetting.Characters, 0, 1)
         self._addSetting(NovelSetting.Scenes, 0, 2)
 
-        self._addSetting(NovelSetting.Storylines, 1, 0, enabled=app_env.profile().get('storylines', False))
+        self._addSetting(NovelSetting.Storylines, 1, 0, enabled=app_env.profile().get('storylines', False),
+                         link='https://plotlyst.com/docs/storylines/')
         self._addSetting(NovelSetting.Structure, 1, 2)
 
         self._addSetting(NovelSetting.Documents, 2, 0)
-        self._addSetting(NovelSetting.World_building, 2, 1, enabled=app_env.profile().get('world-building', False))
-        self._addSetting(NovelSetting.Management, 2, 2, enabled=app_env.profile().get('tasks', False))
+        self._addSetting(NovelSetting.World_building, 2, 1, enabled=app_env.profile().get('world-building', False),
+                         link='https://plotlyst.com/docs/world-building/')
+        self._addSetting(NovelSetting.Management, 2, 2, enabled=app_env.profile().get('tasks', False),
+                         link='https://plotlyst.com/docs/task-management/')
 
     def setNovel(self, novel: Novel):
         self._novel = novel
@@ -396,13 +404,15 @@ class NovelPanelSettingsWidget(QWidget):
     def toggledSettings(self) -> List[NovelSetting]:
         return [k for k, v in self._settings.items() if v.isChecked()]
 
-    def _addSetting(self, setting: NovelSetting, row: int, col: int, enabled: bool = True):
+    def _addSetting(self, setting: NovelSetting, row: int, col: int, enabled: bool = True,
+                    link: str = DEFAULT_PREMIUM_LINK):
         toggle = NovelPanelCustomizationToggle(setting)
         self._settings[setting] = toggle
         if not enabled:
             toggle.setIcon(IconRegistry.from_name('ei.lock'))
             toggle.setChecked(False)
             toggle.setDisabled(True)
+            toggle.installEventFilter(DisabledClickEventFilter(toggle, slot=lambda: self._disabledToggleClicked(link)))
         toggle.toggled.connect(partial(self._settingToggled, setting))
         toggle.clicked.connect(partial(self._settingChanged, setting))
         toggle.installEventFilter(self)
@@ -413,6 +423,23 @@ class NovelPanelSettingsWidget(QWidget):
 
     def _settingChanged(self, setting: NovelSetting, toggled: bool):
         self.clicked.emit(setting, toggled)
+
+    def _disabledToggleClicked(self, link: str):
+        menu = MenuWidget()
+        menu.addSection('This is a premium feature. Please purchase Plotlyst to gain access to this panel.')
+        menu.addAction(
+            action('Click here to read more about this feature', icon=IconRegistry.from_name('fa5s.external-link-alt'),
+                   slot=lambda: open_url(link)
+                   )
+        )
+        menu.addSeparator()
+        menu.addAction(
+            action('Purchase', icon=IconRegistry.from_name('ei.shopping-cart'),
+                   slot=lambda: open_url(DEFAULT_PREMIUM_LINK)
+                   )
+        )
+
+        menu.exec(QCursor.pos())
 
 
 # class NovelQuickPanelCustomizationWidget(NovelPanelSettingsWidget, EventListener):
