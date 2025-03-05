@@ -50,6 +50,7 @@ from plotlyst.view.widget.character.editor import CharacterRoleSelector
 from plotlyst.view.widget.character.profile import CharacterProfileEditor, CharacterNameEditorPopup
 from plotlyst.view.widget.character.topic import CharacterTopicsEditor
 from plotlyst.view.widget.confirm import asked
+from plotlyst.view.widget.display import PremiumOverlayWidget
 from plotlyst.view.widget.tour.core import CharacterEditorTourEvent, \
     CharacterEditorNameLineEditTourEvent, TourEvent, CharacterEditorNameFilledTourEvent, \
     CharacterEditorAvatarDisplayTourEvent, CharacterEditorAvatarMenuTourEvent, CharacterEditorBackButtonTourEvent, \
@@ -79,6 +80,7 @@ class CharacterEditor(QObject, EventListener):
         self.ui.btnNewBackstory.clicked.connect(lambda: self.ui.wdgBackstory.add())
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, app_env.profile().get('origin', False))
+        set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))
 
         self.ui.textEdit.setTitleVisible(False)
         self.ui.textEdit.setToolbarVisible(False)
@@ -151,6 +153,8 @@ class CharacterEditor(QObject, EventListener):
 
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBackstory,
                      IconRegistry.backstory_icon('black', PLOTLYST_SECONDARY_COLOR))
+        set_tab_icon(self.ui.tabAttributes, self.ui.tabBackstoryDummy,
+                     IconRegistry.backstory_icon('black', PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabTopics,
                      IconRegistry.topics_icon(color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBigFive, IconRegistry.big_five_icon(PLOTLYST_SECONDARY_COLOR))
@@ -176,6 +180,11 @@ class CharacterEditor(QObject, EventListener):
         self.ui.wdgProfile.layout().addWidget(self.profile)
 
         apply_bg_image(self.ui.scrollAreaBackstoryContents, resource_registry.cover1)
+        if not app_env.profile().get('backstory', False):
+            apply_bg_image(self.ui.tabBackstoryDummy, resource_registry.cover1)
+            PremiumOverlayWidget(self.ui.tabBackstoryDummy, 'Character backstory',
+                                 icon='fa5s.archive',
+                                 alt_link='https://plotlyst.com/docs/characters/')
 
         self.ui.btnClose.clicked.connect(self._save)
 

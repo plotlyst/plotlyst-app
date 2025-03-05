@@ -592,20 +592,21 @@ class PremiumMessageWidget(QFrame):
         incr_icon(self.btnUpgrade, 10)
         incr_font(self.btnUpgrade, 6)
 
-        self.title = IconText()
+        self.title = label(f'{feature} is a premium feature', h2=True, wordWrap=True)
+        self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         if icon:
-            self.title.setIcon(IconRegistry.from_name(icon))
-        self.title.setText(f'{feature} is a premium feature')
-        incr_font(self.title, 8)
-        incr_icon(self.title, 8)
+            iconWdg = Icon()
+            iconWdg.setIcon(IconRegistry.from_name(icon))
+            iconWdg.setIconSize(QSize(32, 32))
+            self.layout().addWidget(iconWdg, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.layout().addWidget(self.title, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.title)
         self.layout().addWidget(label("To use this feature, please purchase Plotlyst.", incr_font_diff=2),
                                 alignment=Qt.AlignmentFlag.AlignCenter)
         if alt_link:
             btnLink = push_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'),
                                'Read more about this feature', transparent_=True)
-            btnLink.installEventFilter(OpacityEventFilter(btnLink))
+            btnLink.installEventFilter(OpacityEventFilter(btnLink, leaveOpacity=0.5))
             decr_font(btnLink)
             decr_icon(btnLink, 2)
             btnLink.clicked.connect(lambda: open_url(alt_link))
