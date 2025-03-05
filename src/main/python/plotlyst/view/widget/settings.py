@@ -26,7 +26,7 @@ from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent
 from PyQt6.QtGui import QIcon, QColor
 from PyQt6.QtWidgets import QWidget, QPushButton, QToolButton, QGridLayout, QFormLayout
 from overrides import overrides
-from qthandy import transparent, sp, vbox, hbox, vspacer, incr_font, pointy, grid, margins, line, spacer
+from qthandy import transparent, sp, vbox, hbox, vspacer, incr_font, pointy, grid, margins, line, spacer, translucent
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -251,7 +251,10 @@ class SettingBaseWidget(QWidget):
         self._wdgChildren.layout().addWidget(child)
 
     def _toggled(self, toggled: bool):
-        self._wdgTitle.setEnabled(toggled)
+        if toggled:
+            self._wdgTitle.setGraphicsEffect(None)
+        else:
+            translucent(self._wdgTitle)
         self._wdgChildren.setVisible(toggled)
 
     @abstractmethod
