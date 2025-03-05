@@ -74,9 +74,6 @@ class CharacterEditor(QObject, EventListener):
                               self._edit_displayed_name))
         self.ui.wdgToolbar.layout().addWidget(self._btnMenu, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.ui.btnNewBackstory.setIcon(IconRegistry.plus_icon('white'))
-        self.ui.btnNewBackstory.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnNewBackstory))
-        self.ui.btnNewBackstory.clicked.connect(lambda: self.ui.wdgBackstory.add())
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
 
         self.ui.textEdit.setTitleVisible(False)
@@ -386,7 +383,6 @@ class CharacterEditor(QObject, EventListener):
         self.ui.btnMoreGender.setText('«' if toggled else '»')
 
     def _avatar_updated(self):
-        self.ui.wdgBackstory.refreshCharacter()
         if self.character.prefs.avatar.use_role and self.character.role is None:
             qtanim.shake(self.ui.btnRole)
 
