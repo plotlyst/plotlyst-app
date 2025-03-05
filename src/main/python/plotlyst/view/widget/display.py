@@ -24,25 +24,25 @@ from typing import Optional, Any, Tuple, List
 import emoji
 import qtanim
 from PyQt6.QtCharts import QChartView
-from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer
+from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent
 from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
     QApplication
 from overrides import overrides
 from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, pointy, hbox, busy, italic, decr_font, \
-    margins, translucent
+    margins, translucent, sp, decr_icon
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_TERTIARY_COLOR
+from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
 from plotlyst.env import app_env
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import emoji_font, insert_before_the_end, \
-    ButtonPressResizeEventFilter, restyle, label, frame, tool_btn, push_btn, action, open_url
+    ButtonPressResizeEventFilter, restyle, label, frame, tool_btn, push_btn, action, open_url, fade_in, wrap
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 
@@ -279,6 +279,7 @@ class IconText(QPushButton, _AbstractIcon):
         super(IconText, self).__init__(parent)
         transparent(self)
         self.setIconSize(QSize(20, 20))
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
     @overrides
     def _setIcon(self):
@@ -572,6 +573,67 @@ class CopiedTextMessage(QLabel):
             QTimer.singleShot(250, lambda: qtanim.fade_out(self))
 
         qtanim.fade_in(self, 150, teardown=finish)
+
+
+class PremiumMessageWidget(QFrame):
+    def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 parent=None):
+        super().__init__(parent)
+        vbox(self, 15, 8)
+        self.setProperty('white-bg', True)
+        self.setProperty('large-rounded', True)
+        sp(self).h_max().v_max()
+
+        self.btnUpgrade = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
+                                   'Purchase',
+                                   tooltip='Upgrade Plotlyst',
+                                   properties=['confirm', 'positive'])
+        self.btnUpgrade.clicked.connect(lambda: open_url(main_link))
+        incr_icon(self.btnUpgrade, 10)
+        incr_font(self.btnUpgrade, 6)
+
+        self.title = IconText()
+        if icon:
+            self.title.setIcon(IconRegistry.from_name(icon))
+        self.title.setText(f'{feature} is a premium feature')
+        incr_font(self.title, 8)
+        incr_icon(self.title, 8)
+
+        self.layout().addWidget(self.title, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(label("To use this feature, please purchase Plotlyst.", incr_font_diff=2),
+                                alignment=Qt.AlignmentFlag.AlignCenter)
+        if alt_link:
+            btnLink = push_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'),
+                               'Read more about this feature', transparent_=True)
+            btnLink.installEventFilter(OpacityEventFilter(btnLink))
+            decr_font(btnLink)
+            decr_icon(btnLink, 2)
+            btnLink.clicked.connect(lambda: open_url(alt_link))
+            self.layout().addWidget(btnLink, alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout().addWidget(wrap(self.btnUpgrade, margin_top=10), alignment=Qt.AlignmentFlag.AlignCenter)
+
+
+class PremiumOverlayWidget(QFrame):
+    def __init__(self, parent, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 alpha: int = 115):
+        super().__init__(parent)
+        self.setStyleSheet(f"PremiumOverlayWidget {{background-color: rgba(0, 0, 0, {alpha});}}")
+        sp(self).h_exp().v_exp()
+        self.parent().installEventFilter(self)
+        self.msg = PremiumMessageWidget(feature, icon, alt_link, main_link)
+        vbox(self)
+        self.layout().addWidget(self.msg, alignment=Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
+
+    @overrides
+    def eventFilter(self, watched: 'QObject', event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Resize:
+            self.setGeometry(0, 0, self.parent().width(), self.parent().height())
+        return super().eventFilter(watched, event)
+
+    @overrides
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        fade_in(self.msg)
 
 
 def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional[float] = None) -> IconText:

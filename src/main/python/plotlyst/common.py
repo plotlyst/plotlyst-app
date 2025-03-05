@@ -61,6 +61,8 @@ VERY_HAPPY_EMOTION_COLOR: str = '#00ca94'
 
 IGNORE_CAPITALIZATION_PROPERTY = 'ignore_capitalization'
 
+DEFAULT_PREMIUM_LINK: str = 'https://plotlyst.com/pricing/'
+
 EMOTION_COLORS: Dict[int, str] = {
     0: '#f25c54',
     1: '#f25c54',

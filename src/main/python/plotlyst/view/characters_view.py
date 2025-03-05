@@ -56,6 +56,7 @@ from plotlyst.view.widget.character.network import CharacterNetworkView
 from plotlyst.view.widget.character.prefs import CharactersPreferencesWidget
 from plotlyst.view.widget.character.profile import CharacterOnboardingPopup, CharacterNameEditorPopup
 from plotlyst.view.widget.characters import CharactersProgressWidget
+from plotlyst.view.widget.display import PremiumOverlayWidget
 from plotlyst.view.widget.importing import ImportCharacterPopup
 from plotlyst.view.widget.tour.core import CharacterNewButtonTourEvent, TourEvent, \
     CharacterCardTourEvent, CharacterPerspectivesTourEvent, CharacterPerspectiveCardsTourEvent, \
@@ -133,9 +134,6 @@ class CharactersView(AbstractNovelView):
             IconRegistry.from_name('ph.share-network-bold', color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnProgressView.setIcon(IconRegistry.progress_check_icon('black'))
 
-        if not app_env.profile().get('network', False):
-            self.ui.btnRelationsView.setHidden(True)
-            self.ui.btnGroupViews.removeButton(self.ui.btnRelationsView)
         if not app_env.profile().get('character-comparison', False):
             self.ui.btnComparison.setHidden(True)
             self.ui.btnGroupViews.removeButton(self.ui.btnComparison)
@@ -217,6 +215,16 @@ class CharactersView(AbstractNovelView):
         self._progress.setNovel(self.novel)
         self._progress.characterClicked.connect(self._edit_character)
         self._progress.refresh()
+
+        if not app_env.profile().get('backstory', False):
+            self._progressOverlay = PremiumOverlayWidget(self.ui.pageProgressView, 'Character progress tracking',
+                                                         icon='mdi.progress-check',
+                                                         alt_link='https://plotlyst.com/docs/characters/')
+
+        if not app_env.profile().get('network', False):
+            self._networkOverlay = PremiumOverlayWidget(self.ui.pageRelationsView, 'Character network',
+                                                        icon='ph.share-network-bold',
+                                                        alt_link='https://plotlyst.com/docs/characters/')
 
         self.ui.btnGroupViews.buttonToggled.connect(self._switch_view)
         link_buttons_to_pages(self.ui.stackCharacters, [(self.ui.btnCardsView, self.ui.pageCardsView),
