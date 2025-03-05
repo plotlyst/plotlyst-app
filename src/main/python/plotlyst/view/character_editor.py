@@ -78,6 +78,7 @@ class CharacterEditor(QObject, EventListener):
         self.ui.btnNewBackstory.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnNewBackstory))
         self.ui.btnNewBackstory.clicked.connect(lambda: self.ui.wdgBackstory.add())
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
+        set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, app_env.profile().get('origin', False))
 
         self.ui.textEdit.setTitleVisible(False)
         self.ui.textEdit.setToolbarVisible(False)
@@ -180,8 +181,10 @@ class CharacterEditor(QObject, EventListener):
 
         if self.ui.tabBackstory.isVisible():
             self.ui.tabAttributes.setCurrentWidget(self.ui.tabBackstory)
-        else:
+        elif self.ui.tabTopics.isVisible():
             self.ui.tabAttributes.setCurrentWidget(self.ui.tabTopics)
+        else:
+            self.ui.tabAttributes.setCurrentWidget(self.ui.tabNotes)
 
         self.repo = RepositoryPersistenceManager.instance()
         dispatcher = event_dispatchers.instance(self.novel)
