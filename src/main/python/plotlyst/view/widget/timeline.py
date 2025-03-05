@@ -19,22 +19,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from abc import abstractmethod
 from dataclasses import dataclass
-from functools import partial
 from typing import List, Optional
 
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QObject, QEvent
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent
-from PyQt6.QtWidgets import QWidget, QSizePolicy, \
-    QLineEdit, QToolButton
+from PyQt6.QtWidgets import QWidget, QLineEdit, QToolButton
 from overrides import overrides
-from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, bold, \
-    margins
+from qthandy import vbox, hbox, sp, incr_font, bold, \
+    margins, clear_layout, vspacer
 from qthandy.filter import VisibilityToggleEventFilter
 
 from plotlyst.common import RELAXED_WHITE_COLOR, NEUTRAL_EMOTION_COLOR, \
     EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import BackstoryEvent
-from plotlyst.view.common import tool_btn, frame
+from plotlyst.view.common import tool_btn, frame, push_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.input import RemovalButton, AutoAdjustableTextEdit
@@ -156,42 +154,44 @@ class BackstoryCard(QWidget):
         self.deleteRequested.emit(self)
 
 
-class BackstoryCardPlaceholder(QWidget):
-    def __init__(self, card: BackstoryCard, alignment: int = Qt.AlignmentFlag.AlignRight, parent=None,
-                 compact: bool = True):
-        super().__init__(parent)
-        self.alignment = alignment
-        self.card = card
+# class BackstoryCardPlaceholder(QWidget):
+#     def __init__(self, card: BackstoryCard, alignment: int = Qt.AlignmentFlag.AlignRight, parent=None,
+#                  compact: bool = True):
+#         super().__init__(parent)
+#         self.alignment = alignment
+#         self.card = card
+#
+#         self._layout = hbox(self, 0, 3)
+#         self.spacer = spacer()
+#         self.spacer.setFixedWidth(self.width() // 2 + 3)
+#         if self.alignment == Qt.AlignmentFlag.AlignRight:
+#             self.layout().addWidget(self.spacer)
+#             if compact:
+#                 self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignLeft)
+#             else:
+#                 self._layout.addWidget(self.card)
+#         elif self.alignment == Qt.AlignmentFlag.AlignLeft:
+#             if compact:
+#                 self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignRight)
+#             else:
+#                 self._layout.addWidget(self.card)
+#             self.layout().addWidget(self.spacer)
+#         else:
+#             self.layout().addWidget(self.card)
 
-        self._layout = hbox(self, 0, 3)
-        self.spacer = spacer()
-        self.spacer.setFixedWidth(self.width() // 2 + 3)
-        if self.alignment == Qt.AlignmentFlag.AlignRight:
-            self.layout().addWidget(self.spacer)
-            if compact:
-                self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignLeft)
-            else:
-                self._layout.addWidget(self.card)
-        elif self.alignment == Qt.AlignmentFlag.AlignLeft:
-            if compact:
-                self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignRight)
-            else:
-                self._layout.addWidget(self.card)
-            self.layout().addWidget(self.spacer)
-        else:
-            self.layout().addWidget(self.card)
 
-    def toggleAlignment(self):
-        if self.alignment == Qt.AlignmentFlag.AlignLeft:
-            self.alignment = Qt.AlignmentFlag.AlignRight
-            self._layout.takeAt(0)
-            self._layout.addWidget(self.spacer)
-            self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignRight)
-        else:
-            self.alignment = Qt.AlignmentFlag.AlignLeft
-            self._layout.takeAt(1)
-            self._layout.insertWidget(0, self.spacer)
-            self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignLeft)
+#
+#     def toggleAlignment(self):
+#         if self.alignment == Qt.AlignmentFlag.AlignLeft:
+#             self.alignment = Qt.AlignmentFlag.AlignRight
+#             self._layout.takeAt(0)
+#             self._layout.addWidget(self.spacer)
+#             self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignRight)
+#         else:
+#             self.alignment = Qt.AlignmentFlag.AlignLeft
+#             self._layout.takeAt(1)
+#             self._layout.insertWidget(0, self.spacer)
+#             self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignLeft)
 
 
 class _ControlButtons(QWidget):
@@ -229,25 +229,35 @@ class _ControlButtons(QWidget):
         return super().eventFilter(watched, event)
 
 
+class BackstoryCardPlaceholder(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        vbox(self, 0, 0)
+        self.wdgTop = QWidget()
+        hbox(self.wdgTop)
+
+        self.btnLeft = push_btn(IconRegistry.plus_icon('grey'), text='Add event to the left', transparent_=True)
+        sp(self.btnLeft).h_exp()
+        self.btnRight = push_btn(IconRegistry.plus_icon('grey'), text='Add event to the right', transparent_=True)
+        sp(self.btnRight).h_exp()
+        self.wdgTop.layout().addWidget(self.btnLeft)
+        self.wdgTop.layout().addWidget(self.btnRight)
+
+        self.btnWhole = push_btn(IconRegistry.plus_icon('grey'), text='Add main event', transparent_=True)
+        sp(self.btnWhole).h_exp()
+
+        self.layout().addWidget(self.wdgTop)
+        self.layout().addWidget(self.btnWhole)
+
+
 class TimelineWidget(QWidget):
     changed = pyqtSignal()
 
-    def __init__(self, theme: Optional[TimelineTheme] = None, parent=None, compact: bool = True):
-        self._spacers: List[QWidget] = []
+    def __init__(self, theme: Optional[TimelineTheme] = None, parent=None):
         super().__init__(parent)
-        if theme is None:
-            theme = TimelineTheme()
-        self._theme = theme
-        self._compact = compact
-        self._layout = vbox(self, spacing=0)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self._lineTopMargin: int = 0
-        self._endSpacerMinHeight: int = 45
+        self._theme = theme if theme else TimelineTheme()
 
-    @overrides
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        for sp in self._spacers:
-            sp.setFixedWidth(self.width() // 2 + 3)
+        vbox(self, spacing=0)
 
     @abstractmethod
     def events(self) -> List[BackstoryEvent]:
@@ -257,64 +267,106 @@ class TimelineWidget(QWidget):
         return BackstoryCard
 
     def refresh(self):
-        self._spacers.clear()
-        clear_layout(self.layout())
+        clear_layout(self)
 
-        prev_alignment = None
-        for i, backstory in enumerate(self.events()):
-            if prev_alignment is None:
-                alignment = Qt.AlignmentFlag.AlignRight
-            elif backstory.follow_up and prev_alignment:
-                alignment = prev_alignment
-            elif prev_alignment == Qt.AlignmentFlag.AlignLeft:
-                alignment = Qt.AlignmentFlag.AlignRight
-            else:
-                alignment = Qt.AlignmentFlag.AlignLeft
-            prev_alignment = alignment
-            event = BackstoryCardPlaceholder(self.cardClass()(backstory, self._theme), alignment, parent=self,
-                                             compact=self._compact)
-            event.card.deleteRequested.connect(self._remove)
+        placeholder = BackstoryCardPlaceholder()
+        self.layout().addWidget(placeholder)
 
-            self._spacers.append(event.spacer)
-            event.spacer.setFixedWidth(self.width() // 2 + 3)
-
-            self._addControlButtons(i)
-            self._layout.addWidget(event)
-
-            event.card.edited.connect(self.changed.emit)
-            event.card.relationChanged.connect(self.changed.emit)
-            event.card.relationChanged.connect(self.refresh)
-
-        self._addControlButtons(-1)
-        spacer_ = vspacer()
-        spacer_.setMinimumHeight(self._endSpacerMinHeight)
-        self.layout().addWidget(spacer_)
+        self.layout().addWidget(vspacer())
 
     @overrides
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(QColor(self._theme.timeline_color)))
-        painter.drawRect(int(self.width() / 2) - 3, self._lineTopMargin, 6, self.height() - self._lineTopMargin)
+        painter.drawRect(int(self.width() / 2) - 3, 0, 6, self.height())
 
-        painter.end()
-
-    def add(self, pos: int = -1):
-        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR)
-        if pos >= 0:
-            self.events().insert(pos, backstory)
-        else:
-            self.events().append(backstory)
-        self.refresh()
-        self.changed.emit()
-
-    def _remove(self, card: BackstoryCard):
-        self.events().remove(card.backstory)
-
-        self.refresh()
-        self.changed.emit()
-
-    def _addControlButtons(self, pos: int):
-        control = _ControlButtons(self._theme, self)
-        control.btnPlus.clicked.connect(partial(self.add, pos))
-        self._layout.addWidget(control, alignment=Qt.AlignmentFlag.AlignHCenter)
+# class TimelineWidget(QWidget):
+#     changed = pyqtSignal()
+#
+#     def __init__(self, theme: Optional[TimelineTheme] = None, parent=None, compact: bool = True):
+#         self._spacers: List[QWidget] = []
+#         super().__init__(parent)
+#         if theme is None:
+#             theme = TimelineTheme()
+#         self._theme = theme
+#         self._compact = compact
+#         self._layout = vbox(self, spacing=0)
+#         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+#         self._lineTopMargin: int = 0
+#         self._endSpacerMinHeight: int = 45
+#
+#     @overrides
+#     def resizeEvent(self, event: QResizeEvent) -> None:
+#         for sp in self._spacers:
+#             sp.setFixedWidth(self.width() // 2 + 3)
+#
+#     @abstractmethod
+#     def events(self) -> List[BackstoryEvent]:
+#         pass
+#
+#     def cardClass(self):
+#         return BackstoryCard
+#
+#     def refresh(self):
+#         self._spacers.clear()
+#         clear_layout(self.layout())
+#
+#         prev_alignment = None
+#         for i, backstory in enumerate(self.events()):
+#             if prev_alignment is None:
+#                 alignment = Qt.AlignmentFlag.AlignRight
+#             elif backstory.follow_up and prev_alignment:
+#                 alignment = prev_alignment
+#             elif prev_alignment == Qt.AlignmentFlag.AlignLeft:
+#                 alignment = Qt.AlignmentFlag.AlignRight
+#             else:
+#                 alignment = Qt.AlignmentFlag.AlignLeft
+#             prev_alignment = alignment
+#             event = BackstoryCardPlaceholder(self.cardClass()(backstory, self._theme), alignment, parent=self,
+#                                              compact=self._compact)
+#             event.card.deleteRequested.connect(self._remove)
+#
+#             self._spacers.append(event.spacer)
+#             event.spacer.setFixedWidth(self.width() // 2 + 3)
+#
+#             self._addControlButtons(i)
+#             self._layout.addWidget(event)
+#
+#             event.card.edited.connect(self.changed.emit)
+#             event.card.relationChanged.connect(self.changed.emit)
+#             event.card.relationChanged.connect(self.refresh)
+#
+#         self._addControlButtons(-1)
+#         spacer_ = vspacer()
+#         spacer_.setMinimumHeight(self._endSpacerMinHeight)
+#         self.layout().addWidget(spacer_)
+#
+#     @overrides
+#     def paintEvent(self, event: QPaintEvent) -> None:
+#         painter = QPainter(self)
+#         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+#         painter.setBrush(QBrush(QColor(self._theme.timeline_color)))
+#         painter.drawRect(int(self.width() / 2) - 3, self._lineTopMargin, 6, self.height() - self._lineTopMargin)
+#
+#         painter.end()
+#
+#     def add(self, pos: int = -1):
+#         backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR)
+#         if pos >= 0:
+#             self.events().insert(pos, backstory)
+#         else:
+#             self.events().append(backstory)
+#         self.refresh()
+#         self.changed.emit()
+#
+#     def _remove(self, card: BackstoryCard):
+#         self.events().remove(card.backstory)
+#
+#         self.refresh()
+#         self.changed.emit()
+#
+#     def _addControlButtons(self, pos: int):
+#         control = _ControlButtons(self._theme, self)
+#         control.btnPlus.clicked.connect(partial(self.add, pos))
+#         self._layout.addWidget(control, alignment=Qt.AlignmentFlag.AlignHCenter)
