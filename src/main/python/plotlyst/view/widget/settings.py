@@ -30,7 +30,7 @@ from qthandy import transparent, sp, vbox, hbox, vspacer, incr_font, pointy, gri
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, DEFAULT_PREMIUM_LINK, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, NovelSetting
 from plotlyst.env import app_env
 from plotlyst.event.core import emit_event, EventListener, Event
@@ -43,7 +43,7 @@ from plotlyst.events import NovelPanelCustomizationEvent, \
     NovelCharacterLoveStyleToggleEvent, NovelCharacterWorkStyleToggleEvent, NovelScenesOrganizationToggleEvent, \
     ScenesOrganizationResetEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager, reset_scenes_organization
-from plotlyst.view.common import label, ButtonPressResizeEventFilter
+from plotlyst.view.common import label, ButtonPressResizeEventFilter, push_btn, open_url
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.style.button import apply_button_palette_color
@@ -487,9 +487,25 @@ class NovelSettingsWidget(QWidget, EventListener):
         # self._addSettingToggle(NovelSetting.Track_conflict, wdgScenes)
         self._addSettingToggle(NovelSetting.Manuscript)
         self._addSettingToggle(NovelSetting.Documents)
-        self._addSettingToggle(NovelSetting.Storylines, enabled=app_env.profile().get('storylines', False))
-        self._addSettingToggle(NovelSetting.World_building, enabled=app_env.profile().get('world-building', False))
-        self._addSettingToggle(NovelSetting.Management, enabled=app_env.profile().get('tasks', False))
+
+        if app_env.profile().get('license_type', 'FREE') == 'FREE':
+            self.layout().addWidget(label('Premium panels', h5=True), alignment=Qt.AlignmentFlag.AlignLeft)
+            btnPurchase = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
+                                   'Upgrade to gain access to these additional panels',
+                                   properties=['confirm', 'positive'])
+            btnPurchase.clicked.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
+            btnPurchase.installEventFilter(OpacityEventFilter(btnPurchase, 0.8, 0.6))
+            self.layout().addWidget(btnPurchase, alignment=Qt.AlignmentFlag.AlignLeft)
+        wdg = self._addSettingToggle(NovelSetting.Storylines, enabled=app_env.profile().get('storylines', False))
+        if not wdg.isEnabled():
+            margins(wdg, left=20)
+        wdg = self._addSettingToggle(NovelSetting.World_building,
+                                     enabled=app_env.profile().get('world-building', False))
+        if not wdg.isEnabled():
+            margins(wdg, left=20)
+        wdg = self._addSettingToggle(NovelSetting.Management, enabled=app_env.profile().get('tasks', False))
+        if not wdg.isEnabled():
+            margins(wdg, left=20)
 
         self.layout().addWidget(label('Advanced settings', h4=True), alignment=Qt.AlignmentFlag.AlignLeft)
         wdgScenesOrg = self._addSettingToggle(NovelSetting.Scenes_organization, insertLine=False,

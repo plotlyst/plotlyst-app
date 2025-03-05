@@ -232,7 +232,7 @@
               <cursorShape>PointingHandCursor</cursorShape>
              </property>
              <property name="toolTip">
-              <string>Scenes</string>
+              <string>Narrative Manager</string>
              </property>
              <property name="text">
               <string/>
