@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QApplication, QLineEdit, QText
     QProgressDialog, QAbstractButton
 from fbs_runtime import platform
 from overrides import overrides
-from qthandy import spacer, busy, gc, pointy, decr_icon, translucent
+from qthandy import spacer, busy, gc, pointy, decr_icon
 from qthandy.filter import InstantTooltipEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 from qttextedit.ops import DEFAULT_FONT_FAMILIES
@@ -82,7 +82,6 @@ from plotlyst.view.widget.labels import SeriesLabel
 from plotlyst.view.widget.log import LogsPopup
 from plotlyst.view.widget.patron import PatronRecognitionBuilderPopup
 from plotlyst.view.widget.productivity import ProductivityButton
-from plotlyst.view.widget.settings import NovelQuickPanelCustomizationButton
 from plotlyst.view.widget.tour.core import TutorialNovelOpenTourEvent, tutorial_novel, \
     TutorialNovelCloseTourEvent, NovelTopLevelButtonTourEvent, HomeTopLevelButtonTourEvent, NovelEditorDisplayTourEvent, \
     AllNovelViewsTourEvent, GeneralNovelViewTourEvent, CharacterViewTourEvent, ScenesViewTourEvent, \
@@ -127,7 +126,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self._actionNovelEditor: Optional[QAction] = None
         self._actionScrivener: Optional[QAction] = None
         self._actionSeries: Optional[QAction] = None
-        self._actionSettings: Optional[QAction] = None
         self._actionProgress: Optional[QAction] = None
         last_novel_id = settings.last_novel_id()
         if last_novel_id is not None:
@@ -391,11 +389,9 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         if not self.novel:
             for btn in self.buttonGroup.buttons():
                 btn.setHidden(True)
-            self._actionSettings.setVisible(False)
             self._actionProgress.setVisible(False)
             self._actionScrivener.setVisible(False)
             self._actionSeries.setVisible(False)
-            self.actionQuickCustomization.setDisabled(True)
             self.menuDetachPanels.setDisabled(True)
             return
 
@@ -409,11 +405,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         for btn in self.buttonGroup.buttons():
             btn.setVisible(True)
 
-        self._actionSettings.setVisible(settings.toolbar_quick_settings())
         self._actionProgress.setVisible(app_env.profile().get('productivity', False))
-        self.actionQuickCustomization.setEnabled(True)
         self.menuDetachPanels.setEnabled(True)
-        self.btnSettings.setNovel(self.novel)
         self.outline_mode.setEnabled(True)
         self.outline_mode.setVisible(True)
 
@@ -543,9 +536,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.actionPaste.setIcon(IconRegistry.paste_icon())
         self.actionPaste.triggered.connect(self._paste_text)
 
-        self.actionQuickCustomization.setChecked(settings.toolbar_quick_settings())
-        self.actionQuickCustomization.toggled.connect(self._toggle_quick_settings)
-
         self.actionDirPlaceholder.setText(settings.workspace())
         self.actionOpenProjectDir.setIcon(IconRegistry.from_name('fa5s.external-link-alt'))
         self.actionOpenProjectDir.triggered.connect(lambda: open_location(settings.workspace()))
@@ -628,9 +618,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self._mode_btn_group.setExclusive(True)
         self._mode_btn_group.buttonToggled.connect(self._panel_toggled)
 
-        self.btnSettings = NovelQuickPanelCustomizationButton()
-        translucent(self.btnSettings, 0.6)
-
         self.btnProgress = ProductivityButton()
 
         self.btnComments = QToolButton(self.toolBar)
@@ -665,9 +652,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self._actionScrivener = self.toolBar.addWidget(self.btnScrivener)
         self._actionSeries = self.toolBar.addWidget(self.seriesLabel)
         self._actionProgress = self.toolBar.addWidget(self.btnProgress)
-        self._actionSettings = self.toolBar.addWidget(self.btnSettings)
-        self._actionSettings.setVisible(settings.toolbar_quick_settings())
-        # self.toolBar.addWidget(self.btnComments)
         self.toolBar.addWidget(spacer(10))
 
         self.wdgSidebar.setHidden(True)
@@ -703,10 +687,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         if workspace:
             settings.set_workspace(workspace)
             QTimer.singleShot(250, try_shutdown_to_apply_change)
-
-    def _toggle_quick_settings(self, toggled: bool):
-        self._actionSettings.setVisible(toggled)
-        settings.set_toolbar_quick_settings(toggled)
 
     @busy
     def _load_new_novel(self, novel: Novel):
@@ -795,8 +775,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         gc(self.manuscript_view)
         self.manuscript_view = None
 
-        self._actionSettings.setVisible(False)
-        self.actionQuickCustomization.setDisabled(True)
         self.menuDetachPanels.setDisabled(True)
 
         self.outline_mode.setDisabled(True)

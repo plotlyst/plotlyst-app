@@ -995,24 +995,6 @@
     </widget>
     <addaction name="menuProject"/>
    </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>View</string>
-    </property>
-    <property name="toolTipsVisible">
-     <bool>true</bool>
-    </property>
-    <widget class="QMenu" name="menuToolbar">
-     <property name="title">
-      <string>Toolbar</string>
-     </property>
-     <property name="toolTipsVisible">
-      <bool>true</bool>
-     </property>
-     <addaction name="actionQuickCustomization"/>
-    </widget>
-    <addaction name="menuToolbar"/>
-   </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>Help</string>
@@ -1085,7 +1067,6 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
-   <addaction name="menuView"/>
    <addaction name="menuWindow"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
@@ -1204,22 +1185,6 @@
   <action name="actionOpenProjectDir">
    <property name="text">
     <string>Open in explorer...</string>
-   </property>
-  </action>
-  <action name="actionExportToDocx">
-   <property name="text">
-    <string>Export to Docx</string>
-   </property>
-  </action>
-  <action name="actionQuickCustomization">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Quick panel customization</string>
-   </property>
-   <property name="toolTip">
-    <string>Display quick panel customization in the toolbar</string>
    </property>
   </action>
   <action name="actionLogs">

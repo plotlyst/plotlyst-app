@@ -377,10 +377,6 @@ class NovelPanelSettingsWidget(QWidget):
                 continue
             toggle.setChecked(self._novel.prefs.toggled(toggle.setting()))
 
-    # def reset(self):
-    #     event_dispatchers.instance(self._novel).deregister(self, *panel_events)
-    #     self._novel = None
-
     @overrides
     def eventFilter(self, watched: 'QObject', event: QEvent) -> bool:
         if event.type() == QEvent.Type.Enter:
@@ -419,47 +415,44 @@ class NovelPanelSettingsWidget(QWidget):
         self.clicked.emit(setting, toggled)
 
 
-class NovelQuickPanelCustomizationWidget(NovelPanelSettingsWidget, EventListener):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+# class NovelQuickPanelCustomizationWidget(NovelPanelSettingsWidget, EventListener):
+#     def __init__(self, parent=None):
+#         super().__init__(parent)
+#
+#     @overrides
+#     def setNovel(self, novel: Novel):
+#         super().setNovel(novel)
+#         event_dispatchers.instance(self._novel).register(self, *panel_events)
+#
+#     @overrides
+#     def event_received(self, event: Event):
+#         if isinstance(event, NovelPanelCustomizationEvent):
+#             self._settings[event.setting].setChecked(event.toggled)
+#
+#     @overrides
+#     def _settingToggled(self, setting: NovelSetting, toggled: bool):
+#         pass
+#
+#     @overrides
+#     def _settingChanged(self, setting: NovelSetting, toggled: bool):
+#         toggle_setting(self, self._novel, setting, toggled)
 
-    @overrides
-    def setNovel(self, novel: Novel):
-        super().setNovel(novel)
-        event_dispatchers.instance(self._novel).register(self, *panel_events)
 
-    @overrides
-    def event_received(self, event: Event):
-        if isinstance(event, NovelPanelCustomizationEvent):
-            self._settings[event.setting].setChecked(event.toggled)
-
-    @overrides
-    def _settingToggled(self, setting: NovelSetting, toggled: bool):
-        pass
-
-    @overrides
-    def _settingChanged(self, setting: NovelSetting, toggled: bool):
-        toggle_setting(self, self._novel, setting, toggled)
-
-
-class NovelQuickPanelCustomizationButton(QToolButton):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setIcon(IconRegistry.from_name('fa5s.cubes'))
-        self.setToolTip('Customize what panels are visible')
-        pointy(self)
-        self.installEventFilter(ButtonPressResizeEventFilter(self))
-
-        self._menu = MenuWidget(self)
-        self._customizationWidget = NovelQuickPanelCustomizationWidget()
-        apply_white_menu(self._menu)
-        self._menu.addWidget(self._customizationWidget)
-
-    def setNovel(self, novel: Novel):
-        self._customizationWidget.setNovel(novel)
-
-    # def reset(self):
-    #     self._customizationWidget.reset()
+# class NovelQuickPanelCustomizationButton(QToolButton):
+#     def __init__(self, parent=None):
+#         super().__init__(parent)
+#         self.setIcon(IconRegistry.from_name('fa5s.cubes'))
+#         self.setToolTip('Customize what panels are visible')
+#         pointy(self)
+#         self.installEventFilter(ButtonPressResizeEventFilter(self))
+#
+#         self._menu = MenuWidget(self)
+#         self._customizationWidget = NovelQuickPanelCustomizationWidget()
+#         apply_white_menu(self._menu)
+#         self._menu.addWidget(self._customizationWidget)
+#
+#     def setNovel(self, novel: Novel):
+#         self._customizationWidget.setNovel(novel)
 
 
 class NovelSettingsWidget(QWidget, EventListener):
