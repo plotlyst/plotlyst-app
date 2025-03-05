@@ -23,14 +23,14 @@ from typing import Dict, Optional, List
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent
-from PyQt6.QtGui import QIcon, QColor
+from PyQt6.QtGui import QIcon, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QPushButton, QToolButton, QGridLayout, QFormLayout
 from overrides import overrides
-from qthandy import transparent, sp, vbox, hbox, vspacer, incr_font, pointy, grid, margins, line, spacer
-from qthandy.filter import OpacityEventFilter
+from qthandy import transparent, sp, vbox, hbox, vspacer, incr_font, pointy, grid, margins, line, spacer, translucent
+from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, DEFAULT_PREMIUM_LINK, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, NovelSetting
 from plotlyst.env import app_env
 from plotlyst.event.core import emit_event, EventListener, Event
@@ -43,9 +43,8 @@ from plotlyst.events import NovelPanelCustomizationEvent, \
     NovelCharacterLoveStyleToggleEvent, NovelCharacterWorkStyleToggleEvent, NovelScenesOrganizationToggleEvent, \
     ScenesOrganizationResetEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager, reset_scenes_organization
-from plotlyst.view.common import label, ButtonPressResizeEventFilter
+from plotlyst.view.common import label, ButtonPressResizeEventFilter, push_btn, open_url, action
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.button import SmallToggleButton
 from plotlyst.view.widget.confirm import asked
@@ -251,7 +250,10 @@ class SettingBaseWidget(QWidget):
         self._wdgChildren.layout().addWidget(child)
 
     def _toggled(self, toggled: bool):
-        self._wdgTitle.setEnabled(toggled)
+        if toggled:
+            self._wdgTitle.setGraphicsEffect(None)
+        else:
+            translucent(self._wdgTitle)
         self._wdgChildren.setVisible(toggled)
 
     @abstractmethod
@@ -308,7 +310,7 @@ class NovelPanelCustomizationToggle(QToolButton):
         self.installEventFilter(OpacityEventFilter(self, ignoreCheckedButton=True))
 
         self.setStyleSheet(f'''
-            QToolButton {{
+            QToolButton:enabled {{
                 color: grey;
                 background: lightgrey;
                 border: 1px solid lightgrey;
@@ -317,6 +319,12 @@ class NovelPanelCustomizationToggle(QToolButton):
             QToolButton:checked {{
                 color: black;
                 background: {PLOTLYST_TERTIARY_COLOR};
+            }}
+            QToolButton:disabled {{
+                border: 0px;
+                color: black;
+                opacity: 0.8;
+                background-color: rgba(0, 0, 0, 0);
             }}
         ''')
 
@@ -360,12 +368,15 @@ class NovelPanelSettingsWidget(QWidget):
         self._addSetting(NovelSetting.Characters, 0, 1)
         self._addSetting(NovelSetting.Scenes, 0, 2)
 
-        self._addSetting(NovelSetting.Storylines, 1, 0, enabled=app_env.profile().get('storylines', False))
+        self._addSetting(NovelSetting.Storylines, 1, 0, enabled=app_env.profile().get('storylines', False),
+                         link='https://plotlyst.com/docs/storylines/')
         self._addSetting(NovelSetting.Structure, 1, 2)
 
         self._addSetting(NovelSetting.Documents, 2, 0)
-        self._addSetting(NovelSetting.World_building, 2, 1, enabled=app_env.profile().get('world-building', False))
-        self._addSetting(NovelSetting.Management, 2, 2, enabled=app_env.profile().get('tasks', False))
+        self._addSetting(NovelSetting.World_building, 2, 1, enabled=app_env.profile().get('world-building', False),
+                         link='https://plotlyst.com/docs/world-building/')
+        self._addSetting(NovelSetting.Management, 2, 2, enabled=app_env.profile().get('tasks', False),
+                         link='https://plotlyst.com/docs/task-management/')
 
     def setNovel(self, novel: Novel):
         self._novel = novel
@@ -373,10 +384,6 @@ class NovelPanelSettingsWidget(QWidget):
             if not toggle.isEnabled():
                 continue
             toggle.setChecked(self._novel.prefs.toggled(toggle.setting()))
-
-    # def reset(self):
-    #     event_dispatchers.instance(self._novel).deregister(self, *panel_events)
-    #     self._novel = None
 
     @overrides
     def eventFilter(self, watched: 'QObject', event: QEvent) -> bool:
@@ -397,13 +404,15 @@ class NovelPanelSettingsWidget(QWidget):
     def toggledSettings(self) -> List[NovelSetting]:
         return [k for k, v in self._settings.items() if v.isChecked()]
 
-    def _addSetting(self, setting: NovelSetting, row: int, col: int, enabled: bool = True):
+    def _addSetting(self, setting: NovelSetting, row: int, col: int, enabled: bool = True,
+                    link: str = DEFAULT_PREMIUM_LINK):
         toggle = NovelPanelCustomizationToggle(setting)
         self._settings[setting] = toggle
         if not enabled:
             toggle.setIcon(IconRegistry.from_name('ei.lock'))
             toggle.setChecked(False)
             toggle.setDisabled(True)
+            toggle.installEventFilter(DisabledClickEventFilter(toggle, slot=lambda: self._disabledToggleClicked(link)))
         toggle.toggled.connect(partial(self._settingToggled, setting))
         toggle.clicked.connect(partial(self._settingChanged, setting))
         toggle.installEventFilter(self)
@@ -415,48 +424,62 @@ class NovelPanelSettingsWidget(QWidget):
     def _settingChanged(self, setting: NovelSetting, toggled: bool):
         self.clicked.emit(setting, toggled)
 
+    def _disabledToggleClicked(self, link: str):
+        menu = MenuWidget()
+        menu.addSection('This is a premium feature. Please purchase Plotlyst to gain access to this panel.')
+        menu.addAction(
+            action('Click here to read more about this feature', icon=IconRegistry.from_name('fa5s.external-link-alt'),
+                   slot=lambda: open_url(link)
+                   )
+        )
+        menu.addSeparator()
+        menu.addAction(
+            action('Purchase', icon=IconRegistry.from_name('ei.shopping-cart'),
+                   slot=lambda: open_url(DEFAULT_PREMIUM_LINK)
+                   )
+        )
 
-class NovelQuickPanelCustomizationWidget(NovelPanelSettingsWidget, EventListener):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-    @overrides
-    def setNovel(self, novel: Novel):
-        super().setNovel(novel)
-        event_dispatchers.instance(self._novel).register(self, *panel_events)
-
-    @overrides
-    def event_received(self, event: Event):
-        if isinstance(event, NovelPanelCustomizationEvent):
-            self._settings[event.setting].setChecked(event.toggled)
-
-    @overrides
-    def _settingToggled(self, setting: NovelSetting, toggled: bool):
-        pass
-
-    @overrides
-    def _settingChanged(self, setting: NovelSetting, toggled: bool):
-        toggle_setting(self, self._novel, setting, toggled)
+        menu.exec(QCursor.pos())
 
 
-class NovelQuickPanelCustomizationButton(QToolButton):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setIcon(IconRegistry.from_name('fa5s.cubes'))
-        self.setToolTip('Customize what panels are visible')
-        pointy(self)
-        self.installEventFilter(ButtonPressResizeEventFilter(self))
+# class NovelQuickPanelCustomizationWidget(NovelPanelSettingsWidget, EventListener):
+#     def __init__(self, parent=None):
+#         super().__init__(parent)
+#
+#     @overrides
+#     def setNovel(self, novel: Novel):
+#         super().setNovel(novel)
+#         event_dispatchers.instance(self._novel).register(self, *panel_events)
+#
+#     @overrides
+#     def event_received(self, event: Event):
+#         if isinstance(event, NovelPanelCustomizationEvent):
+#             self._settings[event.setting].setChecked(event.toggled)
+#
+#     @overrides
+#     def _settingToggled(self, setting: NovelSetting, toggled: bool):
+#         pass
+#
+#     @overrides
+#     def _settingChanged(self, setting: NovelSetting, toggled: bool):
+#         toggle_setting(self, self._novel, setting, toggled)
 
-        self._menu = MenuWidget(self)
-        self._customizationWidget = NovelQuickPanelCustomizationWidget()
-        apply_white_menu(self._menu)
-        self._menu.addWidget(self._customizationWidget)
 
-    def setNovel(self, novel: Novel):
-        self._customizationWidget.setNovel(novel)
-
-    # def reset(self):
-    #     self._customizationWidget.reset()
+# class NovelQuickPanelCustomizationButton(QToolButton):
+#     def __init__(self, parent=None):
+#         super().__init__(parent)
+#         self.setIcon(IconRegistry.from_name('fa5s.cubes'))
+#         self.setToolTip('Customize what panels are visible')
+#         pointy(self)
+#         self.installEventFilter(ButtonPressResizeEventFilter(self))
+#
+#         self._menu = MenuWidget(self)
+#         self._customizationWidget = NovelQuickPanelCustomizationWidget()
+#         apply_white_menu(self._menu)
+#         self._menu.addWidget(self._customizationWidget)
+#
+#     def setNovel(self, novel: Novel):
+#         self._customizationWidget.setNovel(novel)
 
 
 class NovelSettingsWidget(QWidget, EventListener):
@@ -484,9 +507,25 @@ class NovelSettingsWidget(QWidget, EventListener):
         # self._addSettingToggle(NovelSetting.Track_conflict, wdgScenes)
         self._addSettingToggle(NovelSetting.Manuscript)
         self._addSettingToggle(NovelSetting.Documents)
-        self._addSettingToggle(NovelSetting.Storylines, enabled=app_env.profile().get('storylines', False))
-        self._addSettingToggle(NovelSetting.World_building, enabled=app_env.profile().get('world-building', False))
-        self._addSettingToggle(NovelSetting.Management, enabled=app_env.profile().get('tasks', False))
+
+        if app_env.profile().get('license_type', 'FREE') == 'FREE':
+            self.layout().addWidget(label('Premium panels', h5=True), alignment=Qt.AlignmentFlag.AlignLeft)
+            btnPurchase = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
+                                   'Upgrade to gain access to these additional panels',
+                                   properties=['confirm', 'positive'])
+            btnPurchase.clicked.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
+            btnPurchase.installEventFilter(OpacityEventFilter(btnPurchase, 0.8, 0.6))
+            self.layout().addWidget(btnPurchase, alignment=Qt.AlignmentFlag.AlignLeft)
+        wdg = self._addSettingToggle(NovelSetting.Storylines, enabled=app_env.profile().get('storylines', False))
+        if not wdg.isEnabled():
+            margins(wdg, left=20)
+        wdg = self._addSettingToggle(NovelSetting.World_building,
+                                     enabled=app_env.profile().get('world-building', False))
+        if not wdg.isEnabled():
+            margins(wdg, left=20)
+        wdg = self._addSettingToggle(NovelSetting.Management, enabled=app_env.profile().get('tasks', False))
+        if not wdg.isEnabled():
+            margins(wdg, left=20)
 
         self.layout().addWidget(label('Advanced settings', h4=True), alignment=Qt.AlignmentFlag.AlignLeft)
         wdgScenesOrg = self._addSettingToggle(NovelSetting.Scenes_organization, insertLine=False,

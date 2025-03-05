@@ -189,7 +189,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="btnArc">
+       <widget class="QToolButton" name="btnManuscript">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -197,7 +197,7 @@
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="toolTip">
-         <string>Story arc</string>
+         <string>Manuscript</string>
         </property>
         <property name="text">
          <string/>
@@ -217,7 +217,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="btnManuscript">
+       <widget class="QToolButton" name="btnArc">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -225,7 +225,7 @@
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="toolTip">
-         <string>Manuscript</string>
+         <string>Story arc</string>
         </property>
         <property name="text">
          <string/>

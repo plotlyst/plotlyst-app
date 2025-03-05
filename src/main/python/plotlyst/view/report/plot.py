@@ -30,11 +30,13 @@ from qthandy import clear_layout, vspacer, gc
 
 from plotlyst.common import clamp, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Novel, Plot, Character, Motivation
+from plotlyst.env import app_env
 from plotlyst.view.common import icon_to_html_img
 from plotlyst.view.generated.report.plot_report_ui import Ui_PlotReport
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.report import AbstractReport
 from plotlyst.view.widget.chart import BaseChart
+from plotlyst.view.widget.display import PremiumOverlayWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode, EyeToggleNode
 
 
@@ -164,6 +166,10 @@ class ArcReport(AbstractReport, Ui_PlotReport):
         self.btnArcsToggle.clicked.connect(self._arcsSelectorClicked)
 
         self.refresh()
+        if not app_env.profile().get('scene-progression', False):
+            PremiumOverlayWidget(self, 'Story arc visualization',
+                                 icon='fa5s.chart-line',
+                                 alt_link='https://plotlyst.com/docs/scenes/')
 
     @overrides
     def refresh(self):
