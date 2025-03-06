@@ -142,6 +142,10 @@ class ManuscriptFindWidget(QWidget):
         self.btnReplace.setDisabled(True)
         self.btnReplace.clicked.connect(self._replace)
 
+        if self.novel.is_readonly():
+            self.replace.setHidden(True)
+            self.btnReplace.setHidden(True)
+
         self.lblResults = label('', bold=True)
 
         self.wdgResults = SearchResultsTextEdit()
