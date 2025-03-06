@@ -36,7 +36,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, truncate_string, \
     RELAXED_WHITE_COLOR, IGNORE_CAPITALIZATION_PROPERTY
-from plotlyst.core.domain import Board, Task, TaskStatus
+from plotlyst.core.domain import Task, TaskStatus
 from plotlyst.env import app_env
 from plotlyst.service.resource import JsonDownloadResult, JsonDownloadWorker
 from plotlyst.view.common import label, set_tab_enabled, push_btn, spin, scroll_area, wrap, frame, shadow, tool_btn, \
@@ -157,154 +157,6 @@ class PlusTaskWidget(QWidget):
         self.layout().addWidget(self.lblDescription)
         if appendLine:
             self.layout().addWidget(line())
-
-
-class PlusFeaturesWidget(QWidget):
-    DOWNLOAD_THRESHOLD_SECONDS = 60 * 60 * 8  # 8 hours in seconds
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._last_fetched = None
-        self._downloading = False
-        self._board: Optional[Board] = None
-        self._thread_pool = QThreadPool()
-
-        vbox(self)
-
-        self._scroll = scroll_area(frameless=True)
-        self._scroll.setProperty('relaxed-white-bg', True)
-        self.centerWdg = QWidget()
-        self.centerWdg.setProperty('relaxed-white-bg', True)
-        vbox(self.centerWdg, spacing=15)
-        self._scroll.setWidget(self.centerWdg)
-        self.layout().addWidget(self._scroll)
-
-        self.lblLastUpdated = label('', description=True, decr_font_diff=1)
-        self.btnVisitRoadmap = push_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'), transparent_=True,
-                                        text='Visit online roadmap')
-        self.btnVisitRoadmap.clicked.connect(lambda: open_url(
-            'https://plotlyst.featurebase.app/?s=66cd8ba9b3152ae64e027821%2C66cd8ba9b3152ae64e02781f%2C66cd8ba9b3152ae64e027820%2C66cd8ba9b3152ae64e027822&t=66db16cff80243b72d39bcdd'))
-        self.btnVisitRoadmap.installEventFilter(OpacityEventFilter(self.btnVisitRoadmap, enterOpacity=0.7))
-
-        self.wdgTasks = QWidget()
-        vbox(self.wdgTasks)
-
-        self.wdgLoading = QWidget()
-        vbox(self.wdgLoading, 0, 0)
-        self.centerWdg.layout().addWidget(group(self.lblLastUpdated, self.btnVisitRoadmap),
-                                          alignment=Qt.AlignmentFlag.AlignRight)
-        self.centerWdg.layout().addWidget(self.wdgLoading)
-        self.centerWdg.layout().addWidget(self.wdgTasks)
-        self.centerWdg.layout().addWidget(vspacer())
-        self.wdgLoading.setHidden(True)
-
-    @overrides
-    def showEvent(self, event: QShowEvent):
-        super().showEvent(event)
-
-        if self._downloading:
-            return
-
-        if self._last_fetched is None or (
-                datetime.datetime.now() - self._last_fetched).total_seconds() > self.DOWNLOAD_THRESHOLD_SECONDS:
-            self._handle_downloading_status(True)
-            self._download_data()
-
-    def _download_data(self):
-        clear_layout(self.wdgTasks)
-        result = JsonDownloadResult()
-        runnable = JsonDownloadWorker("https://raw.githubusercontent.com/plotlyst/feed/refs/heads/main/plus.json",
-                                      result)
-        result.finished.connect(self._handle_downloaded_data)
-        result.failed.connect(self._handle_download_failure)
-        self._thread_pool.start(runnable)
-
-    def _handle_downloaded_data(self, data):
-        self._board: Board = Board.from_dict(data)
-
-        statuses = {}
-        for status in self._board.statuses:
-            statuses[str(status.id)] = status
-
-        toolbar = QWidget()
-        hbox(toolbar)
-        btnAll = push_btn(IconRegistry.from_name('msc.debug-stackframe-dot'), text='All',
-                          properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
-        btnAll.clicked.connect(self._displayAll)
-        btnAll.setChecked(True)
-        btnPlanned = push_btn(IconRegistry.from_name('fa5.calendar-alt'), text='Planned',
-                              properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
-        btnPlanned.clicked.connect(self._displayPlanned)
-        btnCompleted = push_btn(IconRegistry.from_name('fa5s.check'), text='Completed',
-                                properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
-        btnCompleted.clicked.connect(self._displayCompleted)
-        btnGroup = QButtonGroup(self)
-        btnGroup.addButton(btnAll)
-        btnGroup.addButton(btnPlanned)
-        btnGroup.addButton(btnCompleted)
-
-        self.wdgTasks.layout().addWidget(group(btnAll, vline(), btnPlanned, btnCompleted),
-                                         alignment=Qt.AlignmentFlag.AlignLeft)
-        self.wdgTasks.layout().addWidget(line())
-
-        allCounter = 0
-        plannedCounter = 0
-        completedCounter = 0
-        for i, task in enumerate(self._board.tasks):
-            status = statuses[str(task.status_ref)]
-            wdg = PlusTaskWidget(task, status, appendLine=i < len(self._board.tasks) - 1)
-            self.wdgTasks.layout().addWidget(wdg)
-
-            allCounter += 1
-            if status.text == 'Completed':
-                completedCounter += 1
-            else:
-                plannedCounter += 1
-
-        btnAll.setText(btnAll.text() + f' ({allCounter})')
-        btnPlanned.setText(btnPlanned.text() + f' ({plannedCounter})')
-        btnCompleted.setText(btnCompleted.text() + f' ({completedCounter})')
-
-        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        self.lblLastUpdated.setText(f"Last updated: {now}")
-        self._last_fetched = datetime.datetime.now()
-
-        self._handle_downloading_status(False)
-
-    def _handle_download_failure(self, status_code: int, message: str):
-        if self._board is None:
-            self.lblLastUpdated.setText("Failed to update data.")
-        self._handle_downloading_status(False)
-
-    def _handle_downloading_status(self, loading: bool):
-        self._downloading = loading
-        self.wdgLoading.setVisible(loading)
-        if loading:
-            btn = push_btn(transparent_=True)
-            btn.setIconSize(QSize(128, 128))
-            self.wdgLoading.layout().addWidget(btn,
-                                               alignment=Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
-            spin(btn, PLOTLYST_SECONDARY_COLOR)
-        else:
-            clear_layout(self.wdgLoading)
-
-    def _displayAll(self):
-        for i in range(self.wdgTasks.layout().count()):
-            wdg = self.wdgTasks.layout().itemAt(i).widget()
-            if isinstance(wdg, PlusTaskWidget):
-                wdg.setVisible(True)
-
-    def _displayPlanned(self):
-        for i in range(self.wdgTasks.layout().count()):
-            wdg = self.wdgTasks.layout().itemAt(i).widget()
-            if isinstance(wdg, PlusTaskWidget):
-                wdg.setVisible(wdg.status.text == 'Planned')
-
-    def _displayCompleted(self):
-        for i in range(self.wdgTasks.layout().count()):
-            wdg = self.wdgTasks.layout().itemAt(i).widget()
-            if isinstance(wdg, PlusTaskWidget):
-                wdg.setVisible(wdg.status.text == 'Completed')
 
 
 class GenreCard(Card):
@@ -1256,7 +1108,8 @@ class PatronRecognitionBuilderPopup(PopupDialog):
 
         self.tabWidget.addTab(self.tabMain, IconRegistry.from_name('mdi.account'),
                               'Basic info')
-        self.tabWidget.addTab(self.tabProfile, IconRegistry.from_name('mdi.badge-account-horizontal-outline'), 'Detailed Profile')
+        self.tabWidget.addTab(self.tabProfile, IconRegistry.from_name('mdi.badge-account-horizontal-outline'),
+                              'Detailed Profile')
         self.tabWidget.addTab(self.tabExport, IconRegistry.from_name('mdi6.export-variant'), 'Export')
 
         self.textJson = QTextBrowser()
