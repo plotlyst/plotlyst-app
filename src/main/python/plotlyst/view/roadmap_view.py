@@ -146,14 +146,13 @@ class RoadmapBoardWidget(QWidget):
         self._tagFilters: Set[str] = set()
         self._version: str = ''
         self._status: str = ''
-        self._beta: bool = False
 
     def setBoard(self, board: Board):
         clear_layout(self)
         self._tasks.clear()
         self._tagFilters.clear()
         self._version = ''
-        self._beta = False
+        self._status = ''
 
         statuses = {}
         for status in board.statuses:
@@ -182,27 +181,18 @@ class RoadmapBoardWidget(QWidget):
 
     def showAll(self):
         self._version = ''
-        self._beta = False
 
         for task, wdg in self._tasks.items():
             wdg.setVisible(self._filter(task))
 
     def filterVersion(self, version: str):
         self._version = version
-        self._beta = False
 
         for task, wdg in self._tasks.items():
             wdg.setVisible(self._filter(task))
 
     def filterStatus(self, status: str, toggled: bool):
         self._status = status if toggled else ''
-
-        for task, wdg in self._tasks.items():
-            wdg.setVisible(self._filter(task))
-
-    def filterBeta(self):
-        self._version = ''
-        self._beta = True
 
         for task, wdg in self._tasks.items():
             wdg.setVisible(self._filter(task))
@@ -220,8 +210,6 @@ class RoadmapBoardWidget(QWidget):
         if self._version and task.version != self._version:
             return False
         if self._status and self._tasks[task].status.text != self._status:
-            return False
-        if self._beta and not task.beta:
             return False
 
         return self._filteredByTags(task)
@@ -274,7 +262,6 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         self.btnAll.clicked.connect(self._roadmapWidget.showAll)
         self.btnFree.clicked.connect(lambda: self._roadmapWidget.filterVersion('Free'))
         self.btnPlus.clicked.connect(lambda: self._roadmapWidget.filterVersion('Plus'))
-        self.btnBeta.clicked.connect(self._roadmapWidget.filterBeta)
 
         self.wdgLoading.setHidden(True)
 
@@ -334,17 +321,13 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         btnGroup = ExclusiveOptionalButtonGroup(self)
         for tag, item in self._board.tags.items():
             tagBtn = tag_filter_btn(tag, item.icon)
-            # tagBtn = push_btn(IconRegistry.from_name(item.icon, 'grey', item.icon_color),
-            #                   f'{tag.capitalize()} ({tags_counter.get(tag, 0)})', transparent_=True, checkable=True)
             btnGroup.addButton(tagBtn)
-            # tagBtn.toggled.connect(partial(bold, tagBtn))
             tagBtn.toggled.connect(partial(self._roadmapWidget.filterTag, tag))
             wdgTypes.layout().addWidget(tagBtn, alignment=Qt.AlignmentFlag.AlignLeft)
         self.wdgCategoriesParent.layout().addWidget(vspacer())
 
         self.btnFree.setText(f'Free ({versions_counter.get("Free", 0)})')
         self.btnPlus.setText(f'Plus ({versions_counter.get("Plus", 0)})')
-        self.btnBeta.setText(f'Beta ({versions_counter.get("Beta", 0)})')
 
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         self.lblLastUpdated.setText(f"Last updated: {now}")
