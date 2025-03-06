@@ -21,12 +21,12 @@ import datetime
 from functools import partial
 from typing import Optional, Dict, Set
 
-from PyQt6.QtCore import QEvent, QThreadPool, QSize, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, QThreadPool, QSize, Qt
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame
+from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame, QPushButton
 from overrides import overrides
-from qthandy import clear_layout, hbox, spacer, margins, vbox, incr_font, retain_when_hidden, decr_icon, translucent, \
-    decr_font, transparent, vspacer, italic
+from qthandy import clear_layout, hbox, spacer, vbox, incr_font, retain_when_hidden, decr_icon, translucent, \
+    decr_font, transparent, vspacer, italic, bold, margins, incr_icon
 from qthandy.filter import VisibilityToggleEventFilter, OpacityEventFilter
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR, RELAXED_WHITE_COLOR
@@ -34,38 +34,18 @@ from plotlyst.core.domain import Board, Task, TaskStatus
 from plotlyst.core.template import SelectionItem
 from plotlyst.env import app_env
 from plotlyst.service.resource import JsonDownloadWorker, JsonDownloadResult
-from plotlyst.view.common import push_btn, spin, shadow, tool_btn, open_url, ButtonPressResizeEventFilter
+from plotlyst.view.common import push_btn, spin, shadow, tool_btn, open_url, ButtonPressResizeEventFilter, \
+    ExclusiveOptionalButtonGroup, label
 from plotlyst.view.generated.roadmap_view_ui import Ui_RoadmapView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.input import AutoAdjustableTextEdit
+from plotlyst.view.widget.patron import PlusTaskWidget
 from plotlyst.view.widget.task import BaseStatusColumnWidget
-from plotlyst.view.widget.tree import TreeView, EyeToggleNode
 
 tags_counter: Dict[str, int] = {}
 versions_counter: Dict[str, int] = {}
-
-
-class TagsTreeView(TreeView):
-    toggled = pyqtSignal(str, bool)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-    def setTags(self, tags: Dict[str, SelectionItem]):
-        self.clear()
-        for k, v in tags.items():
-            node = EyeToggleNode(f'{k.capitalize()} ({tags_counter.get(k, 0)})',
-                                 IconRegistry.from_name(v.icon, color=v.icon_color))
-            node.setToolTip(v.text)
-            node.toggled.connect(partial(self.toggled.emit, k))
-            self._centralWidget.layout().addWidget(node)
-
-        self._centralWidget.layout().addWidget(vspacer())
-
-    def clear(self):
-        clear_layout(self._centralWidget)
 
 
 class RoadmapTaskWidget(QFrame):
@@ -148,62 +128,77 @@ class RoadmapStatusColumn(BaseStatusColumnWidget):
         return wdg
 
 
+def tag_filter_btn(tag: str, icon: str) -> QPushButton:
+    tagBtn = push_btn(IconRegistry.from_name(icon),
+                      f'{tag.capitalize()} ({tags_counter.get(tag, 0)})', transparent_=True, checkable=True)
+    incr_font(tagBtn)
+    incr_icon(tagBtn, 2)
+    tagBtn.toggled.connect(partial(bold, tagBtn))
+    tagBtn.installEventFilter(OpacityEventFilter(tagBtn, leaveOpacity=0.8, ignoreCheckedButton=True))
+    return tagBtn
+
+
 class RoadmapBoardWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        hbox(self, spacing=20)
-        self._statusColumns: Dict[str, RoadmapStatusColumn] = {}
-        self._tasks: Dict[Task, RoadmapTaskWidget] = {}
+        vbox(self, spacing=10)
+        self._tasks: Dict[Task, PlusTaskWidget] = {}
         self._tagFilters: Set[str] = set()
+        self._version: str = ''
+        self._status: str = ''
 
     def setBoard(self, board: Board):
         clear_layout(self)
-        self._statusColumns.clear()
         self._tasks.clear()
         self._tagFilters.clear()
-        self._version: str = ''
-        self._beta: bool = False
+        self._version = ''
+        self._status = ''
 
+        btnSubmitRequest = push_btn(IconRegistry.from_name('mdi.comment-text', RELAXED_WHITE_COLOR),
+                                    text='Request a new feature',
+                                    properties=['positive', 'confirm'])
+        btnSubmitRequest.clicked.connect(lambda: open_url('https://plotlyst.featurebase.app/'))
+        self.layout().addWidget(btnSubmitRequest, alignment=Qt.AlignmentFlag.AlignRight)
+
+        statuses = {}
         for status in board.statuses:
-            column = RoadmapStatusColumn(status)
-            self.layout().addWidget(column)
-            self._statusColumns[str(status.id)] = column
+            statuses[str(status.id)] = status
 
-        for task in board.tasks:
-            column = self._statusColumns.get(str(task.status_ref))
-            wdg = column.addTask(task, board)
+        tags_counter['Planned'] = 0
+        tags_counter['Completed'] = 0
+
+        for i, task in enumerate(board.tasks):
+            status = statuses[str(task.status_ref)]
+            wdg = PlusTaskWidget(task, status, appendLine=i < len(board.tasks) - 1)
             self._tasks[task] = wdg
+            self.layout().addWidget(wdg)
+
+            tags_counter[status.text] += 1
+
             for tag in task.tags:
                 if tag not in tags_counter:
                     tags_counter[tag] = 0
                 tags_counter[tag] += 1
-            if task.beta:
-                versions_counter['Beta'] += 1
+
             if task.version:
                 versions_counter[task.version] += 1
 
-        _spacer = spacer()
-        _spacer.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        self.layout().addWidget(_spacer)
-        margins(self, left=20)
+        self.layout().addWidget(vspacer())
 
     def showAll(self):
         self._version = ''
-        self._beta = False
 
         for task, wdg in self._tasks.items():
             wdg.setVisible(self._filter(task))
 
     def filterVersion(self, version: str):
         self._version = version
-        self._beta = False
 
         for task, wdg in self._tasks.items():
             wdg.setVisible(self._filter(task))
 
-    def filterBeta(self):
-        self._version = ''
-        self._beta = True
+    def filterStatus(self, status: str, toggled: bool):
+        self._status = status if toggled else ''
 
         for task, wdg in self._tasks.items():
             wdg.setVisible(self._filter(task))
@@ -220,7 +215,7 @@ class RoadmapBoardWidget(QWidget):
     def _filter(self, task: Task) -> bool:
         if self._version and task.version != self._version:
             return False
-        if self._beta and not task.beta:
+        if self._status and self._tasks[task].status.text != self._status:
             return False
 
         return self._filteredByTags(task)
@@ -242,19 +237,17 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         super().__init__(parent)
         self.setupUi(self)
 
-        self.btnRoadmapIcon.setIcon(IconRegistry.from_name('fa5s.road'))
         self.btnPlus.setIcon(IconRegistry.from_name('mdi.certificate', color_on=PLOTLYST_SECONDARY_COLOR))
         self.btnVisitRoadmap.setIcon(IconRegistry.from_name('fa5s.external-link-alt'))
         self.btnVisitRoadmap.installEventFilter(ButtonPressResizeEventFilter(self.btnVisitRoadmap))
         self.btnVisitRoadmap.clicked.connect(lambda: open_url('https://plotlyst.featurebase.app/roadmap'))
         decr_icon(self.btnVisitRoadmap, 2)
         decr_font(self.btnVisitRoadmap)
+        decr_font(self.lblLastUpdated)
         italic(self.btnVisitRoadmap)
         self.btnVisitRoadmap.installEventFilter(OpacityEventFilter(self.btnVisitRoadmap, enterOpacity=0.7))
-
-        self.btnSubmitRequest.setIcon(IconRegistry.from_name('mdi.comment-text', RELAXED_WHITE_COLOR))
-        self.btnSubmitRequest.installEventFilter(ButtonPressResizeEventFilter(self.btnSubmitRequest))
-        self.btnSubmitRequest.clicked.connect(lambda: open_url('https://plotlyst.featurebase.app/'))
+        self.lblDesc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        incr_font(self.lblDesc)
 
         self.splitter.setSizes([150, 550])
 
@@ -266,14 +259,13 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         self._roadmapWidget = RoadmapBoardWidget()
         self.scrollAreaWidgetContents.layout().addWidget(self._roadmapWidget)
 
-        self._tagsTree = TagsTreeView()
-        self.wdgCategoriesParent.layout().addWidget(self._tagsTree)
-        self._tagsTree.toggled.connect(self._roadmapWidget.filterTag)
+        incr_font(self.btnAll)
+        incr_font(self.btnFree)
+        incr_font(self.btnPlus)
 
         self.btnAll.clicked.connect(self._roadmapWidget.showAll)
         self.btnFree.clicked.connect(lambda: self._roadmapWidget.filterVersion('Free'))
         self.btnPlus.clicked.connect(lambda: self._roadmapWidget.filterVersion('Plus'))
-        self.btnBeta.clicked.connect(self._roadmapWidget.filterBeta)
 
         self.wdgLoading.setHidden(True)
 
@@ -291,7 +283,7 @@ class RoadmapView(QWidget, Ui_RoadmapView):
 
     def _download_data(self):
         result = JsonDownloadResult()
-        runnable = JsonDownloadWorker("https://raw.githubusercontent.com/plotlyst/feed/refs/heads/main/posts.json",
+        runnable = JsonDownloadWorker("https://raw.githubusercontent.com/plotlyst/feed/refs/heads/main/plus.json",
                                       result)
         result.finished.connect(self._handle_downloaded_data)
         result.failed.connect(self._handle_download_failure)
@@ -301,17 +293,45 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         self.btnAll.setChecked(True)
         tags_counter.clear()
         versions_counter.clear()
+        clear_layout(self.wdgCategoriesParent)
         versions_counter['Free'] = 0
         versions_counter['Plus'] = 0
         versions_counter['Beta'] = 0
 
-        self._board = Board.from_dict(data)
+        self._board: Board = Board.from_dict(data)
         self._roadmapWidget.setBoard(self._board)
-        self._tagsTree.setTags(self._board.tags)
+
+        btnGroup = ExclusiveOptionalButtonGroup(self)
+        tagCompleted = tag_filter_btn('Completed', 'fa5s.check')
+        tagPlanned = tag_filter_btn('Planned', 'fa5.calendar-alt')
+        tagCompleted.clicked.connect(partial(self._roadmapWidget.filterStatus, 'Completed'))
+        tagPlanned.clicked.connect(partial(self._roadmapWidget.filterStatus, 'Planned'))
+        btnGroup.addButton(tagCompleted)
+        btnGroup.addButton(tagPlanned)
+        self.wdgCategoriesParent.layout().addWidget(label('State', description=True))
+        wdgStates = QWidget()
+        vbox(wdgStates)
+        margins(wdgStates, left=10, bottom=30)
+        wdgStates.layout().addWidget(tagCompleted, alignment=Qt.AlignmentFlag.AlignLeft)
+        wdgStates.layout().addWidget(tagPlanned, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgCategoriesParent.layout().addWidget(wdgStates)
+
+        self.wdgCategoriesParent.layout().addWidget(label('Type', description=True))
+        wdgTypes = QWidget()
+        vbox(wdgTypes)
+        margins(wdgTypes, left=10)
+        self.wdgCategoriesParent.layout().addWidget(wdgTypes)
+
+        btnGroup = ExclusiveOptionalButtonGroup(self)
+        for tag, item in self._board.tags.items():
+            tagBtn = tag_filter_btn(tag, item.icon)
+            btnGroup.addButton(tagBtn)
+            tagBtn.toggled.connect(partial(self._roadmapWidget.filterTag, tag))
+            wdgTypes.layout().addWidget(tagBtn, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgCategoriesParent.layout().addWidget(vspacer())
 
         self.btnFree.setText(f'Free ({versions_counter.get("Free", 0)})')
         self.btnPlus.setText(f'Plus ({versions_counter.get("Plus", 0)})')
-        self.btnBeta.setText(f'Beta ({versions_counter.get("Beta", 0)})')
 
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         self.lblLastUpdated.setText(f"Last updated: {now}")
