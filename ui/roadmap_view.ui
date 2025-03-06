@@ -124,7 +124,7 @@
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Planned, in-progress, and completed tasks for both the Free and Plotlyst Plus versions. Beta: upcoming features that are currently available in the Beta version.</string>
+         <string>Planned and completed Plotlyst features.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -408,7 +408,7 @@
          <x>0</x>
          <y>0</y>
          <width>343</width>
-         <height>176</height>
+         <height>183</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -416,6 +416,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="relaxed-white-bg" stdset="0">
+        <bool>true</bool>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <property name="spacing">

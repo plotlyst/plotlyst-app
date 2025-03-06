@@ -25,7 +25,7 @@ from PyQt6.QtCore import QEvent, QThreadPool, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame
 from overrides import overrides
-from qthandy import clear_layout, hbox, spacer, margins, vbox, incr_font, retain_when_hidden, decr_icon, translucent, \
+from qthandy import clear_layout, hbox, spacer, vbox, incr_font, retain_when_hidden, decr_icon, translucent, \
     decr_font, transparent, vspacer, italic
 from qthandy.filter import VisibilityToggleEventFilter, OpacityEventFilter
 
@@ -40,6 +40,7 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.input import AutoAdjustableTextEdit
+from plotlyst.view.widget.patron import PlusTaskWidget
 from plotlyst.view.widget.task import BaseStatusColumnWidget
 from plotlyst.view.widget.tree import TreeView, EyeToggleNode
 
@@ -151,7 +152,7 @@ class RoadmapStatusColumn(BaseStatusColumnWidget):
 class RoadmapBoardWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        hbox(self, spacing=20)
+        vbox(self, spacing=15)
         self._statusColumns: Dict[str, RoadmapStatusColumn] = {}
         self._tasks: Dict[Task, RoadmapTaskWidget] = {}
         self._tagFilters: Set[str] = set()
@@ -164,28 +165,43 @@ class RoadmapBoardWidget(QWidget):
         self._version: str = ''
         self._beta: bool = False
 
+        statuses = {}
         for status in board.statuses:
-            column = RoadmapStatusColumn(status)
-            self.layout().addWidget(column)
-            self._statusColumns[str(status.id)] = column
+            statuses[str(status.id)] = status
 
-        for task in board.tasks:
-            column = self._statusColumns.get(str(task.status_ref))
-            wdg = column.addTask(task, board)
-            self._tasks[task] = wdg
-            for tag in task.tags:
-                if tag not in tags_counter:
-                    tags_counter[tag] = 0
-                tags_counter[tag] += 1
-            if task.beta:
-                versions_counter['Beta'] += 1
-            if task.version:
-                versions_counter[task.version] += 1
+        for i, task in enumerate(board.tasks):
+            status = statuses[str(task.status_ref)]
+            wdg = PlusTaskWidget(task, status, appendLine=i < len(board.tasks) - 1)
+            self.layout().addWidget(wdg)
 
-        _spacer = spacer()
-        _spacer.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        self.layout().addWidget(_spacer)
-        margins(self, left=20)
+            # allCounter += 1
+            # if status.text == 'Completed':
+            #     completedCounter += 1
+            # else:
+            #     plannedCounter += 1
+
+        # for status in board.statuses:
+        #     column = RoadmapStatusColumn(status)
+        #     self.layout().addWidget(column)
+        #     self._statusColumns[str(status.id)] = column
+        #
+        # for task in board.tasks:
+        #     column = self._statusColumns.get(str(task.status_ref))
+        #     wdg = column.addTask(task, board)
+        #     self._tasks[task] = wdg
+        #     for tag in task.tags:
+        #         if tag not in tags_counter:
+        #             tags_counter[tag] = 0
+        #         tags_counter[tag] += 1
+        #     if task.beta:
+        #         versions_counter['Beta'] += 1
+        #     if task.version:
+        #         versions_counter[task.version] += 1
+
+        # _spacer = spacer()
+        # _spacer.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.layout().addWidget(vspacer())
+        # margins(self, left=20)
 
     def showAll(self):
         self._version = ''
@@ -291,7 +307,7 @@ class RoadmapView(QWidget, Ui_RoadmapView):
 
     def _download_data(self):
         result = JsonDownloadResult()
-        runnable = JsonDownloadWorker("https://raw.githubusercontent.com/plotlyst/feed/refs/heads/main/posts.json",
+        runnable = JsonDownloadWorker("https://raw.githubusercontent.com/plotlyst/feed/refs/heads/main/plus.json",
                                       result)
         result.finished.connect(self._handle_downloaded_data)
         result.failed.connect(self._handle_download_failure)
