@@ -50,7 +50,7 @@ from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.kb.browser import KnowledgeBaseWidget
 from plotlyst.view.widget.library import ShelvesTreeView, StoryCreationDialog, NovelDisplayCard, SeriesDisplayCard, \
     NovelSelectorPopup
-from plotlyst.view.widget.patron import PatronsWidget, PlotlystPlusWidget
+from plotlyst.view.widget.patron import PlotlystPlusWidget
 from plotlyst.view.widget.tour.core import LibraryTourEvent, NewStoryButtonTourEvent, \
     NewStoryDialogOpenTourEvent, TutorialNovelSelectTourEvent, NovelDisplayTourEvent, tutorial_novel, \
     NovelOpenButtonTourEvent, TutorialNovelCloseTourEvent
@@ -127,10 +127,8 @@ class HomeView(AbstractView):
             IconRegistry.from_name('mdi.bookshelf', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.ui.btnRoadmap.setIcon(
             IconRegistry.from_name('fa5s.road', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
-        self.ui.btnPlotlystPlus.setIcon(
-            IconRegistry.from_name('mdi.certificate', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.ui.btnPatrons.setIcon(
-            IconRegistry.from_name('msc.organization', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
+            IconRegistry.from_name('fa5b.patreon', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.ui.btnKnowledgeBase.setIcon(
             IconRegistry.from_name('fa5s.graduation-cap', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
 
@@ -193,7 +191,6 @@ class HomeView(AbstractView):
         link_buttons_to_pages(self.ui.stackedWidget,
                               [(self.ui.btnLibrary, self.ui.pageLibrary),
                                (self.ui.btnRoadmap, self.ui.pageRoadmap),
-                               (self.ui.btnPlotlystPlus, self.ui.pagePlotlystPlus),
                                (self.ui.btnPatrons, self.ui.pagePatrons),
                                (self.ui.btnKnowledgeBase, self.ui.pageKnowledgeBase),
                                ])
@@ -205,10 +202,7 @@ class HomeView(AbstractView):
         self.ui.pageKnowledgeBase.layout().addWidget(self._knowledgeBase)
 
         self._plotlystPlus = PlotlystPlusWidget()
-        self.ui.pagePlotlystPlus.layout().addWidget(self._plotlystPlus)
-
-        self._patronsWidget = PatronsWidget()
-        self.ui.pagePatrons.layout().addWidget(self._patronsWidget)
+        self.ui.pagePatrons.layout().addWidget(self._plotlystPlus)
 
         self.ui.btnLibrary.setChecked(True)
         self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageEmpty)

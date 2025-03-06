@@ -598,7 +598,7 @@ class PatreonTiersWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         vbox(self)
-        margins(self, bottom=45)
+        margins(self, bottom=15)
 
         self._scroll = scroll_area(frameless=True)
         self._scroll.setProperty('relaxed-white-bg', True)
@@ -613,8 +613,9 @@ class PatreonTiersWidget(QWidget):
 
         title = label('Patreon Tiers', h2=True)
         desc = label(
-            'Plotlyst is an indie project created by a solo developer with a passion for writing and storytelling. Your support makes it possible to keep improving the software and keep it free for everyone. Every tier helps fund future development and allows you to play a key role in shaping the future of Plotlyst.',
+            'Plotlyst is an indie project created by a solo developer with a passion for writing and storytelling.',
             description=True, incr_font_diff=1, wordWrap=True)
+        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         btnPatreon = self._joinButton()
 
         self.centerWdg.layout().addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -629,9 +630,6 @@ class PatreonTiersWidget(QWidget):
             if tier.has_plotlyst_plus:
                 section.btnPlus.clicked.connect(self.showPlus)
 
-        btnPatreon = self._joinButton()
-        self.centerWdg.layout().addWidget(vspacer(max_height=40))
-        self.centerWdg.layout().addWidget(btnPatreon, alignment=Qt.AlignmentFlag.AlignCenter)
         self.centerWdg.layout().addWidget(vspacer())
 
     def _joinButton(self) -> QPushButton:
@@ -1546,17 +1544,16 @@ class PlotlystPlusWidget(QWidget):
         vbox(self.tabReport, 10, 5)
         self.tabPatreon = QWidget()
         vbox(self.tabPatreon, 10, 5)
-        self.tabPlus = QWidget()
-        vbox(self.tabPlus, 10, 5)
         self.tabPatrons = QWidget()
         vbox(self.tabPatrons, 10, 5)
 
-        self.tabWidget.addTab(self.tabReport, IconRegistry.from_name('mdi.crystal-ball', color_on=PLOTLYST_MAIN_COLOR),
-                              'Vision')
         self.tabWidget.addTab(self.tabPatreon, IconRegistry.from_name('fa5b.patreon', color_on=PLOTLYST_MAIN_COLOR),
                               'Patreon')
-        self.tabWidget.addTab(self.tabPlus, IconRegistry.from_name('mdi.certificate', color_on=PLOTLYST_MAIN_COLOR),
-                              'Plus Features')
+        self.tabWidget.addTab(self.tabReport, IconRegistry.from_name('mdi.crystal-ball', color_on=PLOTLYST_MAIN_COLOR),
+                              'Vision')
+        self.tabWidget.addTab(self.tabPatrons, IconRegistry.from_name('msc.organization', color_on=PLOTLYST_MAIN_COLOR),
+                              'Patrons')
+
         self.layout().addWidget(self.tabWidget)
 
         self.lblVisionLastUpdated = label('', description=True, decr_font_diff=1)
@@ -1564,18 +1561,18 @@ class PlotlystPlusWidget(QWidget):
         vbox(self.wdgLoading, 0, 0)
         self._patreonWdg = PatreonTiersWidget()
         self._patreonWdg.showResults.connect(lambda: self.tabWidget.setCurrentWidget(self.tabReport))
-        self._patreonWdg.showPlus.connect(lambda: self.tabWidget.setCurrentWidget(self.tabPlus))
         self._surveyWdg = SurveyResultsWidget()
         self._surveyWdg.showTiers.connect(lambda: self.tabWidget.setCurrentWidget(self.tabPatreon))
-        self._plusWdg = PlusFeaturesWidget()
 
         self.tabReport.layout().addWidget(self.lblVisionLastUpdated, alignment=Qt.AlignmentFlag.AlignRight)
         self.tabReport.layout().addWidget(self._surveyWdg)
         self.tabReport.layout().addWidget(self.wdgLoading)
         self.wdgLoading.setHidden(True)
 
+        self._patronsWidget = PatronsWidget()
+        self.tabPatrons.layout().addWidget(self._patronsWidget)
+
         self.tabPatreon.layout().addWidget(self._patreonWdg)
-        self.tabPlus.layout().addWidget(self._plusWdg)
 
         self._thread_pool = QThreadPool()
 
