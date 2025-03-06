@@ -775,6 +775,9 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         gc(self.manuscript_view)
         self.manuscript_view = None
 
+        self._actionProgress.setVisible(False)
+        self._actionScrivener.setVisible(False)
+        self._actionSeries.setVisible(False)
         self.menuDetachPanels.setDisabled(True)
 
         self.outline_mode.setDisabled(True)
