@@ -687,7 +687,9 @@ class ManuscriptEditor(QWidget, EventListener):
 
         for textedit in self._textedits:
             matches = self._find.sceneMathes(textedit.scene())
+            self._lockTextChanged = True
             textedit.setHighlights(matches)
+            self._lockTextChanged = False
 
     def resetFind(self):
         for textedit in self._textedits:
