@@ -141,7 +141,7 @@ def tag_filter_btn(tag: str, icon: str) -> QPushButton:
 class RoadmapBoardWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        vbox(self, spacing=15)
+        vbox(self, spacing=10)
         self._tasks: Dict[Task, PlusTaskWidget] = {}
         self._tagFilters: Set[str] = set()
         self._version: str = ''
@@ -153,6 +153,12 @@ class RoadmapBoardWidget(QWidget):
         self._tagFilters.clear()
         self._version = ''
         self._status = ''
+
+        btnSubmitRequest = push_btn(IconRegistry.from_name('mdi.comment-text', RELAXED_WHITE_COLOR),
+                                    text='Request a new feature',
+                                    properties=['positive', 'confirm'])
+        btnSubmitRequest.clicked.connect(lambda: open_url('https://plotlyst.featurebase.app/'))
+        self.layout().addWidget(btnSubmitRequest, alignment=Qt.AlignmentFlag.AlignRight)
 
         statuses = {}
         for status in board.statuses:
@@ -231,19 +237,17 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         super().__init__(parent)
         self.setupUi(self)
 
-        self.btnRoadmapIcon.setIcon(IconRegistry.from_name('fa5s.road'))
         self.btnPlus.setIcon(IconRegistry.from_name('mdi.certificate', color_on=PLOTLYST_SECONDARY_COLOR))
         self.btnVisitRoadmap.setIcon(IconRegistry.from_name('fa5s.external-link-alt'))
         self.btnVisitRoadmap.installEventFilter(ButtonPressResizeEventFilter(self.btnVisitRoadmap))
         self.btnVisitRoadmap.clicked.connect(lambda: open_url('https://plotlyst.featurebase.app/roadmap'))
         decr_icon(self.btnVisitRoadmap, 2)
         decr_font(self.btnVisitRoadmap)
+        decr_font(self.lblLastUpdated)
         italic(self.btnVisitRoadmap)
         self.btnVisitRoadmap.installEventFilter(OpacityEventFilter(self.btnVisitRoadmap, enterOpacity=0.7))
-
-        self.btnSubmitRequest.setIcon(IconRegistry.from_name('mdi.comment-text', RELAXED_WHITE_COLOR))
-        self.btnSubmitRequest.installEventFilter(ButtonPressResizeEventFilter(self.btnSubmitRequest))
-        self.btnSubmitRequest.clicked.connect(lambda: open_url('https://plotlyst.featurebase.app/'))
+        self.lblDesc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        incr_font(self.lblDesc)
 
         self.splitter.setSizes([150, 550])
 
@@ -255,9 +259,9 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         self._roadmapWidget = RoadmapBoardWidget()
         self.scrollAreaWidgetContents.layout().addWidget(self._roadmapWidget)
 
-        # self._tagsTree = TagsTreeView()
-        # self.wdgCategoriesParent.layout().addWidget(self._tagsTree)
-        # self._tagsTree.toggled.connect(self._roadmapWidget.filterTag)
+        incr_font(self.btnAll)
+        incr_font(self.btnFree)
+        incr_font(self.btnPlus)
 
         self.btnAll.clicked.connect(self._roadmapWidget.showAll)
         self.btnFree.clicked.connect(lambda: self._roadmapWidget.filterVersion('Free'))

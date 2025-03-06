@@ -131,7 +131,7 @@ class PlusTaskWidget(QWidget):
         super().__init__(parent)
         self.task = task
         self.status = status
-        vbox(self, 10, spacing=5)
+        vbox(self, 5, spacing=3)
 
         self.lblStatus = label(self.status.text)
         self.lblStatus.setStyleSheet(f'''
