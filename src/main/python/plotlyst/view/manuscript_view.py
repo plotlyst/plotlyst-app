@@ -152,6 +152,7 @@ class ManuscriptView(AbstractNovelView):
         self.ui.pageFind.layout().addWidget(self.wdgFind)
         self.textEditor.attachFindWidget(self.wdgFind)
         self.wdgFind.matched.connect(self._term_searched)
+        self.wdgFind.reset.connect(self._term_reset)
         self.wdgFind.replaced.connect(self._term_replaced)
         self.wdgFind.wdgResults.matchClicked.connect(self._navigate)
 
@@ -403,6 +404,8 @@ class ManuscriptView(AbstractNovelView):
         btn = self._btnGroupSideBar.checkedButton()
         if btn is None:
             qtanim.collapse(self.ui.wdgSide)
+            if self.wdgFind.isActive():
+                self.textEditor.resetFind()
             self.wdgFind.deactivate()
             return
 
@@ -481,9 +484,11 @@ class ManuscriptView(AbstractNovelView):
         if 0 < diff < 40:
             scroll_to_bottom(self.ui.scrollEditor)
 
-
     def _term_searched(self):
         self.textEditor.activateFind()
+
+    def _term_reset(self):
+        self.textEditor.resetFind()
 
     def _term_replaced(self):
         scene = self.textEditor.scene()

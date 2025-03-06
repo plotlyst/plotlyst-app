@@ -242,6 +242,10 @@ class GrammarHighlighter(AbstractTextBlockHighlighter, EventListener):
 
         self.rehighlight()
 
+    def clearHighlights(self):
+        self._highlights_index.clear()
+        self.rehighlight()
+
     @overrides
     def setDocument(self, doc: Optional[QTextDocument]) -> None:
         self._asyncTimer.stop()

@@ -106,6 +106,7 @@ class SearchResultsTextEdit(QTextBrowser):
 class ManuscriptFindWidget(QWidget):
     CONTEXT_SIZE: int = 30
     matched = pyqtSignal()
+    reset = pyqtSignal()
     replaced = pyqtSignal()
 
     def __init__(self, novel: Novel, parent=None):
@@ -244,6 +245,7 @@ class ManuscriptFindWidget(QWidget):
         if not term or term == ' ' or (len(term) == 1 and not re.match(r'[\d\W]', term)):
             self.lblResults.clear()
             self.btnReplace.setDisabled(True)
+            self.reset.emit()
             return
 
         json_client.load_manuscript(self.novel)

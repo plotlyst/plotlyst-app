@@ -381,6 +381,9 @@ class ManuscriptTextEdit(TextEditBase):
     def setHighlights(self, highlights: list):
         self.highlighter.setHighlights(highlights)
 
+    def clearHighlights(self):
+        self.highlighter.clearHighlights()
+
     def scene(self) -> Optional[Scene]:
         return self._scene
 
@@ -679,11 +682,16 @@ class ManuscriptEditor(QWidget, EventListener):
 
     def activateFind(self):
         if not self._find.isActive():
+            self.resetFind()
             return
 
         for textedit in self._textedits:
             matches = self._find.sceneMathes(textedit.scene())
             textedit.setHighlights(matches)
+
+    def resetFind(self):
+        for textedit in self._textedits:
+            textedit.clearHighlights()
 
     def setNightMode(self, mode: bool):
         for lbl in self._sceneLabels:
