@@ -307,7 +307,7 @@ class ScenesOutlineView(AbstractNovelView):
         if self.novel.is_readonly():
             for btn in [self.ui.btnNew, self.ui.btnNewWithMenu, self.ui.btnDelete]:
                 btn.setDisabled(True)
-                btn.setToolTip('Option disabled in Scrivener synchronization mode')
+                btn.setToolTip('Option is disabled in Scrivener synchronization mode')
                 btn.installEventFilter(InstantTooltipEventFilter(btn))
 
         self.ui.cards.orderChanged.connect(self._on_scene_cards_swapped)

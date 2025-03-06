@@ -23,7 +23,7 @@ from PyQt6.QtGui import QScreen
 from PyQt6.QtWidgets import QInputDialog, QApplication
 from overrides import overrides
 from qthandy import translucent, bold, margins, spacer, transparent, vspacer, decr_icon, vline, incr_icon, busy
-from qthandy.filter import OpacityEventFilter
+from qthandy.filter import OpacityEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR, RELAXED_WHITE_COLOR
@@ -222,6 +222,11 @@ class ManuscriptView(AbstractNovelView):
         elif self.novel.scenes:
             self.ui.treeChapters.selectScene(self.novel.scenes[0])
             self._editScene(self.novel.scenes[0])
+
+        if self.novel.is_readonly():
+            self.ui.btnAdd.setDisabled(True)
+            self.ui.btnAdd.setToolTip('Option is disabled in Scrivener synchronization mode')
+            self.ui.btnAdd.installEventFilter(InstantTooltipEventFilter(self.ui.btnAdd))
 
         self._update_story_goal()
 
