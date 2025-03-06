@@ -1230,8 +1230,7 @@ class PublishedNovelListWidget(QWidget):
 class PatronRecognitionBuilderPopup(PopupDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.patron = Patron('My name', web='https://plotlyst.com')
-        self.patronVip = Patron('My name', vip=True, web='https://plotlyst.com', novels=[
+        self.patronVip = Patron('My name', vip=True, web='', novels=[
             PatronNovelInfo(''), PatronNovelInfo(''), PatronNovelInfo('')
         ])
 
@@ -1255,9 +1254,9 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         self.tabExport.setProperty('muted-bg', True)
         vbox(self.tabExport, 10, 10)
 
-        self.tabWidget.addTab(self.tabMain, IconRegistry.from_name('fa5s.hand-holding-heart'),
+        self.tabWidget.addTab(self.tabMain, IconRegistry.from_name('mdi.account'),
                               'Basic info')
-        self.tabWidget.addTab(self.tabProfile, IconRegistry.from_name('ri.vip-diamond-fill'), 'VIP Profile')
+        self.tabWidget.addTab(self.tabProfile, IconRegistry.from_name('mdi.badge-account-horizontal-outline'), 'Detailed Profile')
         self.tabWidget.addTab(self.tabExport, IconRegistry.from_name('mdi6.export-variant'), 'Export')
 
         self.textJson = QTextBrowser()
@@ -1338,7 +1337,7 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         self.websiteFrame = self.__framed(self.lineWebsite)
         hintWebsite = HintButton()
         hintWebsite.setHint(
-            'Users will be able to click on your Patron label and visit your website.')
+            'Users will be able to click on your Patron card and visit your website.')
         self.websiteFrame.layout().addWidget(hintWebsite, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.lineBio = self.__lineedit('Bio', iconEditable=False)
@@ -1347,22 +1346,14 @@ class PatronRecognitionBuilderPopup(PopupDialog):
 
         self.wdgPreview = QWidget()
         hbox(self.wdgPreview)
-        self.patronRecognition = PatronRecognitionWidget(self.patron)
-        self.framePatron = self.__framed(self.patronRecognition, margin=5)
         self.patronVipRecognition = PatronRecognitionWidget(self.patronVip)
         self.frameVipPatron = self.__framed(self.patronVipRecognition, margin=5)
-        self.patronLbl = label('Preview:')
-        self.patronVipLbl = label('VIP Preview:')
+        self.patronVipLbl = label('Preview:')
 
         self.wdgPreview.layout().addWidget(spacer())
-        self.wdgPreview.layout().addWidget(self.patronLbl)
-        self.wdgPreview.layout().addWidget(self.framePatron)
         self.wdgPreview.layout().addWidget(self.patronVipLbl)
         self.wdgPreview.layout().addWidget(self.frameVipPatron)
         self.wdgPreview.layout().addWidget(spacer())
-
-        self.patronVipLbl.setHidden(True)
-        self.frameVipPatron.setHidden(True)
 
         self.tabMain.layout().addWidget(self.wdgType)
         self.tabMain.layout().addWidget(self.nameFrame)
@@ -1416,35 +1407,15 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         self.frame.layout().addWidget(self.tabWidget)
         self.frame.layout().addWidget(self.btnCancel, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.tabWidget.currentChanged.connect(self._tabChanged)
-
     def display(self):
         self.exec()
 
-    def _tabChanged(self, index: int):
-        wdg = self.tabWidget.currentWidget()
-        if wdg is self.tabMain:
-            self.patronLbl.setVisible(True)
-            self.framePatron.setVisible(True)
-            self.patronVipLbl.setVisible(False)
-            self.frameVipPatron.setVisible(False)
-        elif wdg is self.tabProfile:
-            self.patronLbl.setVisible(False)
-            self.framePatron.setVisible(False)
-            self.patronVipLbl.setVisible(True)
-            self.frameVipPatron.setVisible(True)
-
     def _nameEdited(self, name: str):
-        self.patron.name = name
         self.patronVip.name = name
-
-        self.patronRecognition.refresh()
         self.patronVipRecognition.refresh()
-
         self._updateJson()
 
     def _genreChanged(self, genre: str):
-        self.patron.genre = genre
         self.patronVip.genre = genre
 
         self._updateJson()
@@ -1461,40 +1432,29 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         else:
             return
 
-        self.patron.profession = profession
         self.patronVip.profession = profession
 
         self._updateJson()
 
     def _iconChanged(self, name: str):
-        self.patron.icon = name
         self.patronVip.icon = name
 
-        self.patronRecognition.refresh()
         self.patronVipRecognition.refresh()
 
         self._updateJson()
 
     def _websiteEdited(self, web: str):
-        self.patron.web = web
         self.patronVip.web = web
-
         self.patronVipRecognition.refresh()
-
         self._updateJson()
 
     def _bioEdited(self, bio: str):
-        self.patron.bio = bio
         self.patronVip.bio = bio
-
         self.patronVipRecognition.refresh()
-
         self._updateJson()
 
     def _descEdited(self, desc: str):
-        self.patron.description = desc
         self.patronVip.description = desc
-
         self._updateJson()
 
     def _socialsChanged(self):
