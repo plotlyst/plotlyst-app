@@ -23,10 +23,10 @@ from typing import Optional, Dict, Set
 
 from PyQt6.QtCore import QEvent, QThreadPool, QSize, Qt
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame, QButtonGroup
+from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame, QPushButton
 from overrides import overrides
 from qthandy import clear_layout, hbox, spacer, vbox, incr_font, retain_when_hidden, decr_icon, translucent, \
-    decr_font, transparent, vspacer, italic, vline, line, bold
+    decr_font, transparent, vspacer, italic, bold, margins, incr_icon
 from qthandy.filter import VisibilityToggleEventFilter, OpacityEventFilter
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR, RELAXED_WHITE_COLOR
@@ -35,7 +35,7 @@ from plotlyst.core.template import SelectionItem
 from plotlyst.env import app_env
 from plotlyst.service.resource import JsonDownloadWorker, JsonDownloadResult
 from plotlyst.view.common import push_btn, spin, shadow, tool_btn, open_url, ButtonPressResizeEventFilter, \
-    ExclusiveOptionalButtonGroup
+    ExclusiveOptionalButtonGroup, label
 from plotlyst.view.generated.roadmap_view_ui import Ui_RoadmapView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
@@ -128,6 +128,16 @@ class RoadmapStatusColumn(BaseStatusColumnWidget):
         return wdg
 
 
+def tag_filter_btn(tag: str, icon: str) -> QPushButton:
+    tagBtn = push_btn(IconRegistry.from_name(icon),
+                      f'{tag.capitalize()} ({tags_counter.get(tag, 0)})', transparent_=True, checkable=True)
+    incr_font(tagBtn)
+    incr_icon(tagBtn, 2)
+    tagBtn.toggled.connect(partial(bold, tagBtn))
+    tagBtn.installEventFilter(OpacityEventFilter(tagBtn, leaveOpacity=0.8, ignoreCheckedButton=True))
+    return tagBtn
+
+
 class RoadmapBoardWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -135,6 +145,7 @@ class RoadmapBoardWidget(QWidget):
         self._tasks: Dict[Task, PlusTaskWidget] = {}
         self._tagFilters: Set[str] = set()
         self._version: str = ''
+        self._status: str = ''
         self._beta: bool = False
 
     def setBoard(self, board: Board):
@@ -148,28 +159,8 @@ class RoadmapBoardWidget(QWidget):
         for status in board.statuses:
             statuses[str(status.id)] = status
 
-        btnAll = push_btn(IconRegistry.from_name('msc.debug-stackframe-dot'), text='All',
-                          properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
-        # btnAll.clicked.connect(self._displayAll)
-        btnAll.setChecked(True)
-        btnPlanned = push_btn(IconRegistry.from_name('fa5.calendar-alt'), text='Planned',
-                              properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
-        # btnPlanned.clicked.connect(self._displayPlanned)
-        btnCompleted = push_btn(IconRegistry.from_name('fa5s.check'), text='Completed',
-                                properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
-        # btnCompleted.clicked.connect(self._displayCompleted)
-        btnGroup = QButtonGroup(self)
-        btnGroup.addButton(btnAll)
-        btnGroup.addButton(btnPlanned)
-        btnGroup.addButton(btnCompleted)
-
-        self.layout().addWidget(group(btnAll, vline(), btnPlanned, btnCompleted),
-                                alignment=Qt.AlignmentFlag.AlignLeft)
-        self.layout().addWidget(line())
-
-        allCounter = 0
-        plannedCounter = 0
-        completedCounter = 0
+        tags_counter['Planned'] = 0
+        tags_counter['Completed'] = 0
 
         for i, task in enumerate(board.tasks):
             status = statuses[str(task.status_ref)]
@@ -177,33 +168,15 @@ class RoadmapBoardWidget(QWidget):
             self._tasks[task] = wdg
             self.layout().addWidget(wdg)
 
-            allCounter += 1
-            if status.text == 'Completed':
-                completedCounter += 1
-            else:
-                plannedCounter += 1
+            tags_counter[status.text] += 1
 
             for tag in task.tags:
                 if tag not in tags_counter:
                     tags_counter[tag] = 0
                 tags_counter[tag] += 1
 
-        btnAll.setText(btnAll.text() + f' ({allCounter})')
-        btnPlanned.setText(btnPlanned.text() + f' ({plannedCounter})')
-        btnCompleted.setText(btnCompleted.text() + f' ({completedCounter})')
-
-        # for task in board.tasks:
-        #     column = self._statusColumns.get(str(task.status_ref))
-        #     wdg = column.addTask(task, board)
-        #     self._tasks[task] = wdg
-        #     for tag in task.tags:
-        #         if tag not in tags_counter:
-        #             tags_counter[tag] = 0
-        #         tags_counter[tag] += 1
-        #     if task.beta:
-        #         versions_counter['Beta'] += 1
-        #     if task.version:
-        #         versions_counter[task.version] += 1
+            if task.version:
+                versions_counter[task.version] += 1
 
         self.layout().addWidget(vspacer())
 
@@ -217,6 +190,12 @@ class RoadmapBoardWidget(QWidget):
     def filterVersion(self, version: str):
         self._version = version
         self._beta = False
+
+        for task, wdg in self._tasks.items():
+            wdg.setVisible(self._filter(task))
+
+    def filterStatus(self, status: str, toggled: bool):
+        self._status = status if toggled else ''
 
         for task, wdg in self._tasks.items():
             wdg.setVisible(self._filter(task))
@@ -239,6 +218,8 @@ class RoadmapBoardWidget(QWidget):
 
     def _filter(self, task: Task) -> bool:
         if self._version and task.version != self._version:
+            return False
+        if self._status and self._tasks[task].status.text != self._status:
             return False
         if self._beta and not task.beta:
             return False
@@ -330,13 +311,35 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         self._roadmapWidget.setBoard(self._board)
 
         btnGroup = ExclusiveOptionalButtonGroup(self)
+        tagCompleted = tag_filter_btn('Completed', 'fa5s.check')
+        tagPlanned = tag_filter_btn('Planned', 'fa5.calendar-alt')
+        tagCompleted.clicked.connect(partial(self._roadmapWidget.filterStatus, 'Completed'))
+        tagPlanned.clicked.connect(partial(self._roadmapWidget.filterStatus, 'Planned'))
+        btnGroup.addButton(tagCompleted)
+        btnGroup.addButton(tagPlanned)
+        self.wdgCategoriesParent.layout().addWidget(label('State', description=True))
+        wdgStates = QWidget()
+        vbox(wdgStates)
+        margins(wdgStates, left=10, bottom=30)
+        wdgStates.layout().addWidget(tagCompleted, alignment=Qt.AlignmentFlag.AlignLeft)
+        wdgStates.layout().addWidget(tagPlanned, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgCategoriesParent.layout().addWidget(wdgStates)
+
+        self.wdgCategoriesParent.layout().addWidget(label('Type', description=True))
+        wdgTypes = QWidget()
+        vbox(wdgTypes)
+        margins(wdgTypes, left=10)
+        self.wdgCategoriesParent.layout().addWidget(wdgTypes)
+
+        btnGroup = ExclusiveOptionalButtonGroup(self)
         for tag, item in self._board.tags.items():
-            tagBtn = push_btn(IconRegistry.from_name(item.icon, 'grey', item.icon_color),
-                              f'{tag.capitalize()} ({tags_counter.get(tag, 0)})', transparent_=True, checkable=True)
+            tagBtn = tag_filter_btn(tag, item.icon)
+            # tagBtn = push_btn(IconRegistry.from_name(item.icon, 'grey', item.icon_color),
+            #                   f'{tag.capitalize()} ({tags_counter.get(tag, 0)})', transparent_=True, checkable=True)
             btnGroup.addButton(tagBtn)
-            tagBtn.toggled.connect(partial(bold, tagBtn))
+            # tagBtn.toggled.connect(partial(bold, tagBtn))
             tagBtn.toggled.connect(partial(self._roadmapWidget.filterTag, tag))
-            self.wdgCategoriesParent.layout().addWidget(tagBtn, alignment=Qt.AlignmentFlag.AlignLeft)
+            wdgTypes.layout().addWidget(tagBtn, alignment=Qt.AlignmentFlag.AlignLeft)
         self.wdgCategoriesParent.layout().addWidget(vspacer())
 
         self.btnFree.setText(f'Free ({versions_counter.get("Free", 0)})')

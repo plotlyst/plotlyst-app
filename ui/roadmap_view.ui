@@ -57,7 +57,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Plotlyst roadmap</string>
+         <string>Plotlyst features</string>
         </property>
         <property name="h4" stdset="0">
          <bool>true</bool>
@@ -124,7 +124,7 @@
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Planned and completed Plotlyst features.</string>
+         <string>Planned and completed features for the Plotlyst Free and Plotlyst Plus packages.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
