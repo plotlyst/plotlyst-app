@@ -36,7 +36,7 @@ from plotlyst.core.domain import Scene, Novel, Chapter, ChapterType
 from plotlyst.event.core import Event, EventListener, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneDeletedEvent, \
-    SceneChangedEvent, SceneAddedEvent, ScenesOrganizationResetEvent
+    SceneChangedEvent, SceneAddedEvent, ScenesOrganizationResetEvent, NovelScenesOrganizationToggleEvent
 from plotlyst.events import SceneOrderChangedEvent, ChapterChangedEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_scene
 from plotlyst.view.common import action, insert_before_the_end
@@ -224,7 +224,7 @@ class ScenesTreeView(TreeView, EventListener):
         self._novel = novel
         dispatcher = event_dispatchers.instance(self._novel)
         dispatcher.register(self, SceneOrderChangedEvent, ChapterChangedEvent, SceneDeletedEvent, SceneAddedEvent,
-                            SceneChangedEvent, ScenesOrganizationResetEvent)
+                            SceneChangedEvent, ScenesOrganizationResetEvent, NovelScenesOrganizationToggleEvent)
         self._readOnly = readOnly
 
         self.refresh()
@@ -372,6 +372,9 @@ class ScenesTreeView(TreeView, EventListener):
         elif isinstance(event,
                         (SceneAddedEvent, SceneOrderChangedEvent, ChapterChangedEvent, ScenesOrganizationResetEvent)):
             self._tryRefresh()
+        elif isinstance(event, NovelScenesOrganizationToggleEvent):
+            self._refreshSceneTitles()
+
 
     def _tryRefresh(self):
         if self.isVisible():
