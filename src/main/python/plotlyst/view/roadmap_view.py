@@ -25,7 +25,8 @@ from PyQt6.QtCore import QEvent, QThreadPool, QSize, Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QWidget, QPushButton
 from overrides import overrides
-from qthandy import clear_layout, vbox, incr_font, decr_icon, decr_font, vspacer, italic, bold, margins, incr_icon, line
+from qthandy import clear_layout, vbox, incr_font, decr_icon, decr_font, vspacer, italic, bold, margins, incr_icon, \
+    line, spacer, translucent
 from qthandy.filter import OpacityEventFilter
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
@@ -37,7 +38,7 @@ from plotlyst.view.common import push_btn, spin, tool_btn, open_url, ButtonPress
 from plotlyst.view.generated.roadmap_view_ui import Ui_RoadmapView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
-from plotlyst.view.widget.display import IconText
+from plotlyst.view.widget.display import IconText, Icon
 
 tags_counter: Dict[str, int] = {}
 versions_counter: Dict[str, int] = {}
@@ -59,6 +60,12 @@ class TaskWidget(QWidget):
             color: {self.status.color_hexa};
         ''')
 
+        self.iconPlus = Icon()
+        self.iconPlus.setToolTip('Plotlyst Plus feature')
+        self.iconPlus.setIcon(IconRegistry.from_name('mdi.certificate', PLOTLYST_SECONDARY_COLOR))
+        translucent(self.iconPlus, 0.5)
+        self.iconPlus.setVisible(self.task.version == 'Plus')
+
         self.lblName = IconText()
         incr_font(self.lblName, 4)
         self.lblName.setText(self.task.title)
@@ -74,7 +81,7 @@ class TaskWidget(QWidget):
         self._btnOpenInExternal.clicked.connect(lambda: open_url(self.task.web_link))
 
         self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.layout().addWidget(group(self.lblName, self._btnOpenInExternal), alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(group(self.lblName, self._btnOpenInExternal, spacer(), self.iconPlus))
         self.layout().addWidget(self.lblDescription)
         if appendLine:
             self.layout().addWidget(line())
