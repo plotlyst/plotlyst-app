@@ -106,7 +106,7 @@ class SocialSnapshotPopup(PopupDialog):
     @overrides
     def paintEvent(self, event):
         super().paintEvent(event)
-        scale_factor = 4
+        scale_factor = 6
         pixmap = QPixmap(self.canvasContainer.size() * scale_factor)
 
         painter = QPainter(pixmap)
