@@ -39,7 +39,7 @@ from plotlyst.service.persistence import flush_or_fail
 from plotlyst.service.resource import ask_for_resource
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import tool_btn, ButtonPressResizeEventFilter, action, \
-    ExclusiveOptionalButtonGroup, link_buttons_to_pages, shadow, scroll_to_bottom
+    ExclusiveOptionalButtonGroup, link_buttons_to_pages, shadow, scroll_to_bottom, restyle
 from plotlyst.view.generated.manuscript_view_ui import Ui_ManuscriptView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
@@ -64,7 +64,7 @@ class ManuscriptView(AbstractNovelView):
         self.ui = Ui_ManuscriptView()
         self.ui.setupUi(self.widget)
         self.ui.splitter.setSizes([150, 500])
-        self.ui.stackedWidget.setCurrentWidget(self.ui.pageOverview)
+        self._empty_page()
         self._dist_free_mode: bool = False
 
         self.ui.lblWc.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -72,9 +72,6 @@ class ManuscriptView(AbstractNovelView):
         self.ui.btnAdd.setIcon(IconRegistry.plus_icon(RELAXED_WHITE_COLOR))
         self.ui.btnAddScene.setIcon(IconRegistry.plus_icon(RELAXED_WHITE_COLOR))
         self.ui.btnAddScene.clicked.connect(self.ui.treeChapters.addScene)
-
-        self.ui.btnManuscript.setIcon(IconRegistry.manuscript_icon(color_on='black'))
-        bold(self.ui.btnManuscript)
 
         self._dist_free_top_bar = DistFreeDisplayBar()
         self._dist_free_top_bar.btnExitDistFreeMode.clicked.connect(self._exit_distraction_free)
@@ -185,7 +182,7 @@ class ManuscriptView(AbstractNovelView):
         self._toolbarSeparator = vline()
         self._wdgToolbar = group(spacer(), self._wdgSprint, self._toolbarSeparator, self._spellCheckIcon,
                                  self._cbSpellCheck, self._btnDistractionFree)
-        self.ui.wdgTop.layout().addWidget(self._wdgToolbar)
+        self.ui.pageText.layout().insertWidget(0, self._wdgToolbar)
         margins(self._wdgToolbar, right=10)
 
         self._addSceneMenu = MenuWidget(self.ui.btnAdd)
@@ -277,7 +274,7 @@ class ManuscriptView(AbstractNovelView):
         self._wdgToolbar.setHidden(True)
 
         self._btnGroupSideBar.reset()
-        self.ui.wdgTitle.setHidden(True)
+        self.ui.wdgTop.setHidden(True)
         self.ui.wdgLeftSide.setHidden(True)
         self.ui.wdgSideBar.setHidden(True)
         self.ui.wdgBottom.setHidden(True)
@@ -308,7 +305,7 @@ class ManuscriptView(AbstractNovelView):
         margins(self.ui.pageText, bottom=0)
         self.ui.pageText.setStyleSheet('')
 
-        self.ui.wdgTitle.setVisible(True)
+        self.ui.wdgTop.setVisible(True)
         self._wdgToolbar.setVisible(True)
         self.ui.wdgLeftSide.setVisible(self.ui.btnTreeToggle.isChecked())
         self.ui.wdgSideBar.setVisible(True)
@@ -332,7 +329,7 @@ class ManuscriptView(AbstractNovelView):
         self._progressWdg.setValue(wc)
 
     def _editScene(self, scene: Scene):
-        self.ui.stackedWidget.setCurrentWidget(self.ui.pageText)
+        self._text_page()
 
         if not scene.manuscript:
             scene.manuscript = Document('', scene_id=scene.id)
@@ -347,7 +344,7 @@ class ManuscriptView(AbstractNovelView):
         self._recheckDocument()
 
     def _editChapter(self, chapter: Chapter):
-        self.ui.stackedWidget.setCurrentWidget(self.ui.pageText)
+        self._text_page()
 
         scenes = self.novel.scenes_in_chapter(chapter)
         for scene in scenes:
@@ -470,6 +467,13 @@ class ManuscriptView(AbstractNovelView):
     def _empty_page(self, message: str = ''):
         self.ui.lblEmptyPage.setText(message)
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageEmpty)
+        self.ui.wdgTop.setProperty('relaxed-white-bg', False)
+        restyle(self.ui.wdgTop)
+
+    def _text_page(self):
+        self.ui.stackedWidget.setCurrentWidget(self.ui.pageText)
+        self.ui.wdgTop.setProperty('relaxed-white-bg', True)
+        restyle(self.ui.wdgTop)
 
     def _hide_sidebar(self):
         def finished():
