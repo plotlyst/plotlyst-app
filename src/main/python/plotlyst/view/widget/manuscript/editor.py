@@ -125,7 +125,7 @@ class DistFreeControlsBar(QFrame):
         self.btnFocus.setVisible(True)
         self.btnTypewriterMode.setVisible(True)
         self.btnWordCount.setVisible(True)
-        QTimer.singleShot(5000, self._hideItems)
+        QTimer.singleShot(4000, self._hideItems)
 
     @overrides
     def enterEvent(self, event: QtGui.QEnterEvent) -> None:
