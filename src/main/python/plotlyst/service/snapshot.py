@@ -32,6 +32,7 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.report.productivity import ProductivityCalendar
 from plotlyst.view.widget.display import PopupDialog
+from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar
 
 
 class SnapshotCanvasEditor(QWidget):
@@ -49,6 +50,17 @@ class ProductivitySnapshotEditor(SnapshotCanvasEditor):
         transparent(self.canvas)
 
         calendar = ProductivityCalendar(self.novel.productivity)
+        self.canvas.layout().addWidget(calendar)
+
+
+class WritingSnapshotEditor(SnapshotCanvasEditor):
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(parent)
+        self.novel = novel
+        vbox(self.canvas)
+        transparent(self.canvas)
+
+        calendar = ManuscriptProgressCalendar(self.novel)
         self.canvas.layout().addWidget(calendar)
 
 
@@ -86,6 +98,9 @@ class SocialSnapshotPopup(PopupDialog):
 
         if snapshotType == SnapshotType.Productivity:
             editor = ProductivitySnapshotEditor(self.novel)
+            self.canvasContainer.layout().addWidget(editor.canvas)
+        elif snapshotType == SnapshotType.Writing:
+            editor = WritingSnapshotEditor(self.novel)
             self.canvasContainer.layout().addWidget(editor.canvas)
 
     @overrides

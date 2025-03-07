@@ -33,17 +33,19 @@ from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView, \
     QPushButton, QToolButton, QWidgetItem, QGraphicsColorizeEffect, QGraphicsTextItem
 from overrides import overrides
 from qthandy import retain_when_hidden, translucent, margins, vbox, bold, vline, decr_font, \
-    underline, transparent, italic, decr_icon, pointy, hbox
+    underline, transparent, italic, decr_icon, pointy, hbox, incr_icon, vspacer
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, group
 from qttextedit import TextBlockState
 from textstat import textstat
 
 from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR
-from plotlyst.core.domain import Novel, DocumentProgress
+from plotlyst.core.domain import Novel, DocumentProgress, SnapshotType
 from plotlyst.core.sprint import TimerModel
 from plotlyst.core.text import wc, sentence_count, clean_text
 from plotlyst.env import app_env
+from plotlyst.event.core import emit_event
+from plotlyst.events import SocialSnapshotRequested
 from plotlyst.resources import resource_registry
 from plotlyst.service.manuscript import find_daily_overall_progress
 from plotlyst.view.common import spin, ButtonPressResizeEventFilter, label, push_btn, \
@@ -480,6 +482,13 @@ class ManuscriptDailyProgress(QWidget):
         self._novel = novel
         vbox(self)
 
+        self.btnSnapshot = tool_btn(IconRegistry.from_name('mdi.camera', 'lightgrey'),
+                                    'Take a snapshot for social media',
+                                    transparent_=True)
+        incr_icon(self.btnSnapshot, 6)
+        self.btnSnapshot.clicked.connect(
+            lambda: emit_event(novel, SocialSnapshotRequested(self, SnapshotType.Writing)))
+
         self.btnDay = IconText()
         self.btnDay.setText('Today')
         self.btnDay.setIcon(IconRegistry.from_name('mdi.calendar-month-outline'))
@@ -495,6 +504,8 @@ class ManuscriptDailyProgress(QWidget):
         self.lblAdded = label('', color=PLOTLYST_SECONDARY_COLOR, h3=True)
         self.lblRemoved = label('', color='grey', h3=True)
 
+        self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout().addWidget(vspacer(20))
         self.layout().addWidget(group(self.btnDay, self.btnJumpToToday))
         self.layout().addWidget(group(self.lblAdded, vline(), self.lblRemoved), alignment=Qt.AlignmentFlag.AlignRight)
         lbl = label('Added/Removed', description=True)
