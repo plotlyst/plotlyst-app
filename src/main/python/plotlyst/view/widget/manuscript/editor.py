@@ -677,6 +677,13 @@ class ManuscriptEditor(QWidget, EventListener):
         self._chapter = None
         clear_layout(self.wdgEditor)
 
+    @overrides
+    def setFocus(self) -> None:
+        if self._textedits:
+            self._textedits[0].setFocus()
+        else:
+            super().setFocus()
+
     def attachFindWidget(self, find: ManuscriptFindWidget):
         self._find = find
 

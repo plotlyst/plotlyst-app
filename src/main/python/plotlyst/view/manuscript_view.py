@@ -274,6 +274,7 @@ class ManuscriptView(AbstractNovelView):
         self.ui.pageText.setStyleSheet(f'QWidget {{background-color: {BG_DARK_COLOR};}}')
         self._wdgToolbar.setHidden(True)
 
+        self._btnGroupSideBar.reset()
         self.ui.wdgTitle.setHidden(True)
         self.ui.wdgLeftSide.setHidden(True)
         self.ui.wdgSideBar.setHidden(True)
@@ -281,6 +282,7 @@ class ManuscriptView(AbstractNovelView):
         self._dist_free_top_bar.setVisible(True)
         self._dist_free_bottom_bar.setVisible(True)
         self._dist_free_mode = True
+
         self.textEditor.initSentenceHighlighter()
         self.textEditor.setNightMode(True)
 
@@ -292,6 +294,7 @@ class ManuscriptView(AbstractNovelView):
         self._toggle_typewriter_mode(self._dist_free_bottom_bar.btnTypewriterMode.isChecked())
 
         self.ui.scrollEditor.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textEditor.setFocus()
 
     def _exit_distraction_free(self):
         emit_global_event(ExitDistractionFreeMode(self))
@@ -403,10 +406,9 @@ class ManuscriptView(AbstractNovelView):
     def _side_bar_toggled(self, _, toggled: bool):
         btn = self._btnGroupSideBar.checkedButton()
         if btn is None:
-            qtanim.collapse(self.ui.wdgSide)
-            if self.wdgFind.isActive():
-                self.textEditor.resetFind()
             self.wdgFind.deactivate()
+            self.textEditor.resetFind()
+            qtanim.collapse(self.ui.wdgSide)
             return
 
         if toggled and not self.ui.wdgSide.isVisible():
