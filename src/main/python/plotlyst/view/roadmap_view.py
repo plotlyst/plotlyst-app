@@ -23,113 +23,65 @@ from typing import Optional, Dict, Set
 
 from PyQt6.QtCore import QEvent, QThreadPool, QSize, Qt
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame, QPushButton
+from PyQt6.QtWidgets import QWidget, QPushButton
 from overrides import overrides
-from qthandy import clear_layout, hbox, spacer, vbox, incr_font, retain_when_hidden, decr_icon, translucent, \
-    decr_font, transparent, vspacer, italic, bold, margins, incr_icon
-from qthandy.filter import VisibilityToggleEventFilter, OpacityEventFilter
+from qthandy import clear_layout, vbox, incr_font, decr_icon, decr_font, vspacer, italic, bold, margins, incr_icon, line
+from qthandy.filter import OpacityEventFilter
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR, RELAXED_WHITE_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Board, Task, TaskStatus
-from plotlyst.core.template import SelectionItem
 from plotlyst.env import app_env
 from plotlyst.service.resource import JsonDownloadWorker, JsonDownloadResult
-from plotlyst.view.common import push_btn, spin, shadow, tool_btn, open_url, ButtonPressResizeEventFilter, \
+from plotlyst.view.common import push_btn, spin, tool_btn, open_url, ButtonPressResizeEventFilter, \
     ExclusiveOptionalButtonGroup, label
 from plotlyst.view.generated.roadmap_view_ui import Ui_RoadmapView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
-from plotlyst.view.style.button import apply_button_palette_color
-from plotlyst.view.widget.input import AutoAdjustableTextEdit
-from plotlyst.view.widget.patron import PlusTaskWidget
-from plotlyst.view.widget.task import BaseStatusColumnWidget
+from plotlyst.view.widget.display import IconText
 
 tags_counter: Dict[str, int] = {}
 versions_counter: Dict[str, int] = {}
 
 
-class RoadmapTaskWidget(QFrame):
-
-    def __init__(self, task: Task, tags: Dict[str, SelectionItem], parent=None):
+class TaskWidget(QWidget):
+    def __init__(self, task: Task, status: TaskStatus, parent=None, appendLine: bool = True):
         super().__init__(parent)
-        self._task: Task = task
+        self.task = task
+        self.status = status
+        vbox(self, 5, spacing=3)
 
-        self.setProperty('relaxed-white-bg', True)
-        self.setProperty('rounded', True)
+        self.lblStatus = label(self.status.text)
+        font = self.lblStatus.font()
+        font.setCapitalization(QFont.Capitalization.SmallCaps)
+        font.setFamily(app_env.serif_font())
+        self.lblStatus.setFont(font)
+        self.lblStatus.setStyleSheet(f'''
+            color: {self.status.color_hexa};
+        ''')
 
-        vbox(self, margin=5)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
-        self.setMinimumHeight(75)
-        shadow(self, 3)
-
-        self._textTitle = AutoAdjustableTextEdit(self)
-        self._textTitle.setPlaceholderText('New task')
-        self._textTitle.setText(task.title)
-        self.setToolTip(task.summary)
-        transparent(self._textTitle)
-        self._textTitle.setReadOnly(True)
-        font = QFont(app_env.sans_serif_font())
-        font.setWeight(QFont.Weight.Medium)
-        self._textTitle.setFont(font)
-        incr_font(self._textTitle)
+        self.lblName = IconText()
+        incr_font(self.lblName, 4)
+        self.lblName.setText(self.task.title)
+        if self.task.icon:
+            self.lblName.setIcon(IconRegistry.from_name(self.task.icon))
+        self.lblDescription = label(self.task.summary, description=True, wordWrap=True)
+        self.lblDescription.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        incr_font(self.lblDescription)
 
         self._btnOpenInExternal = tool_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'), transparent_=True,
                                            tooltip='Open in browser')
-        self._btnOpenInExternal.clicked.connect(lambda: open_url(self._task.web_link))
-        retain_when_hidden(self._btnOpenInExternal)
         decr_icon(self._btnOpenInExternal, 4)
+        self._btnOpenInExternal.clicked.connect(lambda: open_url(self.task.web_link))
 
-        top_wdg = group(self._textTitle, spacer(), self._btnOpenInExternal, margin=0, spacing=1)
-        self.layout().addWidget(top_wdg, alignment=Qt.AlignmentFlag.AlignTop)
-
-        self._wdgBottom = QWidget()
-        retain_when_hidden(self._wdgBottom)
-        hbox(self._wdgBottom)
-
-        for tag_name in self._task.tags:
-            tag = tags.get(tag_name)
-            if tag:
-                btn = tool_btn(IconRegistry.from_name(tag.icon, tag.icon_color), transparent_=True, icon_resize=False,
-                               pointy_=False, tooltip=tag.text)
-                decr_icon(btn, 4)
-                translucent(btn, 0.7)
-                self._wdgBottom.layout().addWidget(btn)
-
-        self._wdgBottom.layout().addWidget(spacer())
-        if self._task.version == 'Plus':
-            self._btnVersion = push_btn(text=self._task.version, properties=['transparent'],
-                                        tooltip='Feature will be available in Plotlyst Plus', icon_resize=False,
-                                        pointy_=False)
-            self._btnVersion.setIcon(IconRegistry.from_name('mdi.certificate', color=PLOTLYST_MAIN_COLOR))
-            apply_button_palette_color(self._btnVersion, PLOTLYST_MAIN_COLOR)
-            decr_font(self._btnVersion)
-            decr_icon(self._btnVersion, 2)
-            self._wdgBottom.layout().addWidget(self._btnVersion)
-
-        self.layout().addWidget(self._wdgBottom, alignment=Qt.AlignmentFlag.AlignBottom)
-
-        self.installEventFilter(VisibilityToggleEventFilter(self._btnOpenInExternal, self))
-
-    def task(self) -> Task:
-        return self._task
+        self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(group(self.lblName, self._btnOpenInExternal), alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(self.lblDescription)
+        if appendLine:
+            self.layout().addWidget(line())
 
 
-class RoadmapStatusColumn(BaseStatusColumnWidget):
-
-    def __init__(self, status: TaskStatus, parent=None):
-        super().__init__(status, parent, collapseEnabled=False, headerAdditionEnabled=False)
-
-    def addTask(self, task: Task, board: Board) -> RoadmapTaskWidget:
-        wdg = RoadmapTaskWidget(task, board.tags, self)
-        self._container.layout().insertWidget(self._container.layout().count() - 1, wdg,
-                                              alignment=Qt.AlignmentFlag.AlignTop)
-
-        self._header.updateTitle(self._container.layout().count() - 1)
-        return wdg
-
-
-def tag_filter_btn(tag: str, icon: str) -> QPushButton:
-    tagBtn = push_btn(IconRegistry.from_name(icon),
+def tag_filter_btn(tag: str, icon: str, color: str = 'black') -> QPushButton:
+    tagBtn = push_btn(IconRegistry.from_name(icon, color),
                       f'{tag.capitalize()} ({tags_counter.get(tag, 0)})', transparent_=True, checkable=True)
     incr_font(tagBtn)
     incr_icon(tagBtn, 2)
@@ -142,7 +94,7 @@ class RoadmapBoardWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         vbox(self, spacing=10)
-        self._tasks: Dict[Task, PlusTaskWidget] = {}
+        self._tasks: Dict[Task, TaskWidget] = {}
         self._tagFilters: Set[str] = set()
         self._version: str = ''
         self._status: str = ''
@@ -169,7 +121,7 @@ class RoadmapBoardWidget(QWidget):
 
         for i, task in enumerate(board.tasks):
             status = statuses[str(task.status_ref)]
-            wdg = PlusTaskWidget(task, status, appendLine=i < len(board.tasks) - 1)
+            wdg = TaskWidget(task, status, appendLine=i < len(board.tasks) - 1)
             self._tasks[task] = wdg
             self.layout().addWidget(wdg)
 
@@ -302,8 +254,8 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         self._roadmapWidget.setBoard(self._board)
 
         btnGroup = ExclusiveOptionalButtonGroup(self)
-        tagCompleted = tag_filter_btn('Completed', 'fa5s.check')
-        tagPlanned = tag_filter_btn('Planned', 'fa5.calendar-alt')
+        tagCompleted = tag_filter_btn('Completed', 'fa5s.check', '#40916c')
+        tagPlanned = tag_filter_btn('Planned', 'fa5.calendar-alt', '#0077b6')
         tagCompleted.clicked.connect(partial(self._roadmapWidget.filterStatus, 'Completed'))
         tagPlanned.clicked.connect(partial(self._roadmapWidget.filterStatus, 'Planned'))
         btnGroup.addButton(tagCompleted)

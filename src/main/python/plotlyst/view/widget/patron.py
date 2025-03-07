@@ -36,7 +36,6 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, truncate_string, \
     RELAXED_WHITE_COLOR, IGNORE_CAPITALIZATION_PROPERTY
-from plotlyst.core.domain import Task, TaskStatus
 from plotlyst.env import app_env
 from plotlyst.service.resource import JsonDownloadResult, JsonDownloadWorker
 from plotlyst.view.common import label, set_tab_enabled, push_btn, spin, scroll_area, wrap, frame, shadow, tool_btn, \
@@ -124,39 +123,6 @@ example_patron = Patron('Zsolt', web='https://plotlyst.com', bio='Fantasy Writer
 @dataclass
 class Community:
     patrons: List[Patron]
-
-
-class PlusTaskWidget(QWidget):
-    def __init__(self, task: Task, status: TaskStatus, parent=None, appendLine: bool = True):
-        super().__init__(parent)
-        self.task = task
-        self.status = status
-        vbox(self, 5, spacing=3)
-
-        self.lblStatus = label(self.status.text)
-        self.lblStatus.setStyleSheet(f'''
-            color: {self.status.color_hexa};
-        ''')
-
-        self.lblName = IconText()
-        incr_font(self.lblName, 4)
-        self.lblName.setText(self.task.title)
-        if self.task.icon:
-            self.lblName.setIcon(IconRegistry.from_name(self.task.icon))
-        self.lblDescription = label(self.task.summary, description=True, wordWrap=True)
-        self.lblDescription.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        incr_font(self.lblDescription)
-
-        self._btnOpenInExternal = tool_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'), transparent_=True,
-                                           tooltip='Open in browser')
-        decr_icon(self._btnOpenInExternal, 4)
-        self._btnOpenInExternal.clicked.connect(lambda: open_url(self.task.web_link))
-
-        self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.layout().addWidget(group(self.lblName, self._btnOpenInExternal), alignment=Qt.AlignmentFlag.AlignLeft)
-        self.layout().addWidget(self.lblDescription)
-        if appendLine:
-            self.layout().addWidget(line())
 
 
 class GenreCard(Card):
