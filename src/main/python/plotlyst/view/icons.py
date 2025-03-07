@@ -157,7 +157,7 @@ class IconRegistry:
 
     @staticmethod
     def manuscript_icon(color: str = 'black', color_on: str = PLOTLYST_SECONDARY_COLOR) -> QIcon:
-        return IconRegistry.from_name('fa5s.scroll', color=color, color_on=color_on)
+        return IconRegistry.from_name('mdi.typewriter', color=color, color_on=color_on)
 
     @staticmethod
     def chapter_icon(**kwargs) -> QIcon:
