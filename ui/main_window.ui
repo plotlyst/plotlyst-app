@@ -1254,7 +1254,7 @@
   </action>
   <action name="actionDetachScenes">
    <property name="text">
-    <string>Detach scenes</string>
+    <string>Detach narrative manager</string>
    </property>
   </action>
   <action name="actionDetachWorldbuilding">
