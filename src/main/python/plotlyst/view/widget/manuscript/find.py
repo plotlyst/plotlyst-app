@@ -205,11 +205,11 @@ class ManuscriptFindWidget(QWidget):
             next_block = block.next()
 
             if isinstance(block_data, SearchSceneHeaderUserData):
-                print(f'header {block_data.scene.title}')
+                # print(f'header {block_data.scene.title}')
                 if block_data.scene == scene:
                     scene_heading_block = block
                 elif scene_heading_block:  # already found
-                    print('break early')
+                    # print('break early')
                     break
 
             if isinstance(block_data, SearchBlockUserData) and block_data.result['scene'] == scene:

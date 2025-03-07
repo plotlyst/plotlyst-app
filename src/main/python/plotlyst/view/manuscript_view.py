@@ -283,6 +283,10 @@ class ManuscriptView(AbstractNovelView):
         self._dist_free_bottom_bar.setVisible(True)
         self._dist_free_mode = True
 
+        if self._cbSpellCheck.isChecked():
+            self.textEditor.resetGrammarChecking()
+            self._cbSpellCheck.setChecked(False)
+
         self.textEditor.initSentenceHighlighter()
         self.textEditor.setNightMode(True)
 
@@ -430,6 +434,9 @@ class ManuscriptView(AbstractNovelView):
                 self._cbSpellCheck.setChecked(False)
                 emit_critical(language_tool_proxy.error)
             else:
+                if self.wdgFind.isActive():
+                    self.wdgFind.deactivate()
+                    self.textEditor.resetFind()
                 QTimer.singleShot(150, self.textEditor.asyncCheckGrammar)
         else:
             self.textEditor.resetGrammarChecking()
@@ -487,6 +494,9 @@ class ManuscriptView(AbstractNovelView):
             scroll_to_bottom(self.ui.scrollEditor)
 
     def _term_searched(self):
+        if self._cbSpellCheck.isChecked():
+            self.textEditor.resetGrammarChecking()
+            self._cbSpellCheck.setChecked(False)
         self.textEditor.activateFind()
 
     def _term_reset(self):
