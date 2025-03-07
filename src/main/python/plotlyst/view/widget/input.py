@@ -44,7 +44,8 @@ from qttextedit.ops import BoldOperation, ItalicOperation, UnderlineOperation, S
     AlignLeftOperation, AlignCenterOperation, AlignRightOperation, InsertListOperation, InsertNumberedListOperation, \
     FormatOperation, ColorOperation, InsertLinkOperation, TextEditingSettingsOperation
 
-from plotlyst.common import IGNORE_CAPITALIZATION_PROPERTY, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, RED_COLOR
+from plotlyst.common import IGNORE_CAPITALIZATION_PROPERTY, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, RED_COLOR, \
+    PLOTLYST_TERTIARY_COLOR
 from plotlyst.core.domain import TextStatistics, Character, Label
 from plotlyst.core.text import wc
 from plotlyst.env import app_env
@@ -186,6 +187,10 @@ class GrammarHighlighter(AbstractTextBlockHighlighter, EventListener):
                  highlightStyle: GrammarHighlightStyle = GrammarHighlightStyle.UNDERLINE):
         super(GrammarHighlighter, self).__init__(document)
         self._checkEnabled: bool = checkEnabled
+        self._highlights_index = {}
+
+        self._highlight_format = QTextCharFormat()
+        self._highlight_format.setBackground(QColor(PLOTLYST_TERTIARY_COLOR))
 
         self._misspelling_format = QTextCharFormat()
         self._misspelling_format.setUnderlineColor(QColor('#d90429'))
@@ -226,6 +231,21 @@ class GrammarHighlighter(AbstractTextBlockHighlighter, EventListener):
         if not enabled:
             self._asyncTimer.stop()
 
+    def setHighlights(self, highlights: list):
+        self._highlights_index.clear()
+
+        for result in highlights:
+            block_num = result["block"]
+            if block_num not in self._highlights_index:
+                self._highlights_index[block_num] = []
+            self._highlights_index[block_num].append(result)
+
+        self.rehighlight()
+
+    def clearHighlights(self):
+        self._highlights_index.clear()
+        self.rehighlight()
+
     @overrides
     def setDocument(self, doc: Optional[QTextDocument]) -> None:
         self._asyncTimer.stop()
@@ -250,6 +270,13 @@ class GrammarHighlighter(AbstractTextBlockHighlighter, EventListener):
                                self._formats_per_issue.get(m.ruleIssueType, self._grammar_format))
                 misspellings.append((m.offset, m.errorLength, m.replacements, m.message, m.ruleIssueType))
             data.misspellings = misspellings
+        elif self._highlights_index:
+            block_number = self.currentBlock().blockNumber()
+            matches = self._highlights_index.get(block_number, [])
+
+            for match in matches:
+                self.setFormat(match["pos_in_block"][0], match["pos_in_block"][1] - match["pos_in_block"][0],
+                               self._highlight_format)
         else:
             data.misspellings.clear()
 
@@ -1469,7 +1496,7 @@ class TextEditBubbleWidget(QFrame):
 
 
 class SearchField(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, ignoreCapitalization: bool = False):
         super().__init__(parent)
         hbox(self, 0, 0)
         self.btnIcon = tool_btn(IconRegistry.from_name('mdi.magnify'), transparent_=True, pointy_=False)
@@ -1478,6 +1505,8 @@ class SearchField(QWidget):
         self.lineSearch.setClearButtonEnabled(True)
         self.lineSearch.setProperty('rounded', True)
         self.lineSearch.setProperty('white-bg', True)
+        if ignoreCapitalization:
+            self.lineSearch.setProperty(IGNORE_CAPITALIZATION_PROPERTY, True)
 
         self.btnIcon.clicked.connect(self.lineSearch.setFocus)
 

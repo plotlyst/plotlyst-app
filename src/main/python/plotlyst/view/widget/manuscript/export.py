@@ -22,7 +22,7 @@ from typing import Optional
 from PyQt6.QtCore import Qt, QMarginsF, QSize, QTimer
 from PyQt6.QtGui import QTextDocument, QPageSize, QColor, QPageLayout
 from PyQt6.QtPrintSupport import QPrinter, QPrintPreviewWidget
-from PyQt6.QtWidgets import QButtonGroup, QWidget, QApplication, QDialog, QSplitter, QPushButton, QGraphicsView
+from PyQt6.QtWidgets import QButtonGroup, QWidget, QDialog, QSplitter, QPushButton, QGraphicsView
 from overrides import overrides
 from qthandy import vbox, vspacer, incr_icon, incr_font, sp, gc, busy
 
@@ -76,7 +76,7 @@ class ManuscriptExportPopup(PopupDialog):
         self.btnExport = push_btn(IconRegistry.from_name('mdi.file-export-outline', RELAXED_WHITE_COLOR),
                                   'Export to docx',
                                   tooltip='Export manuscript',
-                                  properties=['base', 'positive'])
+                                  properties=['confirm', 'positive'])
         self.btnExport.clicked.connect(self.accept)
         self.btnCancel = push_btn(text='Close', properties=['confirm', 'cancel'])
         self.btnCancel.clicked.connect(self.reject)
@@ -92,19 +92,7 @@ class ManuscriptExportPopup(PopupDialog):
 
     @overrides
     def sizeHint(self) -> QSize:
-        return self._adjustedSize()
-
-    def _adjustedSize(self) -> QSize:
-        window = QApplication.activeWindow()
-        if window:
-            size = QSize(int(window.size().width() * 0.9), int(window.size().height() * 0.8))
-        else:
-            return QSize(800, 600)
-
-        size.setWidth(max(size.width(), 800))
-        size.setHeight(max(size.height(), 600))
-
-        return size
+        return self._adjustedSize(0.9, 0.8, 800, 600)
 
     def display(self):
         self.document = format_manuscript(self.novel)

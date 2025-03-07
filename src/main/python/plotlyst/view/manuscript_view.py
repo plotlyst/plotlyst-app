@@ -51,6 +51,7 @@ from plotlyst.view.widget.manuscript import SprintWidget, \
     ManuscriptProgressCalendar, ManuscriptDailyProgress, ManuscriptProgressCalendarLegend, ManuscriptProgressWidget
 from plotlyst.view.widget.manuscript.editor import ManuscriptEditor, DistFreeControlsBar, DistFreeDisplayBar
 from plotlyst.view.widget.manuscript.export import ManuscriptExportPopup
+from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
 from plotlyst.view.widget.scene.editor import SceneMiniEditor
 from plotlyst.view.widget.tree import TreeSettings
@@ -90,6 +91,7 @@ class ManuscriptView(AbstractNovelView):
         self.ui.btnGoals.setIcon(IconRegistry.goal_icon('black', PLOTLYST_MAIN_COLOR))
         self.ui.btnReadability.setIcon(IconRegistry.from_name('fa5s.glasses', 'black', PLOTLYST_MAIN_COLOR))
         self.ui.btnProgress.setIcon(IconRegistry.from_name('mdi.calendar-month-outline', 'black', PLOTLYST_MAIN_COLOR))
+        self.ui.btnFind.setIcon(IconRegistry.from_name('fa5s.search', 'black', PLOTLYST_MAIN_COLOR, hflip=True))
         self.ui.btnExport.setIcon(IconRegistry.from_name('mdi.file-export-outline', 'black', PLOTLYST_MAIN_COLOR))
         self.ui.btnExport.installEventFilter(
             OpacityEventFilter(self.ui.btnExport, enterOpacity=0.7, ignoreCheckedButton=True))
@@ -111,6 +113,7 @@ class ManuscriptView(AbstractNovelView):
         self._btnGroupSideBar.addButton(self.ui.btnSceneInfo)
         self._btnGroupSideBar.addButton(self.ui.btnGoals)
         self._btnGroupSideBar.addButton(self.ui.btnProgress)
+        self._btnGroupSideBar.addButton(self.ui.btnFind)
         self._btnGroupSideBar.addButton(self.ui.btnSettings)
         for btn in self._btnGroupSideBar.buttons():
             btn.installEventFilter(OpacityEventFilter(btn, enterOpacity=0.7, ignoreCheckedButton=True))
@@ -120,6 +123,7 @@ class ManuscriptView(AbstractNovelView):
         link_buttons_to_pages(self.ui.stackSide,
                               [(self.ui.btnSceneInfo, self.ui.pageInfo), (self.ui.btnGoals, self.ui.pageGoal),
                                (self.ui.btnProgress, self.ui.pageProgress),
+                               (self.ui.btnFind, self.ui.pageFind),
                                (self.ui.btnSettings, self.ui.pageSettings)])
 
         bold(self.ui.lblWordCount)
@@ -143,6 +147,14 @@ class ManuscriptView(AbstractNovelView):
         self.ui.pageProgress.layout().addWidget(self._progressCalendar)
         self.ui.pageProgress.layout().addWidget(ManuscriptProgressCalendarLegend())
         self.ui.pageProgress.layout().addWidget(vspacer())
+
+        self.wdgFind = ManuscriptFindWidget(self.novel)
+        self.ui.pageFind.layout().addWidget(self.wdgFind)
+        self.textEditor.attachFindWidget(self.wdgFind)
+        self.wdgFind.matched.connect(self._term_searched)
+        self.wdgFind.reset.connect(self._term_reset)
+        self.wdgFind.replaced.connect(self._term_replaced)
+        self.wdgFind.wdgResults.matchClicked.connect(self._navigate)
 
         self._btnDistractionFree = tool_btn(IconRegistry.expand_icon(), 'Enter distraction-free mode',
                                             transparent_=True)
@@ -267,6 +279,7 @@ class ManuscriptView(AbstractNovelView):
         self.ui.pageText.setStyleSheet(f'QWidget {{background-color: {BG_DARK_COLOR};}}')
         self._wdgToolbar.setHidden(True)
 
+        self._btnGroupSideBar.reset()
         self.ui.wdgTitle.setHidden(True)
         self.ui.wdgLeftSide.setHidden(True)
         self.ui.wdgSideBar.setHidden(True)
@@ -274,6 +287,11 @@ class ManuscriptView(AbstractNovelView):
         self._dist_free_top_bar.setVisible(True)
         self._dist_free_bottom_bar.setVisible(True)
         self._dist_free_mode = True
+
+        if self._cbSpellCheck.isChecked():
+            self.textEditor.resetGrammarChecking()
+            self._cbSpellCheck.setChecked(False)
+
         self.textEditor.initSentenceHighlighter()
         self.textEditor.setNightMode(True)
 
@@ -285,6 +303,7 @@ class ManuscriptView(AbstractNovelView):
         self._toggle_typewriter_mode(self._dist_free_bottom_bar.btnTypewriterMode.isChecked())
 
         self.ui.scrollEditor.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textEditor.setFocus()
 
     def _exit_distraction_free(self):
         emit_global_event(ExitDistractionFreeMode(self))
@@ -396,6 +415,8 @@ class ManuscriptView(AbstractNovelView):
     def _side_bar_toggled(self, _, toggled: bool):
         btn = self._btnGroupSideBar.checkedButton()
         if btn is None:
+            self.wdgFind.deactivate()
+            self.textEditor.resetFind()
             qtanim.collapse(self.ui.wdgSide)
             return
 
@@ -418,6 +439,9 @@ class ManuscriptView(AbstractNovelView):
                 self._cbSpellCheck.setChecked(False)
                 emit_critical(language_tool_proxy.error)
             else:
+                if self.wdgFind.isActive():
+                    self.wdgFind.deactivate()
+                    self.textEditor.resetFind()
                 QTimer.singleShot(150, self.textEditor.asyncCheckGrammar)
         else:
             self.textEditor.resetGrammarChecking()
@@ -473,6 +497,35 @@ class ManuscriptView(AbstractNovelView):
         diff = self.ui.scrollEditor.verticalScrollBar().maximum() - value
         if 0 < diff < 40:
             scroll_to_bottom(self.ui.scrollEditor)
+
+    def _term_searched(self):
+        if self._cbSpellCheck.isChecked():
+            self.textEditor.resetGrammarChecking()
+            self._cbSpellCheck.setChecked(False)
+        self.textEditor.activateFind()
+
+    def _term_reset(self):
+        self.textEditor.resetFind()
+
+    def _term_replaced(self):
+        scene = self.textEditor.scene()
+        if scene:
+            self.ui.treeChapters.selectScene(scene)
+            self._editScene(scene)
+        else:
+            chapter = self.textEditor.chapter()
+            if chapter:
+                self.ui.treeChapters.selectChapter(chapter)
+                self._editChapter(chapter)
+
+        self._update_story_goal()
+
+    def _navigate(self, context: dict):
+        scene = context['scene']
+        self.ui.treeChapters.selectScene(scene)
+        if self.textEditor.scene() != scene:
+            self._editScene(scene)
+        self.textEditor.jumpTo(context['start'], context['end'])
 
     def _handle_scenes_organization(self):
         self.ui.btnAdd.setVisible(self.novel.prefs.is_scenes_organization())

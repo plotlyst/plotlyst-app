@@ -408,6 +408,18 @@ class PopupDialog(QDialog):
             if override_cursor:
                 QApplication.setOverrideCursor(override_cursor)
 
+    def _adjustedSize(self, percentWidth: float, percentHeight: float, minWidth: int, minHeight: int) -> QSize:
+        window = QApplication.activeWindow()
+        if window:
+            size = QSize(int(window.size().width() * percentWidth), int(window.size().height() * percentHeight))
+        else:
+            return QSize(minWidth, minHeight)
+
+        size.setWidth(max(size.width(), minWidth))
+        size.setHeight(max(size.height(), minHeight))
+
+        return size
+
 
 class LazyWidget(QWidget):
     def __init__(self, parent=None):

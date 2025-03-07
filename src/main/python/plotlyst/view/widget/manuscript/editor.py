@@ -55,6 +55,7 @@ from plotlyst.view.widget.display import WordsDisplay
 from plotlyst.view.widget.input import BasePopupTextEditorToolbar, TextEditBase, GrammarHighlighter, \
     GrammarHighlightStyle
 from plotlyst.view.widget.manuscript import SprintWidget
+from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
 
 
@@ -377,6 +378,12 @@ class ManuscriptTextEdit(TextEditBase):
     def setSentenceHighlighterEnabled(self, enabled: bool):
         self._sentenceHighlighter.setSentenceHighlightEnabled(enabled)
 
+    def setHighlights(self, highlights: list):
+        self.highlighter.setHighlights(highlights)
+
+    def clearHighlights(self):
+        self.highlighter.clearHighlights()
+
     def scene(self) -> Optional[Scene]:
         return self._scene
 
@@ -458,7 +465,7 @@ class ManuscriptEditor(QWidget, EventListener):
     progressChanged = pyqtSignal(DocumentProgress)
     sceneTitleChanged = pyqtSignal(Scene)
     sceneSeparatorClicked = pyqtSignal(Scene)
-    cursorPositionChanged = pyqtSignal(int, int)
+    cursorPositionChanged = pyqtSignal(int, int, int, int)
     cleared = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -474,6 +481,10 @@ class ManuscriptEditor(QWidget, EventListener):
         self._characterWidth: int = 40
         self._maxContentWidth = 0
         self._settings: Optional[ManuscriptEditorSettingsWidget] = None
+        self._lockCursorMove: bool = False
+        self._lockTextChanged: bool = False
+
+        self._find: Optional[ManuscriptFindWidget] = None
 
         vbox(self, 0, 0)
 
@@ -582,6 +593,9 @@ class ManuscriptEditor(QWidget, EventListener):
         event_dispatchers.instance(self._novel).register(self, SceneDeletedEvent, SceneChangedEvent,
                                                          ScenesOrganizationResetEvent)
 
+    def scene(self) -> Optional[Scene]:
+        return self._scene
+
     def setScene(self, scene: Scene):
         self.clear()
         self._scene = scene
@@ -598,6 +612,8 @@ class ManuscriptEditor(QWidget, EventListener):
         self.wdgEditor.layout().addWidget(wdg)
         self.wdgEditor.layout().addWidget(vspacer())
         wdg.setFocus()
+
+        self.activateFind()
 
     def chapter(self) -> Optional[Chapter]:
         return self._chapter
@@ -623,6 +639,8 @@ class ManuscriptEditor(QWidget, EventListener):
 
         self.wdgEditor.layout().addWidget(vspacer())
         self._textedits[0].setFocus()
+
+        self.activateFind()
 
     def manuscriptFont(self) -> QFont:
         return self._font
@@ -659,6 +677,31 @@ class ManuscriptEditor(QWidget, EventListener):
         self._scene = None
         self._chapter = None
         clear_layout(self.wdgEditor)
+
+    @overrides
+    def setFocus(self) -> None:
+        if self._textedits:
+            self._textedits[0].setFocus()
+        else:
+            super().setFocus()
+
+    def attachFindWidget(self, find: ManuscriptFindWidget):
+        self._find = find
+
+    def activateFind(self):
+        if not self._find.isActive():
+            self.resetFind()
+            return
+
+        for textedit in self._textedits:
+            matches = self._find.sceneMathes(textedit.scene())
+            self._lockTextChanged = True
+            textedit.setHighlights(matches)
+            self._lockTextChanged = False
+
+    def resetFind(self):
+        for textedit in self._textedits:
+            textedit.clearHighlights()
 
     def setNightMode(self, mode: bool):
         for lbl in self._sceneLabels:
@@ -719,7 +762,20 @@ class ManuscriptEditor(QWidget, EventListener):
             if textedit.textCursor().hasSelection():
                 return textedit.textCursor().selection()
 
+    def jumpTo(self, start: int, end: int):
+        if self._textedits:
+            textedit = self._textedits[0]
+            cursor = textedit.textCursor()
+            self._lockCursorMove = True
+            cursor.setPosition(start)
+            textedit.setTextCursor(cursor)
+            self._lockCursorMove = False
+
+            QTimer.singleShot(50, lambda: self._cursorPositionChanged(textedit, marginY=300))
+
     def _textChanged(self, textedit: ManuscriptTextEdit, scene: Scene):
+        if self._lockTextChanged:
+            return
         if scene.manuscript.statistics is None:
             scene.manuscript.statistics = DocumentStatistics()
 
@@ -727,12 +783,15 @@ class ManuscriptEditor(QWidget, EventListener):
         updated_progress = self._updateProgress(scene, wc)
 
         scene.manuscript.content = textedit.toHtml()
-        self.repo.update_doc(app_env.novel, scene.manuscript)
+        self.repo.update_doc(self._novel, scene.manuscript)
         if updated_progress:
             self.repo.update_scene(scene)
             self.repo.update_novel(self._novel)
 
         self.textChanged.emit()
+
+        if self._find.isActive():
+            QTimer.singleShot(25, lambda: self._updateFind(scene))
 
     def _updateProgress(self, scene: Scene, wc: int) -> bool:
         if scene.manuscript.statistics.wc == wc:
@@ -752,13 +811,15 @@ class ManuscriptEditor(QWidget, EventListener):
 
         return True
 
-    def _cursorPositionChanged(self, textedit: ManuscriptTextEdit):
+    def _cursorPositionChanged(self, textedit: ManuscriptTextEdit, marginX: int = 50, marginY: int = 50):
+        if self._lockCursorMove:
+            return
         rect = textedit.cursorRect(textedit.textCursor())
         pos = QPoint(rect.x(), rect.y())
         parent_pos = textedit.mapToParent(pos)
         parent_pos = self.wdgEditor.mapToParent(parent_pos)
 
-        self.cursorPositionChanged.emit(parent_pos.x(), parent_pos.y())
+        self.cursorPositionChanged.emit(parent_pos.x(), parent_pos.y(), marginX, marginY)
 
     def _initTextEdit(self, scene: Scene) -> ManuscriptTextEdit:
         _textedit = ManuscriptTextEdit()
@@ -795,18 +856,13 @@ class ManuscriptEditor(QWidget, EventListener):
         return self._novel.prefs.manuscript.font[app_env.platform()]
 
     def _resizeToCharacterWidth(self):
-        # print(f'max {self._maxContentWidth} width {self.width()}')
         if 0 < self._maxContentWidth < self.width():
             margin = self.width() - self._maxContentWidth
         else:
             margin = 0
 
         margin = int(margin // 2)
-        # print(margin)
         margins(self, left=margin, right=margin)
-        # current_margins: QMargins = self.viewportMargins()
-        # self.setViewportMargins(margin, current_margins.top(), margin, current_margins.bottom())
-        # self.resizeToContent()
 
     def _dashInsertionChanged(self, mode: DashInsertionMode):
         for textedit in self._textedits:
@@ -844,3 +900,12 @@ class ManuscriptEditor(QWidget, EventListener):
         if self._scene:
             self._scene.title = title
             self.sceneTitleChanged.emit(self._scene)
+
+    def _updateFind(self, scene: Scene):
+        matches = self._find.updateScene(scene)
+        for textedit in self._textedits:
+            if textedit.scene() == scene:
+                self._lockTextChanged = True
+                textedit.setHighlights(matches)
+                self._lockTextChanged = False
+                break
