@@ -29,7 +29,6 @@ from qtmenu import MenuWidget
 from plotlyst.common import PLOTLYST_MAIN_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, Document, Chapter, DocumentProgress
 from plotlyst.core.domain import Scene
-from plotlyst.env import app_env
 from plotlyst.event.core import emit_global_event, emit_critical, emit_info, Event, emit_event
 from plotlyst.events import SceneChangedEvent, OpenDistractionFreeMode, \
     ExitDistractionFreeMode, NovelSyncEvent, CloseNovelEvent, SceneOrderChangedEvent, SceneAddedEvent, \
@@ -98,8 +97,6 @@ class ManuscriptView(AbstractNovelView):
         self.ui.btnExport.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnExport))
         self.ui.btnExport.clicked.connect(lambda: ManuscriptExportPopup.popup(self.novel))
         self.ui.btnSettings.setIcon(IconRegistry.cog_icon(color_on=PLOTLYST_MAIN_COLOR))
-
-        self.ui.btnProgress.setVisible(app_env.profile().get('productivity', False))
 
         self.ui.btnReadability.setHidden(True)
 

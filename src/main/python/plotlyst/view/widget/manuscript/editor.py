@@ -780,7 +780,7 @@ class ManuscriptEditor(QWidget, EventListener):
             scene.manuscript.statistics = DocumentStatistics()
 
         wc = textedit.statistics().word_count
-        updated_progress = self._updateProgress(scene, wc)
+        updated_progress = self._updateProgress(scene, wc, ignoreDiff=textedit.isTextBeingPasted())
 
         scene.manuscript.content = textedit.toHtml()
         self.repo.update_doc(self._novel, scene.manuscript)
@@ -793,20 +793,21 @@ class ManuscriptEditor(QWidget, EventListener):
         if self._find.isActive():
             QTimer.singleShot(25, lambda: self._updateFind(scene))
 
-    def _updateProgress(self, scene: Scene, wc: int) -> bool:
+    def _updateProgress(self, scene: Scene, wc: int, ignoreDiff: bool = False) -> bool:
         if scene.manuscript.statistics.wc == wc:
             return False
 
         diff = wc - scene.manuscript.statistics.wc
-        progress: DocumentProgress = daily_progress(scene)
-        overall_progress = daily_overall_progress(self._novel)
-        if diff > 0:
-            progress.added += diff
-            overall_progress.added += diff
-        else:
-            progress.removed += abs(diff)
-            overall_progress.removed += abs(diff)
-        self.progressChanged.emit(overall_progress)
+        if not ignoreDiff:
+            progress: DocumentProgress = daily_progress(scene)
+            overall_progress = daily_overall_progress(self._novel)
+            if diff > 0:
+                progress.added += diff
+                overall_progress.added += diff
+            else:
+                progress.removed += abs(diff)
+                overall_progress.removed += abs(diff)
+            self.progressChanged.emit(overall_progress)
         scene.manuscript.statistics.wc = wc
 
         return True
