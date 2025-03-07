@@ -257,6 +257,7 @@ class ManuscriptTextEdit(TextEditBase):
         self._last = last
         self._pasteAsOriginalEnabled = False
         self._resizedOnShow: bool = False
+        self._menuIsShown = False
         self._minHeight = 40
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setTabChangesFocus(True)
@@ -278,6 +279,19 @@ class ManuscriptTextEdit(TextEditBase):
         self.textChanged.connect(self.resizeToContent)
 
     @overrides
+    def createEnhancedContextMenu(self, pos: QPoint):
+        def show():
+            self._menuIsShown = True
+
+        def hide():
+            self._menuIsShown = False
+
+        menu = super().createEnhancedContextMenu(pos)
+        menu.aboutToShow.connect(show)
+        menu.aboutToHide.connect(hide)
+        return menu
+
+    @overrides
     def setFocus(self) -> None:
         super().setFocus()
         self.moveCursor(QTextCursor.MoveOperation.Start)
@@ -287,7 +301,7 @@ class ManuscriptTextEdit(TextEditBase):
         super().focusOutEvent(event)
         if self._sentenceHighlighter and self._sentenceHighlighter.sentenceHighlightEnabled():
             self._sentenceHighlighter.rehighlight()
-        if self.textCursor().hasSelection():
+        if self.textCursor().hasSelection() and not self._menuIsShown:
             cursor = self.textCursor()
             cursor.clearSelection()
             self.setTextCursor(cursor)
