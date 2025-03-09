@@ -262,7 +262,8 @@ class NovelCustomizationWizard(QWidget):
         self._addNovelSetting(NovelSetting.Character_love_style, self.pagePersonality)
         self.pagePersonality.layout().addWidget(vspacer())
 
-        self.pageScenes.layout().addWidget(label('Scene and Chapter Settings', h3=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.pageScenes.layout().addWidget(label('Scene and Chapter Settings', h3=True),
+                                           alignment=Qt.AlignmentFlag.AlignCenter)
         self.pageScenes.layout().addWidget(label(
             "Would you like to write scenes and arrange them inside chapters, or work with chapters only? (can be changed later)",
             description=True, wordWrap=True))
@@ -329,3 +330,8 @@ class NovelCustomizationWizard(QWidget):
             self.wdgPanelSettings.checkSettings([NovelSetting.Manuscript])
 
         self._updateCounter()
+
+
+class NovelDescriptorsDisplay(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
