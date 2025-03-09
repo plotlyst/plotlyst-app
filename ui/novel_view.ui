@@ -365,6 +365,31 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tabDescriptors">
+      <property name="bg" stdset="0">
+       <bool>true</bool>
+      </property>
+      <attribute name="title">
+       <string>Overview</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tabStructure">
       <attribute name="title">
        <string>Structure</string>
@@ -557,8 +582,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>98</width>
-            <height>31</height>
+            <width>546</width>
+            <height>512</height>
            </rect>
           </property>
           <property name="sizePolicy">

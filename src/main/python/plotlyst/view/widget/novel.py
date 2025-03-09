@@ -24,7 +24,7 @@ from typing import Optional, List
 from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtWidgets import QWidget, QStackedWidget
 from overrides import overrides
-from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins
+from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import MAXIMUM_SIZE
@@ -33,12 +33,14 @@ from plotlyst.env import app_env
 from plotlyst.model.characters_model import CharactersTableModel
 from plotlyst.model.common import SelectionItemsModel
 from plotlyst.model.novel import NovelTagsModel
-from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn
+from plotlyst.resources import resource_registry
+from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn, frame, scroll_area
 from plotlyst.view.generated.imported_novel_overview_ui import Ui_ImportedNovelOverview
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
-from plotlyst.view.style.base import apply_white_menu
+from plotlyst.view.style.base import apply_white_menu, apply_border_image
 from plotlyst.view.widget.display import Subtitle
+from plotlyst.view.widget.input import AutoAdjustableLineEdit
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
 from plotlyst.view.widget.labels import LabelsEditorWidget
 from plotlyst.view.widget.manuscript import ManuscriptLanguageSettingWidget
@@ -333,5 +335,40 @@ class NovelCustomizationWizard(QWidget):
 
 
 class NovelDescriptorsDisplay(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
+        self.novel = novel
+
+        self.card = frame()
+        self.card.setProperty('large-rounded', True)
+        self.card.setProperty('relaxed-white-bg', True)
+        self.card.setMaximumWidth(1000)
+        hbox(self).addWidget(self.card)
+        vbox(self.card, 10, spacing=10)
+        margins(self.card, top=25, bottom=40)
+
+        self.wdgTitle = QWidget()
+        self.wdgTitle.setProperty('border-image', True)
+        hbox(self.wdgTitle)
+        self.wdgTitle.setFixedHeight(150)
+        self.wdgTitle.setMaximumWidth(1000)
+        apply_border_image(self.wdgTitle, resource_registry.frame1)
+
+        self.lineNovelTitle = AutoAdjustableLineEdit(defaultWidth=70)
+        self.lineNovelTitle.setPlaceholderText('Title')
+        self.lineNovelTitle.setReadOnly(True)
+        transparent(self.lineNovelTitle)
+        incr_font(self.lineNovelTitle, 10)
+        self.wdgTitle.layout().addWidget(self.lineNovelTitle, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.lineNovelTitle.setText(novel.title)
+
+        self.scrollDescriptors = scroll_area(h_on=False, frameless=True)
+        self.wdgDescriptors = QWidget()
+        self.wdgDescriptors.setProperty('relaxed-white-bg', True)
+        self.scrollDescriptors.setWidget(self.wdgDescriptors)
+        sp(self.wdgDescriptors).v_exp()
+
+        self.card.layout().addWidget(self.wdgTitle)
+        self.card.layout().addWidget(self.scrollDescriptors)
+
+

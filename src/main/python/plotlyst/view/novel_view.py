@@ -40,6 +40,7 @@ from plotlyst.view.generated.novel_view_ui import Ui_NovelView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_border_image
 from plotlyst.view.widget.input import HtmlPopupTextEditorToolbar
+from plotlyst.view.widget.novel import NovelDescriptorsDisplay
 from plotlyst.view.widget.plot.editor import PlotEditor
 from plotlyst.view.widget.settings import NovelSettingsWidget
 
@@ -57,12 +58,17 @@ class NovelView(AbstractNovelView):
         set_tab_icon(self.ui.tabWidget, self.ui.tabPlot, IconRegistry.storylines_icon(color_on=PLOTLYST_MAIN_COLOR))
         set_tab_icon(self.ui.tabWidget, self.ui.tabSynopsis,
                      IconRegistry.from_name('fa5s.scroll', color_on=PLOTLYST_MAIN_COLOR))
+        set_tab_icon(self.ui.tabWidget, self.ui.tabDescriptors, IconRegistry.book_icon(color_on=PLOTLYST_MAIN_COLOR))
         set_tab_icon(self.ui.tabWidget, self.ui.tabTags, IconRegistry.tags_icon(color_on=PLOTLYST_MAIN_COLOR))
         set_tab_icon(self.ui.tabWidget, self.ui.tabSettings, IconRegistry.cog_icon(color_on=PLOTLYST_MAIN_COLOR))
 
+        set_tab_visible(self.ui.tabWidget, self.ui.tabSynopsis, False)
         set_tab_visible(self.ui.tabWidget, self.ui.tabPlot, self.novel.prefs.toggled(NovelSetting.Storylines))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, self.novel.prefs.toggled(NovelSetting.Structure))
         set_tab_visible(self.ui.tabWidget, self.ui.tabTags, False)
+
+        self.wdgDescriptors = NovelDescriptorsDisplay(self.novel)
+        self.ui.tabDescriptors.layout().addWidget(self.wdgDescriptors)
 
         self.ui.btnEditNovel.setIcon(IconRegistry.edit_icon(color_on='darkBlue'))
         self.ui.btnEditNovel.installEventFilter(OpacityEventFilter(parent=self.ui.btnEditNovel))
@@ -122,7 +128,7 @@ class NovelView(AbstractNovelView):
         self._settings = NovelSettingsWidget(self.novel)
         self.ui.wdgSettings.layout().addWidget(self._settings)
 
-        self.ui.tabWidget.setCurrentWidget(self.ui.tabSynopsis)
+        self.ui.tabWidget.setCurrentWidget(self.ui.tabDescriptors)
 
         set_tab_visible(self.ui.tabWidget, self.ui.tabPlot, app_env.profile().get('storylines', False))
 
