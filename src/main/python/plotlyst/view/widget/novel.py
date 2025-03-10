@@ -29,7 +29,7 @@ from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margin
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
-from plotlyst.common import MAXIMUM_SIZE
+from plotlyst.common import MAXIMUM_SIZE, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import StoryStructure, Novel, TagType, SelectionItem, Tag, NovelSetting, ScenesView
 from plotlyst.env import app_env
 from plotlyst.model.characters_model import CharactersTableModel
@@ -382,7 +382,7 @@ class DescriptorLabelSelector(QWidget):
 
     def setLabels(self, labels: List[str], selected: List[str]):
         for label in labels:
-            btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
             btn.setText(label)
             self.btnGroup.addButton(btn)
             if label in selected:
@@ -416,15 +416,16 @@ class NovelDescriptorsEditorPopup(PopupDialog):
 
         self._addHeader('Audience', 'ei.group', 'Select the target audience of your novel')
         self.audienceSelector = DescriptorLabelSelector()
-        self.audienceSelector.setLabels(['Children', 'Middle grade', 'Young adult', 'New adult', 'Adult'], [self.novel.descriptors.audience])
+        self.audienceSelector.setLabels(['Children', 'Middle grade', 'Young adult', 'New adult', 'Adult'],
+                                        [self.novel.descriptors.audience])
         self.audienceSelector.selectionChanged.connect(self._audienceSelected)
         self.center.layout().addWidget(self.audienceSelector)
 
         self._addHeader('Mood', 'mdi.emoticon-outline', "Select the reader's expected emotional experience")
-        self.moodSelector = DescriptorLabelSelector()
+        self.moodSelector = DescriptorLabelSelector(exclusive=False)
         self.moodSelector.setLabels(
-            ['Adventurous', 'Challenging', 'Dark', 'Emotional', 'Funny', 'Hopeful', 'Informative', 'Inspiring',
-             'Lighthearted', 'Mysterious', 'Reflective', 'Relaxing', 'Sad', 'Tense'], self.novel.descriptors.mood)
+            ['adventurous', 'challenging', 'dark', 'emotional', 'funny', 'hopeful', 'informative', 'inspiring',
+             'lighthearted', 'mysterious', 'reflective', 'relaxing', 'sad', 'tense'], self.novel.descriptors.mood)
         self.moodSelector.selectionChanged.connect(self._moodSelected)
         self.center.layout().addWidget(self.moodSelector)
 
@@ -463,7 +464,7 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.novel.descriptors.audience = audience[0] if audience else ''
 
     def _moodSelected(self):
-        pass
+        self.novel.descriptors.mood[:] = self.moodSelector.selected()
 
 
 class NovelDescriptorsDisplay(QWidget):
@@ -509,6 +510,7 @@ class NovelDescriptorsDisplay(QWidget):
         self.wdgSubGenres = self._labels()
         self.wdgAudience = self._labels()
         self.wdgMood = self._labels()
+        margins(self.wdgMood, top=5)
         self.wdgStyle = self._labels()
 
         self._grid.addWidget(self._label('Genres', 'mdi.drama-masks'), 0, 0, alignment=Qt.AlignmentFlag.AlignRight)
@@ -564,6 +566,22 @@ class NovelDescriptorsDisplay(QWidget):
                    ''')
             self.wdgAudience.layout().addWidget(lbl)
 
+        if self.novel.descriptors.mood:
+            for mood in self.novel.descriptors.mood:
+                lbl = label(mood, decr_font_diff=1)
+                font = lbl.font()
+                font.setFamily(app_env.sans_serif_font())
+                lbl.setFont(font)
+                lbl.setStyleSheet(f'''
+                                   QLabel {{
+                                       border: 1px solid lightgrey;
+                                       color: {PLOTLYST_SECONDARY_COLOR};
+                                       background: rgba(0, 0, 0, 0);
+                                       border-radius: 4px;
+                                   }}
+                                   ''')
+                self.wdgMood.layout().addWidget(lbl)
+
     def _label(self, text: str, icon: str = '', major: bool = True) -> IconText:
         lbl = IconText()
         lbl.setText(text)
@@ -587,5 +605,7 @@ class NovelDescriptorsDisplay(QWidget):
         NovelDescriptorsEditorPopup.popup(self.novel)
 
         clear_layout(self.wdgAudience)
+        clear_layout(self.wdgMood)
+
         self.refresh()
         self.repo.update_novel(self.novel)
