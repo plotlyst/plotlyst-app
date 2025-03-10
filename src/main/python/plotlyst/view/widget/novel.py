@@ -24,7 +24,8 @@ from typing import Optional, List
 from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtWidgets import QWidget, QStackedWidget
 from overrides import overrides
-from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp
+from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp, grid, incr_icon, \
+    flow, translucent, clear_layout
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import MAXIMUM_SIZE
@@ -39,7 +40,7 @@ from plotlyst.view.generated.imported_novel_overview_ui import Ui_ImportedNovelO
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, apply_border_image
-from plotlyst.view.widget.display import Subtitle
+from plotlyst.view.widget.display import Subtitle, IconText, Icon
 from plotlyst.view.widget.input import AutoAdjustableLineEdit
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
 from plotlyst.view.widget.labels import LabelsEditorWidget
@@ -334,6 +335,23 @@ class NovelCustomizationWizard(QWidget):
         self._updateCounter()
 
 
+class SpiceWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        hbox(self, 0, 0)
+
+    def setSpice(self, value: int):
+        clear_layout(self)
+        for i in range(6):
+            icon = Icon()
+            if value > i:
+                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', '#c1121f'))
+            else:
+                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'lightgrey'))
+            incr_icon(icon, 8)
+            self.layout().addWidget(icon)
+
+
 class NovelDescriptorsDisplay(QWidget):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -344,7 +362,7 @@ class NovelDescriptorsDisplay(QWidget):
         self.card.setProperty('relaxed-white-bg', True)
         self.card.setMaximumWidth(1000)
         hbox(self).addWidget(self.card)
-        vbox(self.card, 10, spacing=10)
+        vbox(self.card, 10, spacing=25)
         margins(self.card, top=25, bottom=40)
 
         self.wdgTitle = QWidget()
@@ -366,9 +384,55 @@ class NovelDescriptorsDisplay(QWidget):
         self.wdgDescriptors = QWidget()
         self.wdgDescriptors.setProperty('relaxed-white-bg', True)
         self.scrollDescriptors.setWidget(self.wdgDescriptors)
+        self._grid = grid(self.wdgDescriptors, v_spacing=20)
+        margins(self.wdgDescriptors, left=35, right=35)
         sp(self.wdgDescriptors).v_exp()
+
+        self.wdgPrimaryGenres = self._labels()
+        self.wdgSubGenres = self._labels()
+        self.wdgAudience = self._labels()
+        self.wdgMood = self._labels()
+        self.wdgStyle = self._labels()
+
+        self._grid.addWidget(self._label('Genres', 'mdi.drama-masks'), 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self.wdgPrimaryGenres, 0, 1)
+        self._grid.addWidget(self._label('Audience', 'ei.group'), 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self.wdgAudience, 2, 1)
+        self._grid.addWidget(self._label('Mood', 'mdi.emoticon-outline'), 2, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self.wdgMood, 3, 1)
+        self._grid.addWidget(self._label('Style', 'fa5s.pen-fancy'), 3, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self.wdgStyle, 4, 1)
+
+        wc = 0
+        for scene in self.novel.scenes:
+            wc += scene.manuscript.statistics.wc
+        self._grid.addWidget(self._label('Standalone', 'ei.book', major=False), 0, 2,
+                             alignment=Qt.AlignmentFlag.AlignCenter)
+        self._grid.addWidget(self._label(f'Word count: {wc}', 'mdi.book-open-page-variant-outline', major=False), 1, 2,
+                             alignment=Qt.AlignmentFlag.AlignCenter)
+
+        spice = SpiceWidget()
+        spice.setSpice(2)
+        self._grid.addWidget(self._label('Spice', 'mdi6.chili-mild'), 4, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(spice, 4, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(vspacer(), 10, 0)
 
         self.card.layout().addWidget(self.wdgTitle)
         self.card.layout().addWidget(self.scrollDescriptors)
 
+    def _label(self, text: str, icon: str = '', major: bool = True) -> IconText:
+        lbl = IconText()
+        lbl.setText(text)
+        if icon:
+            lbl.setIcon(IconRegistry.from_name(icon))
+        translucent(lbl, 0.7)
+        incr_font(lbl, 4 if major else 1)
+        incr_icon(lbl, 4 if major else 2)
 
+        return lbl
+
+    def _labels(self) -> QWidget:
+        wdg = QWidget()
+        sp(wdg).v_max()
+        flow(wdg)
+        return wdg
