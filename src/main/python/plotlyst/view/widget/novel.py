@@ -362,7 +362,7 @@ class NovelDescriptorsDisplay(QWidget):
         self.card.setProperty('relaxed-white-bg', True)
         self.card.setMaximumWidth(1000)
         hbox(self).addWidget(self.card)
-        vbox(self.card, 10, spacing=25)
+        vbox(self.card, 10, spacing=35)
         margins(self.card, top=25, bottom=40)
 
         self.wdgTitle = QWidget()
@@ -385,7 +385,7 @@ class NovelDescriptorsDisplay(QWidget):
         self.wdgDescriptors.setProperty('relaxed-white-bg', True)
         self.scrollDescriptors.setWidget(self.wdgDescriptors)
         self._grid = grid(self.wdgDescriptors, v_spacing=20)
-        margins(self.wdgDescriptors, left=35, right=35)
+        margins(self.wdgDescriptors, left=45, right=45)
         sp(self.wdgDescriptors).v_exp()
 
         self.wdgPrimaryGenres = self._labels()
@@ -394,26 +394,28 @@ class NovelDescriptorsDisplay(QWidget):
         self.wdgMood = self._labels()
         self.wdgStyle = self._labels()
 
-        self._grid.addWidget(self._label('Genres', 'mdi.drama-masks'), 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self._label('Genres', 'mdi.drama-masks'), 0, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(self.wdgPrimaryGenres, 0, 1)
-        self._grid.addWidget(self._label('Audience', 'ei.group'), 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self._label('Audience', 'ei.group'), 1, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(self.wdgAudience, 2, 1)
-        self._grid.addWidget(self._label('Mood', 'mdi.emoticon-outline'), 2, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self._label('Mood', 'mdi.emoticon-outline'), 2, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(self.wdgMood, 3, 1)
-        self._grid.addWidget(self._label('Style', 'fa5s.pen-fancy'), 3, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self._label('Style', 'fa5s.pen-fancy'), 3, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(self.wdgStyle, 4, 1)
 
         wc = 0
         for scene in self.novel.scenes:
+            if not scene.manuscript or not scene.manuscript.statistics:
+                continue
             wc += scene.manuscript.statistics.wc
         self._grid.addWidget(self._label('Standalone', 'ei.book', major=False), 0, 2,
-                             alignment=Qt.AlignmentFlag.AlignCenter)
+                             alignment=Qt.AlignmentFlag.AlignLeft)
         self._grid.addWidget(self._label(f'Word count: {wc}', 'mdi.book-open-page-variant-outline', major=False), 1, 2,
-                             alignment=Qt.AlignmentFlag.AlignCenter)
+                             alignment=Qt.AlignmentFlag.AlignLeft)
 
         spice = SpiceWidget()
         spice.setSpice(2)
-        self._grid.addWidget(self._label('Spice', 'mdi6.chili-mild'), 4, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self._label('Spice', 'mdi6.chili-mild'), 4, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(spice, 4, 1, alignment=Qt.AlignmentFlag.AlignLeft)
         self._grid.addWidget(vspacer(), 10, 0)
 
@@ -425,9 +427,9 @@ class NovelDescriptorsDisplay(QWidget):
         lbl.setText(text)
         if icon:
             lbl.setIcon(IconRegistry.from_name(icon))
-        translucent(lbl, 0.7)
-        incr_font(lbl, 4 if major else 1)
-        incr_icon(lbl, 4 if major else 2)
+        translucent(lbl, 0.6)
+        incr_font(lbl, 3 if major else 0)
+        incr_icon(lbl, 3 if major else 0)
 
         return lbl
 
