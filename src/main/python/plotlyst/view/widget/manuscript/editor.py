@@ -309,12 +309,6 @@ class ManuscriptTextEdit(TextEditBase):
     @overrides
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         cursor: QTextCursor = self.textCursor()
-        if cursor.atBlockEnd() and event.key() == Qt.Key.Key_Space:
-            cursor.movePosition(QTextCursor.MoveOperation.PreviousCharacter, QTextCursor.MoveMode.KeepAnchor)
-            if cursor.selectedText() == ' ':
-                self.textCursor().deletePreviousChar()
-                self.textCursor().insertText('.')
-
         move_up = cursor.block().blockNumber() == 0 and event.key() == Qt.Key.Key_Up
         move_down = cursor.block().blockNumber() == self.document().blockCount() - 1 and event.key() == Qt.Key.Key_Down
 

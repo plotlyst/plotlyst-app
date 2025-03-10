@@ -693,7 +693,7 @@ class MinorRoleFilterButton(_RoleFilterButton):
 
 
 class SmallToggleButton(QToolButton):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, translucent: bool = True):
         super().__init__(parent)
         self.setIcon(IconRegistry.from_name('ph.toggle-left-thin'))
         self.setCheckable(True)
@@ -701,7 +701,8 @@ class SmallToggleButton(QToolButton):
         transparent(self)
         self.setIconSize(QSize(28, 28))
 
-        self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7, ignoreCheckedButton=True))
+        if translucent:
+            self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.installEventFilter(ButtonPressResizeEventFilter(self))
 
         self.toggled.connect(self._toggled)

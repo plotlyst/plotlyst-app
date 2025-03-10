@@ -22,24 +22,24 @@ from functools import partial
 from PyQt6 import QtGui
 from PyQt6.QtCore import pyqtSignal, QTimer, Qt, QSize
 from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QWidget, QFrame
+from PyQt6.QtWidgets import QWidget, QFrame, QAbstractButton
 from overrides import overrides
 from qthandy import margins, vbox, decr_icon, pointy, vspacer, hbox, incr_font
 from qtmenu import group
 from qttextedit import DashInsertionMode
-from qttextedit.api import AutoCapitalizationMode
+from qttextedit.api import AutoCapitalizationMode, EllipsisInsertionMode
 from qttextedit.ops import FontSectionSettingWidget, FontSizeSectionSettingWidget, TextWidthSectionSettingWidget, \
     FontRadioButton
 from qttextedit.util import EN_DASH, EM_DASH
 
 from plotlyst.core.domain import Novel
 from plotlyst.view.common import label, push_btn, \
-    ExclusiveOptionalButtonGroup, exclusive_buttons
+    exclusive_buttons
 from plotlyst.view.generated.manuscript_context_menu_widget_ui import Ui_ManuscriptContextMenuWidget
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.widget.button import CollapseButton
+from plotlyst.view.widget.button import CollapseButton, SmallToggleButton
 from plotlyst.view.widget.confirm import asked
-from plotlyst.view.widget.input import Toggle
+from plotlyst.view.widget.display import IconText
 
 
 class ManuscriptSpellcheckingSettingsWidget(QWidget, Ui_ManuscriptContextMenuWidget):
@@ -236,47 +236,30 @@ class ManuscriptSmartTypingSettingsWidget(QWidget):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self.novel = novel
-
         vbox(self)
-        self.layout().addWidget(label('Dash', bold=True), alignment=Qt.AlignmentFlag.AlignLeft)
-        self.wdgDashSettings = QWidget()
-        vbox(self.wdgDashSettings, 0)
-        margins(self.wdgDashSettings, left=10)
-        self.wdgDashSettings.layout().addWidget(
-            label("Insert a dash automatically when typing double hyphens (--)", description=True,
-                  wordWrap=True),
-            alignment=Qt.AlignmentFlag.AlignLeft)
-        self.toggleEn = Toggle()
-        self.toggleEm = Toggle()
-        self.btnGroupDash = ExclusiveOptionalButtonGroup()
-        self.btnGroupDash.addButton(self.toggleEn)
-        self.btnGroupDash.addButton(self.toggleEm)
+
+        self.smartQuotesSettings = self._addHeader('Smart quotes',
+                                                   'Insert smart quotes when typing simple apostrophes and quotes')
+        self.toggleSmartQuotes = self._addToggleSetting(self.smartQuotesSettings, icon='fa5s.quote-right')
+        self.toggleSmartQuotes.setChecked(self.novel.prefs.manuscript.smart_quotes)
+
+        self.wdgDashSettings = self._addHeader('Dash', 'Insert a dash automatically when typing double hyphens (--)')
+        self.toggleEn = self._addToggleSetting(self.wdgDashSettings, f'En dash ({EN_DASH})')
+        self.toggleEm = self._addToggleSetting(self.wdgDashSettings, f'Em dash ({EM_DASH})')
+        self.btnGroupDash = exclusive_buttons(self.wdgDashSettings, self.toggleEn, self.toggleEm, optional=True)
 
         if self.novel.prefs.manuscript.dash == DashInsertionMode.INSERT_EN_DASH:
             self.toggleEn.setChecked(True)
         elif self.novel.prefs.manuscript.dash == DashInsertionMode.INSERT_EM_DASH:
             self.toggleEm.setChecked(True)
-
         self.btnGroupDash.buttonToggled.connect(self._dashToggled)
-        self.wdgDashSettings.layout().addWidget(group(label(f'En dash ({EN_DASH})'), self.toggleEn, spacing=0),
-                                                alignment=Qt.AlignmentFlag.AlignRight)
-        self.wdgDashSettings.layout().addWidget(group(label(f'Em dash ({EM_DASH})'), self.toggleEm, spacing=0),
-                                                alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.layout().addWidget(self.wdgDashSettings)
-        self.layout().addWidget(label('Auto-capitalization', bold=True), alignment=Qt.AlignmentFlag.AlignLeft)
-
-        self.wdgCapitalizationSettings = QWidget()
-        vbox(self.wdgCapitalizationSettings, 0)
-        margins(self.wdgCapitalizationSettings, left=10)
-        self.wdgCapitalizationSettings.layout().addWidget(
-            label("Auto-capitalize the first letter at paragraph or sentence level (experimental)", description=True,
-                  wordWrap=True), alignment=Qt.AlignmentFlag.AlignLeft)
-        self.toggleParagraphCapital = Toggle()
-        self.toggleSentenceCapital = Toggle()
-        self.btnGroupCapital = ExclusiveOptionalButtonGroup()
-        self.btnGroupCapital.addButton(self.toggleParagraphCapital)
-        self.btnGroupCapital.addButton(self.toggleSentenceCapital)
+        self.wdgCapitalizationSettings = self._addHeader('Auto-capitalization',
+                                                         'Auto-capitalize the first letter at paragraph or sentence level (experimental)')
+        self.toggleParagraphCapital = self._addToggleSetting(self.wdgCapitalizationSettings, 'Paragraph')
+        self.toggleSentenceCapital = self._addToggleSetting(self.wdgCapitalizationSettings, 'Sentence')
+        self.btnGroupCapital = exclusive_buttons(self.wdgDashSettings, self.toggleParagraphCapital,
+                                                 self.toggleSentenceCapital, optional=True)
 
         if self.novel.prefs.manuscript.capitalization == AutoCapitalizationMode.PARAGRAPH:
             self.toggleParagraphCapital.setChecked(True)
@@ -284,15 +267,37 @@ class ManuscriptSmartTypingSettingsWidget(QWidget):
             self.toggleSentenceCapital.setChecked(True)
         self.btnGroupCapital.buttonToggled.connect(self._capitalizationToggled)
 
-        self.wdgCapitalizationSettings.layout().addWidget(
-            group(label('Paragraph'), self.toggleParagraphCapital, spacing=0),
-            alignment=Qt.AlignmentFlag.AlignRight)
-        self.wdgCapitalizationSettings.layout().addWidget(
-            group(label('Sentence'), self.toggleSentenceCapital, spacing=0),
-            alignment=Qt.AlignmentFlag.AlignRight)
+        self.ellipsisSettings = self._addHeader('Ellipsis', 'Insert ellipsis character when typing three periods')
+        self.toggleEllipsis = self._addToggleSetting(self.ellipsisSettings, icon='fa5s.ellipsis-h')
+        self.toggleEllipsis.setChecked(self.novel.prefs.manuscript.ellipsis == EllipsisInsertionMode.INSERT_ELLIPSIS)
 
-        self.layout().addWidget(self.wdgCapitalizationSettings)
+        self.periodSettings = self._addHeader('Period', 'Insert period when typing double whitespaces')
+        self.togglePeriod = self._addToggleSetting(self.periodSettings, icon='msc.debug-stackframe-dot')
+        self.togglePeriod.setChecked(self.novel.prefs.manuscript.period)
+
         self.layout().addWidget(vspacer())
+
+    def _addHeader(self, title: str, desc: str = '') -> QWidget:
+        self.layout().addWidget(label(title, bold=True), alignment=Qt.AlignmentFlag.AlignLeft)
+        wdgSettings = QWidget()
+        vbox(wdgSettings, 0)
+        margins(wdgSettings, left=10)
+        if desc:
+            wdgSettings.layout().addWidget(label(desc, description=True, wordWrap=True, decr_font_diff=1),
+                                           alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.layout().addWidget(wdgSettings)
+        return wdgSettings
+
+    def _addToggleSetting(self, wdg: QWidget, text: str = '', icon: str = '') -> QAbstractButton:
+        toggle = SmallToggleButton(translucent=False)
+        lbl = IconText()
+        lbl.setText(text)
+        if icon:
+            lbl.setIcon(IconRegistry.from_name(icon, 'grey'))
+        wdg.layout().addWidget(group(lbl, toggle, spacing=0), alignment=Qt.AlignmentFlag.AlignRight)
+
+        return toggle
 
     def _dashToggled(self):
         btn = self.btnGroupDash.checkedButton()
@@ -351,7 +356,7 @@ class ManuscriptEditorSettingsWidget(QWidget):
         self.smartTypingSettings = ManuscriptSmartTypingSettingsWidget(novel)
         self.langSelectionWidget = ManuscriptSpellcheckingSettingsWidget(novel)
 
-        headerSettings = self._addSection('Font settings', 'fa5s.font', self.fontSettings)
+        headerSettings = self._addSection('Editor settings', 'fa5s.font', self.fontSettings)
         headerSmart = self._addSection('Smart Typing', 'ri.double-quotes-r', self.smartTypingSettings)
         headerSpellcheck = self._addSection('Spellchecking', 'fa5s.spell-check', self.langSelectionWidget)
         exclusive_buttons(self, headerSettings.btnCollapse, headerSmart.btnCollapse, headerSpellcheck.btnCollapse,
