@@ -3874,8 +3874,8 @@ class ManuscriptPreferences:
     dash: DashInsertionMode = DashInsertionMode.INSERT_EM_DASH
     capitalization: AutoCapitalizationMode = AutoCapitalizationMode.PARAGRAPH
     ellipsis: EllipsisInsertionMode = EllipsisInsertionMode.NONE
-    smart_quotes: bool = False
-    period: bool = False
+    smart_quotes: bool = True
+    period: bool = True
 
 
 class NovelPanel(Enum):

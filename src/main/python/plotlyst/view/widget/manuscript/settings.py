@@ -232,16 +232,20 @@ class ManuscriptFontSettingsWidget(QWidget):
 class ManuscriptSmartTypingSettingsWidget(QWidget):
     dashChanged = pyqtSignal(DashInsertionMode)
     capitalizationChanged = pyqtSignal(AutoCapitalizationMode)
+    ellipsisChanged = pyqtSignal(EllipsisInsertionMode)
+    smartQuotesChanged = pyqtSignal(bool)
+    periodChanged = pyqtSignal(bool)
 
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self.novel = novel
-        vbox(self)
+        vbox(self, spacing=1)
 
         self.smartQuotesSettings = self._addHeader('Smart quotes',
                                                    'Insert smart quotes when typing simple apostrophes and quotes')
         self.toggleSmartQuotes = self._addToggleSetting(self.smartQuotesSettings, icon='fa5s.quote-right')
         self.toggleSmartQuotes.setChecked(self.novel.prefs.manuscript.smart_quotes)
+        self.toggleSmartQuotes.clicked.connect(self.smartQuotesChanged)
 
         self.wdgDashSettings = self._addHeader('Dash', 'Insert a dash automatically when typing double hyphens (--)')
         self.toggleEn = self._addToggleSetting(self.wdgDashSettings, f'En dash ({EN_DASH})')
@@ -267,20 +271,22 @@ class ManuscriptSmartTypingSettingsWidget(QWidget):
             self.toggleSentenceCapital.setChecked(True)
         self.btnGroupCapital.buttonToggled.connect(self._capitalizationToggled)
 
-        self.ellipsisSettings = self._addHeader('Ellipsis', 'Insert ellipsis character when typing three periods')
+        self.ellipsisSettings = self._addHeader('Ellipsis', 'Insert an ellipsis character when typing three consecutive periods')
         self.toggleEllipsis = self._addToggleSetting(self.ellipsisSettings, icon='fa5s.ellipsis-h')
         self.toggleEllipsis.setChecked(self.novel.prefs.manuscript.ellipsis == EllipsisInsertionMode.INSERT_ELLIPSIS)
+        self.toggleEllipsis.clicked.connect(self._ellipsisToggled)
 
-        self.periodSettings = self._addHeader('Period', 'Insert period when typing double whitespaces')
+        self.periodSettings = self._addHeader('Period', 'Insert a period when typing two consecutive spaces')
         self.togglePeriod = self._addToggleSetting(self.periodSettings, icon='msc.debug-stackframe-dot')
         self.togglePeriod.setChecked(self.novel.prefs.manuscript.period)
+        self.togglePeriod.clicked.connect(self.periodChanged)
 
         self.layout().addWidget(vspacer())
 
     def _addHeader(self, title: str, desc: str = '') -> QWidget:
         self.layout().addWidget(label(title, bold=True), alignment=Qt.AlignmentFlag.AlignLeft)
         wdgSettings = QWidget()
-        vbox(wdgSettings, 0)
+        vbox(wdgSettings, 0, 0)
         margins(wdgSettings, left=10)
         if desc:
             wdgSettings.layout().addWidget(label(desc, description=True, wordWrap=True, decr_font_diff=1),
@@ -316,6 +322,12 @@ class ManuscriptSmartTypingSettingsWidget(QWidget):
             self.capitalizationChanged.emit(AutoCapitalizationMode.PARAGRAPH)
         elif btn is self.toggleSentenceCapital:
             self.capitalizationChanged.emit(AutoCapitalizationMode.SENTENCE)
+
+    def _ellipsisToggled(self, toggled: bool):
+        if toggled:
+            self.ellipsisChanged.emit(EllipsisInsertionMode.INSERT_ELLIPSIS)
+        else:
+            self.ellipsisChanged.emit(EllipsisInsertionMode.NONE)
 
 
 class EditorSettingsHeader(QFrame):
