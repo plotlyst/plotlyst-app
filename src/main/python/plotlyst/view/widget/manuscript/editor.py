@@ -251,10 +251,8 @@ class SceneSeparator(QPushButton):
 class ManuscriptTextEdit(TextEditBase):
     sceneSeparatorClicked = pyqtSignal(Scene)
 
-    def __init__(self, parent=None, first: bool = False, last: bool = False):
+    def __init__(self, parent=None, readOnly: bool = False):
         super(ManuscriptTextEdit, self).__init__(parent)
-        self._first = first
-        self._last = last
         self._pasteAsOriginalEnabled = False
         self._resizedOnShow: bool = False
         self._menuIsShown = False
@@ -268,9 +266,11 @@ class ManuscriptTextEdit(TextEditBase):
 
         self._sentenceHighlighter: Optional[SentenceHighlighter] = None
 
-        toolbar = ManuscriptPopupTextEditorToolbar()
-        toolbar.activate(self)
-        self.setPopupWidget(toolbar)
+        self.setReadOnly(readOnly)
+        if not readOnly:
+            toolbar = ManuscriptPopupTextEditorToolbar()
+            toolbar.activate(self)
+            self.setPopupWidget(toolbar)
 
         self._setDefaultStyleSheet()
         self.setCommandOperations([Heading1Operation, Heading2Operation, Heading3Operation, InsertListOperation,
@@ -837,7 +837,7 @@ class ManuscriptEditor(QWidget, EventListener):
         self.cursorPositionChanged.emit(parent_pos.x(), parent_pos.y(), marginX, marginY)
 
     def _initTextEdit(self, scene: Scene) -> ManuscriptTextEdit:
-        _textedit = ManuscriptTextEdit()
+        _textedit = ManuscriptTextEdit(readOnly=self._novel.is_readonly())
         _textedit.setFont(self._font)
         _textedit.setDashInsertionMode(self._novel.prefs.manuscript.dash)
         _textedit.setAutoCapitalizationMode(self._novel.prefs.manuscript.capitalization)
@@ -850,7 +850,6 @@ class ManuscriptEditor(QWidget, EventListener):
 
         _textedit.setPlaceholderText('Begin writing your story...')
         _textedit.setSidebarEnabled(False)
-        _textedit.setReadOnly(self._novel.is_readonly())
         _textedit.setDocumentMargin(0)
 
         _textedit.setScene(scene)
