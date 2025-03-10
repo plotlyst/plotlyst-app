@@ -30,7 +30,7 @@ from overrides import overrides
 from qthandy import vbox, clear_layout, vspacer, margins, transparent, gc, hbox, italic, translucent, sp, spacer, \
     decr_font, retain_when_hidden, pointy
 from qthandy.filter import OpacityEventFilter
-from qttextedit import remove_font, TextBlockState, DashInsertionMode, AutoCapitalizationMode
+from qttextedit import remove_font, TextBlockState, DashInsertionMode, AutoCapitalizationMode, EllipsisInsertionMode
 from qttextedit.ops import Heading1Operation, Heading2Operation, Heading3Operation, InsertListOperation, \
     InsertNumberedListOperation, BoldOperation, ItalicOperation, UnderlineOperation, StrikethroughOperation, \
     AlignLeftOperation, AlignCenterOperation, AlignRightOperation
@@ -309,12 +309,6 @@ class ManuscriptTextEdit(TextEditBase):
     @overrides
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         cursor: QTextCursor = self.textCursor()
-        if cursor.atBlockEnd() and event.key() == Qt.Key.Key_Space:
-            cursor.movePosition(QTextCursor.MoveOperation.PreviousCharacter, QTextCursor.MoveMode.KeepAnchor)
-            if cursor.selectedText() == ' ':
-                self.textCursor().deletePreviousChar()
-                self.textCursor().insertText('.')
-
         move_up = cursor.block().blockNumber() == 0 and event.key() == Qt.Key.Key_Up
         move_down = cursor.block().blockNumber() == self.document().blockCount() - 1 and event.key() == Qt.Key.Key_Down
 
@@ -729,6 +723,9 @@ class ManuscriptEditor(QWidget, EventListener):
         self._settings = settings
         self._settings.smartTypingSettings.dashChanged.connect(self._dashInsertionChanged)
         self._settings.smartTypingSettings.capitalizationChanged.connect(self._capitalizationChanged)
+        self._settings.smartTypingSettings.smartQuotesChanged.connect(self._smartQuotesChanged)
+        self._settings.smartTypingSettings.periodChanged.connect(self._periodChanged)
+        self._settings.smartTypingSettings.ellipsisChanged.connect(self._ellipsisChanged)
 
         self._settings.fontSettings.sizeSetting.attach(self)
         self._settings.fontSettings.widthSetting.attach(self)
@@ -841,6 +838,9 @@ class ManuscriptEditor(QWidget, EventListener):
         _textedit.setFont(self._font)
         _textedit.setDashInsertionMode(self._novel.prefs.manuscript.dash)
         _textedit.setAutoCapitalizationMode(self._novel.prefs.manuscript.capitalization)
+        _textedit.setSmartQuotesEnabled(self._novel.prefs.manuscript.smart_quotes)
+        _textedit.setPeriodInsertionEnabled(self._novel.prefs.manuscript.period)
+        _textedit.setEllipsisInsertionMode(self._novel.prefs.manuscript.ellipsis)
         transparent(_textedit)
 
         _textedit.setBlockFormat(DEFAULT_MANUSCRIPT_LINE_SPACE, textIndent=DEFAULT_MANUSCRIPT_INDENT)
@@ -888,6 +888,24 @@ class ManuscriptEditor(QWidget, EventListener):
         for textedit in self._textedits:
             textedit.setAutoCapitalizationMode(mode)
         self._novel.prefs.manuscript.capitalization = mode
+        self.repo.update_novel(self._novel)
+
+    def _smartQuotesChanged(self, enabled: bool):
+        for textedit in self._textedits:
+            textedit.setSmartQuotesEnabled(enabled)
+        self._novel.prefs.manuscript.smart_quotes = enabled
+        self.repo.update_novel(self._novel)
+
+    def _periodChanged(self, enabled: bool):
+        for textedit in self._textedits:
+            textedit.setPeriodInsertionEnabled(enabled)
+        self._novel.prefs.manuscript.period = enabled
+        self.repo.update_novel(self._novel)
+
+    def _ellipsisChanged(self, mode: EllipsisInsertionMode):
+        for textedit in self._textedits:
+            textedit.setEllipsisInsertionMode(mode)
+        self._novel.prefs.manuscript.ellipsis = mode
         self.repo.update_novel(self._novel)
 
     def _fontSizeChanged(self, size: int):
