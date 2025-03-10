@@ -21,11 +21,12 @@ from enum import Enum, auto
 from functools import partial
 from typing import Optional, List
 
-from PyQt6.QtCore import pyqtSignal, Qt
-from PyQt6.QtWidgets import QWidget, QStackedWidget
+from PyQt6.QtCore import pyqtSignal, Qt, QObject, QEvent, QSize
+from PyQt6.QtWidgets import QWidget, QStackedWidget, QFrame, QButtonGroup
 from overrides import overrides
 from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp, grid, incr_icon, \
-    flow, translucent, clear_layout
+    flow, clear_layout, pointy
+from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import MAXIMUM_SIZE
@@ -35,12 +36,16 @@ from plotlyst.model.characters_model import CharactersTableModel
 from plotlyst.model.common import SelectionItemsModel
 from plotlyst.model.novel import NovelTagsModel
 from plotlyst.resources import resource_registry
-from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn, frame, scroll_area
+from plotlyst.service.persistence import RepositoryPersistenceManager
+from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn, frame, scroll_area, wrap, \
+    ExclusiveOptionalButtonGroup
 from plotlyst.view.generated.imported_novel_overview_ui import Ui_ImportedNovelOverview
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, apply_border_image
-from plotlyst.view.widget.display import Subtitle, IconText, Icon
+from plotlyst.view.style.theme import BG_PRIMARY_COLOR
+from plotlyst.view.widget.button import SelectorToggleButton
+from plotlyst.view.widget.display import Subtitle, IconText, Icon, PopupDialog
 from plotlyst.view.widget.input import AutoAdjustableLineEdit
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
 from plotlyst.view.widget.labels import LabelsEditorWidget
@@ -352,6 +357,115 @@ class SpiceWidget(QWidget):
             self.layout().addWidget(icon)
 
 
+class DescriptorLabelSelector(QWidget):
+    selectionChanged = pyqtSignal()
+
+    def __init__(self, parent=None, exclusive: bool = True):
+        super().__init__(parent)
+        flow(self)
+        margins(self, left=20, right=20)
+        if exclusive:
+            self.btnGroup = ExclusiveOptionalButtonGroup(self)
+        else:
+            self.btnGroup = QButtonGroup()
+            self.btnGroup.setExclusive(False)
+
+        self.btnGroup.buttonClicked.connect(self.selectionChanged)
+
+    def selected(self) -> List[str]:
+        labels = []
+        for btn in self.btnGroup.buttons():
+            if btn.isChecked():
+                labels.append(btn.text())
+
+        return labels
+
+    def setLabels(self, labels: List[str], selected: List[str]):
+        for label in labels:
+            btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            btn.setText(label)
+            self.btnGroup.addButton(btn)
+            if label in selected:
+                btn.setChecked(True)
+            self.layout().addWidget(btn)
+
+
+class NovelDescriptorsEditorPopup(PopupDialog):
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(parent)
+        self.novel = novel
+        self.frame.layout().setSpacing(3)
+
+        self.btnClose = push_btn(text='Close', properties=['confirm', 'cancel'])
+        self.btnClose.clicked.connect(self.accept)
+
+        self.scroll = scroll_area(h_on=False, frameless=True)
+        self.center = QFrame()
+        vbox(self.center)
+        self.scroll.setWidget(self.center)
+        self.center.setProperty('white-bg', True)
+
+        self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        self.frame.layout().addWidget(self.scroll)
+
+        self._addHeader('Genres', 'mdi.drama-masks', 'Select the primary genres')
+        self.genreSelector = DescriptorLabelSelector(exclusive=False)
+        self.genreSelector.setLabels(['Fantasy', 'Romance', 'Sci-Fi'], self.novel.descriptors.genres)
+        self.genreSelector.selectionChanged.connect(self._genreSelected)
+        self.center.layout().addWidget(self.genreSelector)
+
+        self._addHeader('Audience', 'ei.group', 'Select the target audience of your novel')
+        self.audienceSelector = DescriptorLabelSelector()
+        self.audienceSelector.setLabels(['Children', 'Middle grade', 'Young adult', 'New adult', 'Adult'], [self.novel.descriptors.audience])
+        self.audienceSelector.selectionChanged.connect(self._audienceSelected)
+        self.center.layout().addWidget(self.audienceSelector)
+
+        self._addHeader('Mood', 'mdi.emoticon-outline', "Select the reader's expected emotional experience")
+        self.moodSelector = DescriptorLabelSelector()
+        self.moodSelector.setLabels(
+            ['Adventurous', 'Challenging', 'Dark', 'Emotional', 'Funny', 'Hopeful', 'Informative', 'Inspiring',
+             'Lighthearted', 'Mysterious', 'Reflective', 'Relaxing', 'Sad', 'Tense'], self.novel.descriptors.mood)
+        self.moodSelector.selectionChanged.connect(self._moodSelected)
+        self.center.layout().addWidget(self.moodSelector)
+
+        self._addHeader('Style', 'fa5s.pen-fancy', 'Select which style your novel is written in')
+
+        self.center.layout().addWidget(vspacer())
+
+        self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.setMinimumSize(self._adjustedSize(0.6, 0.5, 600, 400))
+
+    @overrides
+    def sizeHint(self) -> QSize:
+        return self._adjustedSize(0.6, 0.5, 600, 400)
+
+    def display(self):
+        self.exec()
+
+    def _addHeader(self, title: str, icon: str = '', desc: str = ''):
+        lbl = IconText()
+        lbl.setText(title)
+        bold(lbl)
+        incr_font(lbl)
+        if icon:
+            lbl.setIcon(IconRegistry.from_name(icon))
+
+        self.center.layout().addWidget(wrap(lbl, margin_top=10), alignment=Qt.AlignmentFlag.AlignLeft)
+        if desc:
+            self.center.layout().addWidget(label(desc, description=True))
+
+    def _genreSelected(self):
+        pass
+
+    def _audienceSelected(self):
+        audience = self.audienceSelector.selected()
+        self.novel.descriptors.audience = audience[0] if audience else ''
+
+    def _moodSelected(self):
+        pass
+
+
 class NovelDescriptorsDisplay(QWidget):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -382,9 +496,12 @@ class NovelDescriptorsDisplay(QWidget):
 
         self.scrollDescriptors = scroll_area(h_on=False, frameless=True)
         self.wdgDescriptors = QWidget()
+        self.wdgDescriptors.installEventFilter(OpacityEventFilter(self.wdgDescriptors, 0.9, 1.0))
+        self.wdgDescriptors.installEventFilter(self)
+        pointy(self.wdgDescriptors)
         self.wdgDescriptors.setProperty('relaxed-white-bg', True)
         self.scrollDescriptors.setWidget(self.wdgDescriptors)
-        self._grid = grid(self.wdgDescriptors, v_spacing=20)
+        self._grid = grid(self.wdgDescriptors, v_spacing=20, h_spacing=15)
         margins(self.wdgDescriptors, left=45, right=45)
         sp(self.wdgDescriptors).v_exp()
 
@@ -397,11 +514,11 @@ class NovelDescriptorsDisplay(QWidget):
         self._grid.addWidget(self._label('Genres', 'mdi.drama-masks'), 0, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(self.wdgPrimaryGenres, 0, 1)
         self._grid.addWidget(self._label('Audience', 'ei.group'), 1, 0, alignment=Qt.AlignmentFlag.AlignRight)
-        self._grid.addWidget(self.wdgAudience, 2, 1)
+        self._grid.addWidget(self.wdgAudience, 1, 1)
         self._grid.addWidget(self._label('Mood', 'mdi.emoticon-outline'), 2, 0, alignment=Qt.AlignmentFlag.AlignRight)
-        self._grid.addWidget(self.wdgMood, 3, 1)
+        self._grid.addWidget(self.wdgMood, 2, 1)
         self._grid.addWidget(self._label('Style', 'fa5s.pen-fancy'), 3, 0, alignment=Qt.AlignmentFlag.AlignRight)
-        self._grid.addWidget(self.wdgStyle, 4, 1)
+        self._grid.addWidget(self.wdgStyle, 3, 1)
 
         wc = 0
         for scene in self.novel.scenes:
@@ -422,12 +539,39 @@ class NovelDescriptorsDisplay(QWidget):
         self.card.layout().addWidget(self.wdgTitle)
         self.card.layout().addWidget(self.scrollDescriptors)
 
+        self.repo = RepositoryPersistenceManager.instance()
+        self.refresh()
+
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.MouseButtonPress:
+            self._edit()
+        return super().eventFilter(watched, event)
+
+    def refresh(self):
+        if self.novel.descriptors.audience:
+            lbl = label(self.novel.descriptors.audience, incr_font_diff=2)
+            font = lbl.font()
+            font.setFamily(app_env.serif_font())
+            lbl.setFont(font)
+            lbl.setStyleSheet(f'''
+                   QLabel {{
+                       border: 1px solid lightgrey;
+                       background: {BG_PRIMARY_COLOR};
+                       padding: 10px 5px 10px 5px;
+                       border-radius: 12px;
+                   }}
+                   ''')
+            self.wdgAudience.layout().addWidget(lbl)
+
     def _label(self, text: str, icon: str = '', major: bool = True) -> IconText:
         lbl = IconText()
         lbl.setText(text)
+        lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         if icon:
-            lbl.setIcon(IconRegistry.from_name(icon))
-        translucent(lbl, 0.6)
+            lbl.setIcon(IconRegistry.from_name(icon, 'grey'))
+        lbl.setStyleSheet('color: grey; border: 0px;')
+
         incr_font(lbl, 3 if major else 0)
         incr_icon(lbl, 3 if major else 0)
 
@@ -438,3 +582,10 @@ class NovelDescriptorsDisplay(QWidget):
         sp(wdg).v_max()
         flow(wdg)
         return wdg
+
+    def _edit(self):
+        NovelDescriptorsEditorPopup.popup(self.novel)
+
+        clear_layout(self.wdgAudience)
+        self.refresh()
+        self.repo.update_novel(self.novel)

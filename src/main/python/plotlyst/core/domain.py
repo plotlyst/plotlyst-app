@@ -3977,6 +3977,14 @@ def default_locations() -> List[Location]:
 
 
 @dataclass
+class NovelInfo:
+    audience: str = ''
+    style: str = ''
+    genres: List[str] = field(default_factory=list)
+    mood: List[str] = field(default_factory=list)
+
+
+@dataclass
 class Novel(NovelDescriptor):
     story_structures: List[StoryStructure] = field(default_factory=list)
     characters: List[Character] = field(default_factory=list)
@@ -4003,6 +4011,7 @@ class Novel(NovelDescriptor):
                                                              metadata=config(exclude=exclude_if_empty))
     questions: Dict[str, ReaderQuestion] = field(default_factory=dict)
     productivity: DailyProductivity = field(default_factory=DailyProductivity)
+    descriptors: NovelInfo = field(default_factory=NovelInfo)
 
     def pov_characters(self) -> List[Character]:
         pov_ids = set()
