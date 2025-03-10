@@ -22,7 +22,7 @@ from functools import partial
 from typing import Dict, Optional, Set, Union
 from typing import List
 
-from PyQt6.QtCore import QMimeData, QPointF
+from PyQt6.QtCore import QMimeData, QPointF, QTimer
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QShowEvent, QIcon, QAction
 from PyQt6.QtWidgets import QWidget
@@ -39,7 +39,7 @@ from plotlyst.events import SceneDeletedEvent, \
     SceneChangedEvent, SceneAddedEvent, ScenesOrganizationResetEvent, NovelScenesOrganizationToggleEvent
 from plotlyst.events import SceneOrderChangedEvent, ChapterChangedEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_scene
-from plotlyst.view.common import action, insert_before_the_end
+from plotlyst.view.common import action, insert_before_the_end, fade_in, scroll_to_bottom
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.tree import TreeView, ContainerNode, TreeSettings
@@ -185,7 +185,6 @@ class ScenesTreeView(TreeView, EventListener):
     sceneSelected = pyqtSignal(Scene)
     sceneDoubleClicked = pyqtSignal(Scene)
     chapterSelected = pyqtSignal(Chapter)
-    sceneAdded = pyqtSignal(Scene)
 
     # noinspection PyTypeChecker
     def __init__(self, parent=None, settings: Optional[TreeSettings] = None):
@@ -193,6 +192,7 @@ class ScenesTreeView(TreeView, EventListener):
         self._novel: Optional[Novel] = None
         self._readOnly = False
         self._settings = settings
+        self._autoSelectNewScenes: bool = False
 
         self._refreshNeeded = False
 
@@ -228,6 +228,9 @@ class ScenesTreeView(TreeView, EventListener):
         self._readOnly = readOnly
 
         self.refresh()
+
+    def setAutoSelectNewScenes(self, enabled: bool):
+        self._autoSelectNewScenes = enabled
 
     def selectedScenes(self) -> List[Scene]:
         return list(self._selectedScenes)
@@ -309,6 +312,8 @@ class ScenesTreeView(TreeView, EventListener):
         self._novel.update_chapter_titles()
         wdg = self.__initChapterWidget(chapter)
         self._centralWidget.layout().insertWidget(wdg_i, wdg)
+        fade_in(wdg)
+        self.ensureWidgetVisible(wdg)
 
         self.repo.update_novel(self._novel)
         self._emitChapterChange()
@@ -321,7 +326,12 @@ class ScenesTreeView(TreeView, EventListener):
 
         self.repo.insert_scene(self._novel, scene)
         emit_event(self._novel, SceneAddedEvent(self, scene), delay=10)
-        self.sceneAdded.emit(scene)
+
+        fade_in(wdg)
+        QTimer.singleShot(30, lambda: scroll_to_bottom(self))
+
+        if self._autoSelectNewScenes:
+            self._autoSelectScene(scene)
 
     def removeChapter(self, chapter: Chapter):
         wdg = self._chapters.get(chapter)
@@ -341,10 +351,8 @@ class ScenesTreeView(TreeView, EventListener):
             self._selectedChapters.add(chapter)
 
     def selectScene(self, scene: Scene):
-        self.clearSelection()
-        self._scenes[scene].select()
-        if scene not in self._selectedScenes:
-            self._selectedScenes.add(scene)
+        self._selectScene(scene)
+        self.ensureWidgetVisible(self._scenes[scene])
 
     def clearSelection(self):
         for scene in self._selectedScenes:
@@ -375,7 +383,6 @@ class ScenesTreeView(TreeView, EventListener):
         elif isinstance(event, NovelScenesOrganizationToggleEvent):
             self._refreshSceneTitles()
 
-
     def _tryRefresh(self):
         if self.isVisible():
             self.refresh()
@@ -393,7 +400,9 @@ class ScenesTreeView(TreeView, EventListener):
 
         emit_event(self._novel, SceneAddedEvent(self, scene), delay=10)
         self._reorderScenes()
-        self.sceneAdded.emit(scene)
+
+        if self._autoSelectNewScenes:
+            self._autoSelectScene(scene)
 
     def _insertChapter(self, chapterWdg: ChapterNode):
         i = self._centralWidget.layout().indexOf(chapterWdg) + 1
@@ -405,6 +414,16 @@ class ScenesTreeView(TreeView, EventListener):
         self._novel.update_chapter_titles()
         self.repo.update_novel(self._novel)
         self._refreshChapterTitles()
+
+    def _selectScene(self, scene: Scene):
+        self.clearSelection()
+        self._scenes[scene].select()
+        if scene not in self._selectedScenes:
+            self._selectedScenes.add(scene)
+
+    def _autoSelectScene(self, scene: Scene):
+        self._selectScene(scene)
+        self.sceneSelected.emit(scene)
 
     def _sceneSelectionChanged(self, sceneWdg: SceneNode, selected: bool):
         if selected:

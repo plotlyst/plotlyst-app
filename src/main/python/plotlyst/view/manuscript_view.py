@@ -69,6 +69,7 @@ class ManuscriptView(AbstractNovelView):
 
         self.ui.lblWc.setAlignment(Qt.AlignmentFlag.AlignRight)
 
+        self.ui.treeChapters.setAutoSelectNewScenes(True)
         self.ui.btnAdd.setIcon(IconRegistry.plus_icon(RELAXED_WHITE_COLOR))
         self.ui.btnAddScene.setIcon(IconRegistry.plus_icon(RELAXED_WHITE_COLOR))
         self.ui.btnAddScene.clicked.connect(self.ui.treeChapters.addScene)
@@ -204,7 +205,6 @@ class ManuscriptView(AbstractNovelView):
         self.ui.treeChapters.setNovel(self.novel, readOnly=self.novel.is_readonly())
         self.ui.treeChapters.sceneSelected.connect(self._editScene)
         self.ui.treeChapters.chapterSelected.connect(self._editChapter)
-        self.ui.treeChapters.sceneAdded.connect(self._scene_added)
         self.ui.treeChapters.centralWidget().setProperty('bg', True)
 
         self.ui.wdgSide.setHidden(True)
@@ -361,11 +361,6 @@ class ManuscriptView(AbstractNovelView):
         self.ui.btnStage.setDisabled(True)
 
         self._recheckDocument()
-
-    def _scene_added(self, scene: Scene):
-        if self._is_empty_page():
-            self._editScene(scene)
-            self.ui.treeChapters.selectScene(scene)
 
     def _recheckDocument(self):
         if self.ui.stackedWidget.currentWidget() == self.ui.pageText:
