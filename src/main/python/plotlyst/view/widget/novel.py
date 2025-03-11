@@ -26,7 +26,7 @@ from PyQt6.QtGui import QShowEvent
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QFrame, QButtonGroup, QPushButton
 from overrides import overrides
 from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp, grid, incr_icon, \
-    flow, clear_layout, pointy, decr_icon
+    flow, clear_layout, pointy, decr_icon, vline
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
@@ -41,14 +41,15 @@ from plotlyst.model.novel import NovelTagsModel
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn, frame, scroll_area, wrap, \
-    ExclusiveOptionalButtonGroup, tool_btn
+    ExclusiveOptionalButtonGroup, tool_btn, exclusive_buttons
 from plotlyst.view.generated.imported_novel_overview_ui import Ui_ImportedNovelOverview
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, apply_border_image
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.button import SelectorToggleButton
-from plotlyst.view.widget.display import Subtitle, IconText, Icon, PopupDialog
+from plotlyst.view.widget.display import Subtitle, IconText, Icon, PopupDialog, icon_text
+from plotlyst.view.widget.input import Toggle
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
 from plotlyst.view.widget.labels import LabelsEditorWidget
 from plotlyst.view.widget.manuscript import ManuscriptLanguageSettingWidget
@@ -459,7 +460,22 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.center.setProperty('white-bg', True)
 
         self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        self.frame.layout().addWidget(label('Novel Descriptors', h3=True), alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.scroll)
+
+        self.lblStandalone = icon_text('ei.book', 'Standalone')
+        self.toggleStandalone = Toggle()
+        self.lblSeries = icon_text('ph.books', 'Series')
+        self.toggleSeries = Toggle()
+
+        self.wdgBookType = group(self.lblStandalone, self.toggleStandalone, vline(), self.lblSeries, self.toggleSeries)
+        btngroup = exclusive_buttons(self, self.toggleStandalone, self.toggleSeries, optional=True)
+        btngroup.buttonClicked.connect(self._typeSelected)
+        if self.novel.descriptors.type == 'Standalone':
+            self.toggleStandalone.setChecked(True)
+        elif self.novel.descriptors.type == 'Series':
+            self.toggleSeries.setChecked(True)
+        self.center.layout().addWidget(self.wdgBookType, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self._addHeader('Genres', 'mdi.drama-masks', 'Select the primary genres')
         self.genreSelector = DescriptorLabelSelector(exclusive=False)
@@ -535,6 +551,14 @@ class NovelDescriptorsEditorPopup(PopupDialog):
 
     def _moodSelected(self):
         self.novel.descriptors.mood[:] = self.moodSelector.selected()
+
+    def _typeSelected(self):
+        if self.toggleStandalone.isChecked():
+            self.novel.descriptors.type = 'Standalone'
+        elif self.toggleSeries.isChecked():
+            self.novel.descriptors.type = 'Series'
+        else:
+            self.novel.descriptors.type = ''
 
 
 class NovelDescriptorsDisplay(QWidget):
@@ -635,6 +659,18 @@ class NovelDescriptorsDisplay(QWidget):
         self.lineNovelTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def refresh(self):
+        if self.novel.descriptors.type:
+            self._lblStandalone.setText(self.novel.descriptors.type)
+            self._lblStandalone.setVisible(True)
+            if self.novel.descriptors.type == 'Standalone':
+                self._lblStandalone.setIcon(IconRegistry.from_name('ei.book', 'grey'))
+            else:
+                self._lblStandalone.setIcon(IconRegistry.from_name('ph.books', 'grey'))
+        else:
+            self._lblStandalone.setHidden(True)
+
+
+
         if self.novel.descriptors.audience:
             lbl = label(self.novel.descriptors.audience, incr_font_diff=2)
             font = lbl.font()

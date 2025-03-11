@@ -3982,6 +3982,8 @@ class NovelInfo:
     style: str = ''
     genres: List[str] = field(default_factory=list)
     mood: List[str] = field(default_factory=list)
+    type: str = ''
+
 
 
 @dataclass
