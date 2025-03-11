@@ -19,13 +19,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from enum import Enum, auto
 from functools import partial
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from PyQt6.QtCore import pyqtSignal, Qt, QObject, QEvent, QSize
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QFrame, QButtonGroup
 from overrides import overrides
 from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp, grid, incr_icon, \
-    flow, clear_layout, pointy
+    flow, clear_layout, pointy, decr_icon
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
@@ -38,7 +38,7 @@ from plotlyst.model.novel import NovelTagsModel
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn, frame, scroll_area, wrap, \
-    ExclusiveOptionalButtonGroup
+    ExclusiveOptionalButtonGroup, tool_btn
 from plotlyst.view.generated.imported_novel_overview_ui import Ui_ImportedNovelOverview
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
@@ -383,11 +383,62 @@ class DescriptorLabelSelector(QWidget):
     def setLabels(self, labels: List[str], selected: List[str]):
         for label in labels:
             btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
+            if label in genre_icons.keys():
+                btn.setIcon(IconRegistry.from_name(genre_icons[label]))
             btn.setText(label)
             self.btnGroup.addButton(btn)
             if label in selected:
                 btn.setChecked(True)
             self.layout().addWidget(btn)
+
+    def addSecondaryLabels(self, label: str, secondary: List[str], selected: List[str]):
+        btnMenu = tool_btn(IconRegistry.from_name('mdi.chevron-down', 'grey'), transparent_=True)
+        decr_icon(btnMenu, 4)
+        btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
+        btn.setText(label)
+        self.btnGroup.addButton(btn)
+        if label in selected:
+            btn.setChecked(True)
+        self.layout().addWidget(group(btn, btnMenu, margin=0, spacing=0))
+
+        menu = MenuWidget(btnMenu)
+        apply_white_menu(menu)
+        wdg = QWidget()
+        flow(wdg)
+        for sec in secondary:
+            btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
+            btn.setText(sec)
+            self.btnGroup.addButton(btn)
+            if sec in selected:
+                btn.setChecked(True)
+            wdg.layout().addWidget(btn)
+        menu.addWidget(wdg)
+
+
+genre_icons: Dict[str, str] = {
+    'Fantasy': 'fa5s.dragon',
+    'Sci-Fi': 'mdi.robot',
+    'Romance': 'ei.heart',
+    'Mystery': 'mdi.incognito',
+    'Action': 'fa5s.running',
+    'Thriller': 'ri.knife-blood-line',
+    'Horror': 'ri.ghost-2-line',
+    'Crime': 'mdi.pistol',
+    'Caper': 'mdi.robber',
+    'Coming of Age': 'ri.seedling-line',
+    'Cozy': 'ri.home-heart-line',
+    'Historical Fiction': 'fa5s.hourglass-end',
+    'War': 'fa5s.skull',
+    'Western': 'fa5s.hat-cowboy',
+    'Upmarket': 'ph.pen-nib',
+    'Literary Fiction': 'ri.quill-pen-line',
+    'Society': 'mdi6.account-group',
+    'Memoir': 'mdi6.mirror-variant',
+    "Children's Books": 'mdi6.teddy-bear',
+    'Slice of Life': 'fa5s.apple-alt',
+    'Comedy': 'fa5.laugh-beam',
+    'Contemporary': 'fa5s.mobile-alt',
+}
 
 
 class NovelDescriptorsEditorPopup(PopupDialog):
@@ -410,7 +461,15 @@ class NovelDescriptorsEditorPopup(PopupDialog):
 
         self._addHeader('Genres', 'mdi.drama-masks', 'Select the primary genres')
         self.genreSelector = DescriptorLabelSelector(exclusive=False)
-        self.genreSelector.setLabels(['Fantasy', 'Romance', 'Sci-Fi'], self.novel.descriptors.genres)
+        # self.genreSelector.addSecondaryLabels('Fantasy', ['Urban fantasy', 'High fantasy'],
+        #                                       self.novel.descriptors.genres)
+        self.genreSelector.setLabels([
+            'Fantasy', 'Sci-Fi', 'Romance', 'Mystery', 'Action',
+            'Thriller', 'Horror', 'Crime', 'Caper', 'Coming of Age',
+            'Cozy', 'Historical Fiction', 'War', 'Western', 'Upmarket',
+            'Literary Fiction', 'Society', 'Memoir', "Children's Books",
+            'Slice of Life', 'Comedy', 'Contemporary'
+        ], self.novel.descriptors.genres)
         self.genreSelector.selectionChanged.connect(self._genreSelected)
         self.center.layout().addWidget(self.genreSelector)
 
@@ -435,11 +494,11 @@ class NovelDescriptorsEditorPopup(PopupDialog):
 
         self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.setMinimumSize(self._adjustedSize(0.6, 0.5, 600, 400))
+        self.setMinimumSize(self._adjustedSize(0.8, 0.6, 600, 400))
 
     @overrides
     def sizeHint(self) -> QSize:
-        return self._adjustedSize(0.6, 0.5, 600, 400)
+        return self._adjustedSize(0.8, 0.6, 600, 400)
 
     def display(self):
         self.exec()
@@ -457,7 +516,7 @@ class NovelDescriptorsEditorPopup(PopupDialog):
             self.center.layout().addWidget(label(desc, description=True))
 
     def _genreSelected(self):
-        pass
+        self.novel.descriptors.genres[:] = self.genreSelector.selected()
 
     def _audienceSelected(self):
         audience = self.audienceSelector.selected()
@@ -566,21 +625,36 @@ class NovelDescriptorsDisplay(QWidget):
                    ''')
             self.wdgAudience.layout().addWidget(lbl)
 
-        if self.novel.descriptors.mood:
-            for mood in self.novel.descriptors.mood:
-                lbl = label(mood, decr_font_diff=1)
-                font = lbl.font()
-                font.setFamily(app_env.sans_serif_font())
-                lbl.setFont(font)
-                lbl.setStyleSheet(f'''
-                                   QLabel {{
-                                       border: 1px solid lightgrey;
-                                       color: {PLOTLYST_SECONDARY_COLOR};
-                                       background: rgba(0, 0, 0, 0);
-                                       border-radius: 4px;
-                                   }}
-                                   ''')
-                self.wdgMood.layout().addWidget(lbl)
+        for mood in self.novel.descriptors.mood:
+            lbl = label(mood, decr_font_diff=1)
+            font = lbl.font()
+            font.setFamily(app_env.sans_serif_font())
+            lbl.setFont(font)
+            lbl.setStyleSheet(f'''
+                               QLabel {{
+                                   border: 1px solid lightgrey;
+                                   color: {PLOTLYST_SECONDARY_COLOR};
+                                   background: rgba(0, 0, 0, 0);
+                                   border-radius: 4px;
+                               }}
+                               ''')
+            self.wdgMood.layout().addWidget(lbl)
+        print(self.novel.descriptors.genres)
+        for genre in self.novel.descriptors.genres:
+            lbl = label(genre, incr_font_diff=1)
+            font = lbl.font()
+            font.setFamily(app_env.sans_serif_font())
+            lbl.setFont(font)
+            lbl.setStyleSheet(f'''
+                               QLabel {{
+                                   border: 1px solid lightgrey;
+                                   background: {BG_PRIMARY_COLOR};
+                                   color: {PLOTLYST_SECONDARY_COLOR};
+                                   padding: 10px 5px 10px 5px;
+                                   border-radius: 12px;
+                               }}
+                               ''')
+            self.wdgPrimaryGenres.layout().addWidget(lbl)
 
     def _label(self, text: str, icon: str = '', major: bool = True) -> IconText:
         lbl = IconText()
@@ -604,6 +678,7 @@ class NovelDescriptorsDisplay(QWidget):
     def _edit(self):
         NovelDescriptorsEditorPopup.popup(self.novel)
 
+        clear_layout(self.wdgPrimaryGenres)
         clear_layout(self.wdgAudience)
         clear_layout(self.wdgMood)
 
