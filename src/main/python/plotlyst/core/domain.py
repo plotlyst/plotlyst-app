@@ -3987,7 +3987,6 @@ class NovelInfo:
     spice: int = 1
 
 
-
 @dataclass
 class Novel(NovelDescriptor):
     story_structures: List[StoryStructure] = field(default_factory=list)
