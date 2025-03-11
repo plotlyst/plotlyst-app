@@ -22,14 +22,14 @@ from functools import partial
 from typing import Optional, List, Dict
 
 from PyQt6.QtCore import pyqtSignal, Qt, QObject, QEvent, QSize
-from PyQt6.QtWidgets import QWidget, QStackedWidget, QFrame, QButtonGroup
+from PyQt6.QtWidgets import QWidget, QStackedWidget, QFrame, QButtonGroup, QPushButton
 from overrides import overrides
 from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp, grid, incr_icon, \
     flow, clear_layout, pointy, decr_icon
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
-from plotlyst.common import MAXIMUM_SIZE, PLOTLYST_SECONDARY_COLOR
+from plotlyst.common import MAXIMUM_SIZE, PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import StoryStructure, Novel, TagType, SelectionItem, Tag, NovelSetting, ScenesView
 from plotlyst.env import app_env
 from plotlyst.model.characters_model import CharactersTableModel
@@ -480,25 +480,30 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.audienceSelector.selectionChanged.connect(self._audienceSelected)
         self.center.layout().addWidget(self.audienceSelector)
 
-        self._addHeader('Mood', 'mdi.emoticon-outline', "Select the reader's expected emotional experience")
+        self._addHeader('Mood', 'mdi.emoticon-outline', "Select your novel's expected mood and atmosphere")
         self.moodSelector = DescriptorLabelSelector(exclusive=False)
         self.moodSelector.setLabels(
-            ['adventurous', 'challenging', 'dark', 'emotional', 'funny', 'hopeful', 'informative', 'inspiring',
+            ['adventurous', 'challenging', 'dark', 'emotional', 'funny', 'hopeful', 'inspiring',
              'lighthearted', 'mysterious', 'reflective', 'relaxing', 'sad', 'tense'], self.novel.descriptors.mood)
         self.moodSelector.selectionChanged.connect(self._moodSelected)
         self.center.layout().addWidget(self.moodSelector)
 
-        self._addHeader('Style', 'fa5s.pen-fancy', 'Select which style your novel is written in')
+        self._addHeader('Style', 'fa5s.pen-fancy', "Select your novel's writing style")
+        self.styleSelector = DescriptorLabelSelector()
+        self.styleSelector.setLabels(['Stark', 'Conventional', 'Conspicuous', 'Lush'],
+                                     [self.novel.descriptors.style])
+        self.styleSelector.selectionChanged.connect(self._styleSelected)
+        self.center.layout().addWidget(self.styleSelector)
 
         self.center.layout().addWidget(vspacer())
 
         self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.setMinimumSize(self._adjustedSize(0.8, 0.6, 600, 400))
+        self.setMinimumSize(self._adjustedSize(0.8, 0.7, 600, 500))
 
     @overrides
     def sizeHint(self) -> QSize:
-        return self._adjustedSize(0.8, 0.6, 600, 400)
+        return self._adjustedSize(0.8, 0.7, 600, 500)
 
     def display(self):
         self.exec()
@@ -521,6 +526,10 @@ class NovelDescriptorsEditorPopup(PopupDialog):
     def _audienceSelected(self):
         audience = self.audienceSelector.selected()
         self.novel.descriptors.audience = audience[0] if audience else ''
+
+    def _styleSelected(self):
+        style = self.styleSelector.selected()
+        self.novel.descriptors.style = style[0] if style else ''
 
     def _moodSelected(self):
         self.novel.descriptors.mood[:] = self.moodSelector.selected()
@@ -625,6 +634,27 @@ class NovelDescriptorsDisplay(QWidget):
                    ''')
             self.wdgAudience.layout().addWidget(lbl)
 
+        if self.novel.descriptors.style:
+            lbl = label(self.novel.descriptors.style, incr_font_diff=1)
+            font = lbl.font()
+            if self.novel.descriptors.style == 'Stark':
+                font.setFamily(app_env.mono_font())
+            elif self.novel.descriptors.style == 'Conventional':
+                font.setFamily(app_env.serif_font())
+            elif self.novel.descriptors.style == 'Conspicuous':
+                font.setFamily(app_env.sans_serif_font())
+            elif self.novel.descriptors.style == 'Lush':
+                font.setFamily(app_env.cursive_font())
+            lbl.setFont(font)
+            lbl.setStyleSheet(f'''
+                   QLabel {{
+                       border: 1px solid lightgrey;
+                       padding: 10px 5px 10px 5px;
+                       border-radius: 12px;
+                   }}
+                   ''')
+            self.wdgStyle.layout().addWidget(lbl)
+
         for mood in self.novel.descriptors.mood:
             lbl = label(mood, decr_font_diff=1)
             font = lbl.font()
@@ -639,18 +669,22 @@ class NovelDescriptorsDisplay(QWidget):
                                }}
                                ''')
             self.wdgMood.layout().addWidget(lbl)
-        print(self.novel.descriptors.genres)
+
         for genre in self.novel.descriptors.genres:
-            lbl = label(genre, incr_font_diff=1)
+            lbl = QPushButton()
+            lbl.setText(genre)
+            if genre in genre_icons:
+                lbl.setIcon(IconRegistry.from_name(genre_icons[genre], RELAXED_WHITE_COLOR))
             font = lbl.font()
             font.setFamily(app_env.sans_serif_font())
             lbl.setFont(font)
+            incr_font(lbl)
             lbl.setStyleSheet(f'''
-                               QLabel {{
+                               QPushButton {{
                                    border: 1px solid lightgrey;
-                                   background: {BG_PRIMARY_COLOR};
-                                   color: {PLOTLYST_SECONDARY_COLOR};
-                                   padding: 10px 5px 10px 5px;
+                                   background: {PLOTLYST_SECONDARY_COLOR};
+                                   color: {RELAXED_WHITE_COLOR};
+                                   padding: 10px;
                                    border-radius: 12px;
                                }}
                                ''')
@@ -680,6 +714,7 @@ class NovelDescriptorsDisplay(QWidget):
 
         clear_layout(self.wdgPrimaryGenres)
         clear_layout(self.wdgAudience)
+        clear_layout(self.wdgStyle)
         clear_layout(self.wdgMood)
 
         self.refresh()
