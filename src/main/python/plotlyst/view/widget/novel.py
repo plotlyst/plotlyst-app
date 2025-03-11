@@ -575,15 +575,15 @@ class NovelDescriptorsDisplay(QWidget):
         margins(self.wdgDescriptors, left=45, right=45)
         sp(self.wdgDescriptors).v_exp()
 
-        self.wdgPrimaryGenres = self._labels()
-        self.wdgSubGenres = self._labels()
+        self.wdgGenres = self._labels()
+        margins(self.wdgGenres, top=5)
         self.wdgAudience = self._labels()
         self.wdgMood = self._labels()
         margins(self.wdgMood, top=5)
         self.wdgStyle = self._labels()
 
         self._grid.addWidget(self._label('Genres', 'mdi.drama-masks'), 0, 0, alignment=Qt.AlignmentFlag.AlignRight)
-        self._grid.addWidget(self.wdgPrimaryGenres, 0, 1)
+        self._grid.addWidget(self.wdgGenres, 0, 1)
         self._grid.addWidget(self._label('Audience', 'ei.group'), 1, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(self.wdgAudience, 1, 1)
         self._grid.addWidget(self._label('Mood', 'mdi.emoticon-outline'), 2, 0, alignment=Qt.AlignmentFlag.AlignRight)
@@ -591,12 +591,15 @@ class NovelDescriptorsDisplay(QWidget):
         self._grid.addWidget(self._label('Style', 'fa5s.pen-fancy'), 3, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(self.wdgStyle, 3, 1)
 
+        self.wdgRightSide = QWidget()
+        vbox(self.wdgRightSide, spacing=8)
+        self._lblStandalone = self._label('Standalone', 'ei.book', major=False)
         self._words = self._label('', 'mdi.book-open-page-variant-outline', major=False)
+        self.wdgRightSide.layout().addWidget(self._lblStandalone, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgRightSide.layout().addWidget(self._words, alignment=Qt.AlignmentFlag.AlignLeft)
+
         self._updateWc()
-        self._grid.addWidget(self._label('Standalone', 'ei.book', major=False), 0, 2,
-                             alignment=Qt.AlignmentFlag.AlignLeft)
-        self._grid.addWidget(self._words, 1, 2,
-                             alignment=Qt.AlignmentFlag.AlignLeft)
+        self._grid.addWidget(self.wdgRightSide, 0, 2, 1, 2, alignment=Qt.AlignmentFlag.AlignTop)
 
         spice = SpiceWidget()
         spice.setSpice(2)
@@ -675,6 +678,7 @@ class NovelDescriptorsDisplay(QWidget):
 
         for genre in self.novel.descriptors.genres:
             lbl = QPushButton()
+            lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             lbl.setText(genre)
             if genre in genre_icons:
                 lbl.setIcon(IconRegistry.from_name(genre_icons[genre], RELAXED_WHITE_COLOR))
@@ -691,7 +695,7 @@ class NovelDescriptorsDisplay(QWidget):
                                    border-radius: 12px;
                                }}
                                ''')
-            self.wdgPrimaryGenres.layout().addWidget(lbl)
+            self.wdgGenres.layout().addWidget(lbl)
 
     def _label(self, text: str, icon: str = '', major: bool = True) -> IconText:
         lbl = IconText()
@@ -724,7 +728,7 @@ class NovelDescriptorsDisplay(QWidget):
     def _edit(self):
         NovelDescriptorsEditorPopup.popup(self.novel)
 
-        clear_layout(self.wdgPrimaryGenres)
+        clear_layout(self.wdgGenres)
         clear_layout(self.wdgAudience)
         clear_layout(self.wdgStyle)
         clear_layout(self.wdgMood)
