@@ -703,6 +703,7 @@ class NovelDescriptorsDisplay(QWidget):
 
         self.lblSpice = self._label('Spice', 'mdi6.chili-mild')
         self.wdgSpice = SpiceWidget()
+        self.wdgSpice.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._grid.addWidget(self.lblSpice, 4, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(self.wdgSpice, 4, 1, alignment=Qt.AlignmentFlag.AlignLeft)
         if self.novel.descriptors.has_spice:
