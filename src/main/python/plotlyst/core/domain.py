@@ -3860,6 +3860,7 @@ class FontSettings:
     family: str = ''
     text_width: int = 0
     font_size: int = 0
+    line_space: int = 2
 
 
 @dataclass

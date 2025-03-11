@@ -29,7 +29,7 @@ from qtmenu import group
 from qttextedit import DashInsertionMode
 from qttextedit.api import AutoCapitalizationMode, EllipsisInsertionMode
 from qttextedit.ops import FontSectionSettingWidget, FontSizeSectionSettingWidget, TextWidthSectionSettingWidget, \
-    FontRadioButton
+    FontRadioButton, SliderSectionWidget
 from qttextedit.util import EN_DASH, EM_DASH
 
 from plotlyst.core.domain import Novel
@@ -196,6 +196,27 @@ class ManuscriptFontSettingWidget(FontSectionSettingWidget):
             self._editor.setManuscriptFontFamily(btn.family())
 
 
+class LineSpaceSettingWidget(SliderSectionWidget):
+    spaceChanged = pyqtSignal(int)
+
+    def __init__(self, parent=None):
+        super().__init__('Line Space', 0, 4, parent)
+
+    @overrides
+    def _activate(self):
+        value = self._editor.lineSpace()
+        value -= 100
+        value //= 25
+        self._slider.setValue(value)
+        self._slider.valueChanged.connect(self._valueChanged)
+
+    def _valueChanged(self, value: int):
+        if self._editor is None:
+            return
+        self._editor.setLineSpace(100 + 25 * value)
+        self.spaceChanged.emit(value)
+
+
 class ManuscriptFontSizeSettingWidget(FontSizeSectionSettingWidget):
 
     @overrides
@@ -215,7 +236,7 @@ class ManuscriptFontSizeSettingWidget(FontSizeSectionSettingWidget):
         self.sizeChanged.emit(value)
 
 
-class ManuscriptFontSettingsWidget(QWidget):
+class ManuscriptTextSettingsWidget(QWidget):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         vbox(self)
@@ -223,10 +244,12 @@ class ManuscriptFontSettingsWidget(QWidget):
         self.fontSetting = ManuscriptFontSettingWidget()
         self.sizeSetting = ManuscriptFontSizeSettingWidget()
         self.widthSetting = TextWidthSectionSettingWidget()
+        self.spaceSetting = LineSpaceSettingWidget()
 
         self.layout().addWidget(self.fontSetting)
         self.layout().addWidget(self.sizeSetting)
         self.layout().addWidget(self.widthSetting)
+        self.layout().addWidget(self.spaceSetting)
 
 
 class ManuscriptSmartTypingSettingsWidget(QWidget):
@@ -271,7 +294,8 @@ class ManuscriptSmartTypingSettingsWidget(QWidget):
             self.toggleSentenceCapital.setChecked(True)
         self.btnGroupCapital.buttonToggled.connect(self._capitalizationToggled)
 
-        self.ellipsisSettings = self._addHeader('Ellipsis', 'Insert an ellipsis character when typing three consecutive periods')
+        self.ellipsisSettings = self._addHeader('Ellipsis',
+                                                'Insert an ellipsis character when typing three consecutive periods')
         self.toggleEllipsis = self._addToggleSetting(self.ellipsisSettings, icon='fa5s.ellipsis-h')
         self.toggleEllipsis.setChecked(self.novel.prefs.manuscript.ellipsis == EllipsisInsertionMode.INSERT_ELLIPSIS)
         self.toggleEllipsis.clicked.connect(self._ellipsisToggled)
@@ -364,7 +388,7 @@ class ManuscriptEditorSettingsWidget(QWidget):
         super().__init__(parent)
         vbox(self)
 
-        self.fontSettings = ManuscriptFontSettingsWidget(novel)
+        self.fontSettings = ManuscriptTextSettingsWidget(novel)
         self.smartTypingSettings = ManuscriptSmartTypingSettingsWidget(novel)
         self.langSelectionWidget = ManuscriptSpellcheckingSettingsWidget(novel)
 

@@ -486,6 +486,7 @@ class ManuscriptEditor(QWidget, EventListener):
         self._scene: Optional[Scene] = None
         self._chapter: Optional[Chapter] = None
         self._font = self.defaultFont()
+        self._lineSpace: int = DEFAULT_MANUSCRIPT_LINE_SPACE
         self._characterWidth: int = 40
         self._maxContentWidth = 0
         self._settings: Optional[ManuscriptEditorSettingsWidget] = None
@@ -589,6 +590,8 @@ class ManuscriptEditor(QWidget, EventListener):
                 self._font.setPointSize(fontSettings.font_size)
             if fontSettings.text_width:
                 self.setCharacterWidth(fontSettings.text_width)
+            if fontSettings.line_space:
+                self.setLineSpace(100 + 25 * fontSettings.line_space)
         else:
             self.setCharacterWidth(60)
 
@@ -670,6 +673,15 @@ class ManuscriptEditor(QWidget, EventListener):
         self._maxContentWidth = metrics.boundingRect('M' * self._characterWidth).width()
         self._resizeToCharacterWidth()
 
+    def lineSpace(self) -> int:
+        return self._lineSpace
+
+    def setLineSpace(self, value: int):
+        self._lineSpace = value
+        for textedit in self._textedits:
+            textedit.setBlockFormat(value, textIndent=DEFAULT_MANUSCRIPT_INDENT)
+            textedit.applyBlockFormat()
+
     def refresh(self):
         if self._scene:
             self.setScene(self._scene)
@@ -730,10 +742,12 @@ class ManuscriptEditor(QWidget, EventListener):
         self._settings.fontSettings.sizeSetting.attach(self)
         self._settings.fontSettings.widthSetting.attach(self)
         self._settings.fontSettings.fontSetting.attach(self)
+        self._settings.fontSettings.spaceSetting.attach(self)
 
         self._settings.fontSettings.sizeSetting.sizeChanged.connect(self._fontSizeChanged)
         self._settings.fontSettings.widthSetting.widthChanged.connect(self._textWidthChanged)
         self._settings.fontSettings.fontSetting.fontSelected.connect(self._fontChanged)
+        self._settings.fontSettings.spaceSetting.spaceChanged.connect(self._spaceChanged)
 
     def statistics(self) -> TextStatistics:
         overall_stats = TextStatistics(0)
@@ -843,7 +857,7 @@ class ManuscriptEditor(QWidget, EventListener):
         _textedit.setEllipsisInsertionMode(self._novel.prefs.manuscript.ellipsis)
         transparent(_textedit)
 
-        _textedit.setBlockFormat(DEFAULT_MANUSCRIPT_LINE_SPACE, textIndent=DEFAULT_MANUSCRIPT_INDENT)
+        _textedit.setBlockFormat(self._lineSpace, textIndent=DEFAULT_MANUSCRIPT_INDENT)
         _textedit.setAutoFormatting(QTextEdit.AutoFormattingFlag.AutoNone)
         _textedit.selectionChanged.connect(self.selectionChanged)
         _textedit.setProperty('borderless', True)
@@ -853,6 +867,7 @@ class ManuscriptEditor(QWidget, EventListener):
         _textedit.setDocumentMargin(0)
 
         _textedit.setScene(scene)
+        _textedit.applyBlockFormat()
         _textedit.textChanged.connect(partial(self._textChanged, _textedit, scene))
         _textedit.cursorPositionChanged.connect(partial(self._cursorPositionChanged, _textedit))
         self._textedits.append(_textedit)
@@ -926,6 +941,11 @@ class ManuscriptEditor(QWidget, EventListener):
         titleFont.setFamily(family)
         self.textTitle.setFont(titleFont)
 
+        self.repo.update_novel(self._novel)
+
+    def _spaceChanged(self, value: int):
+        fontSettings = self._getFontSettings()
+        fontSettings.line_space = value
         self.repo.update_novel(self._novel)
 
     def _titleEdited(self, title: str):
