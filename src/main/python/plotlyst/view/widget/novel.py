@@ -41,13 +41,13 @@ from plotlyst.model.novel import NovelTagsModel
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn, frame, scroll_area, wrap, \
-    ExclusiveOptionalButtonGroup, tool_btn, exclusive_buttons
+    ExclusiveOptionalButtonGroup, tool_btn, exclusive_buttons, fade, ButtonPressResizeEventFilter
 from plotlyst.view.generated.imported_novel_overview_ui import Ui_ImportedNovelOverview
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, apply_border_image
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
-from plotlyst.view.widget.button import SelectorToggleButton
+from plotlyst.view.widget.button import SelectorToggleButton, SmallToggleButton
 from plotlyst.view.widget.display import Subtitle, IconText, Icon, PopupDialog, icon_text
 from plotlyst.view.widget.input import Toggle
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
@@ -344,20 +344,30 @@ class NovelCustomizationWizard(QWidget):
 
 
 class SpiceWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, editable: bool = False):
         super().__init__(parent)
+        self._editable = editable
         hbox(self, 0, 0)
 
     def setSpice(self, value: int):
         clear_layout(self)
         for i in range(6):
             icon = Icon()
-            if value > i:
-                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', '#c1121f'))
+            icon.setCheckable(self._editable)
+            if self._editable:
+                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'grey', '#c1121f'))
+                icon.installEventFilter(OpacityEventFilter(icon))
+                icon.installEventFilter(ButtonPressResizeEventFilter(icon))
+                pointy(icon)
             else:
-                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'lightgrey'))
-            incr_icon(icon, 8)
+                if value > i:
+                    icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', '#c1121f'))
+                else:
+                    icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'lightgrey'))
+            incr_icon(icon, 12 if self._editable else 8)
             self.layout().addWidget(icon)
+
+        self.layout().addWidget(spacer())
 
 
 class DescriptorLabelSelector(QWidget):
@@ -456,6 +466,7 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.scroll = scroll_area(h_on=False, frameless=True)
         self.center = QFrame()
         vbox(self.center)
+        margins(self.center, bottom=15)
         self.scroll.setWidget(self.center)
         self.center.setProperty('white-bg', True)
 
@@ -506,12 +517,20 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.moodSelector.selectionChanged.connect(self._moodSelected)
         self.center.layout().addWidget(self.moodSelector)
 
-        self._addHeader('Style', 'fa5s.pen-fancy', "Select your novel's writing style")
+        self._addHeader('Style', 'fa5s.pen-fancy', "Select your novel's writing style", checkable=True)
         self.styleSelector = DescriptorLabelSelector()
         self.styleSelector.setLabels(['Stark', 'Conventional', 'Conspicuous', 'Lush'],
                                      [self.novel.descriptors.style])
         self.styleSelector.selectionChanged.connect(self._styleSelected)
         self.center.layout().addWidget(self.styleSelector)
+
+        self.wdgSpice = SpiceWidget(editable=True)
+        margins(self.wdgSpice, left=10)
+        toggle = self._addHeader('Spice', 'mdi6.chili-mild', "", checkable=True, wdg=self.wdgSpice)
+        self.wdgSpice.setSpice(self.novel.descriptors.spice)
+        self.wdgSpice.setVisible(self.novel.descriptors.has_spice)
+        toggle.toggled.connect(lambda x: fade(self.wdgSpice, x))
+        toggle.setChecked(self.novel.descriptors.has_spice)
 
         self.center.layout().addWidget(vspacer())
 
@@ -526,7 +545,8 @@ class NovelDescriptorsEditorPopup(PopupDialog):
     def display(self):
         self.exec()
 
-    def _addHeader(self, title: str, icon: str = '', desc: str = ''):
+    def _addHeader(self, title: str, icon: str = '', desc: str = '', checkable: bool = False, wdg: Optional[QWidget] = None) -> Optional[
+        SmallToggleButton]:
         lbl = IconText()
         lbl.setText(title)
         bold(lbl)
@@ -534,9 +554,18 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         if icon:
             lbl.setIcon(IconRegistry.from_name(icon))
 
-        self.center.layout().addWidget(wrap(lbl, margin_top=10), alignment=Qt.AlignmentFlag.AlignLeft)
+        toggle = None
+
+        if checkable:
+            toggle = SmallToggleButton()
+            self.center.layout().addWidget(group(lbl, toggle, wdg, margin_top=10, margin_left=0),
+                                           alignment=Qt.AlignmentFlag.AlignLeft)
+        else:
+            self.center.layout().addWidget(wrap(lbl, margin_top=10), alignment=Qt.AlignmentFlag.AlignLeft)
         if desc:
             self.center.layout().addWidget(label(desc, description=True))
+
+        return toggle
 
     def _genreSelected(self):
         self.novel.descriptors.genres[:] = self.genreSelector.selected()
@@ -668,8 +697,6 @@ class NovelDescriptorsDisplay(QWidget):
                 self._lblStandalone.setIcon(IconRegistry.from_name('ph.books', 'grey'))
         else:
             self._lblStandalone.setHidden(True)
-
-
 
         if self.novel.descriptors.audience:
             lbl = label(self.novel.descriptors.audience, incr_font_diff=2)

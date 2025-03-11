@@ -3983,6 +3983,8 @@ class NovelInfo:
     genres: List[str] = field(default_factory=list)
     mood: List[str] = field(default_factory=list)
     type: str = ''
+    has_spice: bool = False
+    spice: int = 0
 
 
 
