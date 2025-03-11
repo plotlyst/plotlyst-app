@@ -18,13 +18,13 @@
     <number>3</number>
    </property>
    <property name="leftMargin">
-    <number>15</number>
+    <number>5</number>
    </property>
    <property name="topMargin">
     <number>5</number>
    </property>
    <property name="rightMargin">
-    <number>15</number>
+    <number>5</number>
    </property>
    <property name="bottomMargin">
     <number>5</number>
@@ -304,6 +304,46 @@
        <property name="bottomMargin">
         <number>5</number>
        </property>
+       <item>
+        <widget class="QScrollArea" name="scrollArea_2">
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="horizontalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="wdgCategories">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>168</width>
+            <height>147</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QScrollArea" name="scrollArea">
@@ -318,7 +358,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>343</width>
+         <width>356</width>
          <height>157</height>
         </rect>
        </property>
