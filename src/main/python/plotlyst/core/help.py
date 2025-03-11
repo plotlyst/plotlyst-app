@@ -371,3 +371,16 @@ def character_role_examples(role: Role) -> List[CharacterRoleExample]:
 
 
 synopsis_editor_placeholder = "Summarize your story's main events"
+
+WELCOME_DOC_CONTENT: str = '''
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head><meta name="qrichtext" content="1" /><meta charset="utf-8" /><style type="text/css">
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: "\2610"; }
+li.checked::marker { content: "\2612"; }
+</style></head><body style=" font-family:'Fira Sans Semi-Light'; font-size:12pt; font-weight:400; font-style:normal;">
+<h1 style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;"><span style=" font-size:xx-large; font-weight:700;">Welcome to Plotlyst</span></h1>
+<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;">This is the Documents panel where you can add additional notes.</p>
+<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;">In <a href="https://plotlyst.com/pricing"><span style=" text-decoration: underline; color:#0000ff;">Plotlyst Plus</span></a>, you can also use create Mindmaps here.</p></body></html>
+'''
