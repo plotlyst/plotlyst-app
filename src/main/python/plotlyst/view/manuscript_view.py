@@ -325,7 +325,7 @@ class ManuscriptView(AbstractNovelView):
 
     def _update_story_goal(self):
         wc = sum([x.manuscript.statistics.wc for x in self.novel.scenes if x.manuscript and x.manuscript.statistics])
-        self.ui.lblWc.setText(f'{wc} word{"s" if wc > 1 else ""}')
+        self.ui.lblWc.setText(f'{wc:,} word{"s" if wc > 1 else ""}')
         self._progressWdg.setValue(wc)
 
     def _editScene(self, scene: Scene):

@@ -173,7 +173,7 @@ class WordsDisplay(QLabel):
 
     def setWordCount(self, count: int):
         if count:
-            self._text = f'<html><b>{count}</b> word{"s" if count > 1 else ""}'
+            self._text = f'<html><b>{count:,}</b> word{"s" if count > 1 else ""}'
             self.setText(self._text)
         else:
             self._text = ''
@@ -187,7 +187,7 @@ class WordsDisplay(QLabel):
 
     def setSecondaryWordCount(self, count: int):
         if count:
-            self.setText(f'{count} of {self._text}')
+            self.setText(f'{count:,} of {self._text}')
         else:
             self.setText(self._text)
 

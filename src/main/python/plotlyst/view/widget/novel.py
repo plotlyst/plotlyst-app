@@ -22,6 +22,7 @@ from functools import partial
 from typing import Optional, List, Dict
 
 from PyQt6.QtCore import pyqtSignal, Qt, QObject, QEvent, QSize
+from PyQt6.QtGui import QShowEvent
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QFrame, QButtonGroup, QPushButton
 from overrides import overrides
 from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp, grid, incr_icon, \
@@ -590,14 +591,11 @@ class NovelDescriptorsDisplay(QWidget):
         self._grid.addWidget(self._label('Style', 'fa5s.pen-fancy'), 3, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self._grid.addWidget(self.wdgStyle, 3, 1)
 
-        wc = 0
-        for scene in self.novel.scenes:
-            if not scene.manuscript or not scene.manuscript.statistics:
-                continue
-            wc += scene.manuscript.statistics.wc
+        self._words = self._label('', 'mdi.book-open-page-variant-outline', major=False)
+        self._updateWc()
         self._grid.addWidget(self._label('Standalone', 'ei.book', major=False), 0, 2,
                              alignment=Qt.AlignmentFlag.AlignLeft)
-        self._grid.addWidget(self._label(f'Word count: {wc}', 'mdi.book-open-page-variant-outline', major=False), 1, 2,
+        self._grid.addWidget(self._words, 1, 2,
                              alignment=Qt.AlignmentFlag.AlignLeft)
 
         spice = SpiceWidget()
@@ -617,6 +615,11 @@ class NovelDescriptorsDisplay(QWidget):
         if event.type() == QEvent.Type.MouseButtonPress:
             self._edit()
         return super().eventFilter(watched, event)
+
+    @overrides
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self._updateWc()
 
     def refresh(self):
         if self.novel.descriptors.audience:
@@ -708,6 +711,15 @@ class NovelDescriptorsDisplay(QWidget):
         sp(wdg).v_max()
         flow(wdg)
         return wdg
+
+    def _updateWc(self):
+        wc = 0
+        for scene in self.novel.scenes:
+            if not scene.manuscript or not scene.manuscript.statistics:
+                continue
+            wc += scene.manuscript.statistics.wc
+
+        self._words.setText(f'Word count: {wc:,}')
 
     def _edit(self):
         NovelDescriptorsEditorPopup.popup(self.novel)
