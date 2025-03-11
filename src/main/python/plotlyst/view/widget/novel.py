@@ -344,30 +344,53 @@ class NovelCustomizationWizard(QWidget):
 
 
 class SpiceWidget(QWidget):
+    spiceChanged = pyqtSignal(int)
+
     def __init__(self, parent=None, editable: bool = False):
         super().__init__(parent)
         self._editable = editable
+        self._spice = 0
         hbox(self, 0, 0)
+        self.btnGroup = QButtonGroup()
+        self.btnGroup.buttonClicked.connect(self._spiceChanged)
+
+    def spice(self) -> int:
+        return self._spice
 
     def setSpice(self, value: int):
+        self._spice = value
         clear_layout(self)
         for i in range(5):
             icon = Icon()
             icon.setCheckable(self._editable)
             if self._editable:
-                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'grey', '#c1121f'))
+                # icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'grey', '#c1121f'))
                 icon.installEventFilter(OpacityEventFilter(icon))
                 icon.installEventFilter(ButtonPressResizeEventFilter(icon))
                 pointy(icon)
+                self.btnGroup.addButton(icon)
+            if value > i:
+                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', '#c1121f'))
             else:
-                if value > i:
-                    icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', '#c1121f'))
-                else:
-                    icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'lightgrey'))
+                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'grey'))
             incr_icon(icon, 12 if self._editable else 8)
             self.layout().addWidget(icon)
 
         self.layout().addWidget(spacer())
+
+    def _spiceChanged(self):
+        for i, btn in enumerate(self.btnGroup.buttons()):
+            if btn.isChecked():
+                self._spice = i + 1
+                break
+
+        for i, icon in enumerate(self.btnGroup.buttons()):
+            if self._spice > i:
+                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', '#c1121f'))
+            else:
+                icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'grey'))
+
+        self.spiceChanged.emit(self._spice)
 
 
 class DescriptorLabelSelector(QWidget):
@@ -534,7 +557,8 @@ class NovelDescriptorsEditorPopup(PopupDialog):
                                  refLink='https://www.romancerehab.com/chili-pepper-heat-rating-scale.html')
         self.wdgSpice.setSpice(self.novel.descriptors.spice)
         self.wdgSpice.setVisible(self.novel.descriptors.has_spice)
-        toggle.toggled.connect(lambda x: fade(self.wdgSpice, x))
+        self.wdgSpice.spiceChanged.connect(self._spiceValueChanged)
+        toggle.toggled.connect(self._spiceToggled)
         toggle.setChecked(self.novel.descriptors.has_spice)
 
         self.center.layout().addWidget(vspacer())
@@ -604,6 +628,13 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         else:
             self.novel.descriptors.type = ''
 
+    def _spiceToggled(self, toggled: bool):
+        self.novel.descriptors.has_spice = toggled
+        fade(self.wdgSpice, toggled)
+
+    def _spiceValueChanged(self, spice: int):
+        self.novel.descriptors.spice = spice
+
 
 class NovelDescriptorsDisplay(QWidget):
     def __init__(self, novel: Novel, parent=None):
@@ -670,10 +701,16 @@ class NovelDescriptorsDisplay(QWidget):
         self._updateWc()
         self._grid.addWidget(self.wdgRightSide, 0, 2, 1, 2, alignment=Qt.AlignmentFlag.AlignTop)
 
-        spice = SpiceWidget()
-        spice.setSpice(2)
-        self._grid.addWidget(self._label('Spice', 'mdi6.chili-mild'), 4, 0, alignment=Qt.AlignmentFlag.AlignRight)
-        self._grid.addWidget(spice, 4, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.lblSpice = self._label('Spice', 'mdi6.chili-mild')
+        self.wdgSpice = SpiceWidget()
+        self._grid.addWidget(self.lblSpice, 4, 0, alignment=Qt.AlignmentFlag.AlignRight)
+        self._grid.addWidget(self.wdgSpice, 4, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+        if self.novel.descriptors.has_spice:
+            self.wdgSpice.setSpice(self.novel.descriptors.spice)
+        else:
+            self.lblSpice.setHidden(True)
+            self.wdgSpice.setHidden(True)
+
         self._grid.addWidget(vspacer(), 10, 0)
 
         self.card.layout().addWidget(self.wdgTitle)
@@ -784,6 +821,11 @@ class NovelDescriptorsDisplay(QWidget):
                                }}
                                ''')
             self.wdgGenres.layout().addWidget(lbl)
+
+        self.lblSpice.setVisible(self.novel.descriptors.has_spice)
+        self.wdgSpice.setVisible(self.novel.descriptors.has_spice)
+        if self.novel.descriptors.has_spice:
+            self.wdgSpice.setSpice(self.novel.descriptors.spice)
 
     def _label(self, text: str, icon: str = '', major: bool = True) -> IconText:
         lbl = IconText()
