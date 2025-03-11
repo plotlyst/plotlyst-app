@@ -3984,7 +3984,7 @@ class NovelInfo:
     mood: List[str] = field(default_factory=list)
     type: str = ''
     has_spice: bool = False
-    spice: int = 0
+    spice: int = 1
 
 
 
