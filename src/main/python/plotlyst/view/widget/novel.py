@@ -345,6 +345,8 @@ class NovelCustomizationWizard(QWidget):
 
 class SpiceWidget(QWidget):
     spiceChanged = pyqtSignal(int)
+    spiceHoverEntered = pyqtSignal(int)
+    spiceHoverLeft = pyqtSignal(int)
 
     def __init__(self, parent=None, editable: bool = False):
         super().__init__(parent)
@@ -353,6 +355,16 @@ class SpiceWidget(QWidget):
         hbox(self, 0, 0)
         self.btnGroup = QButtonGroup()
         self.btnGroup.buttonClicked.connect(self._spiceChanged)
+
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Enter:
+            i = self.btnGroup.buttons().index(watched)
+            self.spiceHoverEntered.emit(i)
+        elif event.type() == QEvent.Type.Leave:
+            i = self.btnGroup.buttons().index(watched)
+            self.spiceHoverLeft.emit(i)
+        return super().eventFilter(watched, event)
 
     def spice(self) -> int:
         return self._spice
@@ -364,9 +376,9 @@ class SpiceWidget(QWidget):
             icon = Icon()
             icon.setCheckable(self._editable)
             if self._editable:
-                # icon.setIcon(IconRegistry.from_name('mdi6.chili-mild', 'grey', '#c1121f'))
                 icon.installEventFilter(OpacityEventFilter(icon))
                 icon.installEventFilter(ButtonPressResizeEventFilter(icon))
+                icon.installEventFilter(self)
                 pointy(icon)
                 self.btnGroup.addButton(icon)
             if value > i:
