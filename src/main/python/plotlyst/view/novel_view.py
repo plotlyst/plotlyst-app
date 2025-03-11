@@ -144,7 +144,7 @@ class NovelView(AbstractNovelView):
 
     @overrides
     def refresh(self):
-        self.ui.lblTitle.setText(self.novel.title)
+        self.wdgDescriptors.refreshTitle()
 
     def show_settings(self):
         self.ui.tabWidget.setCurrentWidget(self.ui.tabSettings)

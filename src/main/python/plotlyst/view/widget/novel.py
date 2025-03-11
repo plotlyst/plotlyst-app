@@ -33,6 +33,8 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from plotlyst.common import MAXIMUM_SIZE, PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import StoryStructure, Novel, TagType, SelectionItem, Tag, NovelSetting, ScenesView
 from plotlyst.env import app_env
+from plotlyst.event.core import emit_global_event
+from plotlyst.events import SelectNovelEvent
 from plotlyst.model.characters_model import CharactersTableModel
 from plotlyst.model.common import SelectionItemsModel
 from plotlyst.model.novel import NovelTagsModel
@@ -47,7 +49,6 @@ from plotlyst.view.style.base import apply_white_menu, apply_border_image
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.button import SelectorToggleButton
 from plotlyst.view.widget.display import Subtitle, IconText, Icon, PopupDialog
-from plotlyst.view.widget.input import AutoAdjustableLineEdit
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
 from plotlyst.view.widget.labels import LabelsEditorWidget
 from plotlyst.view.widget.manuscript import ManuscriptLanguageSettingWidget
@@ -551,14 +552,15 @@ class NovelDescriptorsDisplay(QWidget):
 
         self.wdgTitle = QWidget()
         self.wdgTitle.setProperty('border-image', True)
+        pointy(self.wdgTitle)
         hbox(self.wdgTitle)
         self.wdgTitle.setFixedHeight(150)
         self.wdgTitle.setMaximumWidth(1000)
         apply_border_image(self.wdgTitle, resource_registry.frame1)
+        self.wdgTitle.installEventFilter(OpacityEventFilter(self.wdgTitle, 0.8, 1.0))
 
-        self.lineNovelTitle = AutoAdjustableLineEdit(defaultWidth=70)
-        self.lineNovelTitle.setPlaceholderText('Title')
-        self.lineNovelTitle.setReadOnly(True)
+        self.lineNovelTitle = label(novel.title)
+        self.lineNovelTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         transparent(self.lineNovelTitle)
         incr_font(self.lineNovelTitle, 10)
         self.wdgTitle.layout().addWidget(self.lineNovelTitle, alignment=Qt.AlignmentFlag.AlignVCenter)
@@ -567,7 +569,6 @@ class NovelDescriptorsDisplay(QWidget):
         self.scrollDescriptors = scroll_area(h_on=False, frameless=True)
         self.wdgDescriptors = QWidget()
         self.wdgDescriptors.installEventFilter(OpacityEventFilter(self.wdgDescriptors, 0.9, 1.0))
-        self.wdgDescriptors.installEventFilter(self)
         pointy(self.wdgDescriptors)
         self.wdgDescriptors.setProperty('relaxed-white-bg', True)
         self.scrollDescriptors.setWidget(self.wdgDescriptors)
@@ -610,19 +611,28 @@ class NovelDescriptorsDisplay(QWidget):
         self.card.layout().addWidget(self.wdgTitle)
         self.card.layout().addWidget(self.scrollDescriptors)
 
+        self.wdgTitle.installEventFilter(self)
+        self.wdgDescriptors.installEventFilter(self)
+
         self.repo = RepositoryPersistenceManager.instance()
         self.refresh()
 
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.MouseButtonPress:
+        if watched == self.wdgDescriptors and event.type() == QEvent.Type.MouseButtonPress:
             self._edit()
+        elif watched == self.wdgTitle and event.type() == QEvent.Type.MouseButtonPress:
+            emit_global_event(SelectNovelEvent(self, self.novel))
         return super().eventFilter(watched, event)
 
     @overrides
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         self._updateWc()
+
+    def refreshTitle(self):
+        self.lineNovelTitle.setText(self.novel.title)
+        self.lineNovelTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def refresh(self):
         if self.novel.descriptors.audience:
