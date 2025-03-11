@@ -26,7 +26,7 @@ from PyQt6.QtGui import QShowEvent
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QFrame, QButtonGroup, QPushButton
 from overrides import overrides
 from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp, grid, incr_icon, \
-    flow, clear_layout, pointy, decr_icon, vline
+    flow, clear_layout, pointy, decr_icon, vline, translucent, decr_font
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
@@ -40,8 +40,8 @@ from plotlyst.model.common import SelectionItemsModel
 from plotlyst.model.novel import NovelTagsModel
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn, frame, scroll_area, wrap, \
-    ExclusiveOptionalButtonGroup, tool_btn, exclusive_buttons, fade, ButtonPressResizeEventFilter
+from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn, frame, scroll_area, \
+    ExclusiveOptionalButtonGroup, tool_btn, exclusive_buttons, fade, ButtonPressResizeEventFilter, open_url
 from plotlyst.view.generated.imported_novel_overview_ui import Ui_ImportedNovelOverview
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
@@ -351,7 +351,7 @@ class SpiceWidget(QWidget):
 
     def setSpice(self, value: int):
         clear_layout(self)
-        for i in range(6):
+        for i in range(5):
             icon = Icon()
             icon.setCheckable(self._editable)
             if self._editable:
@@ -509,7 +509,8 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.audienceSelector.selectionChanged.connect(self._audienceSelected)
         self.center.layout().addWidget(self.audienceSelector)
 
-        self._addHeader('Mood', 'mdi.emoticon-outline', "Select your novel's expected mood and atmosphere")
+        self._addHeader('Mood', 'mdi.emoticon-outline', "Select your novel's expected mood and atmosphere",
+                        ref='Source: The StoryGraph', refLink='https://www.thestorygraph.com/')
         self.moodSelector = DescriptorLabelSelector(exclusive=False)
         self.moodSelector.setLabels(
             ['adventurous', 'challenging', 'dark', 'emotional', 'funny', 'hopeful', 'inspiring',
@@ -517,7 +518,9 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.moodSelector.selectionChanged.connect(self._moodSelected)
         self.center.layout().addWidget(self.moodSelector)
 
-        self._addHeader('Style', 'fa5s.pen-fancy', "Select your novel's writing style", checkable=True)
+        self._addHeader('Style', 'fa5s.pen-fancy', "Select your novel's writing style",
+                        ref='Source: Wonderbook',
+                        refLink='https://www.amazon.com/Wonderbook-Illustrated-Creating-Imaginative-Fiction/dp/1419704427')
         self.styleSelector = DescriptorLabelSelector()
         self.styleSelector.setLabels(['Stark', 'Conventional', 'Conspicuous', 'Lush'],
                                      [self.novel.descriptors.style])
@@ -526,7 +529,9 @@ class NovelDescriptorsEditorPopup(PopupDialog):
 
         self.wdgSpice = SpiceWidget(editable=True)
         margins(self.wdgSpice, left=10)
-        toggle = self._addHeader('Spice', 'mdi6.chili-mild', "", checkable=True, wdg=self.wdgSpice)
+        toggle = self._addHeader('Spice', 'mdi6.chili-mild', "", checkable=True, wdg=self.wdgSpice,
+                                 ref='Source: romancerehab.com',
+                                 refLink='https://www.romancerehab.com/chili-pepper-heat-rating-scale.html')
         self.wdgSpice.setSpice(self.novel.descriptors.spice)
         self.wdgSpice.setVisible(self.novel.descriptors.has_spice)
         toggle.toggled.connect(lambda x: fade(self.wdgSpice, x))
@@ -545,7 +550,8 @@ class NovelDescriptorsEditorPopup(PopupDialog):
     def display(self):
         self.exec()
 
-    def _addHeader(self, title: str, icon: str = '', desc: str = '', checkable: bool = False, wdg: Optional[QWidget] = None) -> Optional[
+    def _addHeader(self, title: str, icon: str = '', desc: str = '', ref: str = '', refLink: str = '',
+                   checkable: bool = False, wdg: Optional[QWidget] = None) -> Optional[
         SmallToggleButton]:
         lbl = IconText()
         lbl.setText(title)
@@ -556,14 +562,23 @@ class NovelDescriptorsEditorPopup(PopupDialog):
 
         toggle = None
 
+        refLbl = push_btn(IconRegistry.from_name('fa5s.external-link-alt'), ref, transparent_=True)
+        translucent(refLbl, 0.5)
+        decr_icon(refLbl, 4)
+        decr_font(refLbl)
+
         if checkable:
             toggle = SmallToggleButton()
-            self.center.layout().addWidget(group(lbl, toggle, wdg, margin_top=10, margin_left=0),
-                                           alignment=Qt.AlignmentFlag.AlignLeft)
+            self.center.layout().addWidget(group(lbl, toggle, wdg, spacer(), refLbl, margin_top=10, margin_left=0))
         else:
-            self.center.layout().addWidget(wrap(lbl, margin_top=10), alignment=Qt.AlignmentFlag.AlignLeft)
+            self.center.layout().addWidget(group(lbl, spacer(), refLbl, margin_top=10, margin_left=0))
         if desc:
             self.center.layout().addWidget(label(desc, description=True))
+
+        if refLink:
+            refLbl.clicked.connect(lambda: open_url(refLink))
+        else:
+            refLbl.setHidden(True)
 
         return toggle
 
