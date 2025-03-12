@@ -25,7 +25,7 @@ import emoji
 import qtanim
 from PyQt6.QtCharts import QChartView
 from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent
-from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent
+from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent, QIcon
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
     QApplication
@@ -669,10 +669,11 @@ class PremiumOverlayWidget(QFrame):
         fade_in(self.msg)
 
 
-class PaintedCircle(QWidget):
-    def __init__(self, parent=None):
+class HighQualityPaintedIcon(QWidget):
+    def __init__(self, icon: QIcon, parent=None, size: int = 18):
         super().__init__(parent)
-        self.setFixedSize(18, 18)
+        self._icon = icon
+        self.setFixedSize(size, size)
 
     @overrides
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -681,16 +682,14 @@ class PaintedCircle(QWidget):
                                QPainter.RenderHint.TextAntialiasing |
                                QPainter.RenderHint.SmoothPixmapTransform)
 
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(PLOTLYST_SECONDARY_COLOR))
-        painter.drawEllipse(event.rect())
+        self._icon.paint(painter, event.rect())
 
 
 class PlotlystFooter(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         hbox(self)
-        icon = PaintedCircle()
+        icon = HighQualityPaintedIcon(IconRegistry.book_icon(PLOTLYST_SECONDARY_COLOR), size=16)
         self.layout().addWidget(icon, alignment=Qt.AlignmentFlag.AlignVCenter)
         self.layout().addWidget(label('plotlyst.com', color='grey', decr_font_diff=2),
                                 alignment=Qt.AlignmentFlag.AlignVCenter)
