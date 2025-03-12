@@ -33,7 +33,7 @@ from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView, \
     QPushButton, QToolButton, QWidgetItem, QGraphicsColorizeEffect, QGraphicsTextItem
 from overrides import overrides
 from qthandy import retain_when_hidden, translucent, margins, vbox, bold, vline, decr_font, \
-    underline, transparent, italic, decr_icon, pointy, hbox, incr_icon, vspacer
+    underline, transparent, italic, decr_icon, pointy, hbox, vspacer
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, group
 from qttextedit import TextBlockState
@@ -44,8 +44,6 @@ from plotlyst.core.domain import Novel, DocumentProgress, SnapshotType
 from plotlyst.core.sprint import TimerModel
 from plotlyst.core.text import wc, sentence_count, clean_text
 from plotlyst.env import app_env
-from plotlyst.event.core import emit_event
-from plotlyst.events import SocialSnapshotRequested
 from plotlyst.resources import resource_registry
 from plotlyst.service.manuscript import find_daily_overall_progress
 from plotlyst.view.common import spin, ButtonPressResizeEventFilter, label, push_btn, \
@@ -56,6 +54,7 @@ from plotlyst.view.generated.sprint_widget_ui import Ui_SprintWidget
 from plotlyst.view.generated.timer_setup_widget_ui import Ui_TimerSetupWidget
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.button import apply_button_palette_color
+from plotlyst.view.widget.button import SnapshotButton
 from plotlyst.view.widget.display import WordsDisplay, IconText, Emoji, ChartView
 from plotlyst.view.widget.progress import ProgressChart
 
@@ -482,12 +481,7 @@ class ManuscriptDailyProgress(QWidget):
         self._novel = novel
         vbox(self)
 
-        self.btnSnapshot = tool_btn(IconRegistry.from_name('mdi.camera', 'lightgrey'),
-                                    'Take a snapshot for social media',
-                                    transparent_=True)
-        incr_icon(self.btnSnapshot, 6)
-        self.btnSnapshot.clicked.connect(
-            lambda: emit_event(novel, SocialSnapshotRequested(self, SnapshotType.Writing)))
+        self.btnSnapshot = SnapshotButton(self._novel, SnapshotType.Writing)
 
         self.btnDay = IconText()
         self.btnDay.setText('Today')

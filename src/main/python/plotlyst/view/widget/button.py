@@ -31,11 +31,15 @@ from qthandy import hbox, translucent, bold, incr_font, transparent, retain_when
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, PLOTLYST_MAIN_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, PLOTLYST_MAIN_COLOR, \
+    LIGHTGREY_IDLE_COLOR, LIGHTGREY_ACTIVE_COLOR
 from plotlyst.core.domain import SelectionItem, Novel, tag_characterization, tag_worldbuilding, \
     tag_brainstorming, tag_research, tag_writing, tag_plotting, tag_theme, tag_outlining, tag_revision, tag_drafting, \
-    tag_editing, tag_collect_feedback, tag_publishing, tag_marketing, tag_book_cover_design, tag_formatting
+    tag_editing, tag_collect_feedback, tag_publishing, tag_marketing, tag_book_cover_design, tag_formatting, \
+    SnapshotType
 from plotlyst.env import app_env
+from plotlyst.event.core import emit_event
+from plotlyst.events import SocialSnapshotRequested
 from plotlyst.service.importer import SyncImporter
 from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action, label
 from plotlyst.view.icons import IconRegistry
@@ -739,3 +743,26 @@ class ToggleAllOnAndOff(QWidget):
         self.layout().addWidget(self.btnOn)
         self.layout().addWidget(label('/'))
         self.layout().addWidget(self.btnOff)
+
+
+class SnapshotButton(QPushButton):
+    ICON: str = 'mdi.camera'
+
+    def __init__(self, novel: Novel, snapshotType: SnapshotType, parent=None):
+        super().__init__(parent)
+        self.setIcon(IconRegistry.from_name(self.ICON, LIGHTGREY_IDLE_COLOR))
+        self.setToolTip('Take a snapshot for social media')
+        transparent(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+        pointy(self)
+
+        incr_icon(self, 6)
+        self.clicked.connect(lambda: emit_event(novel, SocialSnapshotRequested(self, snapshotType)))
+
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.setIcon(IconRegistry.from_name(self.ICON, LIGHTGREY_ACTIVE_COLOR))
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        self.setIcon(IconRegistry.from_name(self.ICON, LIGHTGREY_IDLE_COLOR))
