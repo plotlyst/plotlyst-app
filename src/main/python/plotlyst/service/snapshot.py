@@ -23,7 +23,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, clear_layout, transparent, vline, vspacer, hbox
+from qthandy import vbox, clear_layout, transparent, vline, vspacer, hbox, retain_when_hidden, italic
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import SnapshotType, Novel
@@ -31,7 +31,7 @@ from plotlyst.view.common import push_btn, frame, exclusive_buttons, label
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report.productivity import ProductivityCalendar
 from plotlyst.view.widget.button import SelectorButton
-from plotlyst.view.widget.display import PopupDialog, PlotlystFooter
+from plotlyst.view.widget.display import PopupDialog, PlotlystFooter, CopiedTextMessage
 from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar
 
 
@@ -71,6 +71,8 @@ class SocialSnapshotPopup(PopupDialog):
     def __init__(self, novel: Novel, snapshotType: Optional[SnapshotType] = None, parent=None):
         super().__init__(parent)
         self.novel = novel
+        self._exported_pixmap: Optional[QPixmap] = None
+
         self.frame.setProperty('muted-bg', True)
         self.frame.setProperty('white-bg', False)
         self.frame.layout().setSpacing(10)
@@ -80,11 +82,11 @@ class SocialSnapshotPopup(PopupDialog):
         self.btnJpg = SelectorButton('mdi6.file-jpg-box', 'JPG')
 
         self._btnGroup = exclusive_buttons(self, self.btnClipboard, self.btnPng, self.btnJpg)
-        self.btnClipboard.setChecked(True)
-
-        self.btnExport = push_btn(IconRegistry.from_name('fa5s.copy', RELAXED_WHITE_COLOR), text='Export',
-                                  properties=['confirm', 'positive'])
+        self.btnExport = push_btn(text='Export', properties=['confirm', 'positive'])
         self.btnExport.clicked.connect(self._export)
+
+        self._btnGroup.buttonToggled.connect(self._formatChanged)
+        self.btnClipboard.setChecked(True)
 
         self.wdgTop = frame()
         self.wdgTop.setProperty('bg', True)
@@ -98,6 +100,11 @@ class SocialSnapshotPopup(PopupDialog):
         self.wdgTop.layout().addWidget(self.btnExport)
 
         self.frame.layout().addWidget(self.wdgTop, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.lblCopied = CopiedTextMessage()
+        italic(self.lblCopied)
+        retain_when_hidden(self.lblCopied)
+        self.frame.layout().addWidget(self.lblCopied, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.canvasContainer = frame()
         self.canvasContainer.setProperty('white-bg', True)
@@ -146,9 +153,21 @@ class SocialSnapshotPopup(PopupDialog):
 
         painter.end()
 
-        self.exported_pixmap = pixmap
+        self._exported_pixmap = pixmap
 
-    def _export(self, scale_factor=3):
-        if hasattr(self, 'exported_pixmap'):
+    def _formatChanged(self):
+        if self.btnClipboard.isChecked():
+            self.btnExport.setIcon(IconRegistry.from_name('fa5s.copy', RELAXED_WHITE_COLOR))
+        elif self.btnPng.isChecked():
+            self.btnExport.setIcon(IconRegistry.from_name('mdi6.file-png-box', RELAXED_WHITE_COLOR))
+        elif self.btnJpg.isChecked():
+            self.btnExport.setIcon(IconRegistry.from_name('mdi6.file-jpg-box', RELAXED_WHITE_COLOR))
+
+    def _export(self):
+        if self._exported_pixmap is None:
+            return
+
+        if self.btnClipboard.isChecked():
             clipboard = QGuiApplication.clipboard()
-            clipboard.setPixmap(self.exported_pixmap)
+            clipboard.setPixmap(self._exported_pixmap)
+            self.lblCopied.trigger()
