@@ -669,14 +669,31 @@ class PremiumOverlayWidget(QFrame):
         fade_in(self.msg)
 
 
-class PlotlystFooter(QPushButton):
+class PaintedCircle(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setText('plotlyst.com')
-        self.setIcon(IconRegistry.from_name('fa5s.circle', PLOTLYST_SECONDARY_COLOR))
-        self.setStyleSheet('color: grey; border: 0px;')
-        decr_font(self, 2)
-        decr_icon(4)
+        self.setFixedSize(18, 18)
+
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing |
+                               QPainter.RenderHint.TextAntialiasing |
+                               QPainter.RenderHint.SmoothPixmapTransform)
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(PLOTLYST_SECONDARY_COLOR))
+        painter.drawEllipse(event.rect())
+
+
+class PlotlystFooter(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        hbox(self)
+        icon = PaintedCircle()
+        self.layout().addWidget(icon, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.layout().addWidget(label('plotlyst.com', color='grey', decr_font_diff=2),
+                                alignment=Qt.AlignmentFlag.AlignVCenter)
 
 
 def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional[float] = None) -> IconText:
