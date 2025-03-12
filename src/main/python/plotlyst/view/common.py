@@ -197,17 +197,18 @@ class ButtonPressResizeEventFilter(QObject):
 
 
 class ButtonIconSwitchEventFilter(QObject):
-    def __init__(self, parent, idleIcon: QIcon, activeIcon: QIcon):
+    def __init__(self, parent: QAbstractButton, idleIcon: QIcon, activeIcon: QIcon):
         super().__init__(parent)
         self._idleIcon = idleIcon
         self._activeIcon = activeIcon
+        parent.setIcon(self._idleIcon)
 
     @overrides
     def eventFilter(self, watched: QAbstractButton, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Enter:
-            watched.setIcon(self._idleIcon)
-        elif event.type() == QEvent.Type.Leave:
             watched.setIcon(self._activeIcon)
+        elif event.type() == QEvent.Type.Leave:
+            watched.setIcon(self._idleIcon)
         return super().eventFilter(watched, event)
 
 

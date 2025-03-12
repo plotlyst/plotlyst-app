@@ -41,7 +41,8 @@ from plotlyst.env import app_env
 from plotlyst.event.core import emit_event
 from plotlyst.events import SocialSnapshotRequested
 from plotlyst.service.importer import SyncImporter
-from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action, label
+from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action, label, \
+    ButtonIconSwitchEventFilter
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 
@@ -746,23 +747,16 @@ class ToggleAllOnAndOff(QWidget):
 
 
 class SnapshotButton(QPushButton):
-    ICON: str = 'mdi.camera'
 
     def __init__(self, novel: Novel, snapshotType: SnapshotType, parent=None):
         super().__init__(parent)
-        self.setIcon(IconRegistry.from_name(self.ICON, LIGHTGREY_IDLE_COLOR))
         self.setToolTip('Take a snapshot for social media')
         transparent(self)
         self.installEventFilter(ButtonPressResizeEventFilter(self))
+        self.installEventFilter(
+            ButtonIconSwitchEventFilter(self, IconRegistry.from_name('mdi.camera', LIGHTGREY_IDLE_COLOR),
+                                        IconRegistry.from_name('mdi.camera', LIGHTGREY_ACTIVE_COLOR)))
         pointy(self)
 
         incr_icon(self, 6)
         self.clicked.connect(lambda: emit_event(novel, SocialSnapshotRequested(self, snapshotType)))
-
-    @overrides
-    def enterEvent(self, event: QEnterEvent) -> None:
-        self.setIcon(IconRegistry.from_name(self.ICON, LIGHTGREY_ACTIVE_COLOR))
-
-    @overrides
-    def leaveEvent(self, event: QEvent) -> None:
-        self.setIcon(IconRegistry.from_name(self.ICON, LIGHTGREY_IDLE_COLOR))
