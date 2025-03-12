@@ -30,7 +30,7 @@ from plotlyst.core.domain import SnapshotType, Novel
 from plotlyst.view.common import push_btn, frame, exclusive_buttons, label
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report.productivity import ProductivityCalendar
-from plotlyst.view.widget.button import SelectorButton
+from plotlyst.view.widget.button import TopSelectorButton
 from plotlyst.view.widget.display import PopupDialog, PlotlystFooter, CopiedTextMessage
 from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar
 
@@ -77,9 +77,9 @@ class SocialSnapshotPopup(PopupDialog):
         self.frame.setProperty('white-bg', False)
         self.frame.layout().setSpacing(10)
 
-        self.btnClipboard = SelectorButton('fa5.clipboard', 'Clipboard')
-        self.btnPng = SelectorButton('mdi6.file-png-box', 'PNG')
-        self.btnJpg = SelectorButton('mdi6.file-jpg-box', 'JPG')
+        self.btnClipboard = TopSelectorButton('fa5.clipboard', 'Clipboard')
+        self.btnPng = TopSelectorButton('mdi6.file-png-box', 'PNG')
+        self.btnJpg = TopSelectorButton('mdi6.file-jpg-box', 'JPG')
 
         self._btnGroup = exclusive_buttons(self, self.btnClipboard, self.btnPng, self.btnJpg)
         self.btnExport = push_btn(text='Export', properties=['confirm', 'positive'])

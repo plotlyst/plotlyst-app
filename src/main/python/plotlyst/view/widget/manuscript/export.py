@@ -33,7 +33,7 @@ from plotlyst.view.common import push_btn, label, exclusive_buttons
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.theme import BG_MUTED_COLOR
-from plotlyst.view.widget.button import SelectorButton
+from plotlyst.view.widget.button import TopSelectorButton
 from plotlyst.view.widget.display import PopupDialog
 from plotlyst.view.widget.settings import Forms
 
@@ -45,8 +45,8 @@ class ManuscriptExportPopup(PopupDialog):
         self.preview = self.__newPreview()
         self.document: Optional[QTextDocument] = None
 
-        self._btnDocx = SelectorButton('mdi.file-word-outline', 'Word (.docx)')
-        self._btnPdf = SelectorButton('fa5.file-pdf', 'PDF')
+        self._btnDocx = TopSelectorButton('mdi.file-word-outline', 'Word (.docx)')
+        self._btnPdf = TopSelectorButton('fa5.file-pdf', 'PDF')
 
         self.wdgEditor = QWidget()
         vbox(self.wdgEditor, 10, 6)

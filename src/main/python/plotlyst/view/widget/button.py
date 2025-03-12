@@ -746,7 +746,7 @@ class ToggleAllOnAndOff(QWidget):
         self.layout().addWidget(self.btnOff)
 
 
-class SelectorButton(QPushButton):
+class TopSelectorButton(QPushButton):
     def __init__(self, icon: str = '', text: str = '', parent=None):
         super().__init__(parent)
         self.setText(text)
