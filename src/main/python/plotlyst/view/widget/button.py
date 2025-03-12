@@ -746,6 +746,21 @@ class ToggleAllOnAndOff(QWidget):
         self.layout().addWidget(self.btnOff)
 
 
+class SelectorButton(QPushButton):
+    def __init__(self, icon: str = '', text: str = '', parent=None):
+        super().__init__(parent)
+        self.setText(text)
+        if icon:
+            self.setIcon(IconRegistry.from_name(icon, color_on=PLOTLYST_SECONDARY_COLOR))
+        self.setCheckable(True)
+        pointy(self)
+        self.setProperty('transparent-rounded-bg-on-hover', True)
+        self.setProperty('secondary-selector', True)
+
+        incr_icon(self, 4)
+        incr_font(self, 2)
+
+
 class SnapshotButton(QPushButton):
 
     def __init__(self, novel: Novel, snapshotType: SnapshotType, parent=None):

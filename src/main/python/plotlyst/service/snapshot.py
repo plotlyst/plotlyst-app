@@ -23,15 +23,16 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, clear_layout, transparent
+from qthandy import vbox, clear_layout, transparent, vline, vspacer
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import SnapshotType, Novel
-from plotlyst.view.common import push_btn, frame
+from plotlyst.view.common import push_btn, frame, exclusive_buttons, label
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.report.productivity import ProductivityCalendar
-from plotlyst.view.widget.display import PopupDialog
+from plotlyst.view.widget.button import SelectorButton
+from plotlyst.view.widget.display import PopupDialog, PlotlystFooter
 from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar
 
 
@@ -61,15 +62,35 @@ class WritingSnapshotEditor(SnapshotCanvasEditor):
         transparent(self.canvas)
 
         calendar = ManuscriptProgressCalendar(self.novel)
+        self.canvas.layout().addWidget(vspacer())
         self.canvas.layout().addWidget(calendar)
+        self.canvas.layout().addWidget(vspacer())
+        self.canvas.layout().addWidget(PlotlystFooter(), alignment=Qt.AlignmentFlag.AlignLeft)
 
 
 class SocialSnapshotPopup(PopupDialog):
     def __init__(self, novel: Novel, snapshotType: Optional[SnapshotType] = None, parent=None):
         super().__init__(parent)
         self.novel = novel
-        self.frame.setProperty('bg', True)
+        self.frame.setProperty('muted-bg', True)
         self.frame.setProperty('white-bg', False)
+        self.frame.layout().setSpacing(10)
+
+        self.btnClipboard = SelectorButton('fa5.clipboard', 'Clipboard')
+        self.btnPng = SelectorButton('mdi6.file-png-box', 'PNG')
+        self.btnJpg = SelectorButton('mdi6.file-jpg-box', 'JPG')
+
+        self._btnGroup = exclusive_buttons(self, self.btnClipboard, self.btnPng, self.btnJpg)
+        self.btnClipboard.setChecked(True)
+
+        self.btnExport = push_btn(IconRegistry.from_name('fa5s.copy', RELAXED_WHITE_COLOR), text='Export',
+                                  properties=['confirm', 'positive'])
+        self.btnExport.clicked.connect(self._export)
+        self.frame.layout().addWidget(
+            group(label('Export image to: ', h5=True), self.btnClipboard, self.btnPng, self.btnJpg, vline(),
+                  self.btnExport, margin=10,
+                  spacing=5),
+            alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.canvasContainer = frame()
         self.canvasContainer.setProperty('white-bg', True)
@@ -78,14 +99,12 @@ class SocialSnapshotPopup(PopupDialog):
         # self.canvasContainer.setFixedSize(450, 450)
         self.canvasContainer.setFixedSize(200, 356)
 
-        self.btnExport = push_btn(IconRegistry.from_name('fa5s.copy', RELAXED_WHITE_COLOR), text='Export',
-                                  properties=['confirm', 'positive'])
-        self.btnExport.clicked.connect(self._export)
-        self.btnCancel = push_btn(text='Close', properties=['confirm', 'cancel'])
+        self.btnCancel = push_btn(icon=IconRegistry.from_name('ei.remove', 'grey'), text='Close',
+                                  properties=['confirm', 'cancel'])
         self.btnCancel.clicked.connect(self.reject)
 
-        self.frame.layout().addWidget(self.canvasContainer)
-        self.frame.layout().addWidget(group(self.btnCancel, self.btnExport), alignment=Qt.AlignmentFlag.AlignRight)
+        self.frame.layout().addWidget(self.canvasContainer, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.btnCancel, alignment=Qt.AlignmentFlag.AlignRight)
 
         if snapshotType:
             self._selectType(snapshotType)

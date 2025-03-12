@@ -35,7 +35,7 @@ from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, point
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK
+from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
@@ -667,6 +667,16 @@ class PremiumOverlayWidget(QFrame):
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         fade_in(self.msg)
+
+
+class PlotlystFooter(QPushButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setText('plotlyst.com')
+        self.setIcon(IconRegistry.from_name('fa5s.circle', PLOTLYST_SECONDARY_COLOR))
+        self.setStyleSheet('color: grey; border: 0px;')
+        decr_font(self, 2)
+        decr_icon(4)
 
 
 def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional[float] = None) -> IconText:
