@@ -593,7 +593,7 @@ class ManuscriptProgressCalendar(QCalendarWidget):
                     painter.setBrush(QColor('#EDE1F2'))
                 else:
                     painter.setBrush(QColor(RELAXED_WHITE_COLOR))
-                rad = rect.width() // 2 - 1
+                rad = min(rect.width(), rect.height()) // 2 - 1
                 painter.drawEllipse(rect.center() + QPoint(1, 1), rad, rad)
 
             if date > self.maximumDate():

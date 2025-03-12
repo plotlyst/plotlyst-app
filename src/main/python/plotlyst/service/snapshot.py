@@ -23,15 +23,15 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, clear_layout, transparent, vline, vspacer, hbox, retain_when_hidden, italic
+from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hidden, italic, incr_font
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import SnapshotType, Novel
 from plotlyst.view.common import push_btn, frame, exclusive_buttons, label
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report.productivity import ProductivityCalendar
-from plotlyst.view.widget.button import TopSelectorButton
-from plotlyst.view.widget.display import PopupDialog, PlotlystFooter, CopiedTextMessage
+from plotlyst.view.widget.button import TopSelectorButton, SelectorToggleButton
+from plotlyst.view.widget.display import PopupDialog, PlotlystFooter, CopiedTextMessage, icon_text
 from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar
 
 
@@ -61,9 +61,9 @@ class WritingSnapshotEditor(SnapshotCanvasEditor):
         transparent(self.canvas)
 
         calendar = ManuscriptProgressCalendar(self.novel)
-        self.canvas.layout().addWidget(vspacer())
+        # self.canvas.layout().addWidget(vspacer())
         self.canvas.layout().addWidget(calendar)
-        self.canvas.layout().addWidget(vspacer())
+        # self.canvas.layout().addWidget(vspacer())
         self.canvas.layout().addWidget(PlotlystFooter(), alignment=Qt.AlignmentFlag.AlignLeft)
 
 
@@ -72,6 +72,7 @@ class SocialSnapshotPopup(PopupDialog):
         super().__init__(parent)
         self.novel = novel
         self._exported_pixmap: Optional[QPixmap] = None
+        self._snapshotType = snapshotType
 
         self.frame.setProperty('muted-bg', True)
         self.frame.setProperty('white-bg', False)
@@ -106,11 +107,29 @@ class SocialSnapshotPopup(PopupDialog):
         retain_when_hidden(self.lblCopied)
         self.frame.layout().addWidget(self.lblCopied, alignment=Qt.AlignmentFlag.AlignRight)
 
+        self.btnRatio9_16 = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextOnly, minWidth=60)
+        self.btnRatio9_16.setText('9:16')
+        incr_font(self.btnRatio9_16)
+        self.btnRatio1_1 = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextOnly, minWidth=60)
+        self.btnRatio1_1.setText('1:1')
+        incr_font(self.btnRatio1_1)
+
+        self.wdgRatios = QWidget()
+        hbox(self.wdgRatios)
+        self.wdgRatios.layout().addWidget(icon_text('mdi.aspect-ratio', 'Size ratio'))
+        self.wdgRatios.layout().addWidget(self.btnRatio9_16)
+        self.wdgRatios.layout().addWidget(self.btnRatio1_1)
+        self._btnGroupRatios = exclusive_buttons(self, self.btnRatio9_16, self.btnRatio1_1)
+        self.btnRatio9_16.setChecked(True)
+        self._btnGroupRatios.buttonClicked.connect(self._ratioChanged)
+
+        self.frame.layout().addWidget(self.wdgRatios, alignment=Qt.AlignmentFlag.AlignCenter)
+
         self.canvasContainer = frame()
         self.canvasContainer.setProperty('white-bg', True)
         self.canvasContainer.setProperty('large-rounded', True)
         vbox(self.canvasContainer, 0, 0)
-        # self.canvasContainer.setFixedSize(450, 450)
+        # self.canvasContainer.setFixedSize(356, 356)
         self.canvasContainer.setFixedSize(200, 356)
 
         self.btnCancel = push_btn(icon=IconRegistry.from_name('ei.remove', 'grey'), text='Close',
@@ -120,8 +139,8 @@ class SocialSnapshotPopup(PopupDialog):
         self.frame.layout().addWidget(self.canvasContainer, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.btnCancel, alignment=Qt.AlignmentFlag.AlignRight)
 
-        if snapshotType:
-            self._selectType(snapshotType)
+        if self._snapshotType:
+            self._selectType(self._snapshotType)
 
     def display(self):
         self.exec()
@@ -162,6 +181,14 @@ class SocialSnapshotPopup(PopupDialog):
             self.btnExport.setIcon(IconRegistry.from_name('mdi6.file-png-box', RELAXED_WHITE_COLOR))
         elif self.btnJpg.isChecked():
             self.btnExport.setIcon(IconRegistry.from_name('mdi6.file-jpg-box', RELAXED_WHITE_COLOR))
+
+    def _ratioChanged(self):
+        if self.btnRatio9_16.isChecked():
+            self.canvasContainer.setFixedSize(200, 356)
+        elif self.btnRatio1_1.isChecked():
+            self.canvasContainer.setFixedSize(356, 356)
+
+        self._selectType(self._snapshotType)
 
     def _export(self):
         if self._exported_pixmap is None:
