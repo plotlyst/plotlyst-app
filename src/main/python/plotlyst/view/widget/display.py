@@ -691,8 +691,8 @@ class PlotlystFooter(QWidget):
         hbox(self)
         icon = HighQualityPaintedIcon(IconRegistry.book_icon(PLOTLYST_SECONDARY_COLOR), size=16)
         self.layout().addWidget(icon, alignment=Qt.AlignmentFlag.AlignVCenter)
-        self.layout().addWidget(label('plotlyst.com', color='grey', decr_font_diff=2),
-                                alignment=Qt.AlignmentFlag.AlignVCenter)
+        footer = label('plotlyst.com', color='grey', decr_font_diff=2)
+        self.layout().addWidget(wrap(footer, margin_bottom=2))
 
 
 def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional[float] = None) -> IconText:
