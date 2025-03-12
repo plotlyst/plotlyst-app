@@ -3559,6 +3559,7 @@ class ProductivityType(SelectionItem):
 
 class SnapshotType(Enum):
     Productivity = 0
+    Writing = 1
 
 
 def default_productivity_categories() -> List[ProductivityType]:
