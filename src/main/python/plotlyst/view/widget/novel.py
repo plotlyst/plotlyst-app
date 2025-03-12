@@ -17,9 +17,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import re
 from enum import Enum, auto
 from functools import partial
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from PyQt6.QtCore import pyqtSignal, Qt, QObject, QEvent, QSize
 from PyQt6.QtGui import QShowEvent
@@ -437,11 +438,13 @@ class DescriptorLabelSelector(QWidget):
 
         return labels
 
-    def setLabels(self, labels: List[str], selected: List[str]):
+    def setLabels(self, labels: List[str], selected: List[str], genre: bool = False):
         for label in labels:
             btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
-            if label in genre_icons.keys():
-                btn.setIcon(IconRegistry.from_name(genre_icons[label]))
+            if genre:
+                icon = genre_icon(label)
+                if icon:
+                    btn.setIcon(IconRegistry.from_name(icon))
             btn.setText(label)
             self.btnGroup.addButton(btn)
             if label in selected:
@@ -472,30 +475,38 @@ class DescriptorLabelSelector(QWidget):
         menu.addWidget(wdg)
 
 
-genre_icons: Dict[str, str] = {
-    'Fantasy': 'fa5s.dragon',
-    'Sci-Fi': 'mdi.robot',
-    'Romance': 'ei.heart',
-    'Mystery': 'mdi.incognito',
-    'Action': 'fa5s.running',
-    'Thriller': 'ri.knife-blood-line',
-    'Horror': 'ri.ghost-2-line',
-    'Crime': 'mdi.pistol',
-    'Caper': 'mdi.robber',
-    'Coming of Age': 'ri.seedling-line',
-    'Cozy': 'ri.home-heart-line',
-    'Historical Fiction': 'fa5s.hourglass-end',
-    'War': 'fa5s.skull',
-    'Western': 'fa5s.hat-cowboy',
-    'Upmarket': 'ph.pen-nib',
-    'Literary Fiction': 'ri.quill-pen-line',
-    'Society': 'mdi6.account-group',
-    'Memoir': 'mdi6.mirror-variant',
-    "Children's Books": 'mdi6.teddy-bear',
-    'Slice of Life': 'fa5s.apple-alt',
-    'Comedy': 'fa5.laugh-beam',
-    'Contemporary': 'fa5s.mobile-alt',
+genre_icons = {
+    'Fantasy': {0: 'fa5s.dragon', 1: 'mdi.unicorn', 2: 'fa5s.hat-wizard'},
+    'Sci-Fi': {0: 'mdi.robot', 1: 'mdi.rocket', 2: 'mdi.alien'},
+    'Romance': {0: 'ei.heart', 1: 'fa5s.kiss-wink-heart', 2: 'mdi.rose'},
+    'Mystery': {0: 'mdi.incognito', 1: 'fa5s.user-secret', 2: 'mdi.magnify'},
+    'Action': {0: 'fa5s.running', 1: 'mdi.explosion', 2: 'mdi.sword-cross'},
+    'Thriller': {0: 'ri.knife-blood-line', 1: 'mdi.skull-crossbones'},
+    'Horror': {0: 'ri.ghost-2-line', 1: 'mdi.blood-bag', 2: 'mdi.spider-web'},
+    'Crime': {0: 'mdi.pistol', 1: 'mdi.handcuffs', 2: 'mdi.police-badge'},
+    'Caper': {0: 'mdi.robber', 1: 'fa5s.mask'},
+    'Coming of Age': {0: 'ri.seedling-line', 1: 'mdi.human-child'},
+    'Cozy': {0: 'ri.home-heart-line', 1: 'mdi.mug-hot'},
+    'Historical Fiction': {0: 'fa5s.hourglass-end', 1: 'mdi.castle'},
+    'War': {0: 'fa5s.skull', 1: 'mdi.tank', 2: 'mdi.rifle'},
+    'Western': {0: 'fa5s.hat-cowboy', 1: 'mdi.horseshoe'},
+    'Upmarket': {0: 'ph.pen-nib', 1: 'mdi.book-open-variant'},
+    'Literary Fiction': {0: 'ri.quill-pen-line', 1: 'mdi.book-cog'},
+    'Society': {0: 'mdi6.account-group', 1: 'mdi.account-multiple'},
+    'Memoir': {0: 'mdi6.mirror-variant', 1: 'mdi.notebook'},
+    "Children's Books": {0: 'mdi6.teddy-bear', 1: 'mdi.balloon'},
+    'Slice of Life': {0: 'fa5s.apple-alt', 1: 'mdi.coffee'},
+    'Comedy': {0: 'fa5.laugh-beam', 1: 'mdi.emoticon-happy-outline'},
+    'Contemporary': {0: 'fa5s.mobile-alt', 1: 'mdi.city'},
 }
+
+
+def genre_icon(genre: str) -> str:
+    name, version = re.match(r'^(.*?)(?: v(\d+))?$', genre).groups()
+    version = int(version) if version else 0
+
+    if version in genre_icons[name].keys():
+        return genre_icons[name][version]
 
 
 class NovelDescriptorsEditorPopup(PopupDialog):
@@ -543,7 +554,7 @@ class NovelDescriptorsEditorPopup(PopupDialog):
             'Cozy', 'Historical Fiction', 'War', 'Western', 'Upmarket',
             'Literary Fiction', 'Society', 'Memoir', "Children's Books",
             'Slice of Life', 'Comedy', 'Contemporary'
-        ], self.novel.descriptors.genres)
+        ], self.novel.descriptors.genres, genre=True)
         self.genreSelector.selectionChanged.connect(self._genreSelected)
         self.center.layout().addWidget(self.genreSelector)
 
@@ -856,8 +867,9 @@ class NovelDescriptorsDisplay(QWidget):
             lbl = QPushButton()
             lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             lbl.setText(genre)
-            if genre in genre_icons:
-                lbl.setIcon(IconRegistry.from_name(genre_icons[genre], RELAXED_WHITE_COLOR))
+            icon = genre_icon(genre)
+            if icon:
+                lbl.setIcon(IconRegistry.from_name(icon, RELAXED_WHITE_COLOR))
             font = lbl.font()
             font.setFamily(app_env.sans_serif_font())
             lbl.setFont(font)
