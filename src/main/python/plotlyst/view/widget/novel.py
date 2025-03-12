@@ -343,7 +343,7 @@ class NovelCustomizationWizard(QWidget):
         self._updateCounter()
 
 
-spice_descriotions = {
+spice_descriptions = {
     1: 'Romance with minimal physical intimacy, limited to kissing and hand-holding',
     2: 'Implied or closed-door content with strong romantic tension but little to no explicit detail',
     3: 'Some explicit content, but with milder language and less frequent or detailed intimate scenes',
@@ -523,7 +523,8 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.lblSeries = icon_text('ph.books', 'Series')
         self.toggleSeries = Toggle()
 
-        self.wdgBookType = group(self.lblStandalone, self.toggleStandalone, vline(), self.lblSeries, self.toggleSeries)
+        self.wdgBookType = group(self.lblStandalone, self.toggleStandalone, vline(), self.lblSeries, self.toggleSeries,
+                                 margin_top=15)
         btngroup = exclusive_buttons(self, self.toggleStandalone, self.toggleSeries, optional=True)
         btngroup.buttonClicked.connect(self._typeSelected)
         if self.novel.descriptors.type == 'Standalone':
@@ -660,11 +661,11 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self._resetSpiceDescription()
 
     def _updateSpiceDescription(self, spice: int):
-        self.descSpice.setText(spice_descriotions[spice])
+        self.descSpice.setText(spice_descriptions[spice])
 
     def _resetSpiceDescription(self):
         if self.novel.descriptors.has_spice and self.novel.descriptors.spice:
-            self.descSpice.setText(spice_descriotions[self.novel.descriptors.spice])
+            self.descSpice.setText(spice_descriptions[self.novel.descriptors.spice])
         else:
             self.descSpice.clear()
 
@@ -876,7 +877,7 @@ class NovelDescriptorsDisplay(QWidget):
         self.wdgSpice.setVisible(self.novel.descriptors.has_spice)
         if self.novel.descriptors.has_spice:
             self.wdgSpice.setSpice(self.novel.descriptors.spice)
-            self.wdgSpice.setToolTip(spice_descriotions[self.novel.descriptors.spice])
+            self.wdgSpice.setToolTip(spice_descriptions[self.novel.descriptors.spice])
 
     def _label(self, text: str, icon: str = '', major: bool = True) -> IconText:
         lbl = IconText()
