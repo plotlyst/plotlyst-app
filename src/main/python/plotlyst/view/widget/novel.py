@@ -343,6 +343,15 @@ class NovelCustomizationWizard(QWidget):
         self._updateCounter()
 
 
+spice_descriotions = {
+    1: 'Romance with minimal physical intimacy, limited to kissing and hand-holding',
+    2: 'Implied or closed-door content with strong romantic tension but little to no explicit detail',
+    3: 'Some explicit content, but with milder language and less frequent or detailed intimate scenes',
+    4: 'Explicit content with strong language and multiple detailed intimate scenes',
+    5: 'Highly explicit content with multiple detailed intimate scenes. All erotica would belong here',
+}
+
+
 class SpiceWidget(QWidget):
     spiceChanged = pyqtSignal(int)
     spiceHoverEntered = pyqtSignal(int)
@@ -360,10 +369,10 @@ class SpiceWidget(QWidget):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Enter:
             i = self.btnGroup.buttons().index(watched)
-            self.spiceHoverEntered.emit(i)
+            self.spiceHoverEntered.emit(i + 1)
         elif event.type() == QEvent.Type.Leave:
             i = self.btnGroup.buttons().index(watched)
-            self.spiceHoverLeft.emit(i)
+            self.spiceHoverLeft.emit(i + 1)
         return super().eventFilter(watched, event)
 
     def spice(self) -> int:
@@ -563,13 +572,18 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.center.layout().addWidget(self.styleSelector)
 
         self.wdgSpice = SpiceWidget(editable=True)
+        self.wdgSpice.spiceHoverEntered.connect(self._updateSpiceDescription)
+        self.wdgSpice.spiceHoverLeft.connect(self._resetSpiceDescription)
         margins(self.wdgSpice, left=10)
         toggle = self._addHeader('Spice', 'mdi6.chili-mild', "", checkable=True, wdg=self.wdgSpice,
                                  ref='Source: romancerehab.com',
                                  refLink='https://www.romancerehab.com/chili-pepper-heat-rating-scale.html')
+        self.descSpice = label('', description=True)
+        self.center.layout().addWidget(self.descSpice)
         self.wdgSpice.setSpice(self.novel.descriptors.spice)
         self.wdgSpice.setVisible(self.novel.descriptors.has_spice)
         self.wdgSpice.spiceChanged.connect(self._spiceValueChanged)
+        self._resetSpiceDescription()
         toggle.toggled.connect(self._spiceToggled)
         toggle.setChecked(self.novel.descriptors.has_spice)
 
@@ -643,6 +657,16 @@ class NovelDescriptorsEditorPopup(PopupDialog):
     def _spiceToggled(self, toggled: bool):
         self.novel.descriptors.has_spice = toggled
         fade(self.wdgSpice, toggled)
+        self._resetSpiceDescription()
+
+    def _updateSpiceDescription(self, spice: int):
+        self.descSpice.setText(spice_descriotions[spice])
+
+    def _resetSpiceDescription(self):
+        if self.novel.descriptors.has_spice and self.novel.descriptors.spice:
+            self.descSpice.setText(spice_descriotions[self.novel.descriptors.spice])
+        else:
+            self.descSpice.clear()
 
     def _spiceValueChanged(self, spice: int):
         self.novel.descriptors.spice = spice
@@ -839,6 +863,7 @@ class NovelDescriptorsDisplay(QWidget):
         self.wdgSpice.setVisible(self.novel.descriptors.has_spice)
         if self.novel.descriptors.has_spice:
             self.wdgSpice.setSpice(self.novel.descriptors.spice)
+            self.wdgSpice.setToolTip(spice_descriotions[self.novel.descriptors.spice])
 
     def _label(self, text: str, icon: str = '', major: bool = True) -> IconText:
         lbl = IconText()
