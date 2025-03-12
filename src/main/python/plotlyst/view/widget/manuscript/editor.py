@@ -30,7 +30,7 @@ from overrides import overrides
 from qthandy import vbox, clear_layout, vspacer, margins, transparent, gc, hbox, italic, translucent, sp, spacer, \
     decr_font, retain_when_hidden, pointy
 from qthandy.filter import OpacityEventFilter
-from qttextedit import remove_font, TextBlockState, DashInsertionMode, AutoCapitalizationMode
+from qttextedit import remove_font, TextBlockState, DashInsertionMode, AutoCapitalizationMode, EllipsisInsertionMode
 from qttextedit.ops import Heading1Operation, Heading2Operation, Heading3Operation, InsertListOperation, \
     InsertNumberedListOperation, BoldOperation, ItalicOperation, UnderlineOperation, StrikethroughOperation, \
     AlignLeftOperation, AlignCenterOperation, AlignRightOperation
@@ -251,10 +251,8 @@ class SceneSeparator(QPushButton):
 class ManuscriptTextEdit(TextEditBase):
     sceneSeparatorClicked = pyqtSignal(Scene)
 
-    def __init__(self, parent=None, first: bool = False, last: bool = False):
+    def __init__(self, parent=None, readOnly: bool = False):
         super(ManuscriptTextEdit, self).__init__(parent)
-        self._first = first
-        self._last = last
         self._pasteAsOriginalEnabled = False
         self._resizedOnShow: bool = False
         self._menuIsShown = False
@@ -268,9 +266,11 @@ class ManuscriptTextEdit(TextEditBase):
 
         self._sentenceHighlighter: Optional[SentenceHighlighter] = None
 
-        toolbar = ManuscriptPopupTextEditorToolbar()
-        toolbar.activate(self)
-        self.setPopupWidget(toolbar)
+        self.setReadOnly(readOnly)
+        if not readOnly:
+            toolbar = ManuscriptPopupTextEditorToolbar()
+            toolbar.activate(self)
+            self.setPopupWidget(toolbar)
 
         self._setDefaultStyleSheet()
         self.setCommandOperations([Heading1Operation, Heading2Operation, Heading3Operation, InsertListOperation,
@@ -309,12 +309,6 @@ class ManuscriptTextEdit(TextEditBase):
     @overrides
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         cursor: QTextCursor = self.textCursor()
-        if cursor.atBlockEnd() and event.key() == Qt.Key.Key_Space:
-            cursor.movePosition(QTextCursor.MoveOperation.PreviousCharacter, QTextCursor.MoveMode.KeepAnchor)
-            if cursor.selectedText() == ' ':
-                self.textCursor().deletePreviousChar()
-                self.textCursor().insertText('.')
-
         move_up = cursor.block().blockNumber() == 0 and event.key() == Qt.Key.Key_Up
         move_down = cursor.block().blockNumber() == self.document().blockCount() - 1 and event.key() == Qt.Key.Key_Down
 
@@ -492,6 +486,7 @@ class ManuscriptEditor(QWidget, EventListener):
         self._scene: Optional[Scene] = None
         self._chapter: Optional[Chapter] = None
         self._font = self.defaultFont()
+        self._lineSpace: int = DEFAULT_MANUSCRIPT_LINE_SPACE
         self._characterWidth: int = 40
         self._maxContentWidth = 0
         self._settings: Optional[ManuscriptEditorSettingsWidget] = None
@@ -595,6 +590,8 @@ class ManuscriptEditor(QWidget, EventListener):
                 self._font.setPointSize(fontSettings.font_size)
             if fontSettings.text_width:
                 self.setCharacterWidth(fontSettings.text_width)
+            if fontSettings.line_space:
+                self.setLineSpace(100 + 25 * fontSettings.line_space)
         else:
             self.setCharacterWidth(60)
 
@@ -676,6 +673,15 @@ class ManuscriptEditor(QWidget, EventListener):
         self._maxContentWidth = metrics.boundingRect('M' * self._characterWidth).width()
         self._resizeToCharacterWidth()
 
+    def lineSpace(self) -> int:
+        return self._lineSpace
+
+    def setLineSpace(self, value: int):
+        self._lineSpace = value
+        for textedit in self._textedits:
+            textedit.setBlockFormat(value, textIndent=DEFAULT_MANUSCRIPT_INDENT)
+            textedit.applyBlockFormat()
+
     def refresh(self):
         if self._scene:
             self.setScene(self._scene)
@@ -729,14 +735,19 @@ class ManuscriptEditor(QWidget, EventListener):
         self._settings = settings
         self._settings.smartTypingSettings.dashChanged.connect(self._dashInsertionChanged)
         self._settings.smartTypingSettings.capitalizationChanged.connect(self._capitalizationChanged)
+        self._settings.smartTypingSettings.smartQuotesChanged.connect(self._smartQuotesChanged)
+        self._settings.smartTypingSettings.periodChanged.connect(self._periodChanged)
+        self._settings.smartTypingSettings.ellipsisChanged.connect(self._ellipsisChanged)
 
         self._settings.fontSettings.sizeSetting.attach(self)
         self._settings.fontSettings.widthSetting.attach(self)
         self._settings.fontSettings.fontSetting.attach(self)
+        self._settings.fontSettings.spaceSetting.attach(self)
 
         self._settings.fontSettings.sizeSetting.sizeChanged.connect(self._fontSizeChanged)
         self._settings.fontSettings.widthSetting.widthChanged.connect(self._textWidthChanged)
         self._settings.fontSettings.fontSetting.fontSelected.connect(self._fontChanged)
+        self._settings.fontSettings.spaceSetting.spaceChanged.connect(self._spaceChanged)
 
     def statistics(self) -> TextStatistics:
         overall_stats = TextStatistics(0)
@@ -837,23 +848,26 @@ class ManuscriptEditor(QWidget, EventListener):
         self.cursorPositionChanged.emit(parent_pos.x(), parent_pos.y(), marginX, marginY)
 
     def _initTextEdit(self, scene: Scene) -> ManuscriptTextEdit:
-        _textedit = ManuscriptTextEdit()
+        _textedit = ManuscriptTextEdit(readOnly=self._novel.is_readonly())
         _textedit.setFont(self._font)
         _textedit.setDashInsertionMode(self._novel.prefs.manuscript.dash)
         _textedit.setAutoCapitalizationMode(self._novel.prefs.manuscript.capitalization)
+        _textedit.setSmartQuotesEnabled(self._novel.prefs.manuscript.smart_quotes)
+        _textedit.setPeriodInsertionEnabled(self._novel.prefs.manuscript.period)
+        _textedit.setEllipsisInsertionMode(self._novel.prefs.manuscript.ellipsis)
         transparent(_textedit)
 
-        _textedit.setBlockFormat(DEFAULT_MANUSCRIPT_LINE_SPACE, textIndent=DEFAULT_MANUSCRIPT_INDENT)
+        _textedit.setBlockFormat(self._lineSpace, textIndent=DEFAULT_MANUSCRIPT_INDENT)
         _textedit.setAutoFormatting(QTextEdit.AutoFormattingFlag.AutoNone)
         _textedit.selectionChanged.connect(self.selectionChanged)
         _textedit.setProperty('borderless', True)
 
         _textedit.setPlaceholderText('Begin writing your story...')
         _textedit.setSidebarEnabled(False)
-        _textedit.setReadOnly(self._novel.is_readonly())
         _textedit.setDocumentMargin(0)
 
         _textedit.setScene(scene)
+        _textedit.applyBlockFormat()
         _textedit.textChanged.connect(partial(self._textChanged, _textedit, scene))
         _textedit.cursorPositionChanged.connect(partial(self._cursorPositionChanged, _textedit))
         self._textedits.append(_textedit)
@@ -891,6 +905,24 @@ class ManuscriptEditor(QWidget, EventListener):
         self._novel.prefs.manuscript.capitalization = mode
         self.repo.update_novel(self._novel)
 
+    def _smartQuotesChanged(self, enabled: bool):
+        for textedit in self._textedits:
+            textedit.setSmartQuotesEnabled(enabled)
+        self._novel.prefs.manuscript.smart_quotes = enabled
+        self.repo.update_novel(self._novel)
+
+    def _periodChanged(self, enabled: bool):
+        for textedit in self._textedits:
+            textedit.setPeriodInsertionEnabled(enabled)
+        self._novel.prefs.manuscript.period = enabled
+        self.repo.update_novel(self._novel)
+
+    def _ellipsisChanged(self, mode: EllipsisInsertionMode):
+        for textedit in self._textedits:
+            textedit.setEllipsisInsertionMode(mode)
+        self._novel.prefs.manuscript.ellipsis = mode
+        self.repo.update_novel(self._novel)
+
     def _fontSizeChanged(self, size: int):
         fontSettings = self._getFontSettings()
         fontSettings.font_size = size
@@ -909,6 +941,11 @@ class ManuscriptEditor(QWidget, EventListener):
         titleFont.setFamily(family)
         self.textTitle.setFont(titleFont)
 
+        self.repo.update_novel(self._novel)
+
+    def _spaceChanged(self, value: int):
+        fontSettings = self._getFontSettings()
+        fontSettings.line_space = value
         self.repo.update_novel(self._novel)
 
     def _titleEdited(self, title: str):

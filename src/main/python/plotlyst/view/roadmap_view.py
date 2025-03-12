@@ -78,7 +78,10 @@ class TaskWidget(QWidget):
         self._btnOpenInExternal = tool_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'), transparent_=True,
                                            tooltip='Open in browser')
         decr_icon(self._btnOpenInExternal, 4)
-        self._btnOpenInExternal.clicked.connect(lambda: open_url(self.task.web_link))
+        if self.task.web_link:
+            self._btnOpenInExternal.clicked.connect(lambda: open_url(self.task.web_link))
+        else:
+            self._btnOpenInExternal.setHidden(True)
 
         self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(group(self.lblName, self._btnOpenInExternal, spacer(), self.iconPlus))
@@ -252,10 +255,9 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         self.btnAll.setChecked(True)
         tags_counter.clear()
         versions_counter.clear()
-        clear_layout(self.wdgCategoriesParent)
+        clear_layout(self.wdgCategories)
         versions_counter['Free'] = 0
         versions_counter['Plus'] = 0
-        versions_counter['Beta'] = 0
 
         self._board: Board = Board.from_dict(data)
         self._roadmapWidget.setBoard(self._board)
@@ -267,19 +269,19 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         tagPlanned.clicked.connect(partial(self._roadmapWidget.filterStatus, 'Planned'))
         btnGroup.addButton(tagCompleted)
         btnGroup.addButton(tagPlanned)
-        self.wdgCategoriesParent.layout().addWidget(label('State', description=True))
+        self.wdgCategories.layout().addWidget(label('State', description=True))
         wdgStates = QWidget()
         vbox(wdgStates)
         margins(wdgStates, left=10, bottom=30)
         wdgStates.layout().addWidget(tagCompleted, alignment=Qt.AlignmentFlag.AlignLeft)
         wdgStates.layout().addWidget(tagPlanned, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.wdgCategoriesParent.layout().addWidget(wdgStates)
+        self.wdgCategories.layout().addWidget(wdgStates)
 
-        self.wdgCategoriesParent.layout().addWidget(label('Type', description=True))
+        self.wdgCategories.layout().addWidget(label('Type', description=True))
         wdgTypes = QWidget()
         vbox(wdgTypes)
         margins(wdgTypes, left=10)
-        self.wdgCategoriesParent.layout().addWidget(wdgTypes)
+        self.wdgCategories.layout().addWidget(wdgTypes)
 
         btnGroup = ExclusiveOptionalButtonGroup(self)
         for tag, item in self._board.tags.items():
@@ -287,8 +289,9 @@ class RoadmapView(QWidget, Ui_RoadmapView):
             btnGroup.addButton(tagBtn)
             tagBtn.toggled.connect(partial(self._roadmapWidget.filterTag, tag))
             wdgTypes.layout().addWidget(tagBtn, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.wdgCategoriesParent.layout().addWidget(vspacer())
+        self.wdgCategories.layout().addWidget(vspacer())
 
+        self.btnAll.setText(f'All ({versions_counter.get("Free", 0) + versions_counter.get("Plus", 0)})')
         self.btnFree.setText(f'Free ({versions_counter.get("Free", 0)})')
         self.btnPlus.setText(f'Plus ({versions_counter.get("Plus", 0)})')
 

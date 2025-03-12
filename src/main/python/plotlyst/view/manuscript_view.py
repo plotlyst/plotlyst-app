@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import qtanim
 from PyQt6.QtCore import QTimer, Qt, QObject, QEvent
 from PyQt6.QtGui import QScreen
-from PyQt6.QtWidgets import QInputDialog, QApplication
+from PyQt6.QtWidgets import QApplication
 from overrides import overrides
 from qthandy import translucent, bold, margins, spacer, transparent, vspacer, decr_icon, vline, incr_icon, busy
 from qthandy.filter import OpacityEventFilter, InstantTooltipEventFilter
@@ -45,7 +45,7 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.theme import BG_DARK_COLOR
 from plotlyst.view.widget.display import Icon
-from plotlyst.view.widget.input import Toggle
+from plotlyst.view.widget.input import Toggle, SpinBoxDialog
 from plotlyst.view.widget.manuscript import SprintWidget, \
     ManuscriptProgressCalendar, ManuscriptDailyProgress, ManuscriptProgressCalendarLegend, ManuscriptProgressWidget
 from plotlyst.view.widget.manuscript.editor import ManuscriptEditor, DistFreeControlsBar, DistFreeDisplayBar
@@ -69,6 +69,7 @@ class ManuscriptView(AbstractNovelView):
 
         self.ui.lblWc.setAlignment(Qt.AlignmentFlag.AlignRight)
 
+        self.ui.treeChapters.setAutoSelectNewScenes(True)
         self.ui.btnAdd.setIcon(IconRegistry.plus_icon(RELAXED_WHITE_COLOR))
         self.ui.btnAddScene.setIcon(IconRegistry.plus_icon(RELAXED_WHITE_COLOR))
         self.ui.btnAddScene.clicked.connect(self.ui.treeChapters.addScene)
@@ -204,7 +205,6 @@ class ManuscriptView(AbstractNovelView):
         self.ui.treeChapters.setNovel(self.novel, readOnly=self.novel.is_readonly())
         self.ui.treeChapters.sceneSelected.connect(self._editScene)
         self.ui.treeChapters.chapterSelected.connect(self._editChapter)
-        self.ui.treeChapters.sceneAdded.connect(self._scene_added)
         self.ui.treeChapters.centralWidget().setProperty('bg', True)
 
         self.ui.wdgSide.setHidden(True)
@@ -362,11 +362,6 @@ class ManuscriptView(AbstractNovelView):
 
         self._recheckDocument()
 
-    def _scene_added(self, scene: Scene):
-        if self._is_empty_page():
-            self._editScene(scene)
-            self.ui.treeChapters.selectScene(scene)
-
     def _recheckDocument(self):
         if self.ui.stackedWidget.currentWidget() == self.ui.pageText:
             self._text_changed()
@@ -395,10 +390,9 @@ class ManuscriptView(AbstractNovelView):
             self._manuscriptDailyProgressDisplay.setProgress(progress)
 
     def _edit_wc_goal(self):
-        goal, changed = QInputDialog.getInt(self._progressWdg.btnEditGoal, 'Word count goal', 'Edit word count target',
-                                            value=self.novel.manuscript_goals.target_wc,
-                                            min=1000, max=10000000, step=1000)
-        if changed:
+        goal = SpinBoxDialog.edit('Word count goal', value=self.novel.manuscript_goals.target_wc,
+                                  min_value=1000, max_value=10000000, step=1000)
+        if goal:
             self.novel.manuscript_goals.target_wc = goal
             self.repo.update_novel(self.novel)
             self._refresh_target_wc()

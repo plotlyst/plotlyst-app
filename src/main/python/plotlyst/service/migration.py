@@ -27,3 +27,10 @@ def migrate_novel(novel: Novel):
         novel.documents.append(doc)
         novel.events_map = None
         RepositoryPersistenceManager.instance().update_novel(novel)
+
+    if novel.synopsis is not None:
+        novel.synopsis.icon = 'fa5s.scroll'
+        novel.synopsis.title = 'Synopsis'
+        novel.documents.append(novel.synopsis)
+        novel.synopsis = None
+        RepositoryPersistenceManager.instance().update_novel(novel)

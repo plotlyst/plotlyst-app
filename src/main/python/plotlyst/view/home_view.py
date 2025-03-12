@@ -29,8 +29,8 @@ from qtmenu import MenuWidget
 from plotlyst.common import NAV_BAR_BUTTON_DEFAULT_COLOR, \
     NAV_BAR_BUTTON_CHECKED_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK
 from plotlyst.core.client import client
-from plotlyst.core.domain import NovelDescriptor, StoryType, Novel
-from plotlyst.core.help import home_page_welcome_text
+from plotlyst.core.domain import NovelDescriptor, StoryType, Novel, WELCOME_DOC_ID
+from plotlyst.core.help import home_page_welcome_text, WELCOME_DOC_CONTENT
 from plotlyst.env import app_env
 from plotlyst.event.core import emit_global_event, Event
 from plotlyst.event.handler import global_event_dispatcher
@@ -307,6 +307,11 @@ class HomeView(AbstractView):
                 self.repo.insert_scene(novel, scene)
                 if scene.manuscript:
                     self.repo.update_doc(novel, scene.manuscript)
+
+            for doc in novel.documents:
+                if doc.id == WELCOME_DOC_ID:
+                    doc.content = WELCOME_DOC_CONTENT
+                    self.repo.update_doc(novel, doc)
 
             flush()
 

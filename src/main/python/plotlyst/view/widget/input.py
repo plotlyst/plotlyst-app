@@ -1157,6 +1157,64 @@ class TextInputDialog(PopupDialog):
         self.btnConfirm.setEnabled(len(key) > 0)
 
 
+class SpinBoxDialog(PopupDialog):
+    def __init__(self, title: str, value: int = 0, min_value: int = 0, max_value: int = 100, step: int = 1,
+                 description: str = '',
+                 parent=None):
+        super().__init__(parent)
+
+        self.title = label(title, h4=True)
+        sp(self.title).v_max()
+        self.wdgTitle = QWidget()
+        hbox(self.wdgTitle, spacing=5)
+        self.wdgTitle.layout().addWidget(self.title, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgTitle.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.lblDescription = label(description, description=True, wordWrap=True)
+        self.lblDescription.setMinimumWidth(450)
+
+        self.spinBox = QSpinBox()
+        self.spinBox.setMinimum(min_value)
+        self.spinBox.setMaximum(max_value)
+        self.spinBox.setSingleStep(step)
+        self.spinBox.setValue(value)
+        incr_font(self.spinBox, 4)
+        # self.spinBox.setProperty('white-bg', True)
+        # self.spinBox.setProperty('rounded', True)
+        self.spinBox.valueChanged.connect(self._valueChanged)
+
+        self.btnConfirm = push_btn(text='Confirm', properties=['confirm', 'positive'])
+        self.btnConfirm.setShortcut(Qt.Key.Key_Return)
+        sp(self.btnConfirm).h_exp()
+        self.btnConfirm.clicked.connect(self.accept)
+
+        self.btnCancel = push_btn(text='Cancel', properties=['confirm', 'cancel'])
+        self.btnCancel.clicked.connect(self.reject)
+
+        self.frame.layout().addWidget(self.wdgTitle)
+        self.frame.layout().addWidget(self.lblDescription)
+        if not description:
+            self.lblDescription.setHidden(True)
+        self.frame.layout().addWidget(self.spinBox)
+        self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm), alignment=Qt.AlignmentFlag.AlignRight)
+
+    def display(self) -> Optional[int]:
+        result = self.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            return self.spinBox.value()
+
+        return None
+
+    @classmethod
+    def edit(cls, title: str = 'Edit value', value: int = 0, min_value: int = 0, max_value: int = 100, step: int = 1,
+             description: str = ''):
+        return cls.popup(title, value, min_value, max_value, step, description)
+
+    def _valueChanged(self, value: int):
+        self.btnConfirm.setEnabled(True)
+
+
 class TextAreaInputDialog(PopupDialog):
 
     def __init__(self, title: str, placeholder: str, description: str, value: str = '', parent=None):

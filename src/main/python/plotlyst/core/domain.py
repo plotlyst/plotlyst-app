@@ -30,7 +30,7 @@ from PyQt6.QtCore import Qt
 from dataclasses_json import dataclass_json, Undefined, config
 from overrides import overrides
 from qttextedit import DashInsertionMode
-from qttextedit.api import AutoCapitalizationMode
+from qttextedit.api import AutoCapitalizationMode, EllipsisInsertionMode
 
 from plotlyst.common import act_color, RED_COLOR, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.template import SelectionItem, exclude_if_empty, exclude_if_black, enneagram_choices, \
@@ -3534,11 +3534,11 @@ class Document(CharacterBased, SceneBased):
         self._scene: Optional[Scene] = None
 
 
+WELCOME_DOC_ID = uuid.UUID('ec2a62d9-fc00-41dd-8a6c-b121156b6cf4')
+
+
 def default_documents() -> List[Document]:
-    return [Document('Story', id=uuid.UUID('ec2a62d9-fc00-41dd-8a6c-b121156b6cf4'), icon='fa5s.book-open'),
-            Document('Characters', id=uuid.UUID('8fa16650-bed0-489b-baa1-d239e5198d47'), icon='fa5s.user'),
-            Document('Locations', id=uuid.UUID('42739fb7-85a9-4716-b1e0-5ab4c751eebd'), icon='fa5s.map-marker'),
-            ]
+    return [Document('Welcome!', id=WELCOME_DOC_ID, icon='ph.hand-waving-fill')]
 
 
 @dataclass
@@ -3861,6 +3861,7 @@ class FontSettings:
     family: str = ''
     text_width: int = 0
     font_size: int = 0
+    line_space: int = 2
 
 
 @dataclass
@@ -3874,6 +3875,9 @@ class ManuscriptPreferences:
     font: Dict[str, FontSettings] = field(default_factory=dict)
     dash: DashInsertionMode = DashInsertionMode.INSERT_EM_DASH
     capitalization: AutoCapitalizationMode = AutoCapitalizationMode.PARAGRAPH
+    ellipsis: EllipsisInsertionMode = EllipsisInsertionMode.NONE
+    smart_quotes: bool = True
+    period: bool = True
 
 
 class NovelPanel(Enum):

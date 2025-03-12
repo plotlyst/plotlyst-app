@@ -44,7 +44,6 @@ from plotlyst.events import SceneChangedEvent, SceneDeletedEvent, NovelStoryStru
     NovelStorylinesToggleEvent, NovelStructureToggleEvent, NovelPovTrackingToggleEvent, SceneAddedEvent, \
     SceneStoryBeatChangedEvent, ActiveSceneStageChanged, NovelScenesOrganizationToggleEvent
 from plotlyst.events import SceneOrderChangedEvent
-from plotlyst.model.common import SelectionItemsModel
 from plotlyst.model.novel import NovelStagesModel
 from plotlyst.model.scenes_model import ScenesTableModel, ScenesFilterProxyModel, ScenesStageTableModel
 from plotlyst.service.cache import acts_registry
@@ -52,7 +51,6 @@ from plotlyst.service.persistence import delete_scene
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import ButtonPressResizeEventFilter, action, restyle, insert_after
 from plotlyst.view.delegates import ScenesViewDelegate
-from plotlyst.view.dialog.items import ItemsEditorDialog
 from plotlyst.view.generated.scenes_title_ui import Ui_ScenesTitle
 from plotlyst.view.generated.scenes_view_ui import Ui_ScenesView
 from plotlyst.view.icons import IconRegistry
@@ -62,6 +60,7 @@ from plotlyst.view.widget.cards import SceneCard, SceneCardFilter
 from plotlyst.view.widget.chart import ActDistributionChart
 from plotlyst.view.widget.display import ChartView
 from plotlyst.view.widget.input import RotatedButtonOrientation
+from plotlyst.view.widget.items_editor import ItemsEditorPopup
 from plotlyst.view.widget.novel import StoryStructureSelectorMenu
 from plotlyst.view.widget.progress import SceneStageProgressCharts
 from plotlyst.view.widget.scene.story_map import StoryMap, StoryMapDisplayMode
@@ -627,11 +626,7 @@ class ScenesOutlineView(AbstractNovelView):
         self.ui.wdgStoryStructure.activateBeatSelection(enabled)
 
     def _customize_stages(self):
-        diag = ItemsEditorDialog(NovelStagesModel(copy.deepcopy(self.novel.stages)))
-        diag.wdgItemsEditor.tableView.setColumnHidden(SelectionItemsModel.ColIcon, True)
-        diag.wdgItemsEditor.setRemoveAllEnabled(False)
-        diag.wdgItemsEditor.setInsertionEnabled(True)
-        items = diag.display()
+        items = ItemsEditorPopup.popup(NovelStagesModel(copy.deepcopy(self.novel.stages)))
         if items:
             self.novel.stages.clear()
             self.novel.stages.extend(items)

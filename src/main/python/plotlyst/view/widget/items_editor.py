@@ -17,20 +17,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from typing import Optional
+from typing import Optional, List
 
 from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, QPoint, QSortFilterProxyModel
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QWidget, QAbstractItemView, QTableView
+from PyQt6.QtWidgets import QWidget, QAbstractItemView, QTableView, QDialog
 from qthandy import vbox, spacer, hbox, vline
 from qthandy.filter import OpacityEventFilter
 
+from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import SelectionItem
 from plotlyst.model.common import SelectionItemsModel
-from plotlyst.view.common import show_color_picker, PopupMenuBuilder, tool_btn
+from plotlyst.view.common import show_color_picker, PopupMenuBuilder, tool_btn, push_btn
 from plotlyst.view.delegates import TextItemDelegate
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.layout import group
 from plotlyst.view.widget.confirm import confirmed
+from plotlyst.view.widget.display import PopupDialog
 from plotlyst.view.widget.utility import IconSelectorDialog
 
 
@@ -247,3 +250,32 @@ class ItemsEditorWidget(QWidget):
             return self.proxy.mapToSource(indexes[0])
         else:
             return indexes[0]
+
+
+class ItemsEditorPopup(PopupDialog):
+    def __init__(self, model: SelectionItemsModel, parent=None):
+        super().__init__(parent)
+        self.model = model
+        self.wdgItemsEditor = ItemsEditorWidget()
+        self.wdgItemsEditor.setModel(self.model)
+        self.wdgItemsEditor.tableView.setColumnHidden(SelectionItemsModel.ColIcon, True)
+        self.wdgItemsEditor.setRemoveAllEnabled(False)
+        self.wdgItemsEditor.setInsertionEnabled(True)
+        self.wdgItemsEditor.setMinimumSize(300, 300)
+
+        self.btnConfirm = push_btn(icon=IconRegistry.from_name('fa5s.check', RELAXED_WHITE_COLOR),
+                                   text='Apply', properties=['confirm', 'positive'])
+        self.btnConfirm.clicked.connect(self.accept)
+
+        self.btnCancel = push_btn(text='Cancel', properties=['confirm', 'cancel'])
+        self.btnCancel.clicked.connect(self.reject)
+
+        self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        self.frame.layout().addWidget(self.wdgItemsEditor)
+        self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm), alignment=Qt.AlignmentFlag.AlignRight)
+
+    def display(self) -> List[SelectionItem]:
+        result = self.exec()
+        if result == QDialog.DialogCode.Accepted:
+            return self.model.items()
+        return []
