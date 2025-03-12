@@ -23,13 +23,12 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, clear_layout, transparent, vline, vspacer
+from qthandy import vbox, clear_layout, transparent, vline, vspacer, hbox
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import SnapshotType, Novel
 from plotlyst.view.common import push_btn, frame, exclusive_buttons, label
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.layout import group
 from plotlyst.view.report.productivity import ProductivityCalendar
 from plotlyst.view.widget.button import SelectorButton
 from plotlyst.view.widget.display import PopupDialog, PlotlystFooter
@@ -86,11 +85,19 @@ class SocialSnapshotPopup(PopupDialog):
         self.btnExport = push_btn(IconRegistry.from_name('fa5s.copy', RELAXED_WHITE_COLOR), text='Export',
                                   properties=['confirm', 'positive'])
         self.btnExport.clicked.connect(self._export)
-        self.frame.layout().addWidget(
-            group(label('Export image to: ', h5=True), self.btnClipboard, self.btnPng, self.btnJpg, vline(),
-                  self.btnExport, margin=10,
-                  spacing=5),
-            alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.wdgTop = frame()
+        self.wdgTop.setProperty('bg', True)
+        self.wdgTop.setProperty('large-rounded', True)
+        hbox(self.wdgTop, 10, 5)
+        self.wdgTop.layout().addWidget(label('Export image to: ', h5=True))
+        self.wdgTop.layout().addWidget(self.btnClipboard)
+        self.wdgTop.layout().addWidget(self.btnPng)
+        self.wdgTop.layout().addWidget(self.btnJpg)
+        self.wdgTop.layout().addWidget(vline())
+        self.wdgTop.layout().addWidget(self.btnExport)
+
+        self.frame.layout().addWidget(self.wdgTop, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.canvasContainer = frame()
         self.canvasContainer.setProperty('white-bg', True)
