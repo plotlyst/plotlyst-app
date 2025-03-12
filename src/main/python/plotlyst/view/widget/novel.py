@@ -49,7 +49,7 @@ from plotlyst.view.style.base import apply_white_menu, apply_border_image
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.button import SelectorToggleButton, SmallToggleButton
 from plotlyst.view.widget.display import Subtitle, IconText, Icon, PopupDialog, icon_text
-from plotlyst.view.widget.input import Toggle
+from plotlyst.view.widget.input import Toggle, AutoAdjustableTextEdit
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
 from plotlyst.view.widget.labels import LabelsEditorWidget
 from plotlyst.view.widget.manuscript import ManuscriptLanguageSettingWidget
@@ -753,6 +753,19 @@ class NovelDescriptorsDisplay(QWidget):
         self.card.layout().addWidget(self.wdgTitle)
         self.card.layout().addWidget(self.scrollDescriptors)
 
+        self.textPremise = AutoAdjustableTextEdit()
+        self.textPremise.setMaximumWidth(500)
+        self.textPremise.setPlaceholderText("Premise: encapsulate your story's core idea in 1-2 sentences")
+        transparent(self.textPremise)
+        self.textPremise.setFontItalic(True)
+        # self.ui.btnPremiseIcon.setIcon(IconRegistry.from_name('mdi.label-variant'))
+        self.textPremise.setText(self.novel.premise)
+        self.textPremise.textChanged.connect(self._premise_changed)
+
+        self.wdgPremiseParent = QWidget()
+        hbox(self.wdgPremiseParent).addWidget(self.textPremise)
+        self._grid.addWidget(self.wdgPremiseParent, 8, 0, 1, 3)
+
         self.wdgTitle.installEventFilter(self)
         self.wdgDescriptors.installEventFilter(self)
 
@@ -892,6 +905,11 @@ class NovelDescriptorsDisplay(QWidget):
             wc += scene.manuscript.statistics.wc
 
         self._words.setText(f'Word count: {wc:,}')
+
+    def _premise_changed(self):
+        text = self.textPremise.toPlainText()
+        self.novel.premise = text
+        self.repo.update_novel(self.novel)
 
     def _edit(self):
         NovelDescriptorsEditorPopup.popup(self.novel)
