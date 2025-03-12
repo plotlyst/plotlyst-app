@@ -499,6 +499,7 @@ class ManuscriptDailyProgress(QWidget):
         self.lblRemoved = label('', color='grey', h3=True)
 
         self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
+        self.btnSnapshot.setHidden(True)
         self.layout().addWidget(vspacer(20))
         self.layout().addWidget(group(self.btnDay, self.btnJumpToToday))
         self.layout().addWidget(group(self.lblAdded, vline(), self.lblRemoved), alignment=Qt.AlignmentFlag.AlignRight)
@@ -526,8 +527,8 @@ class ManuscriptDailyProgress(QWidget):
             self.lblRemoved.setText('-')
 
     def setProgress(self, progress: DocumentProgress):
-        self.lblAdded.setText(f'+{progress.added}')
-        self.lblRemoved.setText(f'-{progress.removed}')
+        self.lblAdded.setText(f'+{progress.added:,}')
+        self.lblRemoved.setText(f'-{progress.removed:,}')
 
 
 class ManuscriptProgressCalendar(QCalendarWidget):
