@@ -32,7 +32,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <property name="centered" stdset="0">
       <bool>true</bool>
@@ -142,19 +142,6 @@
                 <string>Title</string>
                </property>
                <property name="h2" stdset="0">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item alignment="Qt::AlignTop">
-              <widget class="QToolButton" name="btnEditNovel">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="transparent" stdset="0">
                 <bool>true</bool>
                </property>
               </widget>
@@ -357,9 +344,6 @@
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item>
-           <widget class="DocumentTextEditor" name="textSynopsis" native="true"/>
-          </item>
          </layout>
         </widget>
        </item>
@@ -649,11 +633,6 @@
    <extends>QWidget</extends>
    <header>plotlyst.view.widget.display</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>DocumentTextEditor</class>
-   <extends>QWidget</extends>
-   <header>plotlyst.view.widget.input</header>
   </customwidget>
   <customwidget>
    <class>WordsDisplay</class>
