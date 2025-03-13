@@ -594,13 +594,6 @@ genre_icons = {
     'Fantasy': {0: 'mdi.creation', 1: 'mdi.unicorn', 2: 'fa5s.hat-wizard', 3: 'ph.sword-fill',
                 4: 'mdi6.shield-sword-outline', 5: 'fa5s.gem', 6: 'mdi.castle', 7: 'mdi6.magic-staff',
                 8: 'mdi.crystal-ball', 9: 'mdi6.axe-battle', 10: 'fa5s.dragon'},
-    'Urban Fantasy': {
-
-    },
-    'High Fantasy': {0: '', 1: 'mdi.creation', 2: 'mdi.unicorn', 3: 'fa5s.hat-wizard', 4: 'ph.sword-fill',
-                     5: 'mdi6.shield-sword-outline', 6: 'fa5s.gem', 7: 'mdi.castle', 8: 'mdi6.magic-staff',
-                     9: 'mdi.crystal-ball', 10: 'mdi6.axe-battle', 11: 'fa5s.dragon'
-                     },
     'Sci-Fi': {0: 'mdi.hexagon-multiple', 1: 'fa5s.rocket', 2: 'mdi.alien', 3: 'ri.space-ship-fill', 4: 'ei.cog-alt',
                5: 'fa5s.virus', 6: 'mdi.robot', 7: 'mdi.antenna', 8: 'fa5s.syringe', 9: 'fa5s.space-shuttle',
                10: 'mdi.space-invaders',
@@ -630,6 +623,13 @@ genre_icons = {
     'Comedy': {0: 'fa5.laugh-beam', 1: 'mdi.emoticon-happy-outline'},
     'Contemporary': {0: 'fa5s.mobile-alt', 1: 'mdi.city'},
 }
+
+for k, v in inverse_genre_hierarchy.items():
+    if k in genre_icons:
+        continue
+    genre_icons[k] = {0: ''}
+    for variant, icon in genre_icons[v].items():
+        genre_icons[k][variant + 1] = icon
 
 
 def extract_genre_info(genre: str) -> Tuple[str, str]:
