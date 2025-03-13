@@ -526,7 +526,7 @@ class DescriptorLabelSelector(QWidget):
     def setGenres(self, genres: List[str], selected: List[str]):
         def addGenre(genre: str, parent: QWidget) -> Tuple[GenreSelectorButton, DotsMenuButton]:
             btn = GenreSelectorButton(genre, parent=parent)
-            btnDots = DotsMenuButton(wdg)
+            btnDots = DotsMenuButton(parent=parent)
 
             self.btnGroup.addButton(btn)
             for variant in selected_variants:
@@ -538,9 +538,9 @@ class DescriptorLabelSelector(QWidget):
             btn.variantChanged.connect(self.selectionChanged)
             btnDots.clicked.connect(btn.displayVariants)
 
-            parent.layout().addWidget(group(btn, btnDots, margin=0, spacing=0))
-            if not genre_icons[btn.name()]:
-                btnDots.setHidden(True)
+            wdg = group(btn, btnDots, margin=0, spacing=0, parent=parent)
+            parent.layout().addWidget(wdg)
+            wdg.installEventFilter(VisibilityToggleEventFilter(btnDots, wdg))
 
             return btn, btnDots
 
@@ -558,7 +558,6 @@ class DescriptorLabelSelector(QWidget):
             btn, btnDots = addGenre(genre_label, wdg)
 
             wdg.layout().addWidget(btnSubgenres, alignment=Qt.AlignmentFlag.AlignLeft)
-            wdg.installEventFilter(VisibilityToggleEventFilter(btnDots, wdg))
             self.layout().addWidget(wdg)
 
             if btn.name() in genre_hierarchy.keys():
@@ -576,7 +575,11 @@ class DescriptorLabelSelector(QWidget):
 
 
 genre_hierarchy: Dict[str, List[str]] = {
-    'Fantasy': ['Urban Fantasy', 'High Fantasy']
+    'Fantasy': ['High Fantasy', 'Low Fantasy', 'Romantasy', 'Urban Fantasy', 'Dark Fantasy', 'Epic Fantasy', 'Grimdark',
+                'Historical Fantasy',
+                'Sword and Sorcery', 'Fairy Tale', 'Steampunk', 'Gaslamp Fantasy', 'Science Fiction Fantasy',
+                'Mythic Fantasy', 'Portal',
+                'Magical Realism']
 }
 
 inverse_genre_hierarchy = {}
