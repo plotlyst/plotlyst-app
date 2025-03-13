@@ -417,6 +417,8 @@ class SpiceWidget(QWidget):
 
 
 class GenreSelectorButton(SelectorToggleButton):
+    variantChanged = pyqtSignal()
+
     def __init__(self, genreLabel: str):
         super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
         self._genreLabel = genreLabel
@@ -428,14 +430,31 @@ class GenreSelectorButton(SelectorToggleButton):
     def name(self) -> str:
         return self._name
 
+    def genre(self) -> str:
+        return self._genreLabel
+
     def displayVariants(self):
         menu = MenuWidget()
-        wdg = IconPicker(list(genre_icons[self._genreLabel].values()), maxColumn=3)
+        wdg = IconPicker(list(genre_icons[self._name].values()), maxColumn=3)
+        wdg.iconSelected.connect(self._variantSelected)
         menu.addSection('Variants')
         menu.addSeparator()
         menu.addWidget(wdg)
 
         menu.exec(QCursor.pos())
+
+    def setVariant(self, icon: str):
+        for k, variant in genre_icons[self._name].items():
+            if variant == icon:
+                self._genreLabel = f'{self._name} #{k}'
+                self._icon = icon
+                self.setIcon(IconRegistry.from_name(self._icon))
+
+    def _variantSelected(self, icon: str):
+        self.setVariant(icon)
+
+        if self.isChecked():
+            self.variantChanged.emit()
 
 
 class DescriptorLabelSelector(QWidget):
@@ -457,7 +476,7 @@ class DescriptorLabelSelector(QWidget):
         labels = []
         for btn in self.btnGroup.buttons():
             if btn.isChecked():
-                labels.append(btn.text())
+                labels.append(btn.genre())
 
         return labels
 
@@ -471,6 +490,8 @@ class DescriptorLabelSelector(QWidget):
             self.layout().addWidget(btn)
 
     def setGenres(self, genres: List[str], selected: List[str]):
+        selected_variants = [extract_genre_info(x) for x in selected]
+
         for genre_label in genres:
             wdg = QWidget()
             vbox(wdg, 0, 0)
@@ -479,10 +500,15 @@ class DescriptorLabelSelector(QWidget):
 
             btn = GenreSelectorButton(genre_label)
             self.btnGroup.addButton(btn)
-            if btn.name() in selected:
-                btn.setChecked(True)
+            for variant in selected_variants:
+                if variant[0] == btn.name():
+                    btn.setChecked(True)
+                    btn.setVariant(variant[1])
+                    break
 
+            btn.variantChanged.connect(self.selectionChanged)
             btnDots.clicked.connect(btn.displayVariants)
+
             wdg.layout().addWidget(group(btn, btnDots, margin=0, spacing=0))
             wdg.installEventFilter(VisibilityToggleEventFilter(btnDots, wdg))
             self.layout().addWidget(wdg)
@@ -538,7 +564,7 @@ genre_icons = {
 
 
 def extract_genre_info(genre: str) -> Tuple[str, str]:
-    name, version = re.match(r'^(.*?)(?: v(\d+))?$', genre).groups()
+    name, version = re.match(r'^(.*?)(?: #(\d+))?$', genre).groups()
     version = int(version) if version else 0
 
     icon = genre_icons[name][version] if genre_icons[name].keys() else ''
