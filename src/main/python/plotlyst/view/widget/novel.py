@@ -550,16 +550,13 @@ class DescriptorLabelSelector(QWidget):
             wdg = QWidget(self)
             vbox(wdg, 0, 0)
 
-            # btnDots = DotsMenuButton(wdg)
             btnSubgenres = push_btn(IconRegistry.from_name('mdi.chevron-right'), text='Subgenres',
                                     properties=['transparent', 'no-menu'])
             decr_font(btnSubgenres)
             btnSubgenres.installEventFilter(OpacityEventFilter(btnSubgenres))
 
             btn, btnDots = addGenre(genre_label, wdg)
-            # btnDots.clicked.connect(btn.displayVariants)
 
-            # wdg.layout().addWidget(group(btn, btnDots, margin=0, spacing=0))
             wdg.layout().addWidget(btnSubgenres, alignment=Qt.AlignmentFlag.AlignLeft)
             wdg.installEventFilter(VisibilityToggleEventFilter(btnDots, wdg))
             self.layout().addWidget(wdg)
@@ -572,8 +569,7 @@ class DescriptorLabelSelector(QWidget):
                 flow(wdgSubgenres)
                 wdgSubgenres.setMinimumWidth(350)
                 for subgenre in genre_hierarchy[btn.name()]:
-                    btn, btnDots = addGenre(subgenre, wdgSubgenres)
-                    # wdgSubgenres.layout().addWidget(btn)
+                    addGenre(subgenre, wdgSubgenres)
                 menu.addWidget(wdgSubgenres)
             else:
                 btnSubgenres.setVisible(False)
