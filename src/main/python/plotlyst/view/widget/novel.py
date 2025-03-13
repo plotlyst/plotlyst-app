@@ -416,6 +416,29 @@ class SpiceWidget(QWidget):
         self.spiceChanged.emit(self._spice)
 
 
+class GenreDisplayLabel(QPushButton):
+    def __init__(self, genre: str, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        name, icon = extract_genre_info(genre)
+        if icon:
+            self.setIcon(IconRegistry.from_name(icon, RELAXED_WHITE_COLOR))
+        self.setText(name)
+        font = self.font()
+        font.setFamily(app_env.sans_serif_font())
+        self.setFont(font)
+        incr_font(self)
+        self.setStyleSheet(f'''
+                               QPushButton {{
+                                   border: 1px solid lightgrey;
+                                   background: {PLOTLYST_SECONDARY_COLOR};
+                                   color: {RELAXED_WHITE_COLOR};
+                                   padding: 10px;
+                                   border-radius: 12px;
+                               }}
+                           ''')
+
+
 class GenreSelectorButton(SelectorToggleButton):
     variantChanged = pyqtSignal()
 
@@ -490,17 +513,8 @@ class DescriptorLabelSelector(QWidget):
             self.layout().addWidget(btn)
 
     def setGenres(self, genres: List[str], selected: List[str]):
-        selected_variants = [extract_genre_info(x) for x in selected]
-
-        secondary_btns = []
-
-        for genre_label in genres:
-            wdg = QWidget(self)
-            vbox(wdg, 0, 0)
-
-            btnDots = DotsMenuButton(wdg)
-
-            btn = GenreSelectorButton(genre_label, parent=wdg)
+        def addGenre(genre: str, parent: QWidget) -> GenreSelectorButton:
+            btn = GenreSelectorButton(genre, parent=parent)
             self.btnGroup.addButton(btn)
             for variant in selected_variants:
                 if variant[0] == btn.name():
@@ -509,40 +523,57 @@ class DescriptorLabelSelector(QWidget):
                     break
 
             btn.variantChanged.connect(self.selectionChanged)
+
+            return btn
+
+        selected_variants = [extract_genre_info(x) for x in selected]
+
+        for genre_label in genres:
+            wdg = QWidget(self)
+            vbox(wdg, 0, 0)
+
+            btnDots = DotsMenuButton(wdg)
+            btnSubgenres = push_btn(IconRegistry.from_name('mdi.chevron-right'), text='Subgenres',
+                                    properties=['transparent'])
+            decr_font(btnSubgenres)
+            btnSubgenres.installEventFilter(OpacityEventFilter(btnSubgenres))
+
+            btn = addGenre(genre_label, wdg)
             btnDots.clicked.connect(btn.displayVariants)
 
             wdg.layout().addWidget(group(btn, btnDots, margin=0, spacing=0))
+            wdg.layout().addWidget(btnSubgenres, alignment=Qt.AlignmentFlag.AlignLeft)
             wdg.installEventFilter(VisibilityToggleEventFilter(btnDots, wdg))
             self.layout().addWidget(wdg)
 
-    # def addSecondaryLabels(self, label: str, secondary: List[str], selected: List[str]):
-    #     btnMenu = tool_btn(IconRegistry.from_name('mdi.chevron-down', 'grey'), transparent_=True)
-    #     decr_icon(btnMenu, 4)
-    #     btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
-    #     btn.setText(label)
-    #     self.btnGroup.addButton(btn)
-    #     if label in selected:
-    #         btn.setChecked(True)
-    #     self.layout().addWidget(group(btn, btnMenu, margin=0, spacing=0))
-    #
-    #     menu = MenuWidget(btnMenu)
-    #     apply_white_menu(menu)
-    #     wdg = QWidget()
-    #     flow(wdg)
-    #     for sec in secondary:
-    #         btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
-    #         btn.setText(sec)
-    #         self.btnGroup.addButton(btn)
-    #         if sec in selected:
-    #             btn.setChecked(True)
-    #         wdg.layout().addWidget(btn)
-    #     menu.addWidget(wdg)
+            if btn.name() in genre_hierarchy.keys():
+                btnSubgenres.setVisible(True)
+                menu = MenuWidget(btnSubgenres)
+                wdgSubgenres = QWidget()
+                flow(wdgSubgenres)
+                wdgSubgenres.setMaximumWidth(250)
+                for subgenre in genre_hierarchy[btn.name()]:
+                    btn = addGenre(subgenre, wdgSubgenres)
+                    wdgSubgenres.layout().addWidget(btn)
+                menu.addWidget(wdgSubgenres)
+            else:
+                btnSubgenres.setVisible(False)
 
+
+genre_hierarchy: Dict[str, List[str]] = {
+    'Fantasy': ['Urban Fantasy', 'High Fantasy']
+}
 
 genre_icons = {
     'Fantasy': {0: 'mdi.creation', 1: 'mdi.unicorn', 2: 'fa5s.hat-wizard', 3: 'ph.sword-fill',
                 4: 'mdi6.shield-sword-outline', 5: 'fa5s.gem', 6: 'mdi.castle', 7: 'mdi6.magic-staff',
                 8: 'mdi.crystal-ball', 9: 'mdi6.axe-battle', 10: 'fa5s.dragon'},
+    'Urban Fantasy': {
+
+    },
+    'High Fantasy': {
+
+    },
     'Sci-Fi': {0: 'mdi.hexagon-multiple', 1: 'fa5s.rocket', 2: 'mdi.alien', 3: 'ri.space-ship-fill', 4: 'ei.cog-alt',
                5: 'fa5s.virus', 6: 'mdi.robot', 7: 'mdi.antenna', 8: 'fa5s.syringe', 9: 'fa5s.space-shuttle',
                10: 'mdi.space-invaders',
@@ -936,25 +967,25 @@ class NovelDescriptorsDisplay(QWidget):
             self.wdgMood.layout().addWidget(lbl)
 
         for genre in self.novel.descriptors.genres:
-            lbl = QPushButton()
-            lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-            name, icon = extract_genre_info(genre)
-            if icon:
-                lbl.setIcon(IconRegistry.from_name(icon, RELAXED_WHITE_COLOR))
-            lbl.setText(name)
-            font = lbl.font()
-            font.setFamily(app_env.sans_serif_font())
-            lbl.setFont(font)
-            incr_font(lbl)
-            lbl.setStyleSheet(f'''
-                               QPushButton {{
-                                   border: 1px solid lightgrey;
-                                   background: {PLOTLYST_SECONDARY_COLOR};
-                                   color: {RELAXED_WHITE_COLOR};
-                                   padding: 10px;
-                                   border-radius: 12px;
-                               }}
-                               ''')
+            lbl = GenreDisplayLabel(genre)
+            # lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+            # name, icon = extract_genre_info(genre)
+            # if icon:
+            #     lbl.setIcon(IconRegistry.from_name(icon, RELAXED_WHITE_COLOR))
+            # lbl.setText(name)
+            # font = lbl.font()
+            # font.setFamily(app_env.sans_serif_font())
+            # lbl.setFont(font)
+            # incr_font(lbl)
+            # lbl.setStyleSheet(f'''
+            #                    QPushButton {{
+            #                        border: 1px solid lightgrey;
+            #                        background: {PLOTLYST_SECONDARY_COLOR};
+            #                        color: {RELAXED_WHITE_COLOR};
+            #                        padding: 10px;
+            #                        border-radius: 12px;
+            #                    }}
+            #                    ''')
             self.wdgGenres.layout().addWidget(lbl)
 
         self.lblSpice.setVisible(self.novel.descriptors.has_spice)
