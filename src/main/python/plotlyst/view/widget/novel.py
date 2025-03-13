@@ -20,15 +20,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import re
 from enum import Enum, auto
 from functools import partial
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from PyQt6.QtCore import pyqtSignal, Qt, QObject, QEvent, QSize
-from PyQt6.QtGui import QShowEvent
+from PyQt6.QtGui import QShowEvent, QCursor
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QFrame, QButtonGroup, QPushButton
 from overrides import overrides
 from qthandy import vspacer, spacer, transparent, bold, vbox, hbox, line, margins, incr_font, sp, grid, incr_icon, \
     flow, clear_layout, pointy, decr_icon, vline, translucent, decr_font
-from qthandy.filter import OpacityEventFilter
+from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import MAXIMUM_SIZE, PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
@@ -42,19 +42,20 @@ from plotlyst.model.novel import NovelTagsModel
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import link_buttons_to_pages, action, label, push_btn, frame, scroll_area, \
-    ExclusiveOptionalButtonGroup, tool_btn, exclusive_buttons, fade, ButtonPressResizeEventFilter, open_url
+    ExclusiveOptionalButtonGroup, exclusive_buttons, fade, ButtonPressResizeEventFilter, open_url
 from plotlyst.view.generated.imported_novel_overview_ui import Ui_ImportedNovelOverview
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, apply_border_image
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
-from plotlyst.view.widget.button import SelectorToggleButton, SmallToggleButton
+from plotlyst.view.widget.button import SelectorToggleButton, SmallToggleButton, DotsMenuButton
 from plotlyst.view.widget.display import Subtitle, IconText, Icon, PopupDialog, icon_text
 from plotlyst.view.widget.input import Toggle, AutoAdjustableTextEdit
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
 from plotlyst.view.widget.labels import LabelsEditorWidget
 from plotlyst.view.widget.manuscript import ManuscriptLanguageSettingWidget
 from plotlyst.view.widget.settings import NovelPanelSettingsWidget, NovelSettingToggle
+from plotlyst.view.widget.utility import IconPicker
 
 
 class TagLabelsEditor(LabelsEditorWidget):
@@ -415,6 +416,28 @@ class SpiceWidget(QWidget):
         self.spiceChanged.emit(self._spice)
 
 
+class GenreSelectorButton(SelectorToggleButton):
+    def __init__(self, genreLabel: str):
+        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
+        self._genreLabel = genreLabel
+        self._name, self._icon = extract_genre_info(genreLabel)
+        if self._icon:
+            self.setIcon(IconRegistry.from_name(self._icon))
+        self.setText(self._name)
+
+    def name(self) -> str:
+        return self._name
+
+    def displayVariants(self):
+        menu = MenuWidget()
+        wdg = IconPicker(list(genre_icons[self._genreLabel].values()), maxColumn=3)
+        menu.addSection('Variants')
+        menu.addSeparator()
+        menu.addWidget(wdg)
+
+        menu.exec(QCursor.pos())
+
+
 class DescriptorLabelSelector(QWidget):
     selectionChanged = pyqtSignal()
 
@@ -438,41 +461,54 @@ class DescriptorLabelSelector(QWidget):
 
         return labels
 
-    def setLabels(self, labels: List[str], selected: List[str], genre: bool = False):
+    def setLabels(self, labels: List[str], selected: List[str]):
         for label in labels:
             btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
-            if genre:
-                icon = genre_icon(label)
-                if icon:
-                    btn.setIcon(IconRegistry.from_name(icon))
             btn.setText(label)
             self.btnGroup.addButton(btn)
             if label in selected:
                 btn.setChecked(True)
             self.layout().addWidget(btn)
 
-    def addSecondaryLabels(self, label: str, secondary: List[str], selected: List[str]):
-        btnMenu = tool_btn(IconRegistry.from_name('mdi.chevron-down', 'grey'), transparent_=True)
-        decr_icon(btnMenu, 4)
-        btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
-        btn.setText(label)
-        self.btnGroup.addButton(btn)
-        if label in selected:
-            btn.setChecked(True)
-        self.layout().addWidget(group(btn, btnMenu, margin=0, spacing=0))
+    def setGenres(self, genres: List[str], selected: List[str]):
+        for genre_label in genres:
+            wdg = QWidget()
+            vbox(wdg, 0, 0)
 
-        menu = MenuWidget(btnMenu)
-        apply_white_menu(menu)
-        wdg = QWidget()
-        flow(wdg)
-        for sec in secondary:
-            btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
-            btn.setText(sec)
+            btnDots = DotsMenuButton()
+
+            btn = GenreSelectorButton(genre_label)
             self.btnGroup.addButton(btn)
-            if sec in selected:
+            if btn.name() in selected:
                 btn.setChecked(True)
-            wdg.layout().addWidget(btn)
-        menu.addWidget(wdg)
+
+            btnDots.clicked.connect(btn.displayVariants)
+            wdg.layout().addWidget(group(btn, btnDots, margin=0, spacing=0))
+            wdg.installEventFilter(VisibilityToggleEventFilter(btnDots, wdg))
+            self.layout().addWidget(wdg)
+
+    # def addSecondaryLabels(self, label: str, secondary: List[str], selected: List[str]):
+    #     btnMenu = tool_btn(IconRegistry.from_name('mdi.chevron-down', 'grey'), transparent_=True)
+    #     decr_icon(btnMenu, 4)
+    #     btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
+    #     btn.setText(label)
+    #     self.btnGroup.addButton(btn)
+    #     if label in selected:
+    #         btn.setChecked(True)
+    #     self.layout().addWidget(group(btn, btnMenu, margin=0, spacing=0))
+    #
+    #     menu = MenuWidget(btnMenu)
+    #     apply_white_menu(menu)
+    #     wdg = QWidget()
+    #     flow(wdg)
+    #     for sec in secondary:
+    #         btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
+    #         btn.setText(sec)
+    #         self.btnGroup.addButton(btn)
+    #         if sec in selected:
+    #             btn.setChecked(True)
+    #         wdg.layout().addWidget(btn)
+    #     menu.addWidget(wdg)
 
 
 genre_icons = {
@@ -501,12 +537,13 @@ genre_icons = {
 }
 
 
-def genre_icon(genre: str) -> str:
+def extract_genre_info(genre: str) -> Tuple[str, str]:
     name, version = re.match(r'^(.*?)(?: v(\d+))?$', genre).groups()
     version = int(version) if version else 0
 
-    if version in genre_icons[name].keys():
-        return genre_icons[name][version]
+    icon = genre_icons[name][version] if genre_icons[name].keys() else ''
+
+    return name, icon
 
 
 class NovelDescriptorsEditorPopup(PopupDialog):
@@ -548,13 +585,13 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.genreSelector = DescriptorLabelSelector(exclusive=False)
         # self.genreSelector.addSecondaryLabels('Fantasy', ['Urban fantasy', 'High fantasy'],
         #                                       self.novel.descriptors.genres)
-        self.genreSelector.setLabels([
+        self.genreSelector.setGenres([
             'Fantasy', 'Sci-Fi', 'Romance', 'Mystery', 'Action',
             'Thriller', 'Horror', 'Crime', 'Caper', 'Coming of Age',
             'Cozy', 'Historical Fiction', 'War', 'Western', 'Upmarket',
             'Literary Fiction', 'Society', 'Memoir', "Children's Books",
             'Slice of Life', 'Comedy', 'Contemporary'
-        ], self.novel.descriptors.genres, genre=True)
+        ], self.novel.descriptors.genres)
         self.genreSelector.selectionChanged.connect(self._genreSelected)
         self.center.layout().addWidget(self.genreSelector)
 
@@ -866,10 +903,10 @@ class NovelDescriptorsDisplay(QWidget):
         for genre in self.novel.descriptors.genres:
             lbl = QPushButton()
             lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-            lbl.setText(genre)
-            icon = genre_icon(genre)
+            name, icon = extract_genre_info(genre)
             if icon:
                 lbl.setIcon(IconRegistry.from_name(icon, RELAXED_WHITE_COLOR))
+            lbl.setText(name)
             font = lbl.font()
             font.setFamily(app_env.sans_serif_font())
             lbl.setFont(font)
