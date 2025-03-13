@@ -26,7 +26,7 @@ from PyQt6.QtWidgets import QWidget, QListView, QSizePolicy, QToolButton, QButto
 from overrides import overrides
 from qthandy import flow, transparent, pointy, grid, vline
 
-from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
+from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, RED_COLOR
 from plotlyst.model.common import proxy
 from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, push_btn, shadow
 from plotlyst.view.generated.icon_selector_widget_ui import Ui_IconsSelectorWidget
@@ -121,8 +121,13 @@ class IconPicker(QWidget):
 
         row = -1
         for i, icon in enumerate(icons):
-            btn = tool_btn(IconRegistry.from_name(icon), transparent_=True)
-            btn.setIconSize(QSize(iconSize, iconSize))
+            if icon:
+                btn = tool_btn(IconRegistry.from_name(icon), transparent_=True)
+                btn.setIconSize(QSize(iconSize, iconSize))
+            else:
+                btn = tool_btn(IconRegistry.from_name('ei.remove-circle', RED_COLOR), transparent_=True)
+                btn.setIconSize(QSize(iconSize - 4, iconSize - 4))
+
             btn.clicked.connect(partial(self.iconSelected.emit, icon))
             if maxColumn:
                 if i % maxColumn == 0:
