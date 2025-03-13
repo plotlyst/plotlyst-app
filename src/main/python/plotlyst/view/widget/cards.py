@@ -223,11 +223,11 @@ class SceneCard(Ui_SceneCard, Card):
 
         self._stageVisible = self.novel.prefs.toggled(NovelSetting.SCENE_CARD_STAGE)
         self.btnPov.setVisible(self.novel.prefs.toggled(NovelSetting.SCENE_CARD_POV))
-        self.lblType.setVisible(self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PURPOSE))
-        self.btnPlotProgress.setVisible(self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PLOT_PROGRESS))
-
-        self.lblType.setVisible(app_env.profile().get('scene-purpose', False))
-        self.btnPlotProgress.setVisible(app_env.profile().get('scene-progress', False))
+        self.lblType.setVisible(
+            self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PURPOSE, default=False) and app_env.profile().get('scene-purpose', False))
+        self.btnPlotProgress.setVisible(
+            self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PLOT_PROGRESS) and app_env.profile().get(
+                'scene-progression', False))
 
         incr_icon(self.btnPlotProgress, 4)
 
