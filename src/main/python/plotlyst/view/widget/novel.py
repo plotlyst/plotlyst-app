@@ -496,7 +496,7 @@ class DescriptorLabelSelector(QWidget):
 
     def __init__(self, parent=None, exclusive: bool = True):
         super().__init__(parent)
-        flow(self)
+        flow(self, spacing=8)
         margins(self, left=20, right=20)
         if exclusive:
             self.btnGroup = ExclusiveOptionalButtonGroup(self)
@@ -557,7 +557,7 @@ class DescriptorLabelSelector(QWidget):
 
             btn, btnDots = addGenre(genre_label, wdg)
 
-            wdg.layout().addWidget(btnSubgenres, alignment=Qt.AlignmentFlag.AlignLeft)
+            wdg.layout().addWidget(btnSubgenres, alignment=Qt.AlignmentFlag.AlignTop)
             self.layout().addWidget(wdg)
 
             if btn.name() in genre_hierarchy.keys():
@@ -566,7 +566,7 @@ class DescriptorLabelSelector(QWidget):
                 apply_white_menu(menu)
                 wdgSubgenres = QWidget()
                 flow(wdgSubgenres)
-                wdgSubgenres.setMinimumWidth(350)
+                wdgSubgenres.setMinimumWidth(450)
                 for subgenre in genre_hierarchy[btn.name()]:
                     addGenre(subgenre, wdgSubgenres)
                 menu.addWidget(wdgSubgenres)
@@ -579,7 +579,35 @@ genre_hierarchy: Dict[str, List[str]] = {
                 'Historical Fantasy',
                 'Sword and Sorcery', 'Fairy Tale', 'Steampunk', 'Gaslamp Fantasy', 'Science Fiction Fantasy',
                 'Mythic Fantasy', 'Portal',
-                'Magical Realism']
+                'Magical Realism'],
+    'Sci-Fi': [
+        'Cyberpunk', 'Space Opera', 'Hard Science Fiction', 'Soft Science Fiction', 'Dystopian', 'Post-Apocalyptic',
+        'Time Travel', 'Alternate History', 'Military Science Fiction', 'Biopunk', 'Utopian',
+        'Techno-thriller', 'Climate Fiction', 'Space Western', 'Nanotechnology Fiction'
+    ],
+    'Romance': ['Historical Romance', 'Romantic Suspense', 'Fantasy Romance', 'Paranormal Romance',
+                'Chick Lit', 'Gothic Romance'
+                ],
+    'Mystery': [
+        'Cozy Mystery', 'Noir', 'Medical Mystery',
+        'Historical Mystery', 'Espionage', 'Whodunit',
+        'Private Investigator', 'True Crime'
+    ],
+    'Action': [
+        'Adventure', 'Superhero', 'Disaster', 'Performance'
+    ],
+    'Thriller': [
+        'Psychological Thriller', 'Crime Thriller', 'Legal Thriller', 'Medical Thriller', 'Spy Thriller',
+        'Techno-thriller',
+        'Domestic Thriller', 'Supernatural Thriller'
+    ],
+    'Horror': [
+        'Psychological Horror', 'Gothic', 'Slasher', 'Supernatural Horror', 'Creature Horror', 'Lovecraftian Horror'
+    ],
+    'Crime': [
+        'Detective Fiction', 'Police Procedural', 'True Crime'
+    ],
+    'Caper': ['Heist']
 }
 
 inverse_genre_hierarchy = {}
@@ -604,7 +632,7 @@ genre_icons = {
     'Thriller': {0: 'ri.knife-blood-line', 1: 'mdi.skull-crossbones', 2: 'mdi.run-fast', 3: 'mdi.eye-outline'},
     'Horror': {0: 'ri.ghost-2-line', 1: 'mdi.blood-bag', 2: 'mdi.spider-web'},
     'Crime': {0: 'mdi.pistol', 1: 'mdi.handcuffs', 2: 'mdi.police-badge', 3: 'fa5s.fingerprint'},
-    'Caper': {0: 'mdi.robber', 1: 'fa5s.mask', 2: 'fa5s.fingerprint'},
+    'Caper': {0: 'mdi.robber', 1: 'fa5s.mask', 2: 'fa5s.fingerprint', 3: 'fa5.money-bill-alt'},
     'Coming of Age': {0: 'ri.seedling-line', 1: 'mdi.human-child'},
     'Cozy': {0: 'ri.home-heart-line', 1: 'fa5s.mug-hot'},
     'Historical Fiction': {0: 'fa5s.hourglass-end', 1: 'mdi.castle', 2: 'fa5s.scroll', 3: 'mdi.fountain',
