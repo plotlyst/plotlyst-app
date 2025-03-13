@@ -48,7 +48,7 @@ from plotlyst.core.domain import Novel, Character, Scene, Chapter, SceneStage, \
     DocumentProgress, ReaderQuestion, SceneReaderQuestion, ImageRef, SceneReaderInformation, \
     CharacterProfileSectionReference, CharacterMultiAttribute, default_character_profile, CharacterPersonality, \
     StrengthWeaknessAttribute, PremiseBuilder, SceneFunctions, Location, default_locations, TopicElement, StoryType, \
-    DailyProductivity
+    DailyProductivity, NovelInfo
 from plotlyst.core.template import Role, exclude_if_empty, exclude_if_black, exclude_if_false
 from plotlyst.env import app_env
 
@@ -236,6 +236,7 @@ class NovelInfo:
                                                              metadata=config(exclude=exclude_if_empty))
     questions: Dict[str, ReaderQuestion] = field(default_factory=dict)
     productivity: DailyProductivity = field(default_factory=DailyProductivity)
+    descriptors: NovelInfo = field(default_factory=NovelInfo)
 
 
 @dataclass
@@ -302,7 +303,8 @@ class JsonClient:
     def novels(self) -> List[NovelDescriptor]:
         return [NovelDescriptor(title=x.title, id=x.id, import_origin=x.import_origin, lang_settings=x.lang_settings,
                                 subtitle=x.subtitle, icon=x.icon, icon_color=x.icon_color,
-                                creation_date=x.creation_date, story_type=x.story_type, short_synopsis=x.short_synopsis, parent=x.parent,
+                                creation_date=x.creation_date, story_type=x.story_type, short_synopsis=x.short_synopsis,
+                                parent=x.parent,
                                 sequence=x.sequence)
                 for x in self.project.novels]
 
@@ -365,7 +367,8 @@ class JsonClient:
                                               import_origin=novel.import_origin,
                                               subtitle=novel.subtitle, icon=novel.icon, icon_color=novel.icon_color,
                                               creation_date=novel.creation_date, story_type=novel.story_type,
-                                              short_synopsis=novel.short_synopsis, parent=novel.parent, sequence=novel.sequence)
+                                              short_synopsis=novel.short_synopsis, parent=novel.parent,
+                                              sequence=novel.sequence)
         self.project.novels.append(project_novel_info)
         self._persist_project()
         self._persist_novel(novel)
@@ -645,7 +648,8 @@ class JsonClient:
                       manuscript_goals=novel_info.manuscript_goals,
                       events_map=novel_info.events_map,
                       character_networks=novel_info.character_networks,
-                      manuscript_progress=novel_info.manuscript_progress, questions=novel_info.questions, productivity=novel_info.productivity)
+                      manuscript_progress=novel_info.manuscript_progress, questions=novel_info.questions,
+                      productivity=novel_info.productivity, descriptors=novel_info.descriptors)
 
         world_path = self.novels_dir.joinpath(str(novel_info.id)).joinpath('world.json')
         if os.path.exists(world_path):
@@ -686,7 +690,8 @@ class JsonClient:
                                version=LATEST_VERSION, prefs=novel.prefs, locations=novel.locations,
                                manuscript_goals=novel.manuscript_goals,
                                events_map=novel.events_map, character_networks=novel.character_networks,
-                               manuscript_progress=novel.manuscript_progress, questions=novel.questions, productivity=novel.productivity)
+                               manuscript_progress=novel.manuscript_progress, questions=novel.questions,
+                               productivity=novel.productivity, descriptors=novel.descriptors)
 
         self.__persist_info(self.novels_dir, novel_info)
         # self._persist_world(novel.id, novel.world)

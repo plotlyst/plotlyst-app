@@ -617,8 +617,8 @@ class ChargeButton(SecondaryActionToolButton):
 
 class SelectorToggleButton(QToolButton):
     def __init__(self, button_style: Qt.ToolButtonStyle = Qt.ToolButtonStyle.ToolButtonTextUnderIcon,
-                 minWidth: int = 100, animated: bool = True):
-        super().__init__()
+                 minWidth: int = 100, animated: bool = True, parent=None):
+        super().__init__(parent)
         self._animated = animated
 
         if minWidth:

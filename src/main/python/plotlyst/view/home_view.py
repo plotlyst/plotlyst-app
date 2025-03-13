@@ -268,6 +268,12 @@ class HomeView(AbstractView):
     def selectSeries(self, series: NovelDescriptor):
         self._shelvesTreeView.selectNovel(series)
 
+    def selectNovel(self, novel: NovelDescriptor):
+        for novel_desc in self._novels:
+            if novel_desc.id == novel.id:
+                self._shelvesTreeView.selectNovel(novel_desc)
+                break
+
     def seriesNovels(self, series: NovelDescriptor) -> List[NovelDescriptor]:
         return self._shelvesTreeView.childrenNovels(series)
 
