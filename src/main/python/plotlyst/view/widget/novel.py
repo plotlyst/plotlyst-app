@@ -435,7 +435,7 @@ class GenreSelectorButton(SelectorToggleButton):
 
     def displayVariants(self):
         menu = MenuWidget()
-        wdg = IconPicker(list(genre_icons[self._name].values()), maxColumn=3)
+        wdg = IconPicker(list(genre_icons[self._name].values()), maxColumn=3, iconSize=28)
         wdg.iconSelected.connect(self._variantSelected)
         menu.addSection('Variants')
         menu.addSeparator()
@@ -538,26 +538,31 @@ class DescriptorLabelSelector(QWidget):
 
 
 genre_icons = {
-    'Fantasy': {0: 'fa5s.dragon', 1: 'mdi.unicorn', 2: 'fa5s.hat-wizard'},
-    'Sci-Fi': {0: 'mdi.robot', 1: 'mdi.rocket', 2: 'mdi.alien'},
-    'Romance': {0: 'ei.heart', 1: 'fa5s.kiss-wink-heart', 2: 'mdi.rose'},
+    'Fantasy': {0: 'fa5s.dragon', 1: 'mdi.unicorn', 2: 'fa5s.hat-wizard', 3: 'ph.sword-fill',
+                4: 'mdi6.shield-sword-outline', 5: 'fa5s.gem', 6: 'mdi.castle', 7: 'mdi6.magic-staff',
+                8: 'mdi.crystal-ball', 9: 'mdi6.axe-battle'},
+    'Sci-Fi': {0: 'mdi.robot', 1: 'fa5s.rocket', 2: 'mdi.alien', 3: 'ri.space-ship-fill'},
+    'Romance': {0: 'ei.heart', 1: 'fa5s.kiss-wink-heart', 2: 'mdi.lipstick'},
     'Mystery': {0: 'mdi.incognito', 1: 'fa5s.user-secret', 2: 'mdi.magnify'},
-    'Action': {0: 'fa5s.running', 1: 'mdi.explosion', 2: 'mdi.sword-cross'},
-    'Thriller': {0: 'ri.knife-blood-line', 1: 'mdi.skull-crossbones'},
+    'Action': {0: 'fa5s.running', 1: 'fa5s.bomb', 2: 'mdi.sword-cross'},
+    'Thriller': {0: 'ri.knife-blood-line', 1: 'mdi.skull-crossbones', 2: 'mdi.run-fast', 3: 'mdi.eye-outline'},
     'Horror': {0: 'ri.ghost-2-line', 1: 'mdi.blood-bag', 2: 'mdi.spider-web'},
-    'Crime': {0: 'mdi.pistol', 1: 'mdi.handcuffs', 2: 'mdi.police-badge'},
-    'Caper': {0: 'mdi.robber', 1: 'fa5s.mask'},
+    'Crime': {0: 'mdi.pistol', 1: 'mdi.handcuffs', 2: 'mdi.police-badge', 3: 'fa5s.fingerprint'},
+    'Caper': {0: 'mdi.robber', 1: 'fa5s.mask', 2: 'fa5s.fingerprint'},
     'Coming of Age': {0: 'ri.seedling-line', 1: 'mdi.human-child'},
-    'Cozy': {0: 'ri.home-heart-line', 1: 'mdi.mug-hot'},
-    'Historical Fiction': {0: 'fa5s.hourglass-end', 1: 'mdi.castle'},
-    'War': {0: 'fa5s.skull', 1: 'mdi.tank', 2: 'mdi.rifle'},
+    'Cozy': {0: 'ri.home-heart-line', 1: 'fa5s.mug-hot'},
+    'Historical Fiction': {0: 'fa5s.hourglass-end', 1: 'mdi.castle', 2: 'fa5s.scroll', 3: 'mdi.fountain',
+                           4: 'mdi.fountain-pen'},
+    'Suspense': {0: 'mdi.eye-outline', 1: 'ph.heartbeat-thin', 2: 'fa5s.user-secret'},
+    'Religious Fiction': {0: 'mdi6.hands-pray', 1: 'fa5s.bible', 2: 'fa5s.book', 3: 'fa5s.cross', 4: 'mdi.candle'},
+    'War': {0: 'fa5s.skull', 1: 'mdi.tank', 2: 'mdi.chemical-weapon', 3: 'mdi.pistol', 4: 'mdi6.axe-battle'},
     'Western': {0: 'fa5s.hat-cowboy', 1: 'mdi.horseshoe'},
-    'Upmarket': {0: 'ph.pen-nib', 1: 'mdi.book-open-variant'},
-    'Literary Fiction': {0: 'ri.quill-pen-line', 1: 'mdi.book-cog'},
-    'Society': {0: 'mdi6.account-group', 1: 'mdi.account-multiple'},
+    'Upmarket': {0: 'ph.pen-nib', 1: 'mdi.book-open-variant', 2: 'mdi.script-outline'},
+    'Literary Fiction': {0: 'ri.quill-pen-line', 1: 'fa5s.pen-nib', 2: 'mdi.script-outline'},
+    'Society': {0: 'mdi6.account-group', 1: 'fa5s.balance-scale-left'},
     'Memoir': {0: 'mdi6.mirror-variant', 1: 'mdi.notebook'},
     "Children's Books": {0: 'mdi6.teddy-bear', 1: 'mdi.balloon'},
-    'Slice of Life': {0: 'fa5s.apple-alt', 1: 'mdi.coffee'},
+    'Slice of Life': {0: 'fa5s.apple-alt', 1: 'mdi.coffee', 2: 'mdi6.notebook-heart-outline'},
     'Comedy': {0: 'fa5.laugh-beam', 1: 'mdi.emoticon-happy-outline'},
     'Contemporary': {0: 'fa5s.mobile-alt', 1: 'mdi.city'},
 }
@@ -614,7 +619,7 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.genreSelector.setGenres([
             'Fantasy', 'Sci-Fi', 'Romance', 'Mystery', 'Action',
             'Thriller', 'Horror', 'Crime', 'Caper', 'Coming of Age',
-            'Cozy', 'Historical Fiction', 'War', 'Western', 'Upmarket',
+            'Cozy', 'Historical Fiction', 'Suspense', 'Religious Fiction', 'War', 'Western', 'Upmarket',
             'Literary Fiction', 'Society', 'Memoir', "Children's Books",
             'Slice of Life', 'Comedy', 'Contemporary'
         ], self.novel.descriptors.genres)

@@ -111,7 +111,7 @@ class ColorPicker(QWidget):
 class IconPicker(QWidget):
     iconSelected = pyqtSignal(str)
 
-    def __init__(self, icons: List[str], parent=None, maxColumn: Optional[int] = None):
+    def __init__(self, icons: List[str], parent=None, maxColumn: Optional[int] = None, iconSize: int = 22):
         super().__init__(parent)
         if maxColumn:
             grid(self, 1, 1, 1)
@@ -122,7 +122,7 @@ class IconPicker(QWidget):
         row = -1
         for i, icon in enumerate(icons):
             btn = tool_btn(IconRegistry.from_name(icon), transparent_=True)
-            btn.setIconSize(QSize(22, 22))
+            btn.setIconSize(QSize(iconSize, iconSize))
             btn.clicked.connect(partial(self.iconSelected.emit, icon))
             if maxColumn:
                 if i % maxColumn == 0:
