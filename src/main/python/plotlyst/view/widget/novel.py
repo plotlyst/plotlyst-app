@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import re
 from enum import Enum, auto
 from functools import partial
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 
 from PyQt6.QtCore import pyqtSignal, Qt, QObject, QEvent, QSize
 from PyQt6.QtGui import QShowEvent, QCursor
@@ -419,8 +419,8 @@ class SpiceWidget(QWidget):
 class GenreSelectorButton(SelectorToggleButton):
     variantChanged = pyqtSignal()
 
-    def __init__(self, genreLabel: str):
-        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
+    def __init__(self, genreLabel: str, parent=None):
+        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50, parent=parent)
         self._genreLabel = genreLabel
         self._name, self._icon = extract_genre_info(genreLabel)
         if self._icon:
@@ -489,16 +489,18 @@ class DescriptorLabelSelector(QWidget):
                 btn.setChecked(True)
             self.layout().addWidget(btn)
 
-    def setGenres(self, genres: List[str], selected: List[str]):
+    def setGenres(self, genres: List[str], secondary: Dict[str, List[str]], selected: List[str]):
         selected_variants = [extract_genre_info(x) for x in selected]
 
+        secondary_btns = []
+
         for genre_label in genres:
-            wdg = QWidget()
+            wdg = QWidget(self)
             vbox(wdg, 0, 0)
 
-            btnDots = DotsMenuButton()
+            btnDots = DotsMenuButton(wdg)
 
-            btn = GenreSelectorButton(genre_label)
+            btn = GenreSelectorButton(genre_label, parent=wdg)
             self.btnGroup.addButton(btn)
             for variant in selected_variants:
                 if variant[0] == btn.name():
@@ -538,10 +540,12 @@ class DescriptorLabelSelector(QWidget):
 
 
 genre_icons = {
-    'Fantasy': {0: 'fa5s.dragon', 1: 'mdi.unicorn', 2: 'fa5s.hat-wizard', 3: 'ph.sword-fill',
+    'Fantasy': {0: 'mdi.creation', 1: 'mdi.unicorn', 2: 'fa5s.hat-wizard', 3: 'ph.sword-fill',
                 4: 'mdi6.shield-sword-outline', 5: 'fa5s.gem', 6: 'mdi.castle', 7: 'mdi6.magic-staff',
-                8: 'mdi.crystal-ball', 9: 'mdi6.axe-battle'},
-    'Sci-Fi': {0: 'mdi.robot', 1: 'fa5s.rocket', 2: 'mdi.alien', 3: 'ri.space-ship-fill'},
+                8: 'mdi.crystal-ball', 9: 'mdi6.axe-battle', 10: 'fa5s.dragon'},
+    'Sci-Fi': {0: 'mdi.hexagon-multiple', 1: 'fa5s.rocket', 2: 'mdi.alien', 3: 'ri.space-ship-fill', 4: 'ei.cog-alt',
+               5: 'fa5s.virus', 6: 'mdi.robot', 7: 'mdi.antenna', 8: 'fa5s.syringe', 9: 'fa5s.space-shuttle', 10: 'mdi.space-invaders',
+               11: 'mdi.space-station'},
     'Romance': {0: 'ei.heart', 1: 'fa5s.kiss-wink-heart', 2: 'mdi.lipstick'},
     'Mystery': {0: 'mdi.incognito', 1: 'fa5s.user-secret', 2: 'mdi.magnify'},
     'Action': {0: 'fa5s.running', 1: 'fa5s.bomb', 2: 'mdi.sword-cross'},
@@ -614,15 +618,13 @@ class NovelDescriptorsEditorPopup(PopupDialog):
 
         self._addHeader('Genres', 'mdi.drama-masks', 'Select the primary genres')
         self.genreSelector = DescriptorLabelSelector(exclusive=False)
-        # self.genreSelector.addSecondaryLabels('Fantasy', ['Urban fantasy', 'High fantasy'],
-        #                                       self.novel.descriptors.genres)
         self.genreSelector.setGenres([
             'Fantasy', 'Sci-Fi', 'Romance', 'Mystery', 'Action',
             'Thriller', 'Horror', 'Crime', 'Caper', 'Coming of Age',
             'Cozy', 'Historical Fiction', 'Suspense', 'Religious Fiction', 'War', 'Western', 'Upmarket',
             'Literary Fiction', 'Society', 'Memoir', "Children's Books",
             'Slice of Life', 'Comedy', 'Contemporary'
-        ], self.novel.descriptors.genres)
+        ], {'Fantasy': ['Urban fantasy', 'High fantasy']}, self.novel.descriptors.genres)
         self.genreSelector.selectionChanged.connect(self._genreSelected)
         self.center.layout().addWidget(self.genreSelector)
 
