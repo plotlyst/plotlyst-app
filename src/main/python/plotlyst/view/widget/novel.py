@@ -917,23 +917,29 @@ class NovelDescriptorsDisplay(QWidget):
             self.lblSpice.setHidden(True)
             self.wdgSpice.setHidden(True)
 
+        # self.textPremise = AutoAdjustableTextEdit()
+        # incr_font(self.textPremise, 4)
+        # self.textPremise.setPlaceholderText("Encapsulate your story's core idea in 1-2 sentences")
+        # self.textPremise.setMaximumWidth(500)
+        # transparent(self.textPremise)
+        # self.textPremise.setFontItalic(True)
+        # self.textPremise.setText(self.novel.premise)
+        # self.textPremise.textChanged.connect(self._premise_changed)
+        #
+        # self.lblPremise = self._label('Premise', 'mdi.flower')
+        # self.lblPremise.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+        # self.lblPremise.clicked.connect(self.textPremise.setFocus)
+
+        # self.wdgPremiseParent = QWidget()
+        # hbox(self.wdgPremiseParent)
+        # self.wdgPremiseParent.layout().addWidget(self.textPremise)
+        # self._grid.addWidget(self.lblPremise, 7, 0, 1, 3)
+        # self._grid.addWidget(self.wdgPremiseParent, 8, 0, 1, 3)
+
         self._grid.addWidget(vspacer(), 10, 0)
 
         self.card.layout().addWidget(self.wdgTitle)
         self.card.layout().addWidget(self.scrollDescriptors)
-
-        self.textPremise = AutoAdjustableTextEdit()
-        self.textPremise.setMaximumWidth(500)
-        self.textPremise.setPlaceholderText("Premise: encapsulate your story's core idea in 1-2 sentences")
-        transparent(self.textPremise)
-        self.textPremise.setFontItalic(True)
-        # self.ui.btnPremiseIcon.setIcon(IconRegistry.from_name('mdi.label-variant'))
-        self.textPremise.setText(self.novel.premise)
-        self.textPremise.textChanged.connect(self._premise_changed)
-
-        self.wdgPremiseParent = QWidget()
-        hbox(self.wdgPremiseParent).addWidget(self.textPremise)
-        self._grid.addWidget(self.wdgPremiseParent, 8, 0, 1, 3)
 
         self.wdgTitle.installEventFilter(self)
         self.wdgDescriptors.installEventFilter(self)

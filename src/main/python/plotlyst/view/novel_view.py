@@ -17,7 +17,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from typing import Optional
 
 from overrides import overrides
 
@@ -29,7 +28,6 @@ from plotlyst.events import NovelUpdatedEvent, \
     SceneChangedEvent, NovelStorylinesToggleEvent, NovelStructureToggleEvent, NovelPanelCustomizationEvent
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import set_tab_icon, set_tab_visible
-from plotlyst.view.dialog.novel import SynopsisEditorDialog
 from plotlyst.view.generated.novel_view_ui import Ui_NovelView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.novel import NovelDescriptorsDisplay
@@ -52,22 +50,12 @@ class NovelView(AbstractNovelView):
         set_tab_icon(self.ui.tabWidget, self.ui.tabTags, IconRegistry.tags_icon(color_on=PLOTLYST_MAIN_COLOR))
         set_tab_icon(self.ui.tabWidget, self.ui.tabSettings, IconRegistry.cog_icon(color_on=PLOTLYST_MAIN_COLOR))
 
-        set_tab_visible(self.ui.tabWidget, self.ui.tabSynopsis, False)
         set_tab_visible(self.ui.tabWidget, self.ui.tabPlot, self.novel.prefs.toggled(NovelSetting.Storylines))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, self.novel.prefs.toggled(NovelSetting.Structure))
         set_tab_visible(self.ui.tabWidget, self.ui.tabTags, False)
 
         self.wdgDescriptors = NovelDescriptorsDisplay(self.novel)
         self.ui.tabDescriptors.layout().addWidget(self.wdgDescriptors)
-
-        self.ui.textPremise.setStyleSheet('font-size: 16pt;')
-        self.ui.textPremise.setToolTip('Premise')
-        self.ui.textPremise.setFontItalic(True)
-        self.ui.btnPremiseIcon.setIcon(IconRegistry.from_name('mdi.label-variant'))
-        self._dialogSynopsisEditor: Optional[SynopsisEditorDialog] = None
-
-        self.ui.textPremise.setText(self.novel.premise)
-        self.ui.textPremise.textChanged.connect(self._premise_changed)
 
         self.ui.wdgStructure.setNovel(self.novel)
 
@@ -99,8 +87,3 @@ class NovelView(AbstractNovelView):
 
     def show_settings(self):
         self.ui.tabWidget.setCurrentWidget(self.ui.tabSettings)
-
-    def _premise_changed(self):
-        text = self.ui.textPremise.toPlainText()
-        self.novel.premise = text
-        self.repo.update_novel(self.novel)
