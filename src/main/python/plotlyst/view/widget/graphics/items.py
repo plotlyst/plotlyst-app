@@ -34,7 +34,7 @@ from qthandy import pointy
 
 from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, \
     WHITE_COLOR
-from plotlyst.core.domain import Node, Relation, Connector, Character, GraphicsItemType, to_node, ConnectorShape
+from plotlyst.core.domain import Node, Relation, Connector, Character, GraphicsItemType, to_node
 from plotlyst.env import app_env
 from plotlyst.service.image import LoadedImage
 from plotlyst.view.common import shadow, calculate_resized_dimensions, text_color_with_bg_qcolor
@@ -670,7 +670,7 @@ class ConnectorItem(QGraphicsPathItem):
 
         path = QPainterPath()
         self._rearrangeCurvedConnector(path, endPoint)
-        if self._connector and self._connector.shape == ConnectorShape.QUAD:
+        if self._connector:
             # else:
             # self._rearrangeLinearConnector(path, width, height)
             # self._rearrangeCurvedConnector(path, endPoint)
@@ -717,7 +717,7 @@ class ConnectorItem(QGraphicsPathItem):
         # cp2 = QPointF(endPoint.x(), self.scenePos().y())
         print(self._source.angle())
         print(self._target.angle())
-        if self._connector and self._connector.shape == ConnectorShape.QUAD and self._connector.cp_x is not None:
+        if self._connector and self._connector.cp_x is not None:
             path.quadTo(QPointF(self._connector.cp_x, self._connector.cp_y), endPoint)
         else:
             if 45 <= abs(self._source.angle()) <= 135:

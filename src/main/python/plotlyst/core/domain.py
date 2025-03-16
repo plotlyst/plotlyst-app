@@ -3822,7 +3822,6 @@ class Connector:
     cp_y: Optional[float] = None
     start_arrow_enabled: bool = field(default=False, metadata=config(exclude=exclude_if_false))
     end_arrow_enabled: bool = field(default=True, metadata=config(exclude=exclude_if_true))
-    shape: ConnectorShape = ConnectorShape.QUAD
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
