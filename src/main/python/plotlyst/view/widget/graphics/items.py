@@ -460,6 +460,9 @@ class ConnectorItem(QGraphicsPathItem):
         self._defaultLineType: ConnectorType = ConnectorType.Curved
         self._cp = BezierCPSocket(parent=self)
         self._cp.setVisible(False)
+
+        self._cp2 = BezierCPSocket(parent=self, index=2)
+        self._cp2.setVisible(False)
         if pen:
             self.setPen(pen)
         else:
@@ -669,7 +672,8 @@ class ConnectorItem(QGraphicsPathItem):
         if self._connector and self._connector.cp_x is not None:
             self._rearrangeCurvedConnector(path, endPoint)
         else:
-            self._rearrangeLinearConnector(path, width, height)
+            # self._rearrangeLinearConnector(path, width, height)
+            self._rearrangeCurvedConnector(path, endPoint)
             self._cp.deactivate()
             self._rearrangeCPSocket(path)
             self._cp.activate()
@@ -690,6 +694,9 @@ class ConnectorItem(QGraphicsPathItem):
             if self.networkScene():
                 self.networkScene().connectorChangedEvent(self)
 
+    def rearrangeCP2(self, pos: QPointF):
+        self.rearrange()
+
     def colorChangedEvent(self, nodeItem: 'NodeItem'):
         if nodeItem is self._target.parentItem():
             if not self._connector.color:
@@ -697,6 +704,7 @@ class ConnectorItem(QGraphicsPathItem):
 
     def _onSelection(self, selected: bool):
         self._cp.setVisible(selected)
+        self._cp2.setVisible(selected)
 
     def _rearrangeLinearConnector(self, path: QPainterPath, width: float, height: float):
         path.lineTo(width, height)
@@ -705,7 +713,26 @@ class ConnectorItem(QGraphicsPathItem):
         self._startArrowheadItem.setRotation(endArrowAngle + 180)
 
     def _rearrangeCurvedConnector(self, path: QPainterPath, endPoint: QPointF):
-        path.quadTo(QPointF(self._connector.cp_x, self._connector.cp_y), endPoint)
+        # path.quadTo(QPointF(self._connector.cp_x, self._connector.cp_y), endPoint)
+        # cp1 = QPointF(self.scenePos().x(), endPoint.y())
+        # cp2 = QPointF(endPoint.x(), self.scenePos().y())
+        print(self._source.angle())
+        print(self._target.angle())
+        if abs(self._source.angle()) >= 30:
+            if abs(self._target.angle()) >= 90:
+                cp1 = QPointF(endPoint.x(), 0)
+                cp2 = QPointF(0, endPoint.y())
+            else:
+                cp1 = QPointF(0, endPoint.y())
+                cp2 = QPointF(0, 0)
+
+            # cp1 = QPointF(self._connector.cp_x, self._connector.cp_y)
+            # cp2 = QPointF(self._cp2.pos().x(), self._cp2.pos().y())
+        else:
+            cp1 = QPointF(0, endPoint.y())
+            cp2 = QPointF(endPoint.x(), 0)
+        print(f'start {self.scenePos()} end {endPoint} cp1 {cp1} cp2 {cp2}')
+        path.cubicTo(cp2, cp1, endPoint)
 
         end = path.pointAtPercent(1)
         close_to_end = path.pointAtPercent(0.98)
