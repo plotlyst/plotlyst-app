@@ -34,7 +34,7 @@ from qthandy import pointy
 
 from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, \
     WHITE_COLOR
-from plotlyst.core.domain import Node, Relation, Connector, Character, GraphicsItemType, to_node
+from plotlyst.core.domain import Node, Relation, Connector, Character, GraphicsItemType, to_node, ConnectorShape
 from plotlyst.env import app_env
 from plotlyst.service.image import LoadedImage
 from plotlyst.view.common import shadow, calculate_resized_dimensions, text_color_with_bg_qcolor
@@ -669,11 +669,11 @@ class ConnectorItem(QGraphicsPathItem):
         endPoint: QPointF = QPointF(width, height)
 
         path = QPainterPath()
-        if self._connector and self._connector.cp_x is not None:
-            self._rearrangeCurvedConnector(path, endPoint)
-        else:
+        self._rearrangeCurvedConnector(path, endPoint)
+        if self._connector and self._connector.shape == ConnectorShape.QUAD:
+            # else:
             # self._rearrangeLinearConnector(path, width, height)
-            self._rearrangeCurvedConnector(path, endPoint)
+            # self._rearrangeCurvedConnector(path, endPoint)
             self._cp.deactivate()
             self._rearrangeCPSocket(path)
             self._cp.activate()
@@ -713,29 +713,32 @@ class ConnectorItem(QGraphicsPathItem):
         self._startArrowheadItem.setRotation(endArrowAngle + 180)
 
     def _rearrangeCurvedConnector(self, path: QPainterPath, endPoint: QPointF):
-        # path.quadTo(QPointF(self._connector.cp_x, self._connector.cp_y), endPoint)
         # cp1 = QPointF(self.scenePos().x(), endPoint.y())
         # cp2 = QPointF(endPoint.x(), self.scenePos().y())
         print(self._source.angle())
         print(self._target.angle())
-        if 45 <= abs(self._source.angle()) <= 135:
-            if 45 <= abs(self._target.angle()) <= 135:
+        if self._connector and self._connector.shape == ConnectorShape.QUAD and self._connector.cp_x is not None:
+            path.quadTo(QPointF(self._connector.cp_x, self._connector.cp_y), endPoint)
+        else:
+            if 45 <= abs(self._source.angle()) <= 135:
+                if 45 <= abs(self._target.angle()) <= 135:
+                    cp1 = QPointF(endPoint.x(), 0)
+                    cp2 = QPointF(0, endPoint.y())
+                else:
+                    cp1 = QPointF(0, endPoint.y())
+                    cp2 = QPointF(0, 0)
+            elif 45 <= abs(self._target.angle()) <= 135:
                 cp1 = QPointF(endPoint.x(), 0)
-                cp2 = QPointF(0, endPoint.y())
+                cp2 = QPointF(endPoint.x(), 0)
             else:
                 cp1 = QPointF(0, endPoint.y())
-                cp2 = QPointF(0, 0)
-        elif 45 <= abs(self._target.angle()) <= 135:
-            cp1 = QPointF(endPoint.x(), 0)
-            cp2 = QPointF(endPoint.x(), 0)
-        else:
-            cp1 = QPointF(0, endPoint.y())
-            cp2 = QPointF(endPoint.x(), 0)
+                cp2 = QPointF(endPoint.x(), 0)
 
-        # cp1 = QPointF(self._connector.cp_x, self._connector.cp_y)
-        # cp2 = QPointF(self._cp2.pos().x(), self._cp2.pos().y())
-        print(f'start {self.scenePos()} end {endPoint} cp1 {cp1} cp2 {cp2}')
-        path.cubicTo(cp2, cp1, endPoint)
+            # cp1 = QPointF(self._connector.cp_x, self._connector.cp_y)
+            # cp1 = QPointF(self._cp.pos().x(), self._cp.pos().y())
+            # cp2 = QPointF(self._cp2.pos().x(), self._cp2.pos().y())
+            print(f'start {self.scenePos()} end {endPoint} cp1 {cp1} cp2 {cp2}')
+            path.cubicTo(cp2, cp1, endPoint)
 
         end = path.pointAtPercent(1)
         close_to_end = path.pointAtPercent(0.98)

@@ -30,7 +30,7 @@ from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsSceneMouseEv
 from overrides import overrides
 
 from plotlyst.core.domain import Node, Diagram, GraphicsItemType, Connector, PlaceholderCharacter, \
-    to_node, Character
+    to_node, Character, ConnectorShape
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.image import LoadedImage
 from plotlyst.view.widget.graphics import NodeItem, CharacterItem, PlaceholderSocketItem, ConnectorItem, \
@@ -152,7 +152,8 @@ class NetworkScene(QGraphicsScene):
             sourceNode.node().id,
             targetNode.node().id,
             self._connectorPlaceholder.source().angle(), target.angle(),
-            pen=connectorItem.penStyle(), width=connectorItem.size()
+            pen=connectorItem.penStyle(), width=connectorItem.size(),
+            shape=ConnectorShape.CURVE
         )
         if connectorItem.icon():
             connector.icon = connectorItem.icon()
