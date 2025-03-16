@@ -718,19 +718,22 @@ class ConnectorItem(QGraphicsPathItem):
         # cp2 = QPointF(endPoint.x(), self.scenePos().y())
         print(self._source.angle())
         print(self._target.angle())
-        if abs(self._source.angle()) >= 30:
-            if abs(self._target.angle()) >= 90:
+        if 45 <= abs(self._source.angle()) <= 135:
+            if 45 <= abs(self._target.angle()) <= 135:
                 cp1 = QPointF(endPoint.x(), 0)
                 cp2 = QPointF(0, endPoint.y())
             else:
                 cp1 = QPointF(0, endPoint.y())
                 cp2 = QPointF(0, 0)
-
-            # cp1 = QPointF(self._connector.cp_x, self._connector.cp_y)
-            # cp2 = QPointF(self._cp2.pos().x(), self._cp2.pos().y())
+        elif 45 <= abs(self._target.angle()) <= 135:
+            cp1 = QPointF(endPoint.x(), 0)
+            cp2 = QPointF(endPoint.x(), 0)
         else:
             cp1 = QPointF(0, endPoint.y())
             cp2 = QPointF(endPoint.x(), 0)
+
+        # cp1 = QPointF(self._connector.cp_x, self._connector.cp_y)
+        # cp2 = QPointF(self._cp2.pos().x(), self._cp2.pos().y())
         print(f'start {self.scenePos()} end {endPoint} cp1 {cp1} cp2 {cp2}')
         path.cubicTo(cp2, cp1, endPoint)
 
