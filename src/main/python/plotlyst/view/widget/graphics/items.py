@@ -461,8 +461,6 @@ class ConnectorItem(QGraphicsPathItem):
         self._cp = BezierCPSocket(parent=self)
         self._cp.setVisible(False)
 
-        self._cp2 = BezierCPSocket(parent=self, index=2)
-        self._cp2.setVisible(False)
         if pen:
             self.setPen(pen)
         else:
@@ -521,6 +519,8 @@ class ConnectorItem(QGraphicsPathItem):
         if connector.icon:
             self.setIcon(connector.icon)
         if connector.cp_x is not None:
+            if connector.cp_controlled is None:  # migration for old connectors
+                connector.cp_controlled = True
             self._cp.setPos(connector.cp_x, connector.cp_y)
         self._connector = connector
         self.rearrange()
@@ -669,14 +669,14 @@ class ConnectorItem(QGraphicsPathItem):
         endPoint: QPointF = QPointF(width, height)
 
         path = QPainterPath()
-        self._rearrangeCurvedConnector(path, endPoint)
-        if self._connector:
-            # else:
-            # self._rearrangeLinearConnector(path, width, height)
-            # self._rearrangeCurvedConnector(path, endPoint)
+
+        if self._connector and self._connector.cp_controlled and self._connector.cp_x is None:
+            self._rearrangeLinearConnector(path, width, height)
             self._cp.deactivate()
             self._rearrangeCPSocket(path)
             self._cp.activate()
+        else:
+            self._rearrangeCurvedConnector(path, endPoint)
 
         self._endArrowheadItem.setPos(width, height)
         self._startArrowheadItem.setPos(0, 0)
@@ -703,8 +703,10 @@ class ConnectorItem(QGraphicsPathItem):
                 self._setColor(QColor(nodeItem.node().color))
 
     def _onSelection(self, selected: bool):
-        self._cp.setVisible(selected)
-        self._cp2.setVisible(selected)
+        if self._connector and self._connector.cp_controlled:
+            self._cp.setVisible(selected)
+        else:
+            self._cp.setVisible(False)
 
     def _rearrangeLinearConnector(self, path: QPainterPath, width: float, height: float):
         path.lineTo(width, height)
@@ -713,11 +715,7 @@ class ConnectorItem(QGraphicsPathItem):
         self._startArrowheadItem.setRotation(endArrowAngle + 180)
 
     def _rearrangeCurvedConnector(self, path: QPainterPath, endPoint: QPointF):
-        # cp1 = QPointF(self.scenePos().x(), endPoint.y())
-        # cp2 = QPointF(endPoint.x(), self.scenePos().y())
-        print(self._source.angle())
-        print(self._target.angle())
-        if self._connector and self._connector.cp_x is not None:
+        if self._connector and self._connector.cp_controlled and self._connector.cp_x is not None:
             path.quadTo(QPointF(self._connector.cp_x, self._connector.cp_y), endPoint)
         else:
             if 45 <= abs(self._source.angle()) <= 135:
@@ -734,10 +732,6 @@ class ConnectorItem(QGraphicsPathItem):
                 cp1 = QPointF(0, endPoint.y())
                 cp2 = QPointF(endPoint.x(), 0)
 
-            # cp1 = QPointF(self._connector.cp_x, self._connector.cp_y)
-            # cp1 = QPointF(self._cp.pos().x(), self._cp.pos().y())
-            # cp2 = QPointF(self._cp2.pos().x(), self._cp2.pos().y())
-            print(f'start {self.scenePos()} end {endPoint} cp1 {cp1} cp2 {cp2}')
             path.cubicTo(cp2, cp1, endPoint)
 
         end = path.pointAtPercent(1)
@@ -1061,6 +1055,9 @@ class CharacterItem(CircleShapedNodeItem):
 
     def setLabelVisible(self, visible: bool):
         self._label.setVisible(visible)
+
+    def setColor(self, color: QColor):
+        pass
 
     def updateLabel(self):
         self._refreshLabel()
