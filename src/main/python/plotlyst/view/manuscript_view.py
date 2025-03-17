@@ -131,6 +131,7 @@ class ManuscriptView(AbstractNovelView):
         self.ui.wdgEditor.layout().addWidget(self.textEditor)
 
         self._manuscriptDailyProgressDisplay = ManuscriptDailyProgress(self.novel)
+        margins(self._manuscriptDailyProgressDisplay, bottom=20)
         self._manuscriptDailyProgressDisplay.refresh()
 
         self._progressCalendar = ManuscriptProgressCalendar(self.novel)
@@ -138,7 +139,6 @@ class ManuscriptView(AbstractNovelView):
         self._progressCalendar.dayChanged.connect(self._manuscriptDailyProgressDisplay.setDate)
         self._manuscriptDailyProgressDisplay.jumpToToday.connect(self._progressCalendar.showToday)
         self.ui.pageProgress.layout().addWidget(self._manuscriptDailyProgressDisplay)
-        self.ui.pageProgress.layout().addWidget(vspacer(20))
         self.ui.pageProgress.layout().addWidget(self._progressCalendar)
         self.ui.pageProgress.layout().addWidget(ManuscriptProgressCalendarLegend())
         self.ui.pageProgress.layout().addWidget(vspacer())

@@ -33,7 +33,7 @@ from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView, \
     QPushButton, QToolButton, QWidgetItem, QGraphicsColorizeEffect, QGraphicsTextItem
 from overrides import overrides
 from qthandy import retain_when_hidden, translucent, margins, vbox, bold, vline, decr_font, \
-    underline, transparent, italic, decr_icon, pointy, hbox, vspacer
+    underline, transparent, italic, decr_icon, pointy, hbox
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, group
 from qttextedit import TextBlockState
@@ -479,7 +479,7 @@ class ManuscriptDailyProgress(QWidget):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self._novel = novel
-        vbox(self)
+        vbox(self, spacing=0)
 
         self.btnSnapshot = SnapshotButton(self._novel, SnapshotType.Writing)
 
@@ -500,11 +500,9 @@ class ManuscriptDailyProgress(QWidget):
 
         self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
         self.btnSnapshot.setHidden(True)
-        self.layout().addWidget(vspacer(20))
-        self.layout().addWidget(group(self.btnDay, self.btnJumpToToday))
-        self.layout().addWidget(group(self.lblAdded, vline(), self.lblRemoved), alignment=Qt.AlignmentFlag.AlignRight)
-        lbl = label('Added/Removed', description=True)
-        decr_font(lbl)
+        self.layout().addWidget(group(self.btnDay, self.btnJumpToToday, margin=0))
+        self.layout().addWidget(group(self.lblAdded, vline(), self.lblRemoved,margin=0, spacing=0), alignment=Qt.AlignmentFlag.AlignRight)
+        lbl = label('Added | Removed', description=True, decr_font_diff=2)
         self.layout().addWidget(lbl, alignment=Qt.AlignmentFlag.AlignRight)
 
     def refresh(self):
