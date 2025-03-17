@@ -175,6 +175,10 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.btnKbLink.installEventFilter(OpacityEventFilter(self.btnKbLink, leaveOpacity=0.6))
         self.btnKbLink.clicked.connect(self._kb_link_clicked)
 
+        self.btnFormatting.setDisabled(True)
+        self.btnFormatting.setHidden(True)
+        self.buttonGroup.removeButton(self.btnFormatting)
+
         for btn in self.buttonGroup.buttons():
             btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.7, ignoreCheckedButton=True))
             btn.installEventFilter(TooltipPositionEventFilter(btn))

@@ -23,7 +23,7 @@ from PyQt6.QtGui import QShowEvent
 from PyQt6.QtWidgets import QWidget
 from jinja2 import Template
 from overrides import overrides
-from qthandy import sp, hbox
+from qthandy import hbox
 
 from plotlyst.core.domain import Novel
 from plotlyst.resources import resource_registry
@@ -73,6 +73,6 @@ class FormattingView(AbstractNovelView):
         self.ui = Ui_FormattingView()
         self.ui.setupUi(self.widget)
 
-        self.wdgFormatting = FormattingWidget()
-        sp(self.wdgFormatting).v_exp().h_exp()
-        self.widget.layout().addWidget(self.wdgFormatting)
+        # self.wdgFormatting = FormattingWidget()
+        # sp(self.wdgFormatting).v_exp().h_exp()
+        # self.widget.layout().addWidget(self.wdgFormatting)
