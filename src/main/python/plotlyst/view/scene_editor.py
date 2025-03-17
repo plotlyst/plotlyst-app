@@ -113,7 +113,6 @@ class SceneEditor(QObject, EventListener):
         retain_when_hidden(self._progressEditor)
         self._progressEditor.progressCharged.connect(self._update_outcome)
         self._structureSelector = StructureBeatSelectorButton(self.novel)
-        self._structureSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Structure))
         self._structureSelector.selected.connect(self._beat_selected)
         self._structureSelector.removed.connect(self._beat_removed)
         self.wdgProgression = QWidget()
@@ -123,6 +122,7 @@ class SceneEditor(QObject, EventListener):
 
         self.ui.wdgTop.layout().addWidget(self.wdgProgression)
 
+        self._structureSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Structure))
         self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
         self.ui.middleLine.setVisible(app_env.profile().get('license_type', 'FREE') != 'FREE')
 
