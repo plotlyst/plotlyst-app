@@ -107,6 +107,14 @@ class AppEnvironment:
         elif self.is_windows():
             return 'Times New Roman'
 
+    def mono_font(self) -> str:
+        if self.is_linux():
+            return 'Monospace'
+        elif self.is_mac():
+            return 'Courier New'
+        elif self.is_windows():
+            return 'Courier New'
+
     def cursive_font(self) -> str:
         if self.is_linux():
             return 'Cursive'

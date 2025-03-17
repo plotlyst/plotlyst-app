@@ -22,17 +22,18 @@ from typing import Optional
 from PyQt6.QtCore import Qt, QMarginsF, QSize, QTimer
 from PyQt6.QtGui import QTextDocument, QPageSize, QColor, QPageLayout
 from PyQt6.QtPrintSupport import QPrinter, QPrintPreviewWidget
-from PyQt6.QtWidgets import QButtonGroup, QWidget, QDialog, QSplitter, QPushButton, QGraphicsView
+from PyQt6.QtWidgets import QWidget, QDialog, QSplitter, QGraphicsView
 from overrides import overrides
-from qthandy import vbox, vspacer, incr_icon, incr_font, sp, gc, busy
+from qthandy import vbox, vspacer, sp, gc, busy
 
-from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
+from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel
 from plotlyst.service.manuscript import export_manuscript_to_docx, format_manuscript, export_manuscript_to_pdf
 from plotlyst.view.common import push_btn, label, exclusive_buttons
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.theme import BG_MUTED_COLOR
+from plotlyst.view.widget.button import TopSelectorButton
 from plotlyst.view.widget.display import PopupDialog
 from plotlyst.view.widget.settings import Forms
 
@@ -44,8 +45,8 @@ class ManuscriptExportPopup(PopupDialog):
         self.preview = self.__newPreview()
         self.document: Optional[QTextDocument] = None
 
-        self._btnDocx = self.__selectorButton('mdi.file-word-outline', 'Word (.docx)')
-        self._btnPdf = self.__selectorButton('fa5.file-pdf', 'PDF')
+        self._btnDocx = TopSelectorButton('mdi.file-word-outline', 'Word (.docx)')
+        self._btnPdf = TopSelectorButton('fa5.file-pdf', 'PDF')
 
         self.wdgEditor = QWidget()
         vbox(self.wdgEditor, 10, 6)
@@ -56,10 +57,7 @@ class ManuscriptExportPopup(PopupDialog):
         self.wdgCentral.addWidget(self.wdgEditor)
         self.wdgCentral.setSizes([550, 150])
 
-        self._btnGroup = QButtonGroup()
-        self._btnGroup.setExclusive(True)
-        self._btnGroup.addButton(self._btnDocx)
-        self._btnGroup.addButton(self._btnPdf)
+        self._btnGroup = exclusive_buttons(self, self._btnDocx, self._btnPdf)
 
         chapterForms = Forms('Chapter titles')
         self.wdgEditor.layout().addWidget(chapterForms)
@@ -126,14 +124,6 @@ class ManuscriptExportPopup(PopupDialog):
         gc(self.preview)
         self.preview = self.__newPreview()
         self.wdgCentral.insertWidget(0, self.preview)
-
-    def __selectorButton(self, icon: str, text: str) -> QPushButton:
-        btn = push_btn(IconRegistry.from_name(icon, color_on=PLOTLYST_SECONDARY_COLOR), text, checkable=True,
-                       properties=['transparent-rounded-bg-on-hover', 'secondary-selector'])
-        incr_icon(btn, 4)
-        incr_font(btn, 2)
-
-        return btn
 
     def __newPreview(self) -> QPrintPreviewWidget:
         preview = QPrintPreviewWidget()

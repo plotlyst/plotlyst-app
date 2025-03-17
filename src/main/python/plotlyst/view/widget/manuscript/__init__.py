@@ -33,14 +33,14 @@ from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView, \
     QPushButton, QToolButton, QWidgetItem, QGraphicsColorizeEffect, QGraphicsTextItem
 from overrides import overrides
 from qthandy import retain_when_hidden, translucent, margins, vbox, bold, vline, decr_font, \
-    underline, transparent, italic, decr_icon, pointy, hbox
+    underline, transparent, italic, decr_icon, pointy, hbox, vspacer
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, group
 from qttextedit import TextBlockState
 from textstat import textstat
 
 from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR
-from plotlyst.core.domain import Novel, DocumentProgress
+from plotlyst.core.domain import Novel, DocumentProgress, SnapshotType
 from plotlyst.core.sprint import TimerModel
 from plotlyst.core.text import wc, sentence_count, clean_text
 from plotlyst.env import app_env
@@ -54,6 +54,7 @@ from plotlyst.view.generated.sprint_widget_ui import Ui_SprintWidget
 from plotlyst.view.generated.timer_setup_widget_ui import Ui_TimerSetupWidget
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.button import apply_button_palette_color
+from plotlyst.view.widget.button import SnapshotButton
 from plotlyst.view.widget.display import WordsDisplay, IconText, Emoji, ChartView
 from plotlyst.view.widget.progress import ProgressChart
 
@@ -480,6 +481,8 @@ class ManuscriptDailyProgress(QWidget):
         self._novel = novel
         vbox(self)
 
+        self.btnSnapshot = SnapshotButton(self._novel, SnapshotType.Writing)
+
         self.btnDay = IconText()
         self.btnDay.setText('Today')
         self.btnDay.setIcon(IconRegistry.from_name('mdi.calendar-month-outline'))
@@ -495,6 +498,9 @@ class ManuscriptDailyProgress(QWidget):
         self.lblAdded = label('', color=PLOTLYST_SECONDARY_COLOR, h3=True)
         self.lblRemoved = label('', color='grey', h3=True)
 
+        self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
+        self.btnSnapshot.setHidden(True)
+        self.layout().addWidget(vspacer(20))
         self.layout().addWidget(group(self.btnDay, self.btnJumpToToday))
         self.layout().addWidget(group(self.lblAdded, vline(), self.lblRemoved), alignment=Qt.AlignmentFlag.AlignRight)
         lbl = label('Added/Removed', description=True)
@@ -521,8 +527,8 @@ class ManuscriptDailyProgress(QWidget):
             self.lblRemoved.setText('-')
 
     def setProgress(self, progress: DocumentProgress):
-        self.lblAdded.setText(f'+{progress.added}')
-        self.lblRemoved.setText(f'-{progress.removed}')
+        self.lblAdded.setText(f'+{progress.added:,}')
+        self.lblRemoved.setText(f'-{progress.removed:,}')
 
 
 class ManuscriptProgressCalendar(QCalendarWidget):
@@ -588,7 +594,7 @@ class ManuscriptProgressCalendar(QCalendarWidget):
                     painter.setBrush(QColor('#EDE1F2'))
                 else:
                     painter.setBrush(QColor(RELAXED_WHITE_COLOR))
-                rad = rect.width() // 2 - 1
+                rad = min(rect.width(), rect.height()) // 2 - 1
                 painter.drawEllipse(rect.center() + QPoint(1, 1), rad, rad)
 
             if date > self.maximumDate():

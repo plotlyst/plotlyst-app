@@ -25,7 +25,7 @@ import emoji
 import qtanim
 from PyQt6.QtCharts import QChartView
 from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent
-from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent
+from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent, QIcon
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
     QApplication
@@ -35,7 +35,7 @@ from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, point
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK
+from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
@@ -173,7 +173,7 @@ class WordsDisplay(QLabel):
 
     def setWordCount(self, count: int):
         if count:
-            self._text = f'<html><b>{count}</b> word{"s" if count > 1 else ""}'
+            self._text = f'<html><b>{count:,}</b> word{"s" if count > 1 else ""}'
             self.setText(self._text)
         else:
             self._text = ''
@@ -187,7 +187,7 @@ class WordsDisplay(QLabel):
 
     def setSecondaryWordCount(self, count: int):
         if count:
-            self.setText(f'{count} of {self._text}')
+            self.setText(f'{count:,} of {self._text}')
         else:
             self.setText(self._text)
 
@@ -667,6 +667,32 @@ class PremiumOverlayWidget(QFrame):
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         fade_in(self.msg)
+
+
+class HighQualityPaintedIcon(QWidget):
+    def __init__(self, icon: QIcon, parent=None, size: int = 18):
+        super().__init__(parent)
+        self._icon = icon
+        self.setFixedSize(size, size)
+
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing |
+                               QPainter.RenderHint.TextAntialiasing |
+                               QPainter.RenderHint.SmoothPixmapTransform)
+
+        self._icon.paint(painter, event.rect())
+
+
+class PlotlystFooter(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        hbox(self)
+        icon = HighQualityPaintedIcon(IconRegistry.book_icon(PLOTLYST_SECONDARY_COLOR), size=16)
+        self.layout().addWidget(icon, alignment=Qt.AlignmentFlag.AlignVCenter)
+        footer = label('plotlyst.com', color='grey', decr_font_diff=2)
+        self.layout().addWidget(wrap(footer, margin_bottom=2))
 
 
 def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional[float] = None) -> IconText:

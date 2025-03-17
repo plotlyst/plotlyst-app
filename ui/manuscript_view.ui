@@ -343,7 +343,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>270</width>
+                  <width>211</width>
                   <height>394</height>
                  </rect>
                 </property>
@@ -530,8 +530,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>84</width>
-                         <height>16</height>
+                         <width>100</width>
+                         <height>30</height>
                         </rect>
                        </property>
                        <property name="relaxed-white-bg" stdset="0">
@@ -568,7 +568,7 @@
                      <number>5</number>
                     </property>
                     <property name="topMargin">
-                     <number>25</number>
+                     <number>5</number>
                     </property>
                     <property name="rightMargin">
                      <number>2</number>

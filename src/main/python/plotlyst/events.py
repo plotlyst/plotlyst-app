@@ -180,6 +180,11 @@ class NovelSyncEvent(Event):
 
 
 @dataclass
+class SelectNovelEvent(Event):
+    novel: NovelDescriptor
+
+
+@dataclass
 class CloseNovelEvent(Event):
     novel: NovelDescriptor
 
