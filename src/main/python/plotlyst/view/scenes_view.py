@@ -457,7 +457,8 @@ class ScenesOutlineView(AbstractNovelView):
         self._enable_action_buttons(selection)
         if selection:
             scene = indexes[0].data(ScenesTableModel.SceneRole)
-            self.ui.treeChapters.selectScene(scene)
+            if self.ui.treeChapters.isVisible():
+                self.ui.treeChapters.selectScene(scene)
             emit_event(self.novel, SceneSelectedEvent(self, scene))
 
     def _on_chapter_selected(self, chapter: Chapter):
