@@ -3895,6 +3895,7 @@ class ScenesView(Enum):
     MANUSCRIPT = 'manuscript'
     BOARD = 'board'
     REPORTS = 'reports'
+    FORMATTING = 'formatting'
 
 
 @dataclass
@@ -3924,6 +3925,7 @@ class NovelSetting(Enum):
     World_building = 'world_building'
     Management = 'management'
     Reports = 'reports'
+    Formatting = 'formatting'
     SCENE_CARD_POV = 'scene_card_pov'
     SCENE_CARD_PURPOSE = 'scene_card_purpose'
     SCENE_CARD_PLOT_PROGRESS = 'scene_card_plot_progress'
