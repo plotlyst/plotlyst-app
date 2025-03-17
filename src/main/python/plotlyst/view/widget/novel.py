@@ -50,7 +50,7 @@ from plotlyst.view.style.base import apply_white_menu, apply_border_image
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.button import SelectorToggleButton, SmallToggleButton, DotsMenuButton
 from plotlyst.view.widget.display import Subtitle, IconText, Icon, PopupDialog, icon_text
-from plotlyst.view.widget.input import Toggle, AutoAdjustableTextEdit
+from plotlyst.view.widget.input import Toggle
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
 from plotlyst.view.widget.labels import LabelsEditorWidget
 from plotlyst.view.widget.manuscript import ManuscriptLanguageSettingWidget
@@ -510,7 +510,10 @@ class DescriptorLabelSelector(QWidget):
         labels = []
         for btn in self.btnGroup.buttons():
             if btn.isChecked():
-                labels.append(btn.genre())
+                if isinstance(btn, GenreSelectorButton):
+                    labels.append(btn.genre())
+                else:
+                    labels.append(btn.text())
 
         return labels
 
