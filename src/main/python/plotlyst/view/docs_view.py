@@ -161,8 +161,11 @@ class DocumentsView(AbstractNovelView):
                 self.textEditor.setCharacterWidth(fontSettings.text_width)
             else:
                 self.textEditor.setCharacterWidth(70)
-
             self.textEditor.textEdit.setFont(font_)
+
+        else:
+            self.textEditor.setCharacterWidth(70)
+
         self.textEditor.textTitle.setPlaceholderText('Untitled')
         self.textEditor.textEdit.textChanged.connect(self._save)
         self.textEditor.titleChanged.connect(self._title_changed_in_editor)

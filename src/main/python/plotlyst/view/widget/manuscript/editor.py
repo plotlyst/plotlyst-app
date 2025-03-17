@@ -590,6 +590,8 @@ class ManuscriptEditor(QWidget, EventListener):
                 self._font.setPointSize(fontSettings.font_size)
             if fontSettings.text_width:
                 self.setCharacterWidth(fontSettings.text_width)
+            else:
+                self.setCharacterWidth(60)
             if fontSettings.line_space:
                 self.setLineSpace(100 + 25 * fontSettings.line_space)
         else:
