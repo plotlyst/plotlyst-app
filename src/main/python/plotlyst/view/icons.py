@@ -288,6 +288,10 @@ class IconRegistry:
         return IconRegistry.from_name('mdi.chart-arc', color=color, color_on=color_on, scale=1.4)
 
     @staticmethod
+    def formatting_icon(color: str = 'black', color_on: str = PLOTLYST_SECONDARY_COLOR) -> QIcon:
+        return IconRegistry.from_name('fa5s.paragraph', color=color, color_on=color_on)
+
+    @staticmethod
     def document_edition_icon(color: str = 'black', color_on=PLOTLYST_SECONDARY_COLOR) -> QIcon:
         return IconRegistry.from_name('mdi.file-document-outline', color=color, color_on=color_on)
 

@@ -53,6 +53,7 @@ class ResourceRegistry:
         self._profile = None
         self._public_key = None
         self._signature = None
+        self._manuscript_template = None
 
     def set_up(self, context: Optional[ApplicationContext] = None):
         self._cork = self.__get_resource('cork.wav', context)
@@ -68,6 +69,7 @@ class ResourceRegistry:
         self._profile = self.__get_resource('profile.cbor', context)
         self._public_key = self.__get_resource('public.pem', context)
         self._signature = self.__get_resource('profile.sig', context)
+        self._manuscript_template = self.__get_resource('manuscript.tex', context)
 
     def __get_resource(self, name: str, context: Optional[ApplicationContext] = None):
         if context:
@@ -134,6 +136,11 @@ class ResourceRegistry:
     @property
     def signature(self) -> str:
         return self._signature
+
+    @property
+    def manuscript_template(self) -> str:
+        return self._manuscript_template
+
 
 resource_registry = ResourceRegistry()
 

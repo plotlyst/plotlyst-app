@@ -67,6 +67,7 @@ from plotlyst.view.common import TooltipPositionEventFilter, ButtonPressResizeEv
 from plotlyst.view.dialog.about import AboutDialog
 from plotlyst.view.dialog.novel import DetachedWindow
 from plotlyst.view.docs_view import DocumentsView
+from plotlyst.view.formating_view import FormattingView
 from plotlyst.view.generated.main_window_ui import Ui_MainWindow
 from plotlyst.view.home_view import HomeView
 from plotlyst.view.icons import IconRegistry
@@ -164,6 +165,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.btnManuscript.setIcon(
             IconRegistry.manuscript_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.btnReports.setIcon(IconRegistry.reports_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
+        self.btnFormatting.setIcon(IconRegistry.formatting_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.btnSettingsLink.setIcon(IconRegistry.cog_icon(color=NAV_BAR_BUTTON_DEFAULT_COLOR))
         self.btnSettingsLink.installEventFilter(ButtonPressResizeEventFilter(self.btnSettingsLink))
         self.btnSettingsLink.installEventFilter(OpacityEventFilter(self.btnSettingsLink, leaveOpacity=0.6))
@@ -435,6 +437,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.board_view = BoardView(self.novel)
         self.manuscript_view = ManuscriptView(self.novel)
         self.reports_view = ReportsView(self.novel)
+        self.formatting_view = FormattingView(self.novel)
 
         self.pageNovel.layout().addWidget(self.novel_view.widget)
         self.pageCharacters.layout().addWidget(self.characters_view.widget)
@@ -444,6 +447,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.pageBoard.layout().addWidget(self.board_view.widget)
         self.pageManuscript.layout().addWidget(self.manuscript_view.widget)
         self.pageAnalysis.layout().addWidget(self.reports_view.widget)
+        self.pageFormatting.layout().addWidget(self.formatting_view.widget)
 
         if self.novel.prefs.panels.scenes_view == ScenesView.NOVEL:
             self.btnNovel.setChecked(True)
@@ -459,6 +463,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             self.btnManuscript.setChecked(True)
         elif self.novel.prefs.panels.scenes_view == ScenesView.REPORTS:
             self.btnReports.setChecked(True)
+        elif self.novel.prefs.panels.scenes_view == ScenesView.FORMATTING:
+            self.btnFormatting.setChecked(True)
         elif self.novel.prefs.panels.scenes_view == ScenesView.SCENES:
             self.btnScenes.setChecked(True)
         else:
@@ -521,6 +527,9 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         elif self.btnReports.isChecked():
             self.stackedWidget.setCurrentWidget(self.pageAnalysis)
             self._current_view = self.reports_view
+        elif self.btnFormatting.isChecked():
+            self.stackedWidget.setCurrentWidget(self.pageFormatting)
+            self._current_view = self.formatting_view
         else:
             self._current_view = None
 
@@ -765,10 +774,15 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         gc(self.board_view)
         self.board_view = None
 
-        self.pageBoard.layout().removeWidget(self.reports_view.widget)
+        self.pageAnalysis.layout().removeWidget(self.reports_view.widget)
         gc(self.reports_view.widget)
         gc(self.reports_view)
         self.reports_view = None
+
+        self.pageFormatting.layout().removeWidget(self.formatting_view.widget)
+        gc(self.formatting_view.widget)
+        gc(self.formatting_view)
+        self.formatting_view = None
 
         self.pageManuscript.layout().removeWidget(self.manuscript_view.widget)
         gc(self.manuscript_view.widget)
@@ -831,6 +845,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             scenes_view = ScenesView.MANUSCRIPT
         elif self.stackedWidget.currentWidget() == self.pageAnalysis:
             scenes_view = ScenesView.REPORTS
+        elif self.stackedWidget.currentWidget() == self.pageFormatting:
+            scenes_view = ScenesView.FORMATTING
         else:
             scenes_view = None
         self.novel.prefs.panels.scenes_view = scenes_view
