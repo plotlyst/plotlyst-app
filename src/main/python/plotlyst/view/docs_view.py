@@ -24,7 +24,8 @@ import qtanim
 from PyQt6.QtGui import QFont
 from overrides import overrides
 from qthandy import clear_layout, margins, bold, italic
-from qttextedit.ops import TextEditorSettingsSection, FontSectionSettingWidget, FontSizeSectionSettingWidget
+from qttextedit.ops import TextEditorSettingsSection, FontSectionSettingWidget, FontSizeSectionSettingWidget, \
+    TextWidthSectionSettingWidget
 
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Document, DocumentType, FontSettings
@@ -128,6 +129,7 @@ class DocumentsView(AbstractNovelView):
 
     def _init_text_editor(self):
         def settings_ready():
+            self.textEditor.settingsWidget().setSectionVisible(TextEditorSettingsSection.TEXT_WIDTH, True)
             self.textEditor.settingsWidget().setSectionVisible(TextEditorSettingsSection.PAGE_WIDTH, False)
             fontSection: FontSectionSettingWidget = self.textEditor.settingsWidget().section(
                 TextEditorSettingsSection.FONT)
@@ -136,6 +138,10 @@ class DocumentsView(AbstractNovelView):
             sizeSection: FontSizeSectionSettingWidget = self.textEditor.settingsWidget().section(
                 TextEditorSettingsSection.FONT_SIZE)
             sizeSection.sizeChanged.connect(self._fontSizeChanged)
+
+            widthSection: TextWidthSectionSettingWidget = self.textEditor.settingsWidget().section(
+                TextEditorSettingsSection.TEXT_WIDTH)
+            widthSection.widthChanged.connect(self._textWidthChanged)
 
         self._clear_text_editor()
 
@@ -151,6 +157,10 @@ class DocumentsView(AbstractNovelView):
                 font_.setFamily(fontSettings.family)
             if fontSettings.font_size:
                 font_.setPointSize(fontSettings.font_size)
+            if fontSettings.text_width:
+                self.textEditor.setCharacterWidth(fontSettings.text_width)
+            else:
+                self.textEditor.setCharacterWidth(70)
 
             self.textEditor.textEdit.setFont(font_)
         self.textEditor.textTitle.setPlaceholderText('Untitled')
@@ -264,6 +274,11 @@ class DocumentsView(AbstractNovelView):
     def _fontSizeChanged(self, size: int):
         fontSettings = self._getFontSettings()
         fontSettings.font_size = size
+        self.repo.update_novel(self.novel)
+
+    def _textWidthChanged(self, width: int):
+        fontSettings = self._getFontSettings()
+        fontSettings.text_width = width
         self.repo.update_novel(self.novel)
 
     def _getFontSettings(self) -> FontSettings:
