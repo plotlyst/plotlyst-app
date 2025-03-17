@@ -154,6 +154,14 @@ class NetworkScene(QGraphicsScene):
             self._connectorPlaceholder.source().angle(), target.angle(),
             pen=connectorItem.penStyle(), width=connectorItem.size()
         )
+
+        if 45 <= connector.source_angle <= 135 and 45 <= connector.target_angle <= 135:
+            connector.cp_controlled = True
+        elif -135 <= connector.source_angle <= -45 and -135 <= connector.target_angle <= -45:
+            connector.cp_controlled = True
+        else:
+            connector.cp_controlled = False
+
         if connectorItem.icon():
             connector.icon = connectorItem.icon()
         connectorItem.setConnector(connector)
