@@ -364,6 +364,11 @@ class FilledSocketItem(AbstractSocketItem):
         radius = self.Size // 2
         painter.drawEllipse(QPointF(self.Size / 2, self.Size // 2), radius, radius)
 
+    @overrides
+    def angle(self) -> float:
+        # somehow for CircleShapedNodeItems we have the socket angles negated
+        return -super().angle()
+
 
 class DotCircleSocketItem(AbstractSocketItem):
 
