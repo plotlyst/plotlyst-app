@@ -694,9 +694,6 @@ class ConnectorItem(QGraphicsPathItem):
             if self.networkScene():
                 self.networkScene().connectorChangedEvent(self)
 
-    def rearrangeCP2(self, pos: QPointF):
-        self.rearrange()
-
     def colorChangedEvent(self, nodeItem: 'NodeItem'):
         if nodeItem is self._target.parentItem():
             if not self._connector.color:
