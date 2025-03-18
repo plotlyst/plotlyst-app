@@ -28,7 +28,7 @@ from PyQt6.QtGui import QDragEnterEvent, QDragMoveEvent, QColor, QAction, QIcon
 from PyQt6.QtWidgets import QFrame, QApplication, QToolButton, QTextBrowser
 from overrides import overrides
 from qthandy import clear_layout, retain_when_hidden, transparent, flow, translucent, gc, incr_icon, vbox, pointy, \
-    incr_font
+    incr_font, margins
 from qthandy.filter import DragEventFilter, DropEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -524,6 +524,7 @@ class CardsView(QFrame):
         super().__init__(parent)
         self._cards: Dict[Any, Card] = {}
         self._layout = flow(self, 9, 15)
+        margins(self, left=15, top=15)
         self.setAcceptDrops(True)
         self._droppedTo: Optional[Card] = None
         self._selected: Optional[Card] = None

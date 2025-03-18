@@ -628,7 +628,7 @@ class _PremiumMessageWidgetBase(QWidget):
         super().__init__(parent)
         vbox(self, 0, 8)
         self.btnUpgrade = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
-                                   'Purchase',
+                                   'Purchase Plotlyst Plus',
                                    tooltip='Upgrade Plotlyst',
                                    properties=['confirm', 'positive'])
         self.btnUpgrade.clicked.connect(lambda: open_url(main_link))
@@ -644,7 +644,7 @@ class _PremiumMessageWidgetBase(QWidget):
             self.layout().addWidget(iconWdg, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.layout().addWidget(self.title)
-        self.layout().addWidget(label("To use this feature, please purchase Plotlyst.", incr_font_diff=2),
+        self.layout().addWidget(label("To use this feature, please purchase Plotlyst Plus.", incr_font_diff=2),
                                 alignment=Qt.AlignmentFlag.AlignCenter)
         if alt_link:
             btnLink = push_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'),
