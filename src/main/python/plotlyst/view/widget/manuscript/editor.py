@@ -49,7 +49,7 @@ from plotlyst.events import SceneDeletedEvent, SceneChangedEvent, ScenesOrganiza
 from plotlyst.resources import resource_registry
 from plotlyst.service.manuscript import daily_progress, daily_overall_progress
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import tool_btn, fade_in, fade, frame
+from plotlyst.view.common import tool_btn, fade_in, fade, frame, restyle
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.text import apply_text_color
 from plotlyst.view.style.theme import BG_DARK_COLOR
@@ -469,7 +469,7 @@ class ManuscriptTextEdit(TextEditBase):
             f'ManuscriptTextEdit {{background-color: {RELAXED_WHITE_COLOR};}}')
 
 
-class ManuscriptEditor(QFrame, EventListener):
+class ManuscriptEditor(QWidget, EventListener):
     textChanged = pyqtSignal()
     selectionChanged = pyqtSignal()
     progressChanged = pyqtSignal(DocumentProgress)
@@ -743,6 +743,16 @@ class ManuscriptEditor(QFrame, EventListener):
             textedit.clearHighlights()
 
     def setNightMode(self, mode: bool):
+        if mode:
+            self.wdgFrame.setFrameShape(QFrame.Shape.NoFrame)
+            self.wdgFrame.setProperty('relaxed-white-bg', False)
+            self.wdgFrame.setProperty('large-rounded', False)
+            restyle(self.wdgFrame)
+        else:
+            self.wdgFrame.setFrameShape(QFrame.Shape.StyledPanel)
+            self.wdgFrame.setProperty('relaxed-white-bg', True)
+            self.wdgFrame.setProperty('large-rounded', True)
+            restyle(self.wdgFrame)
         for lbl in self._sceneLabels:
             if mode:
                 lbl.setStyleSheet(f'color: {RELAXED_WHITE_COLOR}; border: 0px; background-color: rgba(0, 0, 0, 0);')
