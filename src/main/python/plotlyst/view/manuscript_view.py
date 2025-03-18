@@ -270,6 +270,7 @@ class ManuscriptView(AbstractNovelView):
     def _enter_distraction_free(self):
         emit_global_event(OpenDistractionFreeMode(self))
         margins(self.widget, 0, 0, 0, 0)
+        margins(self.ui.pageText, left=0)
         self.ui.pageText.setStyleSheet(f'QWidget {{background-color: {BG_DARK_COLOR};}}')
         self._wdgToolbar.setHidden(True)
 
@@ -302,7 +303,8 @@ class ManuscriptView(AbstractNovelView):
     def _exit_distraction_free(self):
         emit_global_event(ExitDistractionFreeMode(self))
         margins(self.widget, 4, 2, 2, 2)
-        margins(self.ui.pageText, bottom=0)
+        margins(self.ui.pageText, left=self.ui.wdgSideBar.width() if not self.ui.btnTreeToggle.isChecked() else 0,
+                bottom=0)
         self.ui.pageText.setStyleSheet('')
 
         self.ui.wdgTop.setVisible(True)
@@ -472,12 +474,14 @@ class ManuscriptView(AbstractNovelView):
     def _hide_sidebar(self):
         def finished():
             qtanim.fade_in(self.ui.btnTreeToggleSecondary)
+            margins(self.ui.pageText, left=self.ui.wdgSideBar.width())
 
         qtanim.toggle_expansion(self.ui.wdgLeftSide, False, teardown=finished)
         self.ui.btnTreeToggleSecondary.setChecked(False)
 
     def _show_sidebar(self):
         qtanim.toggle_expansion(self.ui.wdgLeftSide, True)
+        margins(self.ui.pageText, left=0)
         self.ui.btnTreeToggle.setChecked(True)
         self.ui.btnTreeToggleSecondary.setVisible(False)
 
