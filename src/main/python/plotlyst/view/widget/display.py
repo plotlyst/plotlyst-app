@@ -566,7 +566,7 @@ class DividerWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.svg_renderer = QSvgRenderer(resource_registry.divider1)
-        self.setMinimumSize(400, 55)
+        self.setMinimumSize(100, 55)
 
     def setResource(self, resource: str):
         self.svg_renderer = QSvgRenderer(resource)
@@ -583,7 +583,7 @@ class DividerWidget(QWidget):
 class SeparatorLineWithShadow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(400, 12)
+        self.setMinimumSize(100, 12)
         self._margin = 50
         self._colorRadiant = QColor(PLACEHOLDER_TEXT_COLOR)
         self._colorRadiant.setAlpha(125)
