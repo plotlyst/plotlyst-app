@@ -24,8 +24,9 @@ from typing import Optional, Any, Tuple, List
 import emoji
 import qtanim
 from PyQt6.QtCharts import QChartView
-from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent
-from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent, QIcon
+from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent, QPointF
+from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent, QIcon, QRadialGradient, \
+    QPen
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
     QApplication
@@ -35,7 +36,8 @@ from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, point
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, PLOTLYST_SECONDARY_COLOR
+from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, \
+    PLOTLYST_SECONDARY_COLOR, PLACEHOLDER_TEXT_COLOR
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
@@ -564,7 +566,11 @@ class DividerWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.svg_renderer = QSvgRenderer(resource_registry.divider1)
-        self.setMinimumSize(400, 55)
+        self.setMinimumSize(100, 55)
+
+    def setResource(self, resource: str):
+        self.svg_renderer = QSvgRenderer(resource)
+        self.update()
 
     @overrides
     def paintEvent(self, event):
@@ -572,6 +578,35 @@ class DividerWidget(QWidget):
         painter.setOpacity(0.8)
         rect = QRectF(0, 0, self.width(), self.height())
         self.svg_renderer.render(painter, rect)
+
+
+class SeparatorLineWithShadow(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumSize(100, 12)
+        self._margin = 50
+        self._colorRadiant = QColor(PLACEHOLDER_TEXT_COLOR)
+        self._colorRadiant.setAlpha(125)
+
+    @overrides
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        line_y = self.height() // 2
+
+        shadow_gradient = QRadialGradient(QPointF(self.width() / 2, line_y), self.width() / 3)
+        shadow_gradient.setColorAt(0.0, self._colorRadiant)
+        shadow_gradient.setColorAt(1.0, QColor(0, 0, 0, 5))
+
+        painter.setBrush(QBrush(shadow_gradient))
+        painter.setPen(Qt.PenStyle.NoPen)
+        shadow_rect = QRectF(self._margin, line_y, self.width() - self._margin * 2, 8)
+        painter.drawEllipse(shadow_rect)
+
+        pen = QPen(QColor(PLACEHOLDER_TEXT_COLOR), 2)
+        painter.setPen(pen)
+        painter.drawLine(self._margin, line_y, self.width() - self._margin, line_y)
 
 
 class CopiedTextMessage(QLabel):

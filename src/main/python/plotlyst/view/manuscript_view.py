@@ -22,7 +22,8 @@ from PyQt6.QtCore import QTimer, Qt, QObject, QEvent
 from PyQt6.QtGui import QScreen
 from PyQt6.QtWidgets import QApplication
 from overrides import overrides
-from qthandy import translucent, bold, margins, spacer, transparent, vspacer, decr_icon, vline, incr_icon, busy
+from qthandy import translucent, bold, margins, transparent, vspacer, decr_icon, vline, incr_icon, busy, \
+    retain_when_hidden
 from qthandy.filter import OpacityEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget
 
@@ -39,7 +40,7 @@ from plotlyst.service.persistence import flush_or_fail
 from plotlyst.service.resource import ask_for_resource
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import tool_btn, ButtonPressResizeEventFilter, action, \
-    ExclusiveOptionalButtonGroup, link_buttons_to_pages, shadow, scroll_to_bottom, restyle
+    ExclusiveOptionalButtonGroup, link_buttons_to_pages, scroll_to_bottom, restyle
 from plotlyst.view.generated.manuscript_view_ui import Ui_ManuscriptView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
@@ -78,7 +79,6 @@ class ManuscriptView(AbstractNovelView):
         self._dist_free_top_bar.btnExitDistFreeMode.clicked.connect(self._exit_distraction_free)
 
         self._dist_free_bottom_bar = DistFreeControlsBar()
-        # self._dist_free_bottom_bar.btnTypewriterMode.toggled.connect(self._toggle_typewriter_mode)
         self.widget.layout().insertWidget(0, self._dist_free_top_bar)
         self.widget.layout().addWidget(self._dist_free_bottom_bar)
         self._dist_free_top_bar.setHidden(True)
@@ -100,6 +100,7 @@ class ManuscriptView(AbstractNovelView):
 
         self.ui.btnTreeToggle.setIcon(IconRegistry.from_name('mdi.file-tree-outline'))
         self.ui.btnTreeToggleSecondary.setIcon(IconRegistry.from_name('mdi.file-tree-outline'))
+        retain_when_hidden(self.ui.btnTreeToggleSecondary)
         self.ui.btnTreeToggleSecondary.setHidden(True)
         self.ui.btnTreeToggle.clicked.connect(self._hide_sidebar)
         self.ui.btnTreeToggleSecondary.clicked.connect(self._show_sidebar)
@@ -168,7 +169,6 @@ class ManuscriptView(AbstractNovelView):
         self._cbSpellCheck = Toggle()
         self._cbSpellCheck.setToolTip('Toggle spellcheck')
 
-        shadow(self.ui.wdgSide, offset=-3, radius=6)
         self.ui.btnHideRightBar.setIcon(IconRegistry.from_name('mdi.chevron-double-right', '#adb5bd'))
         incr_icon(self.ui.btnHideRightBar, 4)
         transparent(self.ui.btnHideRightBar)
@@ -181,10 +181,10 @@ class ManuscriptView(AbstractNovelView):
         self.ui.pageGoal.layout().addWidget(vspacer())
 
         self._toolbarSeparator = vline()
-        self._wdgToolbar = group(spacer(), self._wdgSprint, self._toolbarSeparator, self._spellCheckIcon,
+        self._wdgToolbar = group(self._wdgSprint, self._toolbarSeparator, self._spellCheckIcon,
                                  self._cbSpellCheck, self._btnDistractionFree)
-        self.ui.pageText.layout().insertWidget(0, self._wdgToolbar)
-        margins(self._wdgToolbar, right=10)
+        self.ui.wdgTop.layout().addWidget(self._wdgToolbar, alignment=Qt.AlignmentFlag.AlignRight)
+        margins(self._wdgToolbar, right=10, top=0)
 
         self._addSceneMenu = MenuWidget(self.ui.btnAdd)
         self._addSceneMenu.addAction(action('Add scene', IconRegistry.scene_icon(), self.ui.treeChapters.addScene))
@@ -270,6 +270,7 @@ class ManuscriptView(AbstractNovelView):
     def _enter_distraction_free(self):
         emit_global_event(OpenDistractionFreeMode(self))
         margins(self.widget, 0, 0, 0, 0)
+        margins(self.ui.pageText, left=0)
         self.ui.pageText.setStyleSheet(f'QWidget {{background-color: {BG_DARK_COLOR};}}')
         self._wdgToolbar.setHidden(True)
 
@@ -302,7 +303,8 @@ class ManuscriptView(AbstractNovelView):
     def _exit_distraction_free(self):
         emit_global_event(ExitDistractionFreeMode(self))
         margins(self.widget, 4, 2, 2, 2)
-        margins(self.ui.pageText, bottom=0)
+        margins(self.ui.pageText, left=self.ui.wdgSideBar.width() if not self.ui.btnTreeToggle.isChecked() else 0,
+                bottom=0)
         self.ui.pageText.setStyleSheet('')
 
         self.ui.wdgTop.setVisible(True)
@@ -472,12 +474,14 @@ class ManuscriptView(AbstractNovelView):
     def _hide_sidebar(self):
         def finished():
             qtanim.fade_in(self.ui.btnTreeToggleSecondary)
+            margins(self.ui.pageText, left=self.ui.wdgSideBar.width())
 
         qtanim.toggle_expansion(self.ui.wdgLeftSide, False, teardown=finished)
         self.ui.btnTreeToggleSecondary.setChecked(False)
 
     def _show_sidebar(self):
         qtanim.toggle_expansion(self.ui.wdgLeftSide, True)
+        margins(self.ui.pageText, left=0)
         self.ui.btnTreeToggle.setChecked(True)
         self.ui.btnTreeToggleSecondary.setVisible(False)
 
