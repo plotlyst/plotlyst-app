@@ -45,6 +45,8 @@ class ResourceRegistry:
         self._paper_bg1 = None
         self._vintage_pocket_banner = None
         self._divider1 = None
+        self._top_frame1 = None
+        self._top_frame2 = None
         self._banner = None
         self._circular_frame1 = None
         self._manuscript_docx_template = None
@@ -61,6 +63,8 @@ class ResourceRegistry:
         self._cover1 = self.__get_resource('cover_1.jpg', context)
         self._paper_bg1 = self.__get_resource('paper_bg.jpg', context)
         self._divider1 = self.__get_resource('divider_1.svg', context)
+        self._top_frame1 = self.__get_resource('top_frame1.svg', context)
+        self._top_frame2 = self.__get_resource('top_frame2.svg', context)
         self._banner = self.__get_resource('plotlyst_banner.png', context)
         self._circular_frame1 = self.__get_resource('circular_frame1.png', context)
         self._manuscript_docx_template = self.__get_resource('manuscript-template.docx', context)
@@ -100,6 +104,14 @@ class ResourceRegistry:
     @property
     def divider1(self) -> str:
         return self._divider1
+
+    @property
+    def top_frame1(self) -> str:
+        return self._top_frame1
+
+    @property
+    def top_frame2(self) -> str:
+        return self._top_frame2
 
     @property
     def paper_bg(self) -> str:

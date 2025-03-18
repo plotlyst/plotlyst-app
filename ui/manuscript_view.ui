@@ -37,8 +37,14 @@
      <property name="childrenCollapsible">
       <bool>false</bool>
      </property>
+     <property name="muted-bg" stdset="0">
+      <bool>true</bool>
+     </property>
      <widget class="QWidget" name="wdgLeftSide" native="true">
       <property name="bg" stdset="0">
+       <bool>false</bool>
+      </property>
+      <property name="muted-bg" stdset="0">
        <bool>true</bool>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -244,9 +250,18 @@
           <enum>QFrame::Sunken</enum>
          </property>
          <property name="relaxed-white-bg" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="muted-bg" stdset="0">
           <bool>true</bool>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_16">
+         <property name="bg" stdset="0">
+          <bool>false</bool>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="spacing">
+           <number>0</number>
+          </property>
           <property name="leftMargin">
            <number>15</number>
           </property>
@@ -254,12 +269,12 @@
            <number>10</number>
           </property>
           <property name="rightMargin">
-           <number>5</number>
+           <number>10</number>
           </property>
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item>
+          <item alignment="Qt::AlignLeft">
            <widget class="QToolButton" name="btnTreeToggleSecondary">
             <property name="cursor">
              <cursorShape>PointingHandCursor</cursorShape>
@@ -301,6 +316,9 @@
          </property>
          <widget class="QWidget" name="pageText">
           <property name="relaxed-white-bg" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="muted-bg" stdset="0">
            <bool>true</bool>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
@@ -343,11 +361,14 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>211</width>
+                  <width>201</width>
                   <height>394</height>
                  </rect>
                 </property>
                 <property name="relaxed-white-bg" stdset="0">
+                 <bool>false</bool>
+                </property>
+                <property name="muted-bg" stdset="0">
                  <bool>true</bool>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -355,16 +376,16 @@
                   <number>0</number>
                  </property>
                  <property name="leftMargin">
-                  <number>15</number>
+                  <number>0</number>
                  </property>
                  <property name="topMargin">
-                  <number>15</number>
+                  <number>0</number>
                  </property>
                  <property name="rightMargin">
-                  <number>15</number>
+                  <number>0</number>
                  </property>
                  <property name="bottomMargin">
-                  <number>15</number>
+                  <number>0</number>
                  </property>
                 </layout>
                </widget>
@@ -380,7 +401,7 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>200</width>
+                 <width>210</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -391,6 +412,9 @@
                 <enum>QFrame::Sunken</enum>
                </property>
                <property name="relaxed-white-bg" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="muted-bg" stdset="0">
                 <bool>true</bool>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -398,7 +422,7 @@
                  <number>0</number>
                 </property>
                 <property name="leftMargin">
-                 <number>0</number>
+                 <number>10</number>
                 </property>
                 <property name="topMargin">
                  <number>4</number>
@@ -422,6 +446,9 @@
                 <item>
                  <widget class="QStackedWidget" name="stackSide">
                   <widget class="QWidget" name="pageInfo">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
                    <layout class="QVBoxLayout" name="verticalLayout_11">
                     <property name="spacing">
                      <number>6</number>
@@ -441,6 +468,9 @@
                    </layout>
                   </widget>
                   <widget class="QWidget" name="pageGoal">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
                    <layout class="QVBoxLayout" name="verticalLayout_13">
                     <property name="spacing">
                      <number>0</number>
@@ -460,6 +490,9 @@
                    </layout>
                   </widget>
                   <widget class="QWidget" name="pageReadability">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
                    <layout class="QVBoxLayout" name="verticalLayout_12">
                     <property name="spacing">
                      <number>3</number>
@@ -479,6 +512,9 @@
                    </layout>
                   </widget>
                   <widget class="QWidget" name="pageFind">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
                    <layout class="QVBoxLayout" name="verticalLayout_4">
                     <property name="spacing">
                      <number>0</number>
@@ -498,6 +534,9 @@
                    </layout>
                   </widget>
                   <widget class="QWidget" name="pageSettings">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
                     <property name="spacing">
                      <number>3</number>
@@ -560,6 +599,9 @@
                    </layout>
                   </widget>
                   <widget class="QWidget" name="pageProgress">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
                    <layout class="QVBoxLayout" name="verticalLayout_14">
                     <property name="spacing">
                      <number>3</number>
@@ -598,6 +640,9 @@
                 <enum>QFrame::Sunken</enum>
                </property>
                <property name="relaxed-white-bg" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="muted-bg" stdset="0">
                 <bool>true</bool>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_10">
@@ -843,14 +888,7 @@
               </sizepolicy>
              </property>
              <property name="styleSheet">
-              <string notr="true">#wdgBottom {
-                                                                    background-color: qlineargradient(x1: 0, y1: 0, x2:
-                                                                    1, y2: 1,
-                                                                    stop: 0 #FFFFFF, stop: 0.5 #E1E1E1, stop: 1
-                                                                    #E7E7E7);
-                                                                    border-bottom-left-radius: 6px;
-                                                                    border-bottom-right-radius: 6px;
-                                                                    }
+              <string notr="true">
                                                                 </string>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_8">

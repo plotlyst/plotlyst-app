@@ -25,7 +25,8 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import pyqtSignal, QTextBoundaryFinder, Qt, QSize, QTimer, QEvent, QPoint
 from PyQt6.QtGui import QFont, QResizeEvent, QShowEvent, QTextCursor, QTextCharFormat, QSyntaxHighlighter, QColor, \
     QTextBlock, QFocusEvent, QTextDocumentFragment
-from PyQt6.QtWidgets import QWidget, QApplication, QTextEdit, QLineEdit, QToolButton, QFrame, QPushButton
+from PyQt6.QtWidgets import QWidget, QApplication, QTextEdit, QLineEdit, QToolButton, QFrame, QPushButton, \
+    QGraphicsColorizeEffect
 from overrides import overrides
 from qthandy import vbox, clear_layout, vspacer, margins, transparent, gc, hbox, italic, translucent, sp, spacer, \
     decr_font, retain_when_hidden, pointy
@@ -45,13 +46,14 @@ from plotlyst.env import app_env
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneDeletedEvent, SceneChangedEvent, ScenesOrganizationResetEvent
+from plotlyst.resources import resource_registry
 from plotlyst.service.manuscript import daily_progress, daily_overall_progress
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import tool_btn, fade_in, fade
+from plotlyst.view.common import tool_btn, fade_in, fade, frame
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.text import apply_text_color
 from plotlyst.view.style.theme import BG_DARK_COLOR
-from plotlyst.view.widget.display import WordsDisplay
+from plotlyst.view.widget.display import WordsDisplay, DividerWidget, SeparatorLineWithShadow
 from plotlyst.view.widget.input import BasePopupTextEditorToolbar, TextEditBase, GrammarHighlighter, \
     GrammarHighlightStyle
 from plotlyst.view.widget.manuscript import SprintWidget
@@ -467,7 +469,7 @@ class ManuscriptTextEdit(TextEditBase):
             f'ManuscriptTextEdit {{background-color: {RELAXED_WHITE_COLOR};}}')
 
 
-class ManuscriptEditor(QWidget, EventListener):
+class ManuscriptEditor(QFrame, EventListener):
     textChanged = pyqtSignal()
     selectionChanged = pyqtSignal()
     progressChanged = pyqtSignal(DocumentProgress)
@@ -506,22 +508,33 @@ class ManuscriptEditor(QWidget, EventListener):
         self.textTitle.returnPressed.connect(self.setFocus)
 
         self.wdgTitle = QWidget()
-        hbox(self.wdgTitle).addWidget(self.textTitle)
-        margins(self.wdgTitle, bottom=15)
+        hbox(self.wdgTitle, 0, 0).addWidget(self.textTitle)
+        margins(self.wdgTitle, bottom=5)
 
-        # self.divider = DividerWidget()
-        # effect = QGraphicsColorizeEffect(self.divider)
-        # effect.setColor(QColor(PLACEHOLDER_TEXT_COLOR))
-        # self.divider.setGraphicsEffect(effect)
-        # self._textTitle.returnPressed.connect(self.textEdit.setFocus)
-        # self._textTitle.textEdited.connect(self._titleChanged)
+        self.divider = DividerWidget()
+        self.divider.setResource(resource_registry.top_frame1)
+        self.divider.setMinimumHeight(95)
+        effect = QGraphicsColorizeEffect(self.divider)
+        effect.setColor(QColor(PLACEHOLDER_TEXT_COLOR))
+        self.divider.setGraphicsEffect(effect)
 
         self.wdgEditor = QWidget()
         vbox(self.wdgEditor, 0, 0)
-        margins(self.wdgEditor, left=15, top=40, bottom=50, right=15)
+        margins(self.wdgEditor, left=20, top=20, bottom=50, right=15)
 
-        self.layout().addWidget(self.wdgTitle)
-        self.layout().addWidget(self.wdgEditor)
+        self.wdgFrame = frame()
+        vbox(self.wdgFrame, 0, 0)
+        margins(self.wdgFrame, left=45, right=45, top=25)
+        self.wdgFrame.setProperty('relaxed-white-bg', True)
+        self.wdgFrame.setProperty('large-rounded', True)
+
+        self.wdgFrame.layout().addWidget(self.divider)
+        line_ = SeparatorLineWithShadow()
+        self.wdgFrame.layout().addWidget(self.wdgTitle)
+        self.wdgFrame.layout().addWidget(line_)
+        self.wdgFrame.layout().addWidget(self.wdgEditor)
+
+        self.layout().addWidget(self.wdgFrame)
 
         self.repo = RepositoryPersistenceManager.instance()
 
