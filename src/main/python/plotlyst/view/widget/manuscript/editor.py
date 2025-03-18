@@ -485,6 +485,7 @@ class ManuscriptEditor(QWidget, EventListener):
         self._textedits: List[ManuscriptTextEdit] = []
         self._defaultMargins = 45
         self._minimumMargins = 10
+        self._maximumMargins = 65
         self._sceneLabels: List[SceneSeparator] = []
         self._scenes: List[Scene] = []
         self._scene: Optional[Scene] = None
@@ -585,7 +586,9 @@ class ManuscriptEditor(QWidget, EventListener):
 
         if event.size().width() < 600:
             margins(self.wdgFrame, left=self._minimumMargins, right=self._minimumMargins)
-        elif self.wdgFrame.layout().contentsMargins().left() == self._minimumMargins:
+        elif event.size().width() > 1200:
+            margins(self.wdgFrame, left=self._maximumMargins, right=self._maximumMargins)
+        else:
             margins(self.wdgFrame, left=self._defaultMargins, right=self._defaultMargins)
 
     def defaultFont(self) -> QFont:
