@@ -482,8 +482,9 @@ class ManuscriptEditor(QWidget, EventListener):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._novel: Optional[Novel] = None
-        self._margins: int = 30
         self._textedits: List[ManuscriptTextEdit] = []
+        self._defaultMargins = 45
+        self._minimumMargins = 10
         self._sceneLabels: List[SceneSeparator] = []
         self._scenes: List[Scene] = []
         self._scene: Optional[Scene] = None
@@ -525,7 +526,7 @@ class ManuscriptEditor(QWidget, EventListener):
 
         self.wdgFrame = frame()
         vbox(self.wdgFrame, 0, 0)
-        margins(self.wdgFrame, left=45, right=45, top=25)
+        margins(self.wdgFrame, left=self._defaultMargins, right=self._defaultMargins, top=25)
         self.wdgFrame.setProperty('relaxed-white-bg', True)
         self.wdgFrame.setProperty('large-rounded', True)
 
@@ -578,9 +579,14 @@ class ManuscriptEditor(QWidget, EventListener):
             self.cleared.emit()
 
     @overrides
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
         if self._maxContentWidth > 0:
             self._resizeToCharacterWidth()
+
+        if event.size().width() < 600:
+            margins(self.wdgFrame, left=self._minimumMargins, right=self._minimumMargins)
+        elif self.wdgFrame.layout().contentsMargins().left() == self._minimumMargins:
+            margins(self.wdgFrame, left=self._defaultMargins, right=self._defaultMargins)
 
     def defaultFont(self) -> QFont:
         if app_env.is_linux():
