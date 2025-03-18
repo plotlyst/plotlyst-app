@@ -242,6 +242,7 @@ class SceneSeparator(QPushButton):
         pointy(self)
         italic(self)
         translucent(self)
+        decr_font(self)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
         self.refresh()
@@ -661,7 +662,7 @@ class ManuscriptEditor(QWidget, EventListener):
             sceneLbl = SceneSeparator(scene)
             sceneLbl.clicked.connect(partial(self.sceneSeparatorClicked.emit, scene))
             self._sceneLabels.append(sceneLbl)
-            self.wdgEditor.layout().addWidget(sceneLbl, alignment=Qt.AlignmentFlag.AlignCenter)
+            self.wdgEditor.layout().addWidget(sceneLbl, alignment=Qt.AlignmentFlag.AlignRight)
             self.wdgEditor.layout().addWidget(wdg)
 
         if self._sceneLabels:
