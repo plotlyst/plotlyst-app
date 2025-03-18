@@ -295,6 +295,8 @@ class OutlineTimelineWidget(QFrame):
             y = 0
             for i, wdg in enumerate(self._beatWidgets):
                 pos: QPoint = wdg.pos()
+                if pos.isNull():
+                    continue
                 pos.setY(pos.y() + wdg.layout().contentsMargins().top())
                 if isinstance(wdg, OutlineItemWidget):
                     pos.setY(pos.y() + wdg.iconFixedSize // 2)

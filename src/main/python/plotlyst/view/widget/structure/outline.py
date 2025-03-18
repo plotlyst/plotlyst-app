@@ -390,7 +390,6 @@ class StoryStructureOutline(OutlineTimelineWidget):
         if not self._items:
             self.layout().addWidget(self._newPlaceholderWidget(displayText=True))
 
-        self.update()
 
     @overrides
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
