@@ -39,7 +39,7 @@ from qtmenu import MenuWidget, group
 from qttextedit import TextBlockState
 from textstat import textstat
 
-from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR
+from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR, LIGHTGREY_ACTIVE_COLOR
 from plotlyst.core.domain import Novel, DocumentProgress, SnapshotType
 from plotlyst.core.sprint import TimerModel
 from plotlyst.core.text import wc, sentence_count, clean_text
@@ -501,7 +501,8 @@ class ManuscriptDailyProgress(QWidget):
         self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
         self.btnSnapshot.setHidden(True)
         self.layout().addWidget(group(self.btnDay, self.btnJumpToToday, margin=0))
-        self.layout().addWidget(group(self.lblAdded, vline(), self.lblRemoved,margin=0, spacing=0), alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout().addWidget(group(self.lblAdded, vline(), self.lblRemoved, margin=0, spacing=0),
+                                alignment=Qt.AlignmentFlag.AlignRight)
         lbl = label('Added | Removed', description=True, decr_font_diff=2)
         self.layout().addWidget(lbl, alignment=Qt.AlignmentFlag.AlignRight)
 
@@ -544,8 +545,10 @@ class ManuscriptProgressCalendar(QCalendarWidget):
         item = self.layout().itemAt(0)
         item.widget().setStyleSheet(f'.QWidget {{background-color: {PLOTLYST_SECONDARY_COLOR};}}')
 
-        self._initButton(item.widget().layout().itemAt(0), 'ei.circle-arrow-left')
-        self._initButton(item.widget().layout().itemAt(6), 'ei.circle-arrow-right')
+        self._initControlButton(item.widget().layout().itemAt(0), 'ei.circle-arrow-left')
+        self._initDateButton(item.widget().layout().itemAt(2))
+        self._initDateButton(item.widget().layout().itemAt(4))
+        self._initControlButton(item.widget().layout().itemAt(6), 'ei.circle-arrow-right')
 
         widget = self.layout().itemAt(1).widget()
         if isinstance(widget, QTableView):
@@ -601,12 +604,26 @@ class ManuscriptProgressCalendar(QCalendarWidget):
                 painter.setPen(QColor('black'))
             painter.drawText(rect.toRectF(), str(date.day()), option)
 
-    def _initButton(self, btnItem: QWidgetItem, icon: str):
+    def _initControlButton(self, btnItem: QWidgetItem, icon: str):
         if btnItem and btnItem.widget() and isinstance(btnItem.widget(), QToolButton):
             btn = btnItem.widget()
             transparent(btn)
             pointy(btn)
             btn.setIcon(IconRegistry.from_name(icon, RELAXED_WHITE_COLOR))
+
+    def _initDateButton(self, item: QWidgetItem):
+        if item and item.widget() and isinstance(item.widget(), QToolButton):
+            btn = item.widget()
+            btn.setStyleSheet(f'''
+                QToolButton {{
+                    color: {RELAXED_WHITE_COLOR};
+                    border: 0px;
+                    background-color: rgba(0, 0, 0, 0);
+                }}
+                QToolButton:hover {{
+                    background-color: {LIGHTGREY_ACTIVE_COLOR};
+                }}
+            ''')
 
 
 class ManuscriptProgressCalendarLegend(QWidget):
