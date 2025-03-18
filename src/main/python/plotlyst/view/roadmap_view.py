@@ -64,7 +64,6 @@ class TaskWidget(QWidget):
         self.iconPlus.setToolTip('Plotlyst Plus feature')
         self.iconPlus.setIcon(IconRegistry.from_name('mdi.certificate', PLOTLYST_SECONDARY_COLOR))
         translucent(self.iconPlus, 0.5)
-        self.iconPlus.setVisible(self.task.version == 'Plus')
 
         self.lblName = IconText()
         incr_font(self.lblName, 4)
@@ -85,6 +84,7 @@ class TaskWidget(QWidget):
 
         self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(group(self.lblName, self._btnOpenInExternal, spacer(), self.iconPlus))
+        self.iconPlus.setHidden(self.task.version != 'Plus')
         self.layout().addWidget(self.lblDescription)
         if appendLine:
             self.layout().addWidget(line())

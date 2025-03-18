@@ -503,6 +503,7 @@ class ManuscriptEditor(QWidget, EventListener):
         self.textTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         apply_text_color(self.textTitle, QColor(PLACEHOLDER_TEXT_COLOR))
         self.textTitle.textEdited.connect(self._titleEdited)
+        self.textTitle.returnPressed.connect(self.setFocus)
 
         self.wdgTitle = QWidget()
         hbox(self.wdgTitle).addWidget(self.textTitle)
@@ -649,6 +650,9 @@ class ManuscriptEditor(QWidget, EventListener):
             self._sceneLabels.append(sceneLbl)
             self.wdgEditor.layout().addWidget(sceneLbl, alignment=Qt.AlignmentFlag.AlignCenter)
             self.wdgEditor.layout().addWidget(wdg)
+
+        if self._sceneLabels:
+            self._sceneLabels[0].setHidden(True)
 
         self.wdgEditor.layout().addWidget(vspacer())
         self._textedits[0].setFocus()

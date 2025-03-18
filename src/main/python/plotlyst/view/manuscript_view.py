@@ -317,7 +317,7 @@ class ManuscriptView(AbstractNovelView):
         self.textEditor.clearSentenceHighlighter()
         self.textEditor.setNightMode(False)
 
-        self.ui.wdgBottom.layout().insertWidget(1, self.ui.lblWordCount, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.ui.wdgBottom.layout().insertWidget(0, self.ui.lblWordCount, alignment=Qt.AlignmentFlag.AlignCenter)
         self.ui.lblWordCount.setNightModeEnabled(False)
         self.ui.lblWordCount.setVisible(True)
 
