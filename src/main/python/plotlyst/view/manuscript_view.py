@@ -50,7 +50,7 @@ from plotlyst.view.widget.input import Toggle, SpinBoxDialog
 from plotlyst.view.widget.manuscript import SprintWidget, \
     ManuscriptProgressCalendar, ManuscriptDailyProgress, ManuscriptProgressCalendarLegend, ManuscriptProgressWidget
 from plotlyst.view.widget.manuscript.editor import ManuscriptEditor, DistFreeControlsBar, DistFreeDisplayBar
-from plotlyst.view.widget.manuscript.export import ManuscriptExportPopup
+from plotlyst.view.widget.manuscript.export import ManuscriptExportWidget
 from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
 from plotlyst.view.widget.scene.editor import SceneMiniEditor
@@ -90,10 +90,6 @@ class ManuscriptView(AbstractNovelView):
         self.ui.btnProgress.setIcon(IconRegistry.from_name('mdi.calendar-month-outline', 'black', PLOTLYST_MAIN_COLOR))
         self.ui.btnFind.setIcon(IconRegistry.from_name('fa5s.search', 'black', PLOTLYST_MAIN_COLOR, hflip=True))
         self.ui.btnExport.setIcon(IconRegistry.from_name('mdi.file-export-outline', 'black', PLOTLYST_MAIN_COLOR))
-        self.ui.btnExport.installEventFilter(
-            OpacityEventFilter(self.ui.btnExport, enterOpacity=0.7, ignoreCheckedButton=True))
-        self.ui.btnExport.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnExport))
-        self.ui.btnExport.clicked.connect(lambda: ManuscriptExportPopup.popup(self.novel))
         self.ui.btnSettings.setIcon(IconRegistry.cog_icon(color_on=PLOTLYST_MAIN_COLOR))
 
         self.ui.btnReadability.setHidden(True)
@@ -110,6 +106,7 @@ class ManuscriptView(AbstractNovelView):
         self._btnGroupSideBar.addButton(self.ui.btnGoals)
         self._btnGroupSideBar.addButton(self.ui.btnProgress)
         self._btnGroupSideBar.addButton(self.ui.btnFind)
+        self._btnGroupSideBar.addButton(self.ui.btnExport)
         self._btnGroupSideBar.addButton(self.ui.btnSettings)
         for btn in self._btnGroupSideBar.buttons():
             btn.installEventFilter(OpacityEventFilter(btn, enterOpacity=0.7, ignoreCheckedButton=True))
@@ -120,6 +117,7 @@ class ManuscriptView(AbstractNovelView):
                               [(self.ui.btnSceneInfo, self.ui.pageInfo), (self.ui.btnGoals, self.ui.pageGoal),
                                (self.ui.btnProgress, self.ui.pageProgress),
                                (self.ui.btnFind, self.ui.pageFind),
+                               (self.ui.btnExport, self.ui.pageExport),
                                (self.ui.btnSettings, self.ui.pageSettings)])
 
         bold(self.ui.lblWordCount)
@@ -179,6 +177,10 @@ class ManuscriptView(AbstractNovelView):
         self._progressWdg.btnEditGoal.clicked.connect(self._edit_wc_goal)
         self.ui.pageGoal.layout().addWidget(self._progressWdg, alignment=Qt.AlignmentFlag.AlignCenter)
         self.ui.pageGoal.layout().addWidget(vspacer())
+
+        self._exportWidget = ManuscriptExportWidget(self.novel)
+        self.ui.pageExport.layout().addWidget(self._exportWidget)
+        self.ui.pageExport.layout().addWidget(vspacer())
 
         self._toolbarSeparator = vline()
         self._wdgToolbar = group(self._wdgSprint, self._toolbarSeparator, self._spellCheckIcon,

@@ -170,14 +170,13 @@ class Forms(QWidget):
         vbox(self, 0, 0)
         self.wdgSettings = QWidget()
         self._layout = QFormLayout(self.wdgSettings)
-        margins(self.wdgSettings, left=20)
 
         self.layout().addWidget(label(title, bold=True), alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(self.wdgSettings, alignment=Qt.AlignmentFlag.AlignLeft)
 
     def addSetting(self, text: str) -> SmallToggleButton:
         toggle = SmallToggleButton()
-        self._layout.addRow(label(text, description=True), toggle)
+        self._layout.addRow(label(text, description=True, decr_font_diff=1), toggle)
         return toggle
 
     def setRowVisible(self, row: int, visible: bool):
