@@ -59,16 +59,17 @@ class DocumentAdditionMenu(MenuWidget):
         self._character_menu.setTitle('Characters')
         self._character_menu.setIcon(IconRegistry.character_icon())
         self.addMenu(self._character_menu)
-        self.addSeparator()
 
-        self._otherMenu = MenuWidget()
-        self._otherMenu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
-        self._otherMenu.setTitle('Other')
-        self._otherMenu.addAction(action('Premise builder', IconRegistry.from_name('mdi.flower'),
-                                         lambda: self._premiseSelected(),
-                                         tooltip="Turn ideas into concepts, and develop a final premise"))
+        if app_env.profile().get('extra-docs', False):
+            self.addSeparator()
+            self._otherMenu = MenuWidget()
+            self._otherMenu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
+            self._otherMenu.setTitle('Other')
+            self._otherMenu.addAction(action('Premise builder', IconRegistry.from_name('mdi.flower'),
+                                             lambda: self._premiseSelected(),
+                                             tooltip="Turn ideas into concepts, and develop a final premise"))
 
-        self.addMenu(self._otherMenu)
+            self.addMenu(self._otherMenu)
 
         apply_white_menu(self)
 
