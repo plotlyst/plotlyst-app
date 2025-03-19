@@ -29,10 +29,11 @@ from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import NovelScenesOrganizationToggleEvent
 from plotlyst.service.manuscript import export_manuscript_to_docx
-from plotlyst.view.common import push_btn, exclusive_buttons, label
+from plotlyst.view.common import push_btn, exclusive_buttons, label, fade, frame
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.widget.button import SmallToggleButton
+from plotlyst.view.widget.input import DecoratedLineEdit
 from plotlyst.view.widget.settings import Forms
 
 
@@ -46,6 +47,18 @@ class ManuscriptExportWidget(QWidget, EventListener):
         self.toggleTitlePage.setChecked(True)
         self.layout().addWidget(group(label('Title page', bold=True), self.toggleTitlePage, margin=0, spacing=0),
                                 alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.nameFrame = frame()
+        self.nameFrame.setProperty('rounded', True)
+        self.nameFrame.setProperty('bg', True)
+        vbox(self.nameFrame, 4)
+        self.lineName = DecoratedLineEdit(autoAdjustable=False)
+        self.lineName.lineEdit.setPlaceholderText("Author's name")
+        self.lineName.setIcon(IconRegistry.from_name('mdi.account'))
+        self.nameFrame.layout().addWidget(self.lineName)
+        self.layout().addWidget(self.nameFrame, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.toggleTitlePage.toggled.connect(lambda x: fade(self.nameFrame, x))
 
         self.chapterForms = Forms('Chapter titles')
         self.chapterSceneTitle = self.chapterForms.addSetting("First scene's title")
@@ -71,4 +84,5 @@ class ManuscriptExportWidget(QWidget, EventListener):
     @busy
     def _export(self, _):
         export_manuscript_to_docx(self._novel, sceneTitle=self.chapterSceneTitle.isChecked(),
-                                  povTitle=self.chapterScenePov.isChecked(), titlePage=self.toggleTitlePage.isChecked())
+                                  povTitle=self.chapterScenePov.isChecked(), titlePage=self.toggleTitlePage.isChecked(),
+                                  author=self.lineName.lineEdit.text())

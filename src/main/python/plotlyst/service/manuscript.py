@@ -17,6 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, List
 
@@ -42,7 +43,8 @@ from plotlyst.service.resource import ask_for_resource
 from plotlyst.view.widget.confirm import asked
 
 
-def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: bool = False, titlePage: bool = True):
+def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: bool = False, titlePage: bool = True,
+                              author: str = ''):
     if not ask_for_resource(ResourceType.PANDOC):
         return
 
@@ -65,6 +67,9 @@ def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: 
 
         if novel.subtitle:
             html += f'<div custom-style="Subtitle">{novel.subtitle}</div>'
+
+        html += f'<div custom-style="Author">{author}</div>'
+        html += f'<div custom-style="Date">{datetime.today().strftime("%B %d, %Y")}</div>'
 
     if novel.prefs.is_scenes_organization():
         for i, chapter in enumerate(novel.chapters):
@@ -155,7 +160,7 @@ def export_manuscript_to_pdf(novel: Novel, manuscript: QTextDocument):
 
 def ask_to_open_file(target_path: str):
     if asked('The file will be opened in an external editor associated with that file format.',
-             'Export was finished. Open file in editor?', btnCancelText='No'):
+             'Export was finished. Open file in editor?', btnCancelText='No', btnConfirmText='Open file'):
         open_location(target_path)
 
 
