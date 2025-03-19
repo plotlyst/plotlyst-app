@@ -346,10 +346,10 @@
               <number>0</number>
              </property>
              <property name="topMargin">
-              <number>15</number>
+              <number>0</number>
              </property>
              <property name="bottomMargin">
-              <number>15</number>
+              <number>0</number>
              </property>
              <item>
               <widget class="QScrollArea" name="scrollEditor">
@@ -364,8 +364,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>221</width>
-                  <height>394</height>
+                  <width>211</width>
+                  <height>422</height>
                  </rect>
                 </property>
                 <property name="relaxed-white-bg" stdset="0">
@@ -415,7 +415,7 @@
                 <enum>QFrame::Sunken</enum>
                </property>
                <property name="relaxed-white-bg" stdset="0">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
                <property name="muted-bg" stdset="0">
                 <bool>false</bool>
@@ -428,7 +428,7 @@
                  <number>0</number>
                 </property>
                 <property name="topMargin">
-                 <number>4</number>
+                 <number>14</number>
                 </property>
                 <property name="rightMargin">
                  <number>0</number>
@@ -436,14 +436,38 @@
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
-                <item alignment="Qt::AlignLeft">
-                 <widget class="QToolButton" name="btnHideRightBar">
-                  <property name="cursor">
-                   <cursorShape>PointingHandCursor</cursorShape>
+                <item>
+                 <widget class="QWidget" name="widget_3" native="true">
+                  <property name="relaxed-white-bg" stdset="0">
+                   <bool>true</bool>
                   </property>
-                  <property name="text">
-                   <string/>
-                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_5">
+                   <property name="spacing">
+                    <number>0</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>5</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
+                   <item alignment="Qt::AlignLeft">
+                    <widget class="QToolButton" name="btnHideRightBar">
+                     <property name="cursor">
+                      <cursorShape>PointingHandCursor</cursorShape>
+                     </property>
+                     <property name="text">
+                      <string/>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
                  </widget>
                 </item>
                 <item>
@@ -515,6 +539,9 @@
                    </layout>
                   </widget>
                   <widget class="QWidget" name="pageExport">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
                    <layout class="QVBoxLayout" name="verticalLayout_9">
                     <property name="spacing">
                      <number>3</number>
@@ -592,7 +619,7 @@
                          <x>0</x>
                          <y>0</y>
                          <width>68</width>
-                         <height>342</height>
+                         <height>357</height>
                         </rect>
                        </property>
                        <property name="relaxed-white-bg" stdset="0">
@@ -672,7 +699,7 @@
                  <number>2</number>
                 </property>
                 <property name="topMargin">
-                 <number>10</number>
+                 <number>25</number>
                 </property>
                 <property name="rightMargin">
                  <number>10</number>
