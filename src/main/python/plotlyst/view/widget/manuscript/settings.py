@@ -20,26 +20,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from functools import partial
 
 from PyQt6 import QtGui
-from PyQt6.QtCore import pyqtSignal, QTimer, Qt, QSize
-from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QWidget, QFrame, QAbstractButton
+from PyQt6.QtCore import pyqtSignal, QTimer, Qt, QSize, QEvent
+from PyQt6.QtGui import QMouseEvent, QColor
+from PyQt6.QtWidgets import QWidget, QFrame, QAbstractButton, QGraphicsColorizeEffect
 from overrides import overrides
 from qthandy import margins, vbox, decr_icon, pointy, vspacer, hbox, incr_font
-from qtmenu import group
+from qthandy.filter import OpacityEventFilter
+from qtmenu import group, MenuWidget
 from qttextedit import DashInsertionMode
 from qttextedit.api import AutoCapitalizationMode, EllipsisInsertionMode
 from qttextedit.ops import FontSectionSettingWidget, FontSizeSectionSettingWidget, TextWidthSectionSettingWidget, \
     FontRadioButton, SliderSectionWidget
 from qttextedit.util import EN_DASH, EM_DASH
 
+from plotlyst.common import PLOTLYST_TERTIARY_COLOR
 from plotlyst.core.domain import Novel
+from plotlyst.resources import resource_registry
 from plotlyst.view.common import label, push_btn, \
-    exclusive_buttons
+    exclusive_buttons, tool_btn, action
 from plotlyst.view.generated.manuscript_context_menu_widget_ui import Ui_ManuscriptContextMenuWidget
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.button import CollapseButton, SmallToggleButton
 from plotlyst.view.widget.confirm import asked
-from plotlyst.view.widget.display import IconText
+from plotlyst.view.widget.display import IconText, DividerWidget, SeparatorLineWithShadow
 
 
 class ManuscriptSpellcheckingSettingsWidget(QWidget, Ui_ManuscriptContextMenuWidget):
@@ -181,6 +184,105 @@ class ManuscriptSpellcheckingSettingsWidget(QWidget, Ui_ManuscriptContextMenuWid
         QTimer.singleShot(450, confirm)
 
 
+class SelectableDividerWidget(DividerWidget):
+    selected = pyqtSignal()
+
+    def __init__(self):
+        super().__init__()
+        self._effect = QGraphicsColorizeEffect(self)
+        self._effect.setColor(Qt.GlobalColor.gray)
+        self.setGraphicsEffect(self._effect)
+
+    @overrides
+    def enterEvent(self, event: QtGui.QEnterEvent) -> None:
+        self._effect.setColor(QColor(PLOTLYST_TERTIARY_COLOR))
+
+    @overrides
+    def leaveEvent(self, a0: QEvent) -> None:
+        self._effect.setColor(Qt.GlobalColor.gray)
+
+    @overrides
+    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.selected.emit()
+
+
+class ManuscriptHeaderSelectorWidget(QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        hbox(self, 5)
+
+        self.setProperty('rounded', True)
+        self.setProperty('muted-bg', True)
+
+        self.installEventFilter(OpacityEventFilter(self, 0.7, 1.0))
+        pointy(self)
+
+        self.btnSelector = tool_btn(IconRegistry.from_name('mdi.chevron-down', 'grey'), transparent_=True,
+                                    icon_resize=False)
+        self.btnSelector.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.btnSelector.setIconSize(QSize(18, 18))
+
+        self.divider = DividerWidget()
+        self.divider.setResource(resource_registry.top_frame1)
+        # self.divider.setMinimumSize(0, 0)
+        self.divider.setFixedSize(120, 20)
+
+        self.idleLine = SeparatorLineWithShadow()
+        # self.idleLine.setMinimumSize(0, 0)
+        self.idleLine.setFixedSize(120, 20)
+
+        self.layout().addWidget(self.divider)
+        self.layout().addWidget(self.idleLine)
+        self.layout().addWidget(self.btnSelector)
+
+        self.idleLine.setHidden(True)
+
+    @overrides
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        self.btnSelector.setIconSize(QSize(16, 16))
+
+    @overrides
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        self.btnSelector.setIconSize(QSize(18, 18))
+        self._select()
+
+    def setVariant(self, variant: int):
+        self.idleLine.setHidden(variant > 0)
+        self.divider.setHidden(variant == 0)
+
+        if variant == 1:
+            self.divider.setResource(resource_registry.top_frame1)
+        elif variant == 2:
+            self.divider.setResource(resource_registry.top_frame2)
+
+    def _select(self):
+        menu = MenuWidget(self)
+        menu.addAction(action('None', slot=lambda: self.setVariant(0)))
+        wdgSamples = QWidget()
+        vbox(wdgSamples, 0, 5)
+        for i, resource in enumerate([resource_registry.top_frame1, resource_registry.top_frame2]):
+            sample = SelectableDividerWidget()
+            sample.setResource(resource)
+            sample.setFixedSize(120, 20)
+            sample.selected.connect(partial(self.setVariant, i + 1))
+            wdgSamples.layout().addWidget(sample)
+
+        menu.addWidget(wdgSamples)
+        menu.exec()
+
+
+class ManuscriptHeaderSettingWidget(QWidget):
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(parent)
+        self.novel = novel
+        vbox(self)
+        self.selector = ManuscriptHeaderSelectorWidget()
+        self.layout().addWidget(label('Header', bold=True), alignment=Qt.AlignLeft)
+        self.layout().addWidget(self.selector, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.selector.setVariant(1)
+
+
 class ManuscriptFontSettingWidget(FontSectionSettingWidget):
 
     @overrides
@@ -241,11 +343,13 @@ class ManuscriptTextSettingsWidget(QWidget):
         super().__init__(parent)
         vbox(self)
 
+        self.headerSetting = ManuscriptHeaderSettingWidget(novel)
         self.fontSetting = ManuscriptFontSettingWidget()
         self.sizeSetting = ManuscriptFontSizeSettingWidget()
         self.widthSetting = TextWidthSectionSettingWidget()
         self.spaceSetting = LineSpaceSettingWidget()
 
+        self.layout().addWidget(self.headerSetting)
         self.layout().addWidget(self.fontSetting)
         self.layout().addWidget(self.sizeSetting)
         self.layout().addWidget(self.widthSetting)

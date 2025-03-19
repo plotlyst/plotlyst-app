@@ -584,7 +584,7 @@ class SeparatorLineWithShadow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMinimumSize(100, 12)
-        self._margin = 50
+        self._margin = 10
         self._colorRadiant = QColor(PLACEHOLDER_TEXT_COLOR)
         self._colorRadiant.setAlpha(125)
 
