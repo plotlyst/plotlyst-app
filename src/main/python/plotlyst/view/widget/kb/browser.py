@@ -146,9 +146,9 @@ class KnowledgeBaseWidget(QWidget):
         self.wdgDisplay = frame()
         self.wdgDisplay.setProperty('relaxed-white-bg', True)
         self.wdgDisplay.setProperty('large-rounded', True)
-        self.wdgDisplay.setMaximumWidth(1000)
+        self.wdgDisplay.setMaximumWidth(900)
         vbox(self.wdgDisplay)
-        hbox(self.wdgArticleContainer, 15).addWidget(self.wdgDisplay)
+        hbox(self.wdgArticleContainer, 25).addWidget(self.wdgDisplay)
         margins(self.wdgArticleContainer, top=40, bottom=40)
 
         self.splitter = QSplitter(self)

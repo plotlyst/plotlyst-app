@@ -85,9 +85,10 @@ class AbstractArticleWidget(QWidget):
         font.setFamily(self.textFontFamily)
         textedit.setFont(font)
 
-        textedit.setMarkdown(text)
         textedit.setBlockFormat(lineSpacing=130, textIndent=textIndent, margin_bottom=10, margin_top=10,
                                 margin_left=marginLeft)
+        textedit.setMarkdown(text)
+        textedit.applyBlockFormat()
 
         self.layout().addWidget(textedit)
 
