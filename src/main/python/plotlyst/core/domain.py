@@ -3879,6 +3879,7 @@ class ManuscriptPreferences:
     ellipsis: EllipsisInsertionMode = EllipsisInsertionMode.NONE
     smart_quotes: bool = True
     period: bool = True
+    header_variant: int = 1
 
 
 class NovelPanel(Enum):
