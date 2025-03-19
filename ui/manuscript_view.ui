@@ -364,7 +364,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>211</width>
+                  <width>221</width>
                   <height>394</height>
                  </rect>
                 </property>
@@ -404,7 +404,7 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>210</width>
+                 <width>200</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -425,7 +425,7 @@
                  <number>0</number>
                 </property>
                 <property name="leftMargin">
-                 <number>10</number>
+                 <number>0</number>
                 </property>
                 <property name="topMargin">
                  <number>4</number>
@@ -514,6 +514,25 @@
                     </property>
                    </layout>
                   </widget>
+                  <widget class="QWidget" name="pageExport">
+                   <layout class="QVBoxLayout" name="verticalLayout_9">
+                    <property name="spacing">
+                     <number>3</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>25</number>
+                    </property>
+                   </layout>
+                  </widget>
                   <widget class="QWidget" name="pageFind">
                    <property name="relaxed-white-bg" stdset="0">
                     <bool>true</bool>
@@ -572,8 +591,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>100</width>
-                         <height>30</height>
+                         <width>68</width>
+                         <height>342</height>
                         </rect>
                        </property>
                        <property name="relaxed-white-bg" stdset="0">
@@ -819,7 +838,7 @@
                    </size>
                   </property>
                   <property name="checkable">
-                   <bool>false</bool>
+                   <bool>true</bool>
                   </property>
                   <property name="transparent-circle-bg-on-hover" stdset="0">
                    <bool>true</bool>
