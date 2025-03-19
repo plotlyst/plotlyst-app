@@ -36,6 +36,7 @@ from plotlyst.core.text import wc
 from plotlyst.env import open_location, app_env
 from plotlyst.resources import resource_registry, ResourceType
 from plotlyst.service.common import today_str
+from plotlyst.service.dir import default_exported_location
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.service.resource import ask_for_resource
 from plotlyst.view.widget.confirm import asked
@@ -50,7 +51,7 @@ def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: 
         target_path = 'test.docx'
     else:
         title = slugify(novel.title if novel.title else 'my-novel')
-        target_path, _ = QFileDialog.getSaveFileName(None, 'Export Docx', f'{title}.docx',
+        target_path, _ = QFileDialog.getSaveFileName(None, 'Export Docx', default_exported_location(f'{title}.docx'),
                                                      'Docx files (*.docx);;All Files()')
         if not target_path:
             return
