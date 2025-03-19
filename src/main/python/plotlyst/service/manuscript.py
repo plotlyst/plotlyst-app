@@ -56,7 +56,7 @@ def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: 
         if not target_path:
             return
 
-    html: str = ''
+    html: str = f'<div custom-style="Title">{novel.title if novel.title else "My Novel"}</div>'
     if novel.prefs.is_scenes_organization():
         for i, chapter in enumerate(novel.chapters):
             scenes = novel.scenes_in_chapter(chapter)

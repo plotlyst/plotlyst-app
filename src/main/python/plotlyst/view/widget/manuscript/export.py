@@ -62,6 +62,6 @@ class ManuscriptExportWidget(QWidget, EventListener):
             self.chapterForms.setRowVisible(0, self._novel.prefs.is_scenes_organization())
 
     @busy
-    def _export(self):
+    def _export(self, _):
         export_manuscript_to_docx(self._novel, sceneTitle=self.chapterSceneTitle.isChecked(),
                                   povTitle=self.chapterScenePov.isChecked())
