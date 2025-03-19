@@ -42,7 +42,7 @@ from plotlyst.service.resource import ask_for_resource
 from plotlyst.view.widget.confirm import asked
 
 
-def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: bool = False):
+def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: bool = False, titlePage: bool = True):
     if not ask_for_resource(ResourceType.PANDOC):
         return
 
@@ -56,7 +56,16 @@ def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: 
         if not target_path:
             return
 
-    html: str = f'<div custom-style="Title">{novel.title if novel.title else "My Novel"}</div>'
+    html: str = ''
+    if titlePage:
+        title = novel.title if novel.title else "My Novel"
+        if novel.subtitle:
+            title += ':'
+        html += f'<div custom-style="Title">{title}</div>'
+
+        if novel.subtitle:
+            html += f'<div custom-style="Subtitle">{novel.subtitle}</div>'
+
     if novel.prefs.is_scenes_organization():
         for i, chapter in enumerate(novel.chapters):
             scenes = novel.scenes_in_chapter(chapter)

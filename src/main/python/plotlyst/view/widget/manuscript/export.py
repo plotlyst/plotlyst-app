@@ -29,8 +29,10 @@ from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import NovelScenesOrganizationToggleEvent
 from plotlyst.service.manuscript import export_manuscript_to_docx
-from plotlyst.view.common import push_btn, exclusive_buttons
+from plotlyst.view.common import push_btn, exclusive_buttons, label
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.layout import group
+from plotlyst.view.widget.button import SmallToggleButton
 from plotlyst.view.widget.settings import Forms
 
 
@@ -39,6 +41,11 @@ class ManuscriptExportWidget(QWidget, EventListener):
         super().__init__(parent)
         self._novel = novel
         vbox(self, 5, spacing=15)
+
+        self.toggleTitlePage = SmallToggleButton()
+        self.toggleTitlePage.setChecked(True)
+        self.layout().addWidget(group(label('Title page', bold=True), self.toggleTitlePage, margin=0, spacing=0),
+                                alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.chapterForms = Forms('Chapter titles')
         self.chapterSceneTitle = self.chapterForms.addSetting("First scene's title")
@@ -64,4 +71,4 @@ class ManuscriptExportWidget(QWidget, EventListener):
     @busy
     def _export(self, _):
         export_manuscript_to_docx(self._novel, sceneTitle=self.chapterSceneTitle.isChecked(),
-                                  povTitle=self.chapterScenePov.isChecked())
+                                  povTitle=self.chapterScenePov.isChecked(), titlePage=self.toggleTitlePage.isChecked())

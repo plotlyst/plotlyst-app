@@ -309,6 +309,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
                 self.novel.title = event.novel.title
                 self.novel.icon = event.novel.icon
                 self.novel.icon_color = event.novel.icon_color
+                self.novel.subtitle = event.novel.subtitle
                 self.novel.parent = event.novel.parent
                 self.outline_mode.setText(self.novel.title)
                 if self.novel.icon:

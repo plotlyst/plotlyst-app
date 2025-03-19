@@ -336,6 +336,7 @@ class HomeView(AbstractView):
     def _subtitle_edited(self, subtitle: str):
         self._selected_novel.subtitle = subtitle
         self.repo.update_project_novel(self._selected_novel)
+        emit_global_event(NovelUpdatedEvent(self, self._selected_novel))
 
     def _short_synopsis_edited(self):
         if self._selected_novel:
