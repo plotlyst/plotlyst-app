@@ -44,7 +44,7 @@ from plotlyst.view.widget.confirm import asked
 
 
 def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: bool = False, titlePage: bool = True,
-                              author: str = ''):
+                              author: str = '', email: str = ''):
     if not ask_for_resource(ResourceType.PANDOC):
         return
 
@@ -68,7 +68,13 @@ def export_manuscript_to_docx(novel: Novel, sceneTitle: bool = False, povTitle: 
         if novel.subtitle:
             html += f'<div custom-style="Subtitle">{novel.subtitle}</div>'
 
-        html += f'<div custom-style="Author">{author}</div>'
+        author_info = author
+        if email:
+            if author_info:
+                author_info += f' ({email})'
+            else:
+                author_info = email
+        html += f'<div custom-style="Author">{author_info}</div>'
         html += f'<div custom-style="Date">{datetime.today().strftime("%B %d, %Y")}</div>'
 
     if novel.prefs.is_scenes_organization():

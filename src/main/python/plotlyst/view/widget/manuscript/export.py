@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import QWidget
 from overrides import overrides
 from qthandy import vbox, busy
 
-from plotlyst.common import RELAXED_WHITE_COLOR
+from plotlyst.common import RELAXED_WHITE_COLOR, IGNORE_CAPITALIZATION_PROPERTY
 from plotlyst.core.domain import Novel
 from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
@@ -58,7 +58,18 @@ class ManuscriptExportWidget(QWidget, EventListener):
         self.nameFrame.layout().addWidget(self.lineName)
         self.layout().addWidget(self.nameFrame, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        self.toggleTitlePage.toggled.connect(lambda x: fade(self.nameFrame, x))
+        self.emailFrame = frame()
+        self.emailFrame.setProperty('rounded', True)
+        self.emailFrame.setProperty('bg', True)
+        vbox(self.emailFrame, 4)
+        self.lineEmail = DecoratedLineEdit(autoAdjustable=False)
+        self.lineEmail.lineEdit.setPlaceholderText('Email')
+        self.lineEmail.lineEdit.setProperty(IGNORE_CAPITALIZATION_PROPERTY, True)
+        self.lineEmail.setIcon(IconRegistry.from_name('fa5s.at'))
+        self.emailFrame.layout().addWidget(self.lineEmail)
+        self.layout().addWidget(self.emailFrame, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.toggleTitlePage.toggled.connect(self._titlePageToggled)
 
         self.chapterForms = Forms('Chapter titles')
         self.chapterSceneTitle = self.chapterForms.addSetting("First scene's title")
@@ -81,8 +92,12 @@ class ManuscriptExportWidget(QWidget, EventListener):
         if isinstance(event, NovelScenesOrganizationToggleEvent):
             self.chapterForms.setRowVisible(0, self._novel.prefs.is_scenes_organization())
 
+    def _titlePageToggled(self, toggled: bool):
+        fade(self.nameFrame, toggled)
+        fade(self.emailFrame, toggled)
+
     @busy
     def _export(self, _):
         export_manuscript_to_docx(self._novel, sceneTitle=self.chapterSceneTitle.isChecked(),
                                   povTitle=self.chapterScenePov.isChecked(), titlePage=self.toggleTitlePage.isChecked(),
-                                  author=self.lineName.lineEdit.text())
+                                  author=self.lineName.lineEdit.text(), email=self.lineEmail.lineEdit.text())
