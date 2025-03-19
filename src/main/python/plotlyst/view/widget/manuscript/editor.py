@@ -780,16 +780,16 @@ class ManuscriptEditor(QWidget, EventListener):
         self._settings.smartTypingSettings.periodChanged.connect(self._periodChanged)
         self._settings.smartTypingSettings.ellipsisChanged.connect(self._ellipsisChanged)
 
-        self._settings.fontSettings.sizeSetting.attach(self)
-        self._settings.fontSettings.widthSetting.attach(self)
-        self._settings.fontSettings.fontSetting.attach(self)
-        self._settings.fontSettings.spaceSetting.attach(self)
+        self._settings.textSettings.sizeSetting.attach(self)
+        self._settings.textSettings.widthSetting.attach(self)
+        self._settings.textSettings.fontSetting.attach(self)
+        self._settings.textSettings.spaceSetting.attach(self)
 
-        self._settings.fontSettings.headerSetting.selector.selected.connect(self._headerChanged)
-        self._settings.fontSettings.sizeSetting.sizeChanged.connect(self._fontSizeChanged)
-        self._settings.fontSettings.widthSetting.widthChanged.connect(self._textWidthChanged)
-        self._settings.fontSettings.fontSetting.fontSelected.connect(self._fontChanged)
-        self._settings.fontSettings.spaceSetting.spaceChanged.connect(self._spaceChanged)
+        self._settings.textSettings.headerSetting.selector.selected.connect(self._headerChanged)
+        self._settings.textSettings.sizeSetting.sizeChanged.connect(self._fontSizeChanged)
+        self._settings.textSettings.widthSetting.widthChanged.connect(self._textWidthChanged)
+        self._settings.textSettings.fontSetting.fontSelected.connect(self._fontChanged)
+        self._settings.textSettings.spaceSetting.spaceChanged.connect(self._spaceChanged)
 
     def statistics(self) -> TextStatistics:
         overall_stats = TextStatistics(0)

@@ -496,11 +496,11 @@ class ManuscriptEditorSettingsWidget(QWidget):
         super().__init__(parent)
         vbox(self)
 
-        self.fontSettings = ManuscriptTextSettingsWidget(novel)
+        self.textSettings = ManuscriptTextSettingsWidget(novel)
         self.smartTypingSettings = ManuscriptSmartTypingSettingsWidget(novel)
         self.langSelectionWidget = ManuscriptSpellcheckingSettingsWidget(novel)
 
-        headerSettings = self._addSection('Editor settings', 'fa5s.font', self.fontSettings)
+        headerSettings = self._addSection('Editor settings', 'fa5s.font', self.textSettings)
         headerSmart = self._addSection('Smart Typing', 'ri.double-quotes-r', self.smartTypingSettings)
         headerSpellcheck = self._addSection('Spellchecking', 'fa5s.spell-check', self.langSelectionWidget)
         exclusive_buttons(self, headerSettings.btnCollapse, headerSmart.btnCollapse, headerSpellcheck.btnCollapse,
