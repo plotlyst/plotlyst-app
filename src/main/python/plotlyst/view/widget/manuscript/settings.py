@@ -33,7 +33,7 @@ from qttextedit.ops import FontSectionSettingWidget, FontSizeSectionSettingWidge
     FontRadioButton, SliderSectionWidget
 from qttextedit.util import EN_DASH, EM_DASH
 
-from plotlyst.common import PLOTLYST_TERTIARY_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Novel
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import label, push_btn, \
@@ -195,7 +195,7 @@ class SelectableDividerWidget(DividerWidget):
 
     @overrides
     def enterEvent(self, event: QtGui.QEnterEvent) -> None:
-        self._effect.setColor(QColor(PLOTLYST_TERTIARY_COLOR))
+        self._effect.setColor(QColor(PLOTLYST_SECONDARY_COLOR))
 
     @overrides
     def leaveEvent(self, a0: QEvent) -> None:
@@ -207,6 +207,8 @@ class SelectableDividerWidget(DividerWidget):
 
 
 class ManuscriptHeaderSelectorWidget(QFrame):
+    selected = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         hbox(self, 5)
@@ -224,11 +226,9 @@ class ManuscriptHeaderSelectorWidget(QFrame):
 
         self.divider = DividerWidget()
         self.divider.setResource(resource_registry.top_frame1)
-        # self.divider.setMinimumSize(0, 0)
         self.divider.setFixedSize(120, 20)
 
         self.idleLine = SeparatorLineWithShadow()
-        # self.idleLine.setMinimumSize(0, 0)
         self.idleLine.setFixedSize(120, 20)
 
         self.layout().addWidget(self.divider)
@@ -255,16 +255,20 @@ class ManuscriptHeaderSelectorWidget(QFrame):
         elif variant == 2:
             self.divider.setResource(resource_registry.top_frame2)
 
+    def _variantChanged(self, variant: int):
+        self.setVariant(variant)
+        self.selected.emit(variant)
+
     def _select(self):
         menu = MenuWidget(self)
-        menu.addAction(action('None', slot=lambda: self.setVariant(0)))
+        menu.addAction(action('None', slot=lambda: self._variantChanged(0)))
         wdgSamples = QWidget()
         vbox(wdgSamples, 0, 5)
         for i, resource in enumerate([resource_registry.top_frame1, resource_registry.top_frame2]):
             sample = SelectableDividerWidget()
             sample.setResource(resource)
             sample.setFixedSize(120, 20)
-            sample.selected.connect(partial(self.setVariant, i + 1))
+            sample.selected.connect(partial(self._variantChanged, i + 1))
             wdgSamples.layout().addWidget(sample)
 
         menu.addWidget(wdgSamples)
@@ -280,7 +284,7 @@ class ManuscriptHeaderSettingWidget(QWidget):
         self.layout().addWidget(label('Header', bold=True), alignment=Qt.AlignLeft)
         self.layout().addWidget(self.selector, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.selector.setVariant(1)
+        self.selector.setVariant(self.novel.prefs.manuscript.header_variant)
 
 
 class ManuscriptFontSettingWidget(FontSectionSettingWidget):

@@ -483,9 +483,10 @@ class ManuscriptEditor(QWidget, EventListener):
         super().__init__(parent)
         self._novel: Optional[Novel] = None
         self._textedits: List[ManuscriptTextEdit] = []
-        self._defaultMargins = 45
-        self._minimumMargins = 10
-        self._maximumMargins = 65
+        self._defaultSideMargins = 45
+        self._defaultTopMargin = 25
+        self._minimumSideMargins = 10
+        self._maximumSideMargins = 65
         self._sceneLabels: List[SceneSeparator] = []
         self._scenes: List[Scene] = []
         self._scene: Optional[Scene] = None
@@ -515,8 +516,6 @@ class ManuscriptEditor(QWidget, EventListener):
         margins(self.wdgTitle, bottom=5)
 
         self.divider = DividerWidget()
-        self.divider.setResource(resource_registry.top_frame1)
-        self.divider.setMinimumHeight(95)
         effect = QGraphicsColorizeEffect(self.divider)
         effect.setColor(QColor(PLACEHOLDER_TEXT_COLOR))
         self.divider.setGraphicsEffect(effect)
@@ -527,7 +526,8 @@ class ManuscriptEditor(QWidget, EventListener):
 
         self.wdgFrame = frame()
         vbox(self.wdgFrame, 0, 0)
-        margins(self.wdgFrame, left=self._defaultMargins, right=self._defaultMargins, top=25)
+        margins(self.wdgFrame, left=self._defaultSideMargins, right=self._defaultSideMargins,
+                top=self._defaultTopMargin)
         self.wdgFrame.setProperty('relaxed-white-bg', True)
         self.wdgFrame.setProperty('large-rounded', True)
 
@@ -585,11 +585,11 @@ class ManuscriptEditor(QWidget, EventListener):
             self._resizeToCharacterWidth()
 
         if event.size().width() < 600:
-            margins(self.wdgFrame, left=self._minimumMargins, right=self._minimumMargins)
+            margins(self.wdgFrame, left=self._minimumSideMargins, right=self._minimumSideMargins)
         elif event.size().width() > 1200:
-            margins(self.wdgFrame, left=self._maximumMargins, right=self._maximumMargins)
+            margins(self.wdgFrame, left=self._maximumSideMargins, right=self._maximumSideMargins)
         else:
-            margins(self.wdgFrame, left=self._defaultMargins, right=self._defaultMargins)
+            margins(self.wdgFrame, left=self._defaultSideMargins, right=self._defaultSideMargins)
 
     def defaultFont(self) -> QFont:
         if app_env.is_linux():
@@ -626,6 +626,8 @@ class ManuscriptEditor(QWidget, EventListener):
         title_font.setPointSize(32)
         title_font.setFamily(self._font.family())
         self.textTitle.setFont(title_font)
+
+        self._setHeaderVariant(self._novel.prefs.manuscript.header_variant)
 
         event_dispatchers.instance(self._novel).register(self, SceneDeletedEvent, SceneChangedEvent,
                                                          ScenesOrganizationResetEvent)
@@ -783,6 +785,7 @@ class ManuscriptEditor(QWidget, EventListener):
         self._settings.fontSettings.fontSetting.attach(self)
         self._settings.fontSettings.spaceSetting.attach(self)
 
+        self._settings.fontSettings.headerSetting.selector.selected.connect(self._headerChanged)
         self._settings.fontSettings.sizeSetting.sizeChanged.connect(self._fontSizeChanged)
         self._settings.fontSettings.widthSetting.widthChanged.connect(self._textWidthChanged)
         self._settings.fontSettings.fontSetting.fontSelected.connect(self._fontChanged)
@@ -960,6 +963,22 @@ class ManuscriptEditor(QWidget, EventListener):
         for textedit in self._textedits:
             textedit.setEllipsisInsertionMode(mode)
         self._novel.prefs.manuscript.ellipsis = mode
+        self.repo.update_novel(self._novel)
+
+    def _setHeaderVariant(self, variant: int):
+        self.divider.setHidden(variant == 0)
+        margins(self.wdgFrame, top=self._defaultTopMargin if variant > 0 else self._defaultTopMargin + 15)
+
+        if variant == 1:
+            self.divider.setResource(resource_registry.top_frame1)
+            self.divider.setMinimumHeight(95)
+        elif variant == 2:
+            self.divider.setResource(resource_registry.top_frame2)
+            self.divider.setMinimumHeight(85)
+
+    def _headerChanged(self, variant: int):
+        self._novel.prefs.manuscript.header_variant = variant
+        self._setHeaderVariant(variant)
         self.repo.update_novel(self._novel)
 
     def _fontSizeChanged(self, size: int):
