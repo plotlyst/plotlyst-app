@@ -36,6 +36,7 @@ from plotlyst.resources import resource_registry
 from plotlyst.service.productivity import find_daily_productivity, set_daily_productivity
 from plotlyst.view.common import label, frame, ButtonPressResizeEventFilter, to_rgba_str
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.style.base import transparent_menu
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.display import IconText, OverlayWidget, icon_text
 
@@ -243,11 +244,7 @@ class ProductivityButton(QWidget):
             ''')
 
         self._menu = MenuWidget()
-        self._menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self._menu.setStyleSheet('''
-        MenuWidget {
-                background-color: rgba(0, 0, 0, 0);
-                }''')
+        transparent_menu(self._menu)
         self._menu.aboutToHide.connect(self._hide)
 
         self.layout().addWidget(self.icon)

@@ -243,3 +243,11 @@ def apply_white_menu(menu: MenuWidget):
                             background-color: #DCDCDC;
                         }}
                         ''')
+
+
+def transparent_menu(menu: MenuWidget):
+    menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+    menu.setStyleSheet('''
+            MenuWidget {
+                    background-color: rgba(0, 0, 0, 0);
+                    }''')
