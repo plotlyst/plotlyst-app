@@ -22,6 +22,7 @@ import sys
 from collections import Counter
 from functools import partial
 from typing import Optional, Tuple, List, Union
+from uuid import UUID
 
 import qtanim
 import qtawesome
@@ -41,6 +42,7 @@ from qthandy.filter import DisabledClickEventFilter
 
 from plotlyst.common import WHITE_COLOR
 from plotlyst.env import app_env
+from plotlyst.settings import CHARACTER_INITIAL_AVATAR_COLOR_CODES
 from plotlyst.view.stylesheet import APP_STYLESHEET
 
 
@@ -697,3 +699,7 @@ def exclusive_buttons(parent: QObject, *buttons, optional=False) -> QButtonGroup
     for btn in buttons:
         btnGroup.addButton(btn)
     return btnGroup
+
+
+def default_character_color(uuid_: UUID) -> str:
+    return CHARACTER_INITIAL_AVATAR_COLOR_CODES[uuid_.int % len(CHARACTER_INITIAL_AVATAR_COLOR_CODES)]

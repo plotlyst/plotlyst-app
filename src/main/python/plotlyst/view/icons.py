@@ -32,8 +32,7 @@ from plotlyst.common import CONFLICT_CHARACTER_COLOR, \
 from plotlyst.core.domain import Character, ConflictType, \
     Scene, PlotType, MALE, FEMALE, TRANSGENDER, NON_BINARY, GENDERLESS, ScenePurposeType, StoryStructure
 from plotlyst.core.template import SelectionItem
-from plotlyst.settings import CHARACTER_INITIAL_AVATAR_COLOR_CODES
-from plotlyst.view.common import rounded_pixmap
+from plotlyst.view.common import rounded_pixmap, default_character_color
 
 
 class IconRegistry:
@@ -803,13 +802,12 @@ class AvatarsRegistry:
             return True
         return False
 
-    def name_initial_icon(self, character: Character, fallback: bool = True, color=None, color_on = None) -> QIcon:
+    def name_initial_icon(self, character: Character, fallback: bool = True, color=None, color_on=None) -> QIcon:
         if not character.name:
             return self._dummy_avatar()
 
         if color is None:
-            _uuid_int = character.id.int
-            color = CHARACTER_INITIAL_AVATAR_COLOR_CODES[_uuid_int % len(CHARACTER_INITIAL_AVATAR_COLOR_CODES)]
+            color = default_character_color(character.id)
 
         if color_on is None:
             color_on = color

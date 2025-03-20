@@ -355,9 +355,9 @@ class AvatarSelectors(QWidget):
         self.wdgLeftSide.setProperty('bg', True)
         vbox(self.wdgLeftSide, 5, 5)
         self.wdgRightSide = QWidget()
-        self.wdgRightSide.setProperty('relaxed-white-bg', True)
         retain_when_hidden(self.wdgRightSide)
-        vbox(self.wdgRightSide, 5, 5)
+        vbox(self.wdgRightSide, 0, 5)
+        margins(self.wdgRightSide, top=40)
         self.wdgRightSide.setFixedWidth(200)
         self.layout().addWidget(self.wdgLeftSide)
         self.layout().addWidget(self.wdgRightSide)
@@ -369,7 +369,7 @@ class AvatarSelectors(QWidget):
 
         self.btnImage = push_btn(text='Image', base=True, checkable=True)
         self.btnInitial = push_btn(IconRegistry.from_name('mdi.alpha-a-circle', color_on=RELAXED_WHITE_COLOR),
-                                   text='Name initial',
+                                   text='Icon',
                                    checkable=True, properties=['main-side-nav'])
         self.btnRole = push_btn(IconRegistry.from_name('fa5s.chess-bishop', color_on=RELAXED_WHITE_COLOR),
                                 text='Role icon',
@@ -391,7 +391,7 @@ class AvatarSelectors(QWidget):
         self.btnGroupSelectors.addButton(self.btnInitial)
         self.btnGroupSelectors.addButton(self.btnRole)
         self.btnGroupSelectors.addButton(self.btnCustomIcon)
-        self.btnGroupSelectors.buttonClicked.connect(self._selectorClicked)
+        self.btnGroupSelectors.buttonToggled.connect(self._selectorToggled)
 
         self.wdgLeftSide.layout().addWidget(label('Avatar options', h5=True),
                                             alignment=Qt.AlignmentFlag.AlignCenter)
@@ -428,7 +428,10 @@ class AvatarSelectors(QWidget):
         if self.character.avatar:
             self.btnImage.setIcon(QIcon(avatars.image(self.character)))
 
-    def _selectorClicked(self):
+    def _selectorToggled(self, _, toggled: bool):
+        if not toggled:
+            return
+
         if self.btnImage.isChecked():
             self.character.prefs.avatar.allow_image()
             self.wdgRightSide.setHidden(True)
@@ -438,12 +441,12 @@ class AvatarSelectors(QWidget):
         elif self.btnRole.isChecked():
             self.character.prefs.avatar.allow_role()
             self.wdgRightSide.setHidden(True)
-        elif self.btnCustomIcon.isChecked():
-            self.character.prefs.avatar.allow_custom_icon()
-            result = IconSelectorDialog.popup()
-            if result:
-                self.character.prefs.avatar.icon = result[0]
-                self.character.prefs.avatar.icon_color = result[1].name()
+        # elif self.btnCustomIcon.isChecked():
+        #     self.character.prefs.avatar.allow_custom_icon()
+        #     result = IconSelectorDialog.popup()
+        #     if result:
+        #         self.character.prefs.avatar.icon = result[0]
+        #         self.character.prefs.avatar.icon_color = result[1].name()
 
         self.selectorChanged.emit()
 
@@ -501,7 +504,7 @@ class CharacterAvatar(QWidget):
         self.wdgFrame = QWidget()
         self.wdgFrame.setProperty('border-image', True)
         hbox(self, 0, 0).addWidget(self.wdgFrame)
-        self.btnAvatar = tool_btn(IconRegistry.character_icon(), transparent_=True)
+        self.btnAvatar = tool_btn(IconRegistry.character_icon(), transparent_=True, icon_resize=False)
         hbox(self.wdgFrame, margins).addWidget(self.btnAvatar)
         self.btnAvatar.installEventFilter(OpacityEventFilter(parent=self.btnAvatar, enterOpacity=0.7, leaveOpacity=1.0))
         apply_border_image(self.wdgFrame, resource_registry.circular_frame1)
