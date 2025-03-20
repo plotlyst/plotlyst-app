@@ -136,11 +136,9 @@ CHARACTER_INITIAL_AVATAR_COLOR_CODES: List[str] = [
     '#9575cd',  # Muted purple
     '#26a69a',  # Teal
     '#7986cb',  # Periwinkle
-    '#ccff90',  # Light lime green
     '#4caf50',  # Medium green
 
     '#f06292',  # Hot pink
-    '#ffccbc',  # Light pink
     '#81d4fa',  # Light blue
     '#ef5350',  # Light red
     '#7b1fa2',  # Dark magenta
