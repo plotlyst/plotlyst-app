@@ -35,6 +35,7 @@ from qttextedit.api import AutoCapitalizationMode, EllipsisInsertionMode
 from plotlyst.common import act_color, RED_COLOR, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.template import SelectionItem, exclude_if_empty, exclude_if_black, enneagram_choices, \
     mbti_choices, Role, exclude_if_false, antagonist_role, exclude_if_true
+from plotlyst.view.common import default_character_color
 
 
 @dataclass
@@ -627,6 +628,10 @@ class Character:
     personality: CharacterPersonality = field(default_factory=CharacterPersonality)
     alias: str = field(default='', metadata=config(exclude=exclude_if_empty))
     origin_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+
+    def __post_init__(self):
+        if self.prefs.avatar.icon_color == 'black':
+            self.prefs.avatar.icon_color = default_character_color(self.id)
 
     def enneagram(self) -> Optional[SelectionItem]:
         if self.prefs.toggled(NovelSetting.Character_enneagram):

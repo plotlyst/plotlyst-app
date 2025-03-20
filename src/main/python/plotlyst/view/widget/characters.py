@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import QWidget, QToolButton, QButtonGroup, QSizePolicy, QLa
     QFileDialog, QMessageBox, QGridLayout, QFrame
 from overrides import overrides
 from qthandy import vspacer, transparent, gc, line, spacer, clear_layout, hbox, flow, translucent, margins, pointy, \
-    vbox, retain_when_hidden
+    vbox, retain_when_hidden, incr_icon
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, ScrollableMenuWidget
 
@@ -40,6 +40,7 @@ from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterSummaryChangedEvent, CharacterBackstoryChangedEvent
 from plotlyst.resources import resource_registry
+from plotlyst.settings import CHARACTER_INITIAL_AVATAR_COLOR_CODES
 from plotlyst.view.common import action, ButtonPressResizeEventFilter, tool_btn, label, push_btn
 from plotlyst.view.dialog.utility import ImageCropDialog
 from plotlyst.view.generated.characters_progress_widget_ui import Ui_CharactersProgressWidget
@@ -49,7 +50,7 @@ from plotlyst.view.widget.display import IconText, Icon, OverlayWidget
 from plotlyst.view.widget.labels import CharacterLabel
 from plotlyst.view.widget.progress import CircularProgressBar, ProgressTooltipMode, \
     CharacterRoleProgressChart
-from plotlyst.view.widget.utility import IconSelectorDialog
+from plotlyst.view.widget.utility import ColorPicker
 
 
 class CharacterToolButton(QToolButton):
@@ -359,6 +360,23 @@ class AvatarSelectors(QWidget):
         vbox(self.wdgRightSide, 0, 5)
         margins(self.wdgRightSide, top=40)
         self.wdgRightSide.setFixedWidth(200)
+        self.wdgIconVariants = QWidget()
+        vbox(self.wdgIconVariants)
+        self.wdgRightSide.layout().addWidget(self.wdgIconVariants)
+        self.wdgIconVariants.setProperty('relaxed-white-bg', True)
+
+        self.colorSelector = tool_btn(IconRegistry.from_name('fa5s.circle', self.character.prefs.avatar.icon_color))
+        self.colorSelector.installEventFilter(OpacityEventFilter(self.colorSelector, 0.7, 1.0))
+        incr_icon(self.colorSelector, 12)
+        menu = MenuWidget(self.colorSelector)
+        menu.addWidget(ColorPicker(maxColumn=5, colors=CHARACTER_INITIAL_AVATAR_COLOR_CODES))
+
+        self.wdgFirstLetterVariants = QWidget()
+        flow(self.wdgFirstLetterVariants)
+
+        self.wdgIconVariants.layout().addWidget(self.colorSelector, alignment=Qt.AlignmentFlag.AlignRight)
+        self.wdgIconVariants.layout().addWidget(self.wdgFirstLetterVariants)
+
         self.layout().addWidget(self.wdgLeftSide)
         self.layout().addWidget(self.wdgRightSide)
 
@@ -374,8 +392,6 @@ class AvatarSelectors(QWidget):
         self.btnRole = push_btn(IconRegistry.from_name('fa5s.chess-bishop', color_on=RELAXED_WHITE_COLOR),
                                 text='Role icon',
                                 checkable=True, properties=['main-side-nav'])
-        self.btnCustomIcon = push_btn(IconRegistry.icons_icon(), text='Custom icon', checkable=True,
-                                      properties=['main-side-nav'])
 
         self.btnUploadAvatar = push_btn(IconRegistry.upload_icon(color=RELAXED_WHITE_COLOR), text='Upload image',
                                         properties=['base', 'positive'])
@@ -390,7 +406,6 @@ class AvatarSelectors(QWidget):
         self.btnGroupSelectors.addButton(self.btnImage)
         self.btnGroupSelectors.addButton(self.btnInitial)
         self.btnGroupSelectors.addButton(self.btnRole)
-        self.btnGroupSelectors.addButton(self.btnCustomIcon)
         self.btnGroupSelectors.buttonToggled.connect(self._selectorToggled)
 
         self.wdgLeftSide.layout().addWidget(label('Avatar options', h5=True),
@@ -399,27 +414,20 @@ class AvatarSelectors(QWidget):
         self.wdgSelectors.layout().addWidget(self.btnImage)
         self.wdgSelectors.layout().addWidget(self.btnInitial)
         self.wdgSelectors.layout().addWidget(self.btnRole)
-        self.wdgSelectors.layout().addWidget(self.btnCustomIcon)
         self.wdgLeftSide.layout().addWidget(self.wdgSelectors)
         self.wdgLeftSide.layout().addWidget(line(color='lightgrey'))
         self.wdgLeftSide.layout().addWidget(self.btnUploadAvatar)
-
-        self.refresh()
 
     def refresh(self):
         prefs = self.character.prefs.avatar
         if prefs.use_image:
             self.btnImage.setChecked(True)
             self.btnImage.setVisible(True)
-        elif prefs.use_initial:
+        elif prefs.use_initial or prefs.use_custom_icon:
             self.btnInitial.setChecked(True)
         elif prefs.use_role:
             self.btnRole.setChecked(True)
-        elif prefs.use_custom_icon:
-            self.btnCustomIcon.setChecked(True)
 
-        if prefs.icon:
-            self.btnCustomIcon.setIcon(IconRegistry.from_name(prefs.icon, color_on=RELAXED_WHITE_COLOR))
         if self.character.role:
             self.btnRole.setIcon(IconRegistry.from_name(self.character.role.icon, color_on=RELAXED_WHITE_COLOR))
         if avatars.has_name_initial_icon(self.character):
@@ -427,6 +435,19 @@ class AvatarSelectors(QWidget):
                 avatars.name_initial_icon(self.character, color='black', color_on=RELAXED_WHITE_COLOR))
         if self.character.avatar:
             self.btnImage.setIcon(QIcon(avatars.image(self.character)))
+
+        clear_layout(self.wdgFirstLetterVariants)
+        if self.character.name:
+            name_parts = self.character.name.split()
+            for name in name_parts:
+                if name[0].isnumeric() or name[0].isalpha() and 'a' <= name[0].lower() <= 'z':
+                    for icon_suffix in ['', '-box', '-box-outline', '-circle', '-circle-outline']:
+                        icon = f'mdi.alpha-{name[0].lower()}{icon_suffix}'
+                        btn = tool_btn(IconRegistry.from_name(icon))
+                        btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.7))
+                        btn.clicked.connect(partial(self._iconSelected, icon))
+                        incr_icon(btn, 4)
+                        self.wdgFirstLetterVariants.layout().addWidget(btn)
 
     def _selectorToggled(self, _, toggled: bool):
         if not toggled:
@@ -436,7 +457,10 @@ class AvatarSelectors(QWidget):
             self.character.prefs.avatar.allow_image()
             self.wdgRightSide.setHidden(True)
         elif self.btnInitial.isChecked():
-            self.character.prefs.avatar.allow_initial()
+            if self.character.prefs.avatar.icon:
+                self.character.prefs.avatar.allow_custom_icon()
+            else:
+                self.character.prefs.avatar.allow_initial()
             self.wdgRightSide.setVisible(True)
         elif self.btnRole.isChecked():
             self.character.prefs.avatar.allow_role()
@@ -448,6 +472,11 @@ class AvatarSelectors(QWidget):
         #         self.character.prefs.avatar.icon = result[0]
         #         self.character.prefs.avatar.icon_color = result[1].name()
 
+        self.selectorChanged.emit()
+
+    def _iconSelected(self, icon: str):
+        self.character.prefs.avatar.allow_custom_icon()
+        self.character.prefs.avatar.icon = icon
         self.selectorChanged.emit()
 
     def _upload_avatar(self):
@@ -497,6 +526,7 @@ class CharacterAvatar(QWidget):
         super().__init__(parent)
         self._menu: Optional[MenuWidget] = None
         self._overlay: Optional[OverlayWidget] = None
+        self._wdgAvatarSelectors: Optional[AvatarSelectors] = None
 
         self._defaultIconSize = defaultIconSize
         self._avatarSize = avatarSize
@@ -527,12 +557,12 @@ class CharacterAvatar(QWidget):
             self._menu.aboutToHide.connect(self._aboutToHideMenu)
             transparent_menu(self._menu)
 
-        wdg = AvatarSelectors(self._character)
-        wdg.updated.connect(self._uploadedAvatar)
-        wdg.selectorChanged.connect(self.updateAvatar)
+        self._wdgAvatarSelectors = AvatarSelectors(self._character)
+        self._wdgAvatarSelectors.updated.connect(self._uploadedAvatar)
+        self._wdgAvatarSelectors.selectorChanged.connect(self.updateAvatar)
 
         self._menu.clear()
-        self._menu.addWidget(wdg)
+        self._menu.addWidget(self._wdgAvatarSelectors)
 
     def character(self) -> Optional[Character]:
         return self._character
@@ -565,6 +595,8 @@ class CharacterAvatar(QWidget):
     def _aboutToShowMenu(self):
         self._overlay = OverlayWidget.getActiveWindowOverlay(alpha=75)
         self._overlay.show()
+        if self._wdgAvatarSelectors:
+            self._wdgAvatarSelectors.refresh()
 
     def _aboutToHideMenu(self):
         if self._overlay:

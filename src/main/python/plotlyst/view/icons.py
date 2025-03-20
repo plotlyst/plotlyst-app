@@ -32,7 +32,7 @@ from plotlyst.common import CONFLICT_CHARACTER_COLOR, \
 from plotlyst.core.domain import Character, ConflictType, \
     Scene, PlotType, MALE, FEMALE, TRANSGENDER, NON_BINARY, GENDERLESS, ScenePurposeType, StoryStructure
 from plotlyst.core.template import SelectionItem
-from plotlyst.view.common import rounded_pixmap, default_character_color
+from plotlyst.view.common import rounded_pixmap
 
 
 class IconRegistry:
@@ -807,7 +807,7 @@ class AvatarsRegistry:
             return self._dummy_avatar()
 
         if color is None:
-            color = default_character_color(character.id)
+            color = character.prefs.avatar.icon_color
 
         if color_on is None:
             color_on = color
