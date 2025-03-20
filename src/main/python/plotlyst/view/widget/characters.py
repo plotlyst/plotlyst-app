@@ -41,7 +41,7 @@ from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterSummaryChangedEvent, CharacterBackstoryChangedEvent
 from plotlyst.resources import resource_registry
 from plotlyst.settings import CHARACTER_INITIAL_AVATAR_COLOR_CODES
-from plotlyst.view.common import action, ButtonPressResizeEventFilter, tool_btn, label, push_btn
+from plotlyst.view.common import action, ButtonPressResizeEventFilter, tool_btn, label, push_btn, scroll_area
 from plotlyst.view.dialog.utility import ImageCropDialog
 from plotlyst.view.generated.characters_progress_widget_ui import Ui_CharactersProgressWidget
 from plotlyst.view.icons import avatars, IconRegistry
@@ -373,7 +373,10 @@ class AvatarSelectors(QWidget):
         colorPicker.colorPicked.connect(self._colorChanged)
         menu.addWidget(colorPicker)
 
+        scroll = scroll_area(False, False, True)
         self.wdgFirstLetterVariants = QWidget()
+        self.wdgFirstLetterVariants.setProperty('relaxed-white-bg', True)
+        scroll.setWidget(self.wdgFirstLetterVariants)
         flow(self.wdgFirstLetterVariants, 0, 0)
 
         self.btnCustomIcon = push_btn(IconRegistry.icons_icon(), 'Custom icon', transparent_=True)
@@ -381,7 +384,7 @@ class AvatarSelectors(QWidget):
         self.btnCustomIcon.installEventFilter(OpacityEventFilter(self.btnCustomIcon))
 
         self.wdgIconVariants.layout().addWidget(self.colorSelector, alignment=Qt.AlignmentFlag.AlignRight)
-        self.wdgIconVariants.layout().addWidget(self.wdgFirstLetterVariants)
+        self.wdgIconVariants.layout().addWidget(scroll)
         self.wdgIconVariants.layout().addWidget(self.btnCustomIcon,
                                                 alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
 
@@ -609,6 +612,7 @@ class CharacterAvatar(QWidget):
         self._overlay.show()
         if self._wdgAvatarSelectors:
             self._wdgAvatarSelectors.refresh()
+            self._menu._frame.updateGeometry()
 
     def _aboutToHideMenu(self):
         if self._overlay:
