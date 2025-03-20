@@ -17,6 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import string
 from dataclasses import dataclass
 from functools import partial
 from typing import Iterable, List, Optional, Dict, Union
@@ -448,17 +449,24 @@ class AvatarSelectors(QWidget):
             self.btnImage.setIcon(QIcon(avatars.image(self.character)))
 
         clear_layout(self.wdgFirstLetterVariants)
+
+        letters = []
         if self.character.name:
-            name_parts = self.character.name.split()
-            for name in name_parts:
+            for name in self.character.name.split():
                 if name[0].isnumeric() or name[0].isalpha() and 'a' <= name[0].lower() <= 'z':
-                    for icon_suffix in ['', '-box', '-box-outline', '-circle', '-circle-outline']:
-                        icon = f'mdi.alpha-{name[0].lower()}{icon_suffix}'
-                        btn = tool_btn(IconRegistry.from_name(icon))
-                        btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.7))
-                        btn.clicked.connect(partial(self._iconSelected, icon))
-                        incr_icon(btn, 2)
-                        self.wdgFirstLetterVariants.layout().addWidget(btn)
+                    letters.append(name[0])
+        else:
+            for alpha in string.ascii_lowercase:
+                letters.append(alpha)
+
+        for letter in letters:
+            for icon_suffix in ['', '-box', '-box-outline', '-circle', '-circle-outline']:
+                icon = f'mdi.alpha-{letter.lower()}{icon_suffix}'
+                btn = tool_btn(IconRegistry.from_name(icon))
+                btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.7))
+                btn.clicked.connect(partial(self._iconSelected, icon))
+                incr_icon(btn, 2)
+                self.wdgFirstLetterVariants.layout().addWidget(btn)
 
     def _selectorToggled(self, _, toggled: bool):
         if not toggled:
