@@ -50,7 +50,7 @@ from plotlyst.view.widget.display import IconText, Icon, OverlayWidget
 from plotlyst.view.widget.labels import CharacterLabel
 from plotlyst.view.widget.progress import CircularProgressBar, ProgressTooltipMode, \
     CharacterRoleProgressChart
-from plotlyst.view.widget.utility import ColorPicker
+from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
 
 
 class CharacterToolButton(QToolButton):
@@ -353,13 +353,13 @@ class AvatarSelectors(QWidget):
         self.character = character
         hbox(self, spacing=0)
         self.wdgLeftSide = QWidget()
-        self.wdgLeftSide.setProperty('bg', True)
+        self.wdgLeftSide.setProperty('relaxed-white-bg', True)
         vbox(self.wdgLeftSide, 5, 5)
         self.wdgRightSide = QWidget()
         retain_when_hidden(self.wdgRightSide)
         vbox(self.wdgRightSide, 0, 5)
         margins(self.wdgRightSide, top=40)
-        self.wdgRightSide.setFixedWidth(200)
+        self.wdgRightSide.setFixedWidth(280)
         self.wdgIconVariants = QWidget()
         vbox(self.wdgIconVariants)
         self.wdgRightSide.layout().addWidget(self.wdgIconVariants)
@@ -367,15 +367,23 @@ class AvatarSelectors(QWidget):
 
         self.colorSelector = tool_btn(IconRegistry.from_name('fa5s.circle', self.character.prefs.avatar.icon_color))
         self.colorSelector.installEventFilter(OpacityEventFilter(self.colorSelector, 0.7, 1.0))
-        incr_icon(self.colorSelector, 12)
+        incr_icon(self.colorSelector, 8)
         menu = MenuWidget(self.colorSelector)
-        menu.addWidget(ColorPicker(maxColumn=5, colors=CHARACTER_INITIAL_AVATAR_COLOR_CODES))
+        colorPicker = ColorPicker(maxColumn=5, colors=CHARACTER_INITIAL_AVATAR_COLOR_CODES)
+        colorPicker.colorPicked.connect(self._colorChanged)
+        menu.addWidget(colorPicker)
 
         self.wdgFirstLetterVariants = QWidget()
         flow(self.wdgFirstLetterVariants)
 
+        self.btnCustomIcon = push_btn(IconRegistry.icons_icon(), 'Custom icon', transparent_=True)
+        self.btnCustomIcon.clicked.connect(self._selectCustomIcon)
+        self.btnCustomIcon.installEventFilter(OpacityEventFilter(self.btnCustomIcon))
+
         self.wdgIconVariants.layout().addWidget(self.colorSelector, alignment=Qt.AlignmentFlag.AlignRight)
         self.wdgIconVariants.layout().addWidget(self.wdgFirstLetterVariants)
+        self.wdgIconVariants.layout().addWidget(self.btnCustomIcon,
+                                                alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
 
         self.layout().addWidget(self.wdgLeftSide)
         self.layout().addWidget(self.wdgRightSide)
@@ -385,7 +393,7 @@ class AvatarSelectors(QWidget):
         if app_env.is_mac():
             self.wdgSelectors.layout().setSpacing(15)
 
-        self.btnImage = push_btn(text='Image', base=True, checkable=True)
+        self.btnImage = push_btn(text='Image', checkable=True, properties=['main-side-nav'])
         self.btnInitial = push_btn(IconRegistry.from_name('mdi.alpha-a-circle', color_on=RELAXED_WHITE_COLOR),
                                    text='Icon',
                                    checkable=True, properties=['main-side-nav'])
@@ -446,7 +454,7 @@ class AvatarSelectors(QWidget):
                         btn = tool_btn(IconRegistry.from_name(icon))
                         btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.7))
                         btn.clicked.connect(partial(self._iconSelected, icon))
-                        incr_icon(btn, 4)
+                        incr_icon(btn, 2)
                         self.wdgFirstLetterVariants.layout().addWidget(btn)
 
     def _selectorToggled(self, _, toggled: bool):
@@ -465,18 +473,22 @@ class AvatarSelectors(QWidget):
         elif self.btnRole.isChecked():
             self.character.prefs.avatar.allow_role()
             self.wdgRightSide.setHidden(True)
-        # elif self.btnCustomIcon.isChecked():
-        #     self.character.prefs.avatar.allow_custom_icon()
-        #     result = IconSelectorDialog.popup()
-        #     if result:
-        #         self.character.prefs.avatar.icon = result[0]
-        #         self.character.prefs.avatar.icon_color = result[1].name()
 
         self.selectorChanged.emit()
+
+    def _selectCustomIcon(self):
+        result = IconSelectorDialog.popup(pickColor=False, color=QColor(self.character.prefs.avatar.icon_color))
+        if result:
+            self._iconSelected(result[0])
 
     def _iconSelected(self, icon: str):
         self.character.prefs.avatar.allow_custom_icon()
         self.character.prefs.avatar.icon = icon
+        self.selectorChanged.emit()
+
+    def _colorChanged(self, color: QColor):
+        self.character.prefs.avatar.icon_color = color.name()
+        self.colorSelector.setIcon(IconRegistry.from_name('fa5s.circle', self.character.prefs.avatar.icon_color))
         self.selectorChanged.emit()
 
     def _upload_avatar(self):
