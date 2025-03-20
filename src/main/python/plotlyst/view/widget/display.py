@@ -42,6 +42,8 @@ from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
 from plotlyst.env import app_env
+from plotlyst.event.core import emit_global_event
+from plotlyst.events import ShowRoadmapEvent
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import emoji_font, insert_before_the_end, \
     ButtonPressResizeEventFilter, restyle, label, frame, tool_btn, push_btn, action, open_url, fade_in, wrap
@@ -623,12 +625,14 @@ class CopiedTextMessage(QLabel):
 
 
 class _PremiumMessageWidgetBase(QWidget):
+    visitRoadmap = pyqtSignal()
+
     def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
                  parent=None):
         super().__init__(parent)
         vbox(self, 0, 8)
         self.btnUpgrade = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
-                                   'Purchase Plotlyst Plus',
+                                   'Purchase',
                                    tooltip='Upgrade Plotlyst',
                                    properties=['confirm', 'positive'])
         self.btnUpgrade.clicked.connect(lambda: open_url(main_link))
@@ -656,6 +660,14 @@ class _PremiumMessageWidgetBase(QWidget):
             self.layout().addWidget(btnLink, alignment=Qt.AlignmentFlag.AlignRight)
         self.layout().addWidget(wrap(self.btnUpgrade, margin_top=10), alignment=Qt.AlignmentFlag.AlignCenter)
 
+        self.btnLinkToAllFeatures = push_btn(IconRegistry.from_name('fa5s.road', 'grey'), 'See roadmap',
+                                             transparent_=True)
+        self.btnLinkToAllFeatures.installEventFilter(OpacityEventFilter(self.btnLinkToAllFeatures, leaveOpacity=0.5))
+        self.btnLinkToAllFeatures.clicked.connect(self.visitRoadmap)
+        decr_font(self.btnLinkToAllFeatures, 1)
+        decr_icon(self.btnLinkToAllFeatures, 2)
+        self.layout().addWidget(self.btnLinkToAllFeatures, alignment=Qt.AlignmentFlag.AlignLeft)
+
 
 class PremiumMessageWidget(QFrame):
     def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
@@ -666,7 +678,8 @@ class PremiumMessageWidget(QFrame):
         self.setProperty('large-rounded', True)
         sp(self).h_max().v_max()
 
-        self.layout().addWidget(_PremiumMessageWidgetBase(feature, icon, alt_link, main_link))
+        self.wdg = _PremiumMessageWidgetBase(feature, icon, alt_link, main_link)
+        self.layout().addWidget(self.wdg)
 
 
 class PremiumMessagePopup(PopupDialog):
@@ -675,10 +688,16 @@ class PremiumMessagePopup(PopupDialog):
         super().__init__(parent)
 
         self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
-        self.frame.layout().addWidget(_PremiumMessageWidgetBase(feature, icon, alt_link, main_link))
+        wdg = _PremiumMessageWidgetBase(feature, icon, alt_link, main_link)
+        wdg.visitRoadmap.connect(self._visitRoadmap)
+        self.frame.layout().addWidget(wdg)
 
     def display(self):
         self.exec()
+
+    def _visitRoadmap(self):
+        emit_global_event(ShowRoadmapEvent(self))
+        self.accept()
 
 
 class PremiumOverlayWidget(QFrame):
@@ -689,6 +708,7 @@ class PremiumOverlayWidget(QFrame):
         sp(self).h_exp().v_exp()
         self.parent().installEventFilter(self)
         self.msg = PremiumMessageWidget(feature, icon, alt_link, main_link)
+        self.msg.wdg.visitRoadmap.connect(lambda: emit_global_event(ShowRoadmapEvent(self)))
         vbox(self)
         self.layout().addWidget(self.msg, alignment=Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
 

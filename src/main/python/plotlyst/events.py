@@ -338,3 +338,8 @@ class TaskChangedFromWip(Event):
 @dataclass
 class SocialSnapshotRequested(Event):
     snapshotType: SnapshotType
+
+
+@dataclass
+class ShowRoadmapEvent(Event):
+    pass

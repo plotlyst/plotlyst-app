@@ -265,6 +265,9 @@ class HomeView(AbstractView):
     def showKnowledgeBase(self):
         self.ui.btnKnowledgeBase.setChecked(True)
 
+    def showRoadmap(self):
+        self.ui.btnRoadmap.setChecked(True)
+
     def selectSeries(self, series: NovelDescriptor):
         self._shelvesTreeView.selectNovel(series)
 

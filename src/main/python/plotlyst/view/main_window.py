@@ -47,7 +47,7 @@ from plotlyst.event.handler import EventLogHandler, global_event_dispatcher, eve
 from plotlyst.events import NovelDeletedEvent, \
     NovelUpdatedEvent, OpenDistractionFreeMode, ExitDistractionFreeMode, CloseNovelEvent, NovelPanelCustomizationEvent, \
     NovelWorldBuildingToggleEvent, NovelCharactersToggleEvent, NovelScenesToggleEvent, NovelDocumentsToggleEvent, \
-    NovelManagementToggleEvent, NovelManuscriptToggleEvent, SocialSnapshotRequested, SelectNovelEvent
+    NovelManagementToggleEvent, NovelManuscriptToggleEvent, SocialSnapshotRequested, SelectNovelEvent, ShowRoadmapEvent
 from plotlyst.resources import resource_manager, ResourceType, ResourceDownloadedEvent
 from plotlyst.service.cache import acts_registry, entities_registry
 from plotlyst.service.common import try_shutdown_to_apply_change
@@ -196,7 +196,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
                                          GeneralNovelViewTourEvent,
                                          CharacterViewTourEvent, ScenesViewTourEvent, DocumentsViewTourEvent,
                                          ManuscriptViewTourEvent, AnalysisViewTourEvent, BoardViewTourEvent,
-                                         CloseNovelEvent, SelectNovelEvent)
+                                         CloseNovelEvent, SelectNovelEvent, ShowRoadmapEvent)
 
         self._init_views()
 
@@ -347,6 +347,9 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         elif isinstance(event, SelectNovelEvent):
             self.home_mode.setChecked(True)
             self.home_view.selectNovel(event.novel)
+        elif isinstance(event, ShowRoadmapEvent):
+            self.home_mode.setChecked(True)
+            self.home_view.showRoadmap()
         elif isinstance(event, NovelPanelCustomizationEvent):
             self._handle_customization_event(event)
         elif isinstance(event, NovelEditorDisplayTourEvent):
