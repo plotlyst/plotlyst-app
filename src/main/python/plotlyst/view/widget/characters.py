@@ -365,8 +365,6 @@ class AvatarSelectors(QWidget):
         self.btnUploadAvatar = push_btn(IconRegistry.upload_icon(color=RELAXED_WHITE_COLOR), text='Upload image',
                                         properties=['base', 'positive'])
         self.btnUploadAvatar.clicked.connect(self._upload_avatar)
-        # self.btnAi.setIcon(IconRegistry.from_name('mdi.robot-happy-outline', 'white'))
-        # self.btnAi.clicked.connect(self._select_ai)
         if character.avatar:
             pass
         else:
