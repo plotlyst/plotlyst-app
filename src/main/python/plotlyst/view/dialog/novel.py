@@ -23,36 +23,18 @@ from typing import Optional, List, Any
 import qtanim
 from PyQt6.QtCore import QAbstractListModel, QModelIndex, Qt, QVariant, pyqtSignal
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QDialog, QPushButton, QDialogButtonBox, QApplication, QCompleter, QWidget
+from PyQt6.QtWidgets import QDialog, QPushButton, QDialogButtonBox, QCompleter, QWidget
 from overrides import overrides
 from qthandy import flow, decr_font, decr_icon, pointy, vbox
 from qthandy.filter import DisabledClickEventFilter, OpacityEventFilter
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import NovelDescriptor, PlotValue, Novel
-from plotlyst.core.help import plot_value_help, synopsis_editor_placeholder
+from plotlyst.core.domain import PlotValue
+from plotlyst.core.help import plot_value_help
 from plotlyst.view.common import link_editor_to_btn, ButtonPressResizeEventFilter, set_tab_icon
-from plotlyst.view.generated.novel_creation_dialog_ui import Ui_NovelCreationDialog
 from plotlyst.view.generated.plot_value_editor_dialog_ui import Ui_PlotValueEditorDialog
-from plotlyst.view.generated.synopsis_editor_dialog_ui import Ui_SynopsisEditorDialog
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.widget.input import HtmlPopupTextEditorToolbar
 from plotlyst.view.widget.utility import IconSelectorDialog
-
-
-class NovelEditionDialog(QDialog, Ui_NovelCreationDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setupUi(self)
-
-    def display(self, novel: Optional[NovelDescriptor] = None) -> Optional[str]:
-        if novel:
-            self.lineTitle.setText(novel.title)
-        result = self.exec()
-        if result == QDialog.DialogCode.Rejected:
-            return None
-        return self.lineTitle.text()
-
 
 DEFAULT_VALUE_ICON = 'fa5s.chevron-circle-down'
 
@@ -310,56 +292,6 @@ class PlotValueEditorDialog(QDialog, Ui_PlotValueEditorDialog):
             self._value.icon_color = result[1].name()
             self.btnIcon.setIcon(IconRegistry.from_name(self._value.icon, self._value.icon_color))
             self.btnIcon.setBorderColor(self._value.icon_color)
-
-
-class SynopsisEditorDialog(QDialog, Ui_SynopsisEditorDialog):
-    def __init__(self, novel: Novel, parent=None):
-        super(SynopsisEditorDialog, self).__init__(parent)
-        self.setupUi(self)
-        self._novel = novel
-
-        self.btnClose.clicked.connect(self.reject)
-
-        self.textSynopsis.setPlaceholderText(synopsis_editor_placeholder)
-        self.textSynopsis.setMargins(0, 10, 0, 10)
-        self.textSynopsis.setGrammarCheckEnabled(self._novel.prefs.docs.grammar_check)
-
-        self.textSynopsis.setToolbarVisible(False)
-        self.textSynopsis.setTitleVisible(False)
-        self.textSynopsis.setCharacterWidth(60)
-
-        toolbar = HtmlPopupTextEditorToolbar()
-        toolbar.activate(self.textSynopsis.textEdit)
-        self.textSynopsis.textEdit.setPopupWidget(toolbar)
-
-        self.textSynopsis.setText(novel.synopsis.content)
-
-    def synopsis(self) -> str:
-        return self.textSynopsis.textEdit.toHtml()
-
-    @overrides
-    def show(self) -> None:
-        screen = QApplication.screenAt(self.pos())
-        if screen:
-            self.resize(screen.size().width(), screen.size().height())
-        else:
-            self.resize(600, 500)
-        super().show()
-
-    # @staticmethod
-    # def display(novel: Novel) -> str:
-    #     dialog = SynopsisEditorDialog()
-    #     dialog.textSynopsis.setText(novel.synopsis.content)
-    #
-    #     screen = QApplication.screenAt(dialog.pos())
-    #     if screen:
-    #         dialog.resize(screen.size().width(), screen.size().height())
-    #     else:
-    #         dialog.resize(600, 500)
-    #
-    #     dialog.show()
-    #
-    #     return dialog.textSynopsis.textEdit.toHtml()
 
 
 class DetachedWindow(QDialog):

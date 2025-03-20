@@ -359,7 +359,7 @@ class AvatarSelectors(QWidget):
         retain_when_hidden(self.wdgRightSide)
         vbox(self.wdgRightSide, 0, 5)
         margins(self.wdgRightSide, top=40)
-        self.wdgRightSide.setFixedWidth(280)
+        self.wdgRightSide.setFixedWidth(200)
         self.wdgIconVariants = QWidget()
         vbox(self.wdgIconVariants)
         self.wdgRightSide.layout().addWidget(self.wdgIconVariants)
@@ -374,7 +374,7 @@ class AvatarSelectors(QWidget):
         menu.addWidget(colorPicker)
 
         self.wdgFirstLetterVariants = QWidget()
-        flow(self.wdgFirstLetterVariants)
+        flow(self.wdgFirstLetterVariants, 0, 0)
 
         self.btnCustomIcon = push_btn(IconRegistry.icons_icon(), 'Custom icon', transparent_=True)
         self.btnCustomIcon.clicked.connect(self._selectCustomIcon)
