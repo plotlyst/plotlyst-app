@@ -354,8 +354,15 @@ class AvatarSelectors(QWidget):
         self.character = character
         hbox(self, spacing=0)
         self.wdgLeftSide = QWidget()
-        self.wdgLeftSide.setProperty('relaxed-white-bg', True)
-        vbox(self.wdgLeftSide, 5, 5)
+        self.wdgLeftSide.setStyleSheet(f'''
+        .QWidget {{
+            background: {RELAXED_WHITE_COLOR};
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            border-bottom-left-radius: 15px;
+        }}
+        ''')
+        vbox(self.wdgLeftSide, 8, 5)
         self.wdgRightSide = QWidget()
         retain_when_hidden(self.wdgRightSide)
         vbox(self.wdgRightSide, 0, 5)
@@ -363,8 +370,14 @@ class AvatarSelectors(QWidget):
         self.wdgRightSide.setFixedWidth(200)
         self.wdgIconVariants = QWidget()
         vbox(self.wdgIconVariants)
+        self.wdgIconVariants.setStyleSheet(f'''
+                .QWidget {{
+                    background: {RELAXED_WHITE_COLOR};
+                    border-top-right-radius: 15px;
+                    border-bottom-right-radius: 15px;
+                }}
+                ''')
         self.wdgRightSide.layout().addWidget(self.wdgIconVariants)
-        self.wdgIconVariants.setProperty('relaxed-white-bg', True)
 
         self.colorSelector = tool_btn(IconRegistry.from_name('fa5s.circle', self.character.prefs.avatar.icon_color))
         self.colorSelector.installEventFilter(OpacityEventFilter(self.colorSelector, 0.7, 1.0))
