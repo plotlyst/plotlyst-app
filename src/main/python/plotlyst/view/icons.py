@@ -803,12 +803,16 @@ class AvatarsRegistry:
             return True
         return False
 
-    def name_initial_icon(self, character: Character, fallback: bool = True) -> QIcon:
+    def name_initial_icon(self, character: Character, fallback: bool = True, color=None, color_on = None) -> QIcon:
         if not character.name:
             return self._dummy_avatar()
 
-        _uuid_int = character.id.int
-        color = CHARACTER_INITIAL_AVATAR_COLOR_CODES[_uuid_int % len(CHARACTER_INITIAL_AVATAR_COLOR_CODES)]
+        if color is None:
+            _uuid_int = character.id.int
+            color = CHARACTER_INITIAL_AVATAR_COLOR_CODES[_uuid_int % len(CHARACTER_INITIAL_AVATAR_COLOR_CODES)]
+
+        if color_on is None:
+            color_on = color
 
         first_char = character.name[0]
         if first_char.isnumeric():
@@ -818,9 +822,9 @@ class AvatarsRegistry:
         elif fallback:
             return self._dummy_avatar()
         else:
-            return None
+            return QIcon()
 
-        return IconRegistry.from_name(icon, color)
+        return IconRegistry.from_name(icon, color, color_on)
 
     def update_image(self, character: Character):
         if character in self._images.keys():

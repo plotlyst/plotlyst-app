@@ -179,13 +179,13 @@ btn_style_main_side_nav = """
     }
 
     QPushButton:hover[main-side-nav=true] {
-        background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 0, stop: 0 #d7e3fc);
+        background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 0, stop: 0 #E9DEEE);
         border: 1px hidden black;
     }
 
     QPushButton:checked[main-side-nav=true] {
-        background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 0, stop: 0 #4e4187);
-        border: 1px solid #9BB8F7;
+        background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 0, stop: 0 #7A548B);
+        border: 1px solid #B096BB;
         color: white;
     }
 """
