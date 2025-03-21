@@ -532,7 +532,7 @@ class AvatarSelectors(QWidget):
             return
 
         pixmap = QPixmap.fromImage(image)
-        crop = ImageCropDialog().display(pixmap)
+        crop = ImageCropDialog.popup(pixmap)
         if crop:
             self._update_avatar(crop)
 

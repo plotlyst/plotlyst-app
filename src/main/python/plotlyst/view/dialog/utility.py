@@ -25,10 +25,12 @@ from PyQt6.QtCore import Qt, QSize, QEvent, QPoint, QRect, pyqtSignal
 from PyQt6.QtGui import QPixmap, QIcon, QPainter
 from PyQt6.QtWidgets import QDialog, QToolButton, QPushButton, QApplication
 from overrides import overrides
-from qthandy import bold, underline
+from qthandy import line
 
-from plotlyst.view.common import rounded_pixmap, calculate_resized_dimensions
-from plotlyst.view.generated.image_crop_dialog_ui import Ui_ImageCropDialog
+from plotlyst.common import PLOTLYST_TERTIARY_COLOR
+from plotlyst.view.common import rounded_pixmap, calculate_resized_dimensions, label, push_btn
+from plotlyst.view.layout import group
+from plotlyst.view.widget.display import PopupDialog
 
 
 class _AvatarButton(QToolButton):
@@ -49,39 +51,48 @@ class Corner(Enum):
     BottomLeft = 3
 
 
-class ImageCropDialog(QDialog, Ui_ImageCropDialog):
-    def __init__(self, parent=None):
-        super(ImageCropDialog, self).__init__(parent)
-        self.setupUi(self)
-
-        bold(self.lblPreviewTitle)
-        underline(self.lblPreviewTitle)
-        self.frame = self.CropFrame(self.lblImage)
-        self.frame.cropped.connect(self._updatePreview)
-        self.scaled = None
+class ImageCropDialog(PopupDialog):
+    def __init__(self, pixmap: QPixmap, parent=None):
+        super().__init__(parent)
+        self._pixmap = pixmap
         self.cropped = None
+        self.lblPreview = label()
+        self.lblImage = label()
 
-    def display(self, pixmap: QPixmap) -> Optional[QPixmap]:
-        w, h = calculate_resized_dimensions(pixmap.width(), pixmap.height(), max_size=512)
+        self.frame.layout().addWidget(label('Crop image', h3=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.lblPreview, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(line())
+        self.frame.layout().addWidget(self.lblImage, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.frame.setFixedSize(min(w, h), min(w, h))
+        self._cropFrame = self.CropFrame(self.lblImage)
+        w, h = calculate_resized_dimensions(pixmap.width(), pixmap.height(), max_size=300)
+        self._cropFrame.setFixedSize(min(w, h), min(w, h))
         self.scaled = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio,
                                     Qt.TransformationMode.SmoothTransformation)
         self.lblImage.setPixmap(self.scaled)
+
+        self.btnConfirm = push_btn(text='Confirm', properties=['confirm', 'positive'])
+        self.btnConfirm.clicked.connect(self.accept)
+        self.btnCancel = push_btn(text='Cancel', properties=['confirm', 'cancel'])
+        self.btnCancel.clicked.connect(self.reject)
+        self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm), alignment=Qt.AlignmentFlag.AlignRight)
+
+        self._cropFrame.cropped.connect(self._updatePreview)
+
+    def display(self) -> Optional[QPixmap]:
         self._updatePreview()
         result = self.exec()
-        QApplication.restoreOverrideCursor()
         if result == QDialog.DialogCode.Accepted:
             return self.cropped
 
     def _updatePreview(self):
-        self.cropped = QPixmap(self.frame.width(), self.frame.height())
+        self.cropped = QPixmap(self._cropFrame.width(), self._cropFrame.height())
 
         painter = QPainter(self.cropped)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         cropped_rect = self.scaled.rect()
-        cropped_rect.setX(self.frame.pos().x())
-        cropped_rect.setY(self.frame.pos().y())
+        cropped_rect.setX(self._cropFrame.pos().x())
+        cropped_rect.setY(self._cropFrame.pos().y())
         cropped_rect.setWidth(self.cropped.width())
         cropped_rect.setHeight(self.cropped.height())
         painter.drawPixmap(self.cropped.rect(), self.scaled, cropped_rect)
@@ -94,10 +105,11 @@ class ImageCropDialog(QDialog, Ui_ImageCropDialog):
     class CropFrame(QPushButton):
         cropped = pyqtSignal()
         cornerRange: int = 15
+        minSize: int = 20
 
         def __init__(self, parent):
             super().__init__(parent)
-            self.setStyleSheet('QPushButton {border: 3px dashed red;}')
+            self.setStyleSheet(f'QPushButton {{border: 3px dashed {PLOTLYST_TERTIARY_COLOR};}}')
             self.setMouseTracking(True)
             self._pressedPoint: Optional[QPoint] = None
             self._resizeCorner: Optional[Corner] = None
@@ -113,6 +125,7 @@ class ImageCropDialog(QDialog, Ui_ImageCropDialog):
             if self._pressedPoint:
                 x_diff = event.pos().x() - self._pressedPoint.x()
                 y_diff = event.pos().y() - self._pressedPoint.y()
+                minSize = QSize(20, 20)
                 if self._resizeCorner == Corner.TopLeft:
                     self.setGeometry(self.geometry().x() + x_diff, self.geometry().y() + y_diff, self.width(),
                                      self.height())
