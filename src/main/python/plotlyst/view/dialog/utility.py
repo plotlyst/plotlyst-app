@@ -18,17 +18,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from enum import Enum
+from functools import partial
 from typing import Optional
 
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QSize, QEvent, QPoint, QRect, pyqtSignal
 from PyQt6.QtGui import QPixmap, QIcon, QPainter
-from PyQt6.QtWidgets import QDialog, QToolButton, QPushButton, QApplication
+from PyQt6.QtWidgets import QDialog, QToolButton, QPushButton, QApplication, QWidget
 from overrides import overrides
-from qthandy import line
+from qthandy import line, hbox, translucent, decr_icon
 
 from plotlyst.common import PLOTLYST_TERTIARY_COLOR
-from plotlyst.view.common import rounded_pixmap, calculate_resized_dimensions, label, push_btn
+from plotlyst.view.common import rounded_pixmap, calculate_resized_dimensions, label, push_btn, restyle, tool_btn
+from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.widget.display import PopupDialog
 
@@ -59,11 +61,6 @@ class ImageCropDialog(PopupDialog):
         self.lblPreview = label()
         self.lblImage = label()
 
-        self.frame.layout().addWidget(label('Crop image', h4=True), alignment=Qt.AlignmentFlag.AlignCenter)
-        self.frame.layout().addWidget(self.lblPreview, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.frame.layout().addWidget(line())
-        self.frame.layout().addWidget(self.lblImage, alignment=Qt.AlignmentFlag.AlignCenter)
-
         self._cropFrame = self.CropFrame(self.lblImage)
         w, h = calculate_resized_dimensions(pixmap.width(), pixmap.height(), max_size=300)
         self._cropFrame.setGeometry(1, 1, w - 2, h - 2)
@@ -72,10 +69,25 @@ class ImageCropDialog(PopupDialog):
                                     Qt.TransformationMode.SmoothTransformation)
         self.lblImage.setPixmap(self.scaled)
 
+        wdgFrameColors = QWidget()
+        hbox(wdgFrameColors, 0)
+        for color in ['#d90429', '#3a5a40', '#0077b6', PLOTLYST_TERTIARY_COLOR]:
+            btn = tool_btn(IconRegistry.from_name('mdi.crop-free', color=color), transparent_=True)
+            translucent(btn, 0.7)
+            decr_icon(btn, 4)
+            btn.clicked.connect(partial(self._cropFrame.setColor, color))
+            wdgFrameColors.layout().addWidget(btn)
+
         self.btnConfirm = push_btn(text='Confirm', properties=['confirm', 'positive'])
         self.btnConfirm.clicked.connect(self.accept)
         self.btnCancel = push_btn(text='Cancel', properties=['confirm', 'cancel'])
         self.btnCancel.clicked.connect(self.reject)
+
+        self.frame.layout().addWidget(label('Crop image', h4=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.lblPreview, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(line())
+        self.frame.layout().addWidget(wdgFrameColors, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.lblImage, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm), alignment=Qt.AlignmentFlag.AlignRight)
 
         self._cropFrame.cropped.connect(self._updatePreview)
@@ -115,6 +127,10 @@ class ImageCropDialog(PopupDialog):
             self._pressedPoint: Optional[QPoint] = None
             self._resizeCorner: Optional[Corner] = None
             self._originalSize: QRect = self.geometry()
+
+        def setColor(self, color: str):
+            self.setStyleSheet(f'QPushButton {{border: 3px dashed {color};}}')
+            restyle(self)
 
         @overrides
         def enterEvent(self, event: QEvent) -> None:
