@@ -141,7 +141,7 @@ class ImageCropDialog(PopupDialog):
                     new_size = max(new_size, self.minSize)
                     new_x = self.geometry().x()
                     new_y = max(self.geometry().y() + (self.geometry().height() - new_size), 0)
-                    if new_x and new_y:
+                    if new_y and new_x + new_size < parent_rect.width():
                         self.setGeometry(new_x, new_y, new_size, new_size)
                         self.setFixedSize(new_size, new_size)
                 elif self._resizeCorner == Corner.BottomRight:
