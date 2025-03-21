@@ -23,18 +23,20 @@ from typing import Optional
 
 from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtMultimedia import QSoundEffect
-from PyQt6.QtWidgets import QWidget, QSpinBox, QFrame
+from PyQt6.QtWidgets import QWidget, QFrame
 from qthandy import retain_when_hidden, transparent, vbox
 from qthandy.filter import OpacityEventFilter
-from qtmenu import MenuWidget
+from qtmenu import MenuWidget, group
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import ButtonPressResizeEventFilter, push_btn, ButtonIconSwitchEventFilter
 from plotlyst.view.generated.sprint_widget_ui import Ui_SprintWidget
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
-from plotlyst.view.widget.display import MenuOverlayEventFilter
+from plotlyst.view.widget.display import MenuOverlayEventFilter, icon_text
+from plotlyst.view.widget.input import DecoratedSpinBox
 
 
 class TimerModel(QObject):
@@ -92,8 +94,8 @@ class TimerSetupWidget(QFrame):
         self.setProperty('relaxed-white-bg', True)
         self.setProperty('large-rounded', True)
 
-        self.sbTimer = QSpinBox()
-        self.sbTimer.setPrefix('Minutes:')
+        self.sbTimer = DecoratedSpinBox()
+        self.sbTimer.setPrefix('Minutes: ')
         self.sbTimer.setMinimum(1)
         self.sbTimer.setMaximum(60)
         self.sbTimer.setValue(25)
@@ -101,7 +103,8 @@ class TimerSetupWidget(QFrame):
         self.btnStart = push_btn(IconRegistry.from_name('fa5s.play', RELAXED_WHITE_COLOR), 'Start sprint',
                                  properties=['confirm', 'positive'])
 
-        self.layout().addWidget(self.sbTimer, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(group(icon_text('mdi.timer', 'Writing session', opacity=0.8), self.sbTimer))
+        # self.layout().addWidget(self.sbTimer, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.btnStart, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def value(self) -> int:

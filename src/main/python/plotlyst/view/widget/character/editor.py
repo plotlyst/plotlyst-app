@@ -29,7 +29,7 @@ import qtanim
 from PyQt6.QtCharts import QPieSeries, QPieSlice
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QRectF
 from PyQt6.QtGui import QIcon, QColor, QMouseEvent, QKeySequence
-from PyQt6.QtWidgets import QWidget, QSpinBox, QSlider, QTextBrowser, QButtonGroup, QToolButton, QLabel, QSizePolicy, \
+from PyQt6.QtWidgets import QWidget, QSlider, QTextBrowser, QButtonGroup, QToolButton, QLabel, QSizePolicy, \
     QLineEdit, QDialog
 from overrides import overrides
 from qthandy import vbox, pointy, hbox, sp, vspacer, underline, decr_font, flow, clear_layout, translucent, line, grid, \
@@ -57,7 +57,7 @@ from plotlyst.view.widget.chart import BaseChart, SelectionItemPieSlice
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import Icon, MajorRoleIcon, SecondaryRoleIcon, MinorRoleIcon, \
     IconText, RoleIcon, TruitySourceWidget, PopupDialog, ChartView
-from plotlyst.view.widget.input import Toggle
+from plotlyst.view.widget.input import Toggle, DecoratedSpinBox
 from plotlyst.view.widget.labels import TraitLabel
 from plotlyst.view.widget.timeline import TimelineWidget, BackstoryCard, TimelineTheme
 from plotlyst.view.widget.utility import IconSelectorDialog
@@ -165,7 +165,7 @@ class CharacterAgeEditor(QWidget):
         sp(self._slider).v_exp()
         pointy(self._slider)
 
-        self._spinbox = QSpinBox(self)
+        self._spinbox = DecoratedSpinBox(self)
         self._spinbox.setPrefix('Age: ')
         self._spinbox.setMinimum(0)
         self._spinbox.setMaximum(65000)
