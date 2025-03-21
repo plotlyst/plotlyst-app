@@ -47,12 +47,13 @@ from plotlyst.view.layout import group
 from plotlyst.view.style.theme import BG_DARK_COLOR
 from plotlyst.view.widget.display import Icon
 from plotlyst.view.widget.input import Toggle, SpinBoxDialog
-from plotlyst.view.widget.manuscript import SprintWidget, \
-    ManuscriptProgressCalendar, ManuscriptDailyProgress, ManuscriptProgressCalendarLegend, ManuscriptProgressWidget
+from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar, ManuscriptDailyProgress, \
+    ManuscriptProgressCalendarLegend, ManuscriptProgressWidget
 from plotlyst.view.widget.manuscript.editor import ManuscriptEditor, DistFreeControlsBar, DistFreeDisplayBar
 from plotlyst.view.widget.manuscript.export import ManuscriptExportWidget
 from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
+from plotlyst.view.widget.manuscript.sprint import SprintWidget
 from plotlyst.view.widget.scene.editor import SceneMiniEditor
 from plotlyst.view.widget.tree import TreeSettings
 

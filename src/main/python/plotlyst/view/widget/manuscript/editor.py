@@ -56,9 +56,9 @@ from plotlyst.view.style.theme import BG_DARK_COLOR
 from plotlyst.view.widget.display import WordsDisplay, DividerWidget, SeparatorLineWithShadow
 from plotlyst.view.widget.input import BasePopupTextEditorToolbar, TextEditBase, GrammarHighlighter, \
     GrammarHighlightStyle
-from plotlyst.view.widget.manuscript import SprintWidget
 from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
+from plotlyst.view.widget.manuscript.sprint import SprintWidget
 
 
 class DistFreeDisplayBar(QFrame):
