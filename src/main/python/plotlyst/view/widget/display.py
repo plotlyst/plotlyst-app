@@ -24,7 +24,7 @@ from typing import Optional, Any, Tuple, List
 import emoji
 import qtanim
 from PyQt6.QtCharts import QChartView
-from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent, QPointF
+from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent, QPointF, QObject
 from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent, QIcon, QRadialGradient, \
     QPen
 from PyQt6.QtSvg import QSvgRenderer
@@ -343,6 +343,23 @@ class OverlayWidget(QFrame):
         window = QApplication.activeWindow()
         overlay = OverlayWidget(window, alpha)
         return overlay
+
+
+class MenuOverlayEventFilter(QObject):
+    def __init__(self, menu: MenuWidget):
+        super().__init__(menu)
+        self._overlay: Optional[OverlayWidget] = None
+        menu.aboutToShow.connect(self._aboutToShowMenu)
+        menu.aboutToHide.connect(self._aboutToHideMenu)
+
+    def _aboutToShowMenu(self):
+        self._overlay = OverlayWidget.getActiveWindowOverlay(alpha=75)
+        self._overlay.show()
+
+    def _aboutToHideMenu(self):
+        if self._overlay:
+            self._overlay.hide()
+            self._overlay = None
 
 
 class StageRecommendationBadge(QFrame):
