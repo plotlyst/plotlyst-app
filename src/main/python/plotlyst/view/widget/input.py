@@ -45,7 +45,7 @@ from qttextedit.ops import BoldOperation, ItalicOperation, UnderlineOperation, S
     FormatOperation, ColorOperation, InsertLinkOperation, TextEditingSettingsOperation
 
 from plotlyst.common import IGNORE_CAPITALIZATION_PROPERTY, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, RED_COLOR, \
-    PLOTLYST_TERTIARY_COLOR
+    PLOTLYST_TERTIARY_COLOR, TRANS_PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import TextStatistics, Character, Label
 from plotlyst.core.text import wc
 from plotlyst.env import app_env
@@ -64,7 +64,7 @@ from plotlyst.view.style.base import apply_color
 from plotlyst.view.style.text import apply_texteditor_toolbar_style
 from plotlyst.view.widget._toggle import AnimatedToggle
 from plotlyst.view.widget.button import DotsMenuButton
-from plotlyst.view.widget.display import PopupDialog
+from plotlyst.view.widget.display import PopupDialog, Icon
 from plotlyst.view.widget.utility import IconSelectorDialog
 
 
@@ -1622,9 +1622,14 @@ class DecoratedTextEdit(AutoAdjustableTextEdit):
 class DecoratedSpinBox(QWidget):
     valueChanged = pyqtSignal(int)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, icon: Optional[QIcon] = None):
         super().__init__(parent)
         hbox(self, spacing=0)
+
+        self.icon = Icon()
+        if icon:
+            self.icon.setIcon(icon)
+
         self.spinBox = QSpinBox()
         self.spinBox.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
         self.btnPlus = tool_btn(IconRegistry.from_name('mdi.chevron-up'), transparent_=True)
@@ -1636,6 +1641,7 @@ class DecoratedSpinBox(QWidget):
         self.btnMinus.installEventFilter(OpacityEventFilter(self.btnMinus, 1.0, 0.7))
         decr_icon(self.btnMinus, 5)
         self.btnMinus.clicked.connect(self.spinBox.stepDown)
+        self.layout().addWidget(self.icon)
         self.layout().addWidget(self.spinBox)
         self.layout().addWidget(group(self.btnPlus, self.btnMinus, vertical=False, margin=0, spacing=0))
 
@@ -1660,7 +1666,7 @@ class DecoratedSpinBox(QWidget):
                 background-color: {RELAXED_WHITE_COLOR};
                 padding: 4px 6px;
                 min-height: 24px;
-                selection-background-color: {PLOTLYST_TERTIARY_COLOR};
+                selection-background-color: {TRANS_PLOTLYST_SECONDARY_COLOR};
             }}
 
             QSpinBox:focus {{
@@ -1672,9 +1678,13 @@ class DecoratedSpinBox(QWidget):
         self.spinBox.valueChanged.connect(self.valueChanged)
 
     def setPrefix(self, prefix: str):
+        if prefix and not prefix.endswith(" "):
+            prefix += " "
         self.spinBox.setPrefix(prefix)
 
     def setSuffix(self, suffix: str):
+        if suffix and not suffix.startswith(" "):
+            suffix = " " + suffix
         self.spinBox.setSuffix(suffix)
 
     def setRange(self, min_value: int, max_value: int):

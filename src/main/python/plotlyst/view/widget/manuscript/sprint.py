@@ -21,22 +21,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import datetime
 from typing import Optional
 
+import qtanim
 from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtMultimedia import QSoundEffect
 from PyQt6.QtWidgets import QWidget, QFrame
-from qthandy import retain_when_hidden, transparent, vbox
-from qthandy.filter import OpacityEventFilter
-from qtmenu import MenuWidget, group
+from qthandy import retain_when_hidden, transparent, vbox, incr_font
+from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
+from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.resources import resource_registry
-from plotlyst.view.common import ButtonPressResizeEventFilter, push_btn, ButtonIconSwitchEventFilter
+from plotlyst.view.common import ButtonPressResizeEventFilter, push_btn, ButtonIconSwitchEventFilter, frame
 from plotlyst.view.generated.sprint_widget_ui import Ui_SprintWidget
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
 from plotlyst.view.widget.display import MenuOverlayEventFilter, icon_text
-from plotlyst.view.widget.input import DecoratedSpinBox
+from plotlyst.view.widget.input import DecoratedSpinBox, Toggle
 
 
 class TimerModel(QObject):
@@ -89,27 +90,62 @@ class TimerModel(QObject):
 class TimerSetupWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
-        vbox(self, 10)
+        vbox(self, 15, 8)
 
-        self.setProperty('relaxed-white-bg', True)
+        self.setProperty('bg', True)
         self.setProperty('large-rounded', True)
 
-        self.sbTimer = DecoratedSpinBox()
-        self.sbTimer.setPrefix('Minutes: ')
+        self.sbTimer = DecoratedSpinBox(icon=IconRegistry.from_name('mdi.timer'))
+        self.sbTimer.setPrefix('Session (minutes):')
         self.sbTimer.setMinimum(1)
         self.sbTimer.setMaximum(60)
         self.sbTimer.setValue(25)
+        incr_font(self.sbTimer.spinBox, 3)
 
-        self.btnStart = push_btn(IconRegistry.from_name('fa5s.play', RELAXED_WHITE_COLOR), 'Start sprint',
+        self.toggleCycle = Toggle()
+
+        self.frameCycle = frame()
+        vbox(self.frameCycle, 5)
+        self.frameCycle.setProperty('muted-bg', True)
+        self.frameCycle.setProperty('large-rounded', True)
+
+        self.sbCycles = DecoratedSpinBox(icon=IconRegistry.from_name('ph.repeat-fill'))
+        self.sbCycles.installEventFilter(
+            DisabledClickEventFilter(self.sbCycles, lambda: qtanim.shake(self.toggleCycle)))
+        self.sbCycles.setPrefix('Cycles:')
+        self.sbCycles.setMinimum(1)
+        self.sbCycles.setMaximum(10)
+        self.sbCycles.setValue(4)
+        self.sbBreaks = DecoratedSpinBox(icon=IconRegistry.from_name('ph.coffee'))
+        self.sbBreaks.installEventFilter(
+            DisabledClickEventFilter(self.sbBreaks, lambda: qtanim.shake(self.toggleCycle)))
+        self.sbBreaks.setMinimum(1)
+        self.sbBreaks.setMaximum(25)
+        self.sbBreaks.setPrefix('Break (minutes):')
+        self.sbBreaks.setValue(5)
+
+        self.frameCycle.layout().addWidget(self.sbCycles, alignment=Qt.AlignmentFlag.AlignRight)
+        self.frameCycle.layout().addWidget(self.sbBreaks, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.toggleCycle.toggled.connect(self._cycleToggled)
+        self.toggleCycle.setChecked(True)
+
+        self.btnStart = push_btn(IconRegistry.from_name('fa5s.play', RELAXED_WHITE_COLOR), 'Start writing sprint',
                                  properties=['confirm', 'positive'])
 
-        self.layout().addWidget(group(icon_text('mdi.timer', 'Writing session', opacity=0.8), self.sbTimer))
-        # self.layout().addWidget(self.sbTimer, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.sbTimer, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(
+            group(icon_text('ph.repeat-fill', 'Cycles'), self.toggleCycle, margin=0, spacing=0, margin_top=15),
+            alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(self.frameCycle)
         self.layout().addWidget(self.btnStart, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def value(self) -> int:
         return self.sbTimer.value() * 60
 
+    def _cycleToggled(self, toggled: bool):
+        self.sbCycles.setEnabled(toggled)
+        self.sbBreaks.setEnabled(toggled)
 
 class SprintWidget(QWidget, Ui_SprintWidget):
     def __init__(self, parent=None):
