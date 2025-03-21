@@ -125,19 +125,35 @@ class ImageCropDialog(PopupDialog):
             if self._pressedPoint:
                 x_diff = event.pos().x() - self._pressedPoint.x()
                 y_diff = event.pos().y() - self._pressedPoint.y()
-                minSize = QSize(20, 20)
+                parent_rect = self.parent().rect()
+
                 if self._resizeCorner == Corner.TopLeft:
-                    self.setGeometry(self.geometry().x() + x_diff, self.geometry().y() + y_diff, self.width(),
-                                     self.height())
-                    self.setFixedSize(self.geometry().width() - x_diff, self.geometry().height() - y_diff)
+                    new_size = max(self.geometry().width() - x_diff, self.geometry().height() - y_diff)
+                    new_size = max(new_size, self.minSize)
+                    new_x = max(self.geometry().x() + (self.geometry().width() - new_size), 0)
+                    new_y = max(self.geometry().y() + (self.geometry().height() - new_size), 0)
+                    if new_x and new_y:
+                        self.setGeometry(new_x, new_y, new_size, new_size)
+                        self.setFixedSize(new_size, new_size)
                 elif self._resizeCorner == Corner.TopRight:
-                    self.setGeometry(self.geometry().x(), self.geometry().y() + y_diff, self.width(), self.height())
-                    self.setFixedSize(self._originalSize.width() + x_diff, self.geometry().height() - y_diff)
+                    new_size = max(self._originalSize.width() + x_diff, self.geometry().height() - y_diff)
+                    new_size = max(new_size, self.minSize)
+                    new_y = max(self.geometry().y() + (self.geometry().height() - new_size), 0)
+                    if new_y:
+                        self.setGeometry(self.geometry().x(), new_y, new_size, new_size)
+                        self.setFixedSize(new_size, new_size)
                 elif self._resizeCorner == Corner.BottomRight:
-                    self.setFixedSize(self._originalSize.width() + x_diff, self._originalSize.height() + y_diff)
+                    size_diff = min(self._originalSize.width() + x_diff, self._originalSize.height() + y_diff)
+                    new_size = max(min(size_diff, parent_rect.right() - self.geometry().x(),
+                                       parent_rect.bottom() - self.geometry().y()), self.minSize)
+                    self.setFixedSize(new_size, new_size)
                 elif self._resizeCorner == Corner.BottomLeft:
-                    self.setGeometry(self.geometry().x() + x_diff, self.geometry().y(), self.width(), self.height())
-                    self.setFixedSize(self.geometry().width() - x_diff, self._originalSize.height() + y_diff)
+                    new_size = max(self.geometry().width() - x_diff, self._originalSize.height() + y_diff)
+                    new_size = max(new_size, self.minSize)
+                    new_x = max(self.geometry().x() + (self.geometry().width() - new_size), 0)
+                    if new_x:
+                        self.setGeometry(new_x, self.geometry().y(), new_size, new_size)
+                        self.setFixedSize(new_size, new_size)
                 else:
                     if self._xMovementAllowed(x_diff):
                         self.setGeometry(self.geometry().x() + x_diff, self.geometry().y(), self.width(), self.height())
