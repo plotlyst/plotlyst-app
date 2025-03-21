@@ -41,7 +41,6 @@ from plotlyst.common import RELAXED_WHITE_COLOR, DEFAULT_MANUSCRIPT_LINE_SPACE, 
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import DocumentProgress, Novel, Scene, TextStatistics, DocumentStatistics, FontSettings, \
     Chapter
-from plotlyst.core.sprint import TimerModel
 from plotlyst.env import app_env
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
@@ -58,7 +57,7 @@ from plotlyst.view.widget.input import BasePopupTextEditorToolbar, TextEditBase,
     GrammarHighlightStyle
 from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
-from plotlyst.view.widget.manuscript.sprint import SprintWidget
+from plotlyst.view.widget.manuscript.sprint import SprintWidget, TimerModel
 
 
 class DistFreeDisplayBar(QFrame):

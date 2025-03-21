@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import datetime
 from typing import Optional
 
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer
 from PyQt6.QtMultimedia import QSoundEffect
 from PyQt6.QtWidgets import QWidget
 from qthandy import retain_when_hidden, transparent
@@ -29,12 +29,58 @@ from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
-from plotlyst.core.sprint import TimerModel
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import ButtonPressResizeEventFilter
 from plotlyst.view.generated.sprint_widget_ui import Ui_SprintWidget
 from plotlyst.view.generated.timer_setup_widget_ui import Ui_TimerSetupWidget
 from plotlyst.view.icons import IconRegistry
+
+
+class TimerModel(QObject):
+    DefaultValue: int = 60 * 5
+
+    valueChanged = pyqtSignal()
+    finished = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super(TimerModel, self).__init__(parent)
+        self.value: int = self.DefaultValue
+
+        self._timer = QTimer()
+        self._timer.setInterval(1000)
+        self._timer.timeout.connect(self._tick)
+
+    def start(self, value: int):
+        if value == 3600:
+            value -= 1
+        self.value = value
+        self._timer.start()
+
+    def stop(self):
+        self._timer.stop()
+        self.value = self.DefaultValue
+
+    def remainingTime(self):
+        minutes = self.value // 60
+        seconds = self.value % 60
+        return minutes, seconds
+
+    def isActive(self) -> bool:
+        return self._timer.isActive()
+
+    def toggle(self):
+        if self._timer.isActive():
+            self._timer.stop()
+        else:
+            self._timer.start()
+
+    def _tick(self):
+        if self.value == 0:
+            self._timer.stop()
+            self.finished.emit()
+        else:
+            self.value -= 1
+            self.valueChanged.emit()
 
 
 class TimerSetupWidget(QWidget, Ui_TimerSetupWidget):
