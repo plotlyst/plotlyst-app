@@ -21,18 +21,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import datetime
 from typing import Optional
 
-from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer
+from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtMultimedia import QSoundEffect
-from PyQt6.QtWidgets import QWidget
-from qthandy import retain_when_hidden, transparent
+from PyQt6.QtWidgets import QWidget, QSpinBox
+from qthandy import retain_when_hidden, transparent, vbox
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.resources import resource_registry
-from plotlyst.view.common import ButtonPressResizeEventFilter
+from plotlyst.view.common import ButtonPressResizeEventFilter, push_btn
 from plotlyst.view.generated.sprint_widget_ui import Ui_SprintWidget
-from plotlyst.view.generated.timer_setup_widget_ui import Ui_TimerSetupWidget
 from plotlyst.view.icons import IconRegistry
 
 
@@ -83,10 +82,22 @@ class TimerModel(QObject):
             self.valueChanged.emit()
 
 
-class TimerSetupWidget(QWidget, Ui_TimerSetupWidget):
+class TimerSetupWidget(QWidget):
     def __init__(self, parent=None):
-        super(TimerSetupWidget, self).__init__(parent)
-        self.setupUi(self)
+        super().__init__(parent)
+        vbox(self)
+
+        self.sbTimer = QSpinBox()
+        self.sbTimer.setPrefix('Minutes:')
+        self.sbTimer.setMinimum(1)
+        self.sbTimer.setMaximum(60)
+        self.sbTimer.setValue(25)
+
+        self.btnStart = push_btn(IconRegistry.from_name('fa5s.play', RELAXED_WHITE_COLOR), 'Start sprint',
+                                 properties=['confirm', 'positive'])
+
+        self.layout().addWidget(self.sbTimer, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.btnStart, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def value(self) -> int:
         return self.sbTimer.value() * 60
