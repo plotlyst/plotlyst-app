@@ -66,7 +66,8 @@ class ImageCropDialog(PopupDialog):
 
         self._cropFrame = self.CropFrame(self.lblImage)
         w, h = calculate_resized_dimensions(pixmap.width(), pixmap.height(), max_size=300)
-        self._cropFrame.setFixedSize(min(w, h), min(w, h))
+        self._cropFrame.setGeometry(1, 1, w - 2, h - 2)
+        self._cropFrame.setFixedSize(min(w - 2, h - 2), min(w - 2, h - 2))
         self.scaled = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio,
                                     Qt.TransformationMode.SmoothTransformation)
         self.lblImage.setPixmap(self.scaled)
