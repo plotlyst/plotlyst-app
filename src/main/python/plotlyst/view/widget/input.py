@@ -1639,6 +1639,20 @@ class DecoratedSpinBox(QWidget):
         self.layout().addWidget(self.spinBox)
         self.layout().addWidget(group(self.btnPlus, self.btnMinus, vertical=False, margin=0, spacing=0))
 
+        self.timerPlus = QTimer(self)
+        self.timerPlus.setInterval(100)
+        self.timerPlus.timeout.connect(self.spinBox.stepUp)
+
+        self.timerMinus = QTimer(self)
+        self.timerMinus.setInterval(100)
+        self.timerMinus.timeout.connect(self.spinBox.stepDown)
+
+        self.btnPlus.pressed.connect(self._startIncrementing)
+        self.btnPlus.released.connect(self.timerPlus.stop)
+
+        self.btnMinus.pressed.connect(self._startDecrementing)
+        self.btnMinus.released.connect(self.timerMinus.stop)
+
         self.setStyleSheet(f"""
             QSpinBox {{
                 border: 1px solid lightgrey;
@@ -1693,3 +1707,9 @@ class DecoratedSpinBox(QWidget):
 
     def text(self) -> str:
         return self.spinBox.text()
+
+    def _startIncrementing(self):
+        self.timerPlus.start()
+
+    def _startDecrementing(self):
+        self.timerMinus.start()
