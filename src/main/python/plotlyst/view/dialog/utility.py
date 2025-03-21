@@ -59,7 +59,7 @@ class ImageCropDialog(PopupDialog):
         self.lblPreview = label()
         self.lblImage = label()
 
-        self.frame.layout().addWidget(label('Crop image', h3=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(label('Crop image', h4=True), alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.lblPreview, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(line())
         self.frame.layout().addWidget(self.lblImage, alignment=Qt.AlignmentFlag.AlignCenter)
