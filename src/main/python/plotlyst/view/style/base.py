@@ -24,6 +24,7 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget
 from qtmenu import MenuWidget
 
+from plotlyst.env import app_env
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR, BG_SECONDARY_COLOR, BG_MUTED_COLOR, BG_ALT_COLOR
 
 style = f'''
@@ -247,6 +248,8 @@ def apply_white_menu(menu: MenuWidget):
 
 def transparent_menu(menu: MenuWidget):
     menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+    if app_env.is_windows():
+        menu.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint)
     menu.setStyleSheet('''
             MenuWidget {
                     background-color: rgba(0, 0, 0, 0);
