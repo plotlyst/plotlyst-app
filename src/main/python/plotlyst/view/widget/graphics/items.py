@@ -497,6 +497,12 @@ class ConnectorItem(QGraphicsPathItem):
     def target(self) -> AbstractSocketItem:
         return self._target
 
+    def sourceAngle(self) -> float:
+        return -self._source.angle() if isinstance(self._source, FilledSocketItem) else self._source.angle()
+
+    def targetAngle(self) -> float:
+        return -self._target.angle() if isinstance(self._target, FilledSocketItem) else self._target.angle()
+
     def connector(self) -> Optional[Connector]:
         return self._connector
 
@@ -712,17 +718,20 @@ class ConnectorItem(QGraphicsPathItem):
         self._startArrowheadItem.setRotation(endArrowAngle + 180)
 
     def _rearrangeCurvedConnector(self, path: QPainterPath, endPoint: QPointF):
+        source_angle = self.sourceAngle()
+        target_angle = self.targetAngle()
+
         if self._connector and self._connector.cp_controlled and self._connector.cp_x is not None:
             path.quadTo(QPointF(self._connector.cp_x, self._connector.cp_y), endPoint)
         else:
-            if 45 <= abs(self._source.angle()) <= 135:
-                if 45 <= abs(self._target.angle()) <= 135:
+            if 45 <= abs(source_angle) <= 135:
+                if 45 <= abs(target_angle) <= 135:
                     cp1 = QPointF(endPoint.x(), 0)
                     cp2 = QPointF(0, endPoint.y())
                 else:
                     cp1 = QPointF(0, endPoint.y())
                     cp2 = QPointF(0, 0)
-            elif 45 <= abs(self._target.angle()) <= 135:
+            elif 45 <= abs(target_angle) <= 135:
                 cp1 = QPointF(endPoint.x(), 0)
                 cp2 = QPointF(endPoint.x(), 0)
             else:
