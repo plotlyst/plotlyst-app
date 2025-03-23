@@ -4,6 +4,8 @@
 \usepackage{setspace}
 \usepackage{fancyhdr}
 
+\nofiles
+
 %\geometry{top=1in, bottom=1in, left=1in, right=1in}
 
 \setlength{\parindent}{1em}
@@ -21,7 +23,6 @@
 
 \begin{document}
 
-    % Title Page
     \begin{titlepage}
         \centering
         {\Huge {{ title }}}\\[1cm]
@@ -31,12 +32,10 @@
         \vfill
     \end{titlepage}
 
-    % Start page numbering after title page
     \setcounter{page}{3}
 
-    % Include chapters from separate files
     {% for chapter in chapters %}
-    \include{{ "{" ~ chapter ~ "}" }}
+    \include{ {{ full_path }}/{{ chapter }} }
     {% endfor %}
 
 \end{document}
