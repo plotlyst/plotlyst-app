@@ -407,8 +407,9 @@ class ManuscriptView(AbstractNovelView):
     def _side_bar_toggled(self, _, toggled: bool):
         btn = self._btnGroupSideBar.checkedButton()
         if btn is None:
-            self.wdgFind.deactivate()
-            self.textEditor.resetFind()
+            if self.wdgFind.isActive():
+                self.wdgFind.deactivate()
+                self.textEditor.resetFind()
             qtanim.collapse(self.ui.wdgSide)
             return
 
