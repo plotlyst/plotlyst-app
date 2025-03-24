@@ -23,9 +23,10 @@ from typing import Optional, List
 
 import qtanim
 from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QShowEvent
 from PyQt6.QtMultimedia import QSoundEffect
 from PyQt6.QtWidgets import QWidget, QFrame
+from overrides import overrides
 from qthandy import retain_when_hidden, vbox, incr_font, hbox, decr_icon
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
@@ -44,6 +45,8 @@ class TimerModel(QObject):
     DefaultValue: int = 60 * 5
 
     valueChanged = pyqtSignal()
+    sessionStarted = pyqtSignal()
+    sessionFinished = pyqtSignal()
     finished = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -93,7 +96,14 @@ class TimerModel(QObject):
     def _tick(self):
         if self.value == 0:
             self._timer.stop()
-            self.finished.emit()
+            self.sessionFinished.emit()
+            if self._currentIndex < len(self._times) - 1:
+                self._currentIndex += 1
+                self.value = self._times[self._currentIndex]
+                self.sessionStarted.emit()
+                self._timer.start()
+            else:
+                self.finished.emit()
         else:
             self.value -= 1
             self.valueChanged.emit()
@@ -156,7 +166,7 @@ class TimerSetupWidget(QFrame):
         return self.sbTimer.value() * 60
 
     def cycles(self) -> int:
-        return self.sbCycles.value() if self.toggleCycle.isChecked() else 1
+        return self.sbCycles.value() if self.toggleCycle.isChecked() else 0
 
     def breakTime(self) -> int:
         return self.sbBreaks.value() * 60 if self.toggleCycle.isChecked() else 0
@@ -179,6 +189,8 @@ class SprintWidget(QWidget):
         self.btnTimerSetup.installEventFilter(OpacityEventFilter(self.btnTimerSetup, leaveOpacity=0.5))
         self.btnPause = tool_btn(IconRegistry.pause_icon(color='grey'), transparent_=True, checkable=True)
         self.btnPause.installEventFilter(OpacityEventFilter(self.btnPause, leaveOpacity=0.7))
+        self.btnSkipNext = tool_btn(IconRegistry.from_name('mdi6.skip-next-circle-outline'), transparent_=True)
+        self.btnSkipNext.installEventFilter(OpacityEventFilter(self.btnSkipNext, leaveOpacity=0.7))
         self.btnReset = tool_btn(QIcon(), transparent_=True)
         self.btnReset.installEventFilter(
             ButtonIconSwitchEventFilter(self.btnReset, IconRegistry.from_name('fa5.stop-circle', 'grey'),
@@ -190,6 +202,7 @@ class SprintWidget(QWidget):
         self.layout().addWidget(self.btnTimerSetup)
         self.layout().addWidget(self.time)
         self.layout().addWidget(self.btnPause)
+        self.layout().addWidget(self.btnSkipNext)
         self.layout().addWidget(self.btnReset)
 
         self._timer_setup = TimerSetupWidget()
@@ -199,11 +212,21 @@ class SprintWidget(QWidget):
         self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
 
         self._timer_setup.btnStart.clicked.connect(self.start)
-        self.btnPause.clicked.connect(self._pauseStartTimer)
+        self.btnPause.clicked.connect(self._toggleTimer)
+        self.btnSkipNext.clicked.connect(self._skipNext)
         self.btnReset.clicked.connect(self._reset)
 
         self.setModel(TimerModel())
-        self._effect: Optional[QSoundEffect] = None
+        self._effect = QSoundEffect()
+        self._effect.setSource(QUrl.fromLocalFile(resource_registry.cork))
+        self._soundWarmedUp = False
+
+        # self._player = QMediaPlayer()
+        # self._audio_output = QAudioOutput()
+        # self._player.setAudioOutput(self._audio_output)
+        # self._player.setSource(QUrl.fromLocalFile(resource_registry.cork))
+        # self._audio_output.setVolume(0.3)
+        # self._player.play()
 
     def model(self) -> TimerModel:
         return self._model
@@ -211,8 +234,21 @@ class SprintWidget(QWidget):
     def setModel(self, model: TimerModel):
         self._model = model
         self._model.valueChanged.connect(self._updateTimer)
-        self._model.finished.connect(self._finished)
+        self._model.sessionStarted.connect(self._sessionStarted)
+        self._model.sessionFinished.connect(self._sessionFinished)
+        self._model.finished.connect(self._reset)
         self._toggleState(self._model.isActive())
+
+    @overrides
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        if not self._soundWarmedUp:
+            self._effect.setVolume(0)
+            self._effect.play()
+            QTimer.singleShot(300, lambda: self._effect.play())
+            QTimer.singleShot(600, lambda: self._effect.play())
+            QTimer.singleShot(5000, lambda: self._effect.setVolume(0.3))
+            self._soundWarmedUp = True
 
     def setCompactMode(self, compact: bool):
         self._compact = compact
@@ -238,27 +274,32 @@ class SprintWidget(QWidget):
             self.btnReset.setHidden(True)
         else:
             self.btnPause.setVisible(running)
+            self.btnSkipNext.setVisible(running)
             self.btnReset.setVisible(running)
+
+    def _sessionStarted(self):
+        self._updateTimer()
 
     def _updateTimer(self):
         mins, secs = self._model.remainingTime()
         time = datetime.time(minute=mins, second=secs)
         self.time.setTime(time)
 
-    def _pauseStartTimer(self, played: bool):
+    def _toggleTimer(self, played: bool):
         self.model().toggle()
         if played:
             self.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
         else:
             self.btnPause.setIcon(IconRegistry.play_icon())
 
+    def _skipNext(self):
+        self._model.next()
+
     def _reset(self):
         self.model().stop()
         self._toggleState(False)
 
-    def _finished(self):
-        if self._effect is None:
-            self._effect = QSoundEffect()
-            self._effect.setSource(QUrl.fromLocalFile(resource_registry.cork))
-            self._effect.setVolume(0.3)
+    def _sessionFinished(self):
+        print('play sound')
         self._effect.play()
+        # self._player.play()
