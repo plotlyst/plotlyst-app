@@ -28,7 +28,7 @@ from PyQt6.QtCore import pyqtSignal, QTimer, Qt, QRect, QDate, QPoint, QVariantA
 from PyQt6.QtGui import QTextDocument, QColor, QTextFormat, QPainter, QTextOption, \
     QShowEvent, QIcon
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView, \
-    QPushButton, QToolButton, QWidgetItem, QGraphicsColorizeEffect, QGraphicsTextItem
+    QPushButton, QToolButton, QWidgetItem, QGraphicsColorizeEffect, QGraphicsTextItem, QHeaderView
 from overrides import overrides
 from qthandy import retain_when_hidden, translucent, margins, vbox, bold, vline, decr_font, \
     underline, transparent, italic, decr_icon, pointy, hbox
@@ -452,12 +452,23 @@ class ManuscriptProgressCalendar(QCalendarWidget):
             QTableView {{
                 selection-background-color: {RELAXED_WHITE_COLOR};
             }}
+            QTableView::item:selected {{
+                background: {RELAXED_WHITE_COLOR};
+                color: black;
+            }}
             ''')
+            widget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
             widget.horizontalHeader().setMinimumSectionSize(20)
+            widget.horizontalHeader().setDefaultSectionSize(25)
+
+            widget.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
             widget.verticalHeader().setMinimumSectionSize(20)
+            widget.verticalHeader().setDefaultSectionSize(30)
 
         today = QDate.currentDate()
         self.setMaximumDate(today)
+
+        self.setMaximumHeight(220)
 
     @overrides
     def showEvent(self, event: QShowEvent) -> None:
@@ -495,7 +506,7 @@ class ManuscriptProgressCalendar(QCalendarWidget):
                 painter.drawEllipse(rect.center() + QPoint(1, 1), rad, rad)
 
             if date > self.maximumDate():
-                painter.setPen(QColor('grey'))
+                painter.setPen(QColor(LIGHTGREY_ACTIVE_COLOR))
             else:
                 painter.setPen(QColor('black'))
             painter.drawText(rect.toRectF(), str(date.day()), option)
