@@ -23,10 +23,9 @@ from typing import Optional, List
 
 import qtanim
 from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
-from PyQt6.QtGui import QIcon, QShowEvent
+from PyQt6.QtGui import QIcon
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QWidget, QFrame
-from overrides import overrides
 from qthandy import retain_when_hidden, vbox, incr_font, hbox, decr_icon
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
@@ -217,8 +216,6 @@ class SprintWidget(QWidget):
         self.btnReset.clicked.connect(self._reset)
 
         self.setModel(TimerModel())
-        # self._effect = QSoundEffect()
-        # self._effect.setSource(QUrl.fromLocalFile(resource_registry.cork))
         self._soundWarmedUp = False
 
         self._player = QMediaPlayer()
@@ -226,7 +223,6 @@ class SprintWidget(QWidget):
         self._player.setAudioOutput(self._audio_output)
         self._player.setSource(QUrl.fromLocalFile(resource_registry.cork))
         self._audio_output.setVolume(0.3)
-        # self._player.play()
 
     def model(self) -> TimerModel:
         return self._model
@@ -238,17 +234,6 @@ class SprintWidget(QWidget):
         self._model.sessionFinished.connect(self._sessionFinished)
         self._model.finished.connect(self._reset)
         self._toggleState(self._model.isActive())
-
-    @overrides
-    def showEvent(self, event: QShowEvent) -> None:
-        super().showEvent(event)
-        # if not self._soundWarmedUp:
-        #     self._effect.setVolume(0)
-        #     self._effect.play()
-        #     QTimer.singleShot(300, lambda: self._effect.play())
-        #     QTimer.singleShot(600, lambda: self._effect.play())
-        #     QTimer.singleShot(5000, lambda: self._effect.setVolume(0.3))
-        #     self._soundWarmedUp = True
 
     def setCompactMode(self, compact: bool):
         self._compact = compact
@@ -300,6 +285,4 @@ class SprintWidget(QWidget):
         self._toggleState(False)
 
     def _sessionFinished(self):
-        print('play sound')
-        # self._effect.play()
         self._player.play()
