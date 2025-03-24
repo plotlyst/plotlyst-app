@@ -19,20 +19,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import datetime
-from typing import Optional
+from typing import Optional, List
 
 import qtanim
 from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
+from PyQt6.QtGui import QIcon
 from PyQt6.QtMultimedia import QSoundEffect
-from PyQt6.QtWidgets import QWidget, QFrame
-from qthandy import retain_when_hidden, transparent, vbox, incr_font
+from PyQt6.QtWidgets import QWidget, QFrame, QTimeEdit, QDateTimeEdit, QAbstractSpinBox
+from qthandy import retain_when_hidden, transparent, vbox, incr_font, hbox
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.resources import resource_registry
-from plotlyst.view.common import ButtonPressResizeEventFilter, push_btn, ButtonIconSwitchEventFilter, frame
-from plotlyst.view.generated.sprint_widget_ui import Ui_SprintWidget
+from plotlyst.view.common import push_btn, ButtonIconSwitchEventFilter, frame, tool_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
@@ -48,21 +48,33 @@ class TimerModel(QObject):
 
     def __init__(self, parent=None):
         super(TimerModel, self).__init__(parent)
-        self.value: int = self.DefaultValue
+        self.value: int = 0
+        self._times: List[int] = []
+        self._currentIndex: int = 0
 
         self._timer = QTimer()
         self._timer.setInterval(1000)
         self._timer.timeout.connect(self._tick)
 
-    def start(self, value: int):
-        if value == 3600:
-            value -= 1
-        self.value = value
+    def start(self, session: int, cycles: int = 1, breakTime: int = 300):
+        if session == 3600:
+            session -= 1
+        self._times.append(session)
+        for i in range(cycles - 1):
+            self._times.append(breakTime)
+            self._times.append(session)
+
+        self._currentIndex = 0
+        self.value = self._times[self._currentIndex]
         self._timer.start()
 
     def stop(self):
         self._timer.stop()
         self.value = self.DefaultValue
+
+    def next(self):
+        self.value = 0
+        self._tick()
 
     def remainingTime(self):
         minutes = self.value // 60
@@ -143,31 +155,48 @@ class TimerSetupWidget(QFrame):
     def value(self) -> int:
         return self.sbTimer.value() * 60
 
+    def cycles(self) -> int:
+        return self.sbCycles.value() if self.toggleCycle.isChecked() else 1
+
+    def breakTime(self) -> int:
+        return self.sbBreaks.value() * 60 if self.toggleCycle.isChecked() else 0
+
     def _cycleToggled(self, toggled: bool):
         self.sbCycles.setEnabled(toggled)
         self.sbBreaks.setEnabled(toggled)
 
-class SprintWidget(QWidget, Ui_SprintWidget):
+
+class SprintWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setupUi(self)
-        self._model = None
+        self._model: Optional[TimerModel] = None
         self._compact: bool = False
-        self.setModel(TimerModel())
 
-        self._toggleState(False)
-        transparent(self.time)
-        transparent(self.btnPause)
-        transparent(self.btnReset)
+        hbox(self)
 
-        self.btnTimer.setIcon(IconRegistry.timer_icon())
+        self.btnTimer = tool_btn(IconRegistry.timer_icon(), transparent_=True)
+        self.btnPause = tool_btn(IconRegistry.pause_icon(color='grey'), transparent_=True, checkable=True)
         self.btnPause.installEventFilter(OpacityEventFilter(self.btnPause, leaveOpacity=0.7))
-        self.btnPause.installEventFilter(ButtonPressResizeEventFilter(self.btnPause))
+        self.btnReset = tool_btn(QIcon(), transparent_=True)
         self.btnReset.installEventFilter(
             ButtonIconSwitchEventFilter(self.btnReset, IconRegistry.from_name('fa5.stop-circle', 'grey'),
                                         IconRegistry.from_name('fa5.stop-circle', '#ED6868')))
         self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset, leaveOpacity=0.7))
-        self.btnReset.installEventFilter(ButtonPressResizeEventFilter(self.btnReset))
+
+        self.time = QTimeEdit()
+        self.time.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.time.setWrapping(False)
+        self.time.setReadOnly(True)
+        self.time.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.time.setProperty("showGroupSeparator", False)
+        self.time.setDisplayFormat("mm:ss")
+        self.time.setCurrentSection(QDateTimeEdit.Section.MinuteSection)
+        transparent(self.time)
+
+        self.layout().addWidget(self.btnTimer)
+        self.layout().addWidget(self.time)
+        self.layout().addWidget(self.btnPause)
+        self.layout().addWidget(self.btnReset)
 
         self._timer_setup = TimerSetupWidget()
         self._menu = MenuWidget(self.btnTimer)
@@ -179,6 +208,7 @@ class SprintWidget(QWidget, Ui_SprintWidget):
         self.btnPause.clicked.connect(self._pauseStartTimer)
         self.btnReset.clicked.connect(self._reset)
 
+        self.setModel(TimerModel())
         self._effect: Optional[QSoundEffect] = None
 
     def model(self) -> TimerModel:
@@ -197,7 +227,7 @@ class SprintWidget(QWidget, Ui_SprintWidget):
 
     def start(self):
         self._toggleState(True)
-        self._model.start(self._timer_setup.value())
+        self._model.start(self._timer_setup.value(), self._timer_setup.cycles(), self._timer_setup.breakTime())
         self._updateTimer()
         self._menu.close()
 
