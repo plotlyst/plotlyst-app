@@ -26,7 +26,7 @@ from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtMultimedia import QSoundEffect
 from PyQt6.QtWidgets import QWidget, QFrame, QTimeEdit, QDateTimeEdit, QAbstractSpinBox
-from qthandy import retain_when_hidden, transparent, vbox, incr_font, hbox
+from qthandy import retain_when_hidden, transparent, vbox, incr_font, hbox, decr_icon
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
@@ -174,7 +174,9 @@ class SprintWidget(QWidget):
 
         hbox(self)
 
-        self.btnTimer = tool_btn(IconRegistry.timer_icon(), transparent_=True)
+        self.btnTimerSetup = tool_btn(IconRegistry.timer_icon(), transparent_=True)
+        decr_icon(self.btnTimerSetup)
+        self.btnTimerSetup.installEventFilter(OpacityEventFilter(self.btnTimerSetup, leaveOpacity=0.5))
         self.btnPause = tool_btn(IconRegistry.pause_icon(color='grey'), transparent_=True, checkable=True)
         self.btnPause.installEventFilter(OpacityEventFilter(self.btnPause, leaveOpacity=0.7))
         self.btnReset = tool_btn(QIcon(), transparent_=True)
@@ -193,13 +195,13 @@ class SprintWidget(QWidget):
         self.time.setCurrentSection(QDateTimeEdit.Section.MinuteSection)
         transparent(self.time)
 
-        self.layout().addWidget(self.btnTimer)
+        self.layout().addWidget(self.btnTimerSetup)
         self.layout().addWidget(self.time)
         self.layout().addWidget(self.btnPause)
         self.layout().addWidget(self.btnReset)
 
         self._timer_setup = TimerSetupWidget()
-        self._menu = MenuWidget(self.btnTimer)
+        self._menu = MenuWidget(self.btnTimerSetup)
         self._menu.addWidget(self._timer_setup)
         transparent_menu(self._menu)
         self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
@@ -237,7 +239,7 @@ class SprintWidget(QWidget):
             self.btnPause.setChecked(True)
             self.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
         if self._compact:
-            self.btnTimer.setHidden(running)
+            self.btnTimerSetup.setHidden(running)
             retain_when_hidden(self.btnPause)
             retain_when_hidden(self.btnReset)
             self.btnPause.setHidden(True)

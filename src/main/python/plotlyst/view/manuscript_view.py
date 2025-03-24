@@ -159,9 +159,6 @@ class ManuscriptView(AbstractNovelView):
         self._btnDistractionFree.clicked.connect(self._enter_distraction_free)
 
         self._wdgSprint = SprintWidget()
-        transparent(self._wdgSprint.btnTimer)
-        decr_icon(self._wdgSprint.btnTimer)
-        self._wdgSprint.btnTimer.installEventFilter(OpacityEventFilter(self._wdgSprint.btnTimer, leaveOpacity=0.5))
         self._spellCheckIcon = Icon()
         self._spellCheckIcon.setIcon(IconRegistry.from_name('fa5s.spell-check'))
         self._spellCheckIcon.setToolTip('Spellcheck')
