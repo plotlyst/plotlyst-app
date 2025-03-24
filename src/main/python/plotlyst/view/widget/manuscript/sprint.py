@@ -25,8 +25,8 @@ import qtanim
 from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtMultimedia import QSoundEffect
-from PyQt6.QtWidgets import QWidget, QFrame, QTimeEdit, QDateTimeEdit, QAbstractSpinBox
-from qthandy import retain_when_hidden, transparent, vbox, incr_font, hbox, decr_icon
+from PyQt6.QtWidgets import QWidget, QFrame
+from qthandy import retain_when_hidden, vbox, incr_font, hbox, decr_icon
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
@@ -36,7 +36,7 @@ from plotlyst.view.common import push_btn, ButtonIconSwitchEventFilter, frame, t
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
-from plotlyst.view.widget.display import MenuOverlayEventFilter, icon_text
+from plotlyst.view.widget.display import MenuOverlayEventFilter, icon_text, TimerDisplay
 from plotlyst.view.widget.input import DecoratedSpinBox, Toggle
 
 
@@ -185,15 +185,7 @@ class SprintWidget(QWidget):
                                         IconRegistry.from_name('fa5.stop-circle', '#ED6868')))
         self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset, leaveOpacity=0.7))
 
-        self.time = QTimeEdit()
-        self.time.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
-        self.time.setWrapping(False)
-        self.time.setReadOnly(True)
-        self.time.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.time.setProperty("showGroupSeparator", False)
-        self.time.setDisplayFormat("mm:ss")
-        self.time.setCurrentSection(QDateTimeEdit.Section.MinuteSection)
-        transparent(self.time)
+        self.time = TimerDisplay()
 
         self.layout().addWidget(self.btnTimerSetup)
         self.layout().addWidget(self.time)

@@ -29,7 +29,7 @@ from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyE
     QPen
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
-    QApplication
+    QApplication, QTimeEdit, QAbstractSpinBox, QDateTimeEdit
 from overrides import overrides
 from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, pointy, hbox, busy, italic, decr_font, \
     margins, translucent, sp, decr_icon
@@ -775,3 +775,16 @@ def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional
         translucent(wdg, opacity)
 
     return wdg
+
+
+class TimerDisplay(QTimeEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.setWrapping(False)
+        self.setReadOnly(True)
+        self.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.setProperty("showGroupSeparator", False)
+        self.setDisplayFormat("mm:ss")
+        self.setCurrentSection(QDateTimeEdit.Section.MinuteSection)
+        transparent(self)
