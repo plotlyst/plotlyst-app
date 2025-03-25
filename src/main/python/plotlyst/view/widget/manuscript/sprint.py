@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import datetime
+from dataclasses import dataclass
 from typing import Optional, List
 
 import qtanim
@@ -26,7 +27,7 @@ from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QWidget, QFrame
-from qthandy import retain_when_hidden, vbox, incr_font, hbox, decr_icon
+from qthandy import vbox, incr_font, hbox, decr_icon, vline
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
@@ -38,6 +39,12 @@ from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
 from plotlyst.view.widget.display import MenuOverlayEventFilter, icon_text, TimerDisplay
 from plotlyst.view.widget.input import DecoratedSpinBox, Toggle
+
+
+@dataclass
+class CycleInfo:
+    cycle: int
+    break_time: bool
 
 
 class TimerModel(QObject):
@@ -59,6 +66,8 @@ class TimerModel(QObject):
         self._timer.timeout.connect(self._tick)
 
     def start(self, session: int, cycles: int = 1, breakTime: int = 300):
+        self._times.clear()
+
         if session == 3600:
             session -= 1
         self._times.append(session)
@@ -68,6 +77,7 @@ class TimerModel(QObject):
 
         self._currentIndex = 0
         self.value = self._times[self._currentIndex]
+        self.sessionStarted.emit()
         self._timer.start()
 
     def stop(self):
@@ -85,6 +95,9 @@ class TimerModel(QObject):
 
     def isActive(self) -> bool:
         return self._timer.isActive()
+
+    def cycle(self) -> CycleInfo:
+        return CycleInfo(self._currentIndex // 2 + 1 if len(self._times) > 1 else 0, self._currentIndex % 2 == 1)
 
     def toggle(self):
         if self._timer.isActive():
@@ -181,11 +194,21 @@ class SprintWidget(QWidget):
         self._model: Optional[TimerModel] = None
         self._compact: bool = False
 
-        hbox(self)
+        hbox(self, spacing=0)
 
         self.btnTimerSetup = tool_btn(IconRegistry.timer_icon(), transparent_=True)
         decr_icon(self.btnTimerSetup)
         self.btnTimerSetup.installEventFilter(OpacityEventFilter(self.btnTimerSetup, leaveOpacity=0.5))
+
+        self.btnSessionControls = tool_btn(IconRegistry.from_name('mdi.timer'), transparent_=True)
+        self.btnSessionControls.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btnSessionControls.installEventFilter(OpacityEventFilter(self.btnSessionControls, leaveOpacity=0.5))
+
+        self.btnBreak = tool_btn(IconRegistry.from_name('ph.coffee'), transparent_=True)
+        self.btnBreak.setText('Break')
+        self.btnBreak.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btnBreak.installEventFilter(OpacityEventFilter(self.btnBreak, leaveOpacity=0.5))
+
         self.btnPause = tool_btn(IconRegistry.pause_icon(color='grey'), transparent_=True, checkable=True)
         self.btnPause.installEventFilter(OpacityEventFilter(self.btnPause, leaveOpacity=0.7))
         self.btnSkipNext = tool_btn(IconRegistry.from_name('mdi6.skip-next-circle-outline'), transparent_=True)
@@ -197,9 +220,13 @@ class SprintWidget(QWidget):
         self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset, leaveOpacity=0.7))
 
         self.time = TimerDisplay()
+        self._vLine = vline()
 
         self.layout().addWidget(self.btnTimerSetup)
+        self.layout().addWidget(self.btnSessionControls)
         self.layout().addWidget(self.time)
+        self.layout().addWidget(self.btnBreak)
+        self.layout().addWidget(self._vLine)
         self.layout().addWidget(self.btnPause)
         self.layout().addWidget(self.btnSkipNext)
         self.layout().addWidget(self.btnReset)
@@ -211,7 +238,7 @@ class SprintWidget(QWidget):
         self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
 
         self._timer_setup.btnStart.clicked.connect(self.start)
-        self.btnPause.clicked.connect(self._toggleTimer)
+        self.btnPause.clicked.connect(self._pauseStartTimer)
         self.btnSkipNext.clicked.connect(self._skipNext)
         self.btnReset.clicked.connect(self._reset)
 
@@ -247,30 +274,42 @@ class SprintWidget(QWidget):
         self._menu.close()
 
     def _toggleState(self, running: bool):
+        self.btnTimerSetup.setHidden(running)
+        self.btnSessionControls.setVisible(running)
+        self.btnBreak.setHidden(True)
         self.time.setVisible(running)
+
         if running:
             self.btnPause.setChecked(True)
             self.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
         if self._compact:
-            self.btnTimerSetup.setHidden(running)
-            retain_when_hidden(self.btnPause)
-            retain_when_hidden(self.btnReset)
+            self._vLine.setHidden(True)
             self.btnPause.setHidden(True)
+            self.btnSkipNext.setHidden(True)
             self.btnReset.setHidden(True)
         else:
+            self._vLine.setVisible(running)
             self.btnPause.setVisible(running)
             self.btnSkipNext.setVisible(running)
             self.btnReset.setVisible(running)
 
     def _sessionStarted(self):
+        info = self._model.cycle()
+        self.btnSessionControls.setText(f'#{info.cycle}' if info.cycle else '')
+        self.btnSessionControls.setHidden(info.break_time)
+        self.btnBreak.setVisible(info.break_time)
+
         self._updateTimer()
+
+    def _sessionFinished(self):
+        self._player.play()
 
     def _updateTimer(self):
         mins, secs = self._model.remainingTime()
         time = datetime.time(minute=mins, second=secs)
         self.time.setTime(time)
 
-    def _toggleTimer(self, played: bool):
+    def _pauseStartTimer(self, played: bool):
         self.model().toggle()
         if played:
             self.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
@@ -283,6 +322,3 @@ class SprintWidget(QWidget):
     def _reset(self):
         self.model().stop()
         self._toggleState(False)
-
-    def _sessionFinished(self):
-        self._player.play()
