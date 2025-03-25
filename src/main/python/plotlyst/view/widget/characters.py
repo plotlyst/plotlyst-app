@@ -186,7 +186,7 @@ class CharacterSelectorMenu(ScrollableMenuWidget):
                 hint = hint.expandedTo(QSize(widget.width(), hint.height()))
 
             if has_characters and i < 11:
-                hint = hint.expandedTo(QSize(hint.width(), hint.height() + widget.height()))
+                hint = hint.expandedTo(QSize(hint.width(), hint.height() + widget.sizeHint().height()))
 
         return hint
 
