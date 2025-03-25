@@ -74,7 +74,7 @@ class DistFreeDisplayBar(QFrame):
         retain_when_hidden(self.btnExitDistFreeMode)
 
         self.wdgSprint = SprintWidget(self)
-        self.wdgSprint.setCompactMode(True)
+        self.wdgSprint.setNightMode(True)
 
         self.layout().addWidget(self.wdgSprint, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(self.btnExitDistFreeMode, alignment=Qt.AlignmentFlag.AlignRight)

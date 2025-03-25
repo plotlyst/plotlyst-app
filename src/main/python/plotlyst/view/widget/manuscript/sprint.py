@@ -139,6 +139,7 @@ class TimerControlsWidget(QFrame):
         self.btnPause = tool_btn(IconRegistry.pause_icon(color='grey'), transparent_=True, checkable=True)
         self.btnPause.setIconSize(QSize(32, 32))
         self.btnPause.installEventFilter(OpacityEventFilter(self.btnPause, leaveOpacity=0.7))
+        self.btnPause.toggled.connect(self._pauseToggled)
 
         self.btnPrevious = tool_btn(IconRegistry.from_name('mdi.skip-previous'), transparent_=True)
         self.btnPrevious.setIconSize(QSize(22, 22))
@@ -157,6 +158,15 @@ class TimerControlsWidget(QFrame):
         self.layout().addWidget(group(self.btnPrevious, self.btnPause, self.btnSkipNext, spacing=15),
                                 alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+
+    def setRunningState(self, running: bool):
+        self.btnPause.setChecked(not running)
+
+    def _pauseToggled(self, toggled: bool):
+        if toggled:
+            self.btnPause.setIcon(IconRegistry.play_icon())
+        else:
+            self.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
 
 
 class TimerSetupWidget(QFrame):
@@ -294,10 +304,15 @@ class SprintWidget(QWidget):
         self._model.finished.connect(self._reset)
         self._toggleState(self._model.isActive())
 
-    def setCompactMode(self, compact: bool):
-        self._compact = compact
+    def setNightMode(self, enabled: bool):
         self._toggleState(self.model().isActive())
-        self.time.setStyleSheet(f'border: 0px; color: {RELAXED_WHITE_COLOR}; background-color: rgba(0,0,0,0);')
+        stylesheet = f'border: 0px; color: {RELAXED_WHITE_COLOR}; background-color: rgba(0,0,0,0);'
+        self.time.setStyleSheet(stylesheet)
+        self.btnSessionControls.setStyleSheet(stylesheet)
+        self.btnBreak.setStyleSheet(stylesheet)
+
+        self.btnSessionControls.setIcon(IconRegistry.from_name('mdi.timer', RELAXED_WHITE_COLOR))
+        self.btnBreak.setIcon(IconRegistry.from_name('ph.coffee', RELAXED_WHITE_COLOR))
 
     def start(self):
         self._toggleState(True)
@@ -311,17 +326,7 @@ class SprintWidget(QWidget):
         self.btnBreak.setHidden(True)
         self.time.setVisible(running)
 
-        if running:
-            self.wdgControls.btnPause.setChecked(True)
-            self.wdgControls.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
-        # if self._compact:
-        #     self.btnPause.setHidden(True)
-        #     self.btnSkipNext.setHidden(True)
-        #     self.btnReset.setHidden(True)
-        # else:
-        #     self.btnPause.setVisible(running)
-        #     self.btnSkipNext.setVisible(running)
-        #     self.btnReset.setVisible(running)
+        self.wdgControls.setRunningState(running)
 
     def _sessionStarted(self):
         info = self._model.cycle()
@@ -343,14 +348,12 @@ class SprintWidget(QWidget):
         self._menuSetup.exec(self.mapToGlobal(self.rect().bottomLeft()))
 
     def _showControls(self):
+        self.wdgControls.setRunningState(self._model.isActive())
         self._menuControls.exec(self.mapToGlobal(self.rect().bottomLeft()))
 
-    def _pauseStartTimer(self, played: bool):
+    def _pauseStartTimer(self, _: bool):
         self.model().toggle()
-        if played:
-            self.wdgControls.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
-        else:
-            self.wdgControls.btnPause.setIcon(IconRegistry.play_icon())
+        self.wdgControls.setRunningState(self.model().isActive())
 
     def _jumpToPrevious(self):
         self._model.previous()
