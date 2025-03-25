@@ -83,6 +83,7 @@ class TimerModel(QObject):
     def stop(self):
         self._timer.stop()
         self.value = self.DefaultValue
+        self._times.clear()
 
     def previous(self):
         self.value = self._times[self._currentIndex]
@@ -103,6 +104,9 @@ class TimerModel(QObject):
 
     def isActive(self) -> bool:
         return self._timer.isActive()
+
+    def isSet(self) -> bool:
+        return len(self._times) > 0
 
     def cycle(self) -> CycleInfo:
         return CycleInfo(self._currentIndex // 2 + 1 if len(self._times) > 1 else 0, self._currentIndex % 2 == 1)
@@ -241,7 +245,7 @@ class SprintWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._model: Optional[TimerModel] = None
-        self._compact: bool = False
+        self._nightMode: bool = False
 
         hbox(self, spacing=0)
 
@@ -303,15 +307,17 @@ class SprintWidget(QWidget):
         self._model.sessionStarted.connect(self._sessionStarted)
         self._model.sessionFinished.connect(self._sessionFinished)
         self._model.finished.connect(self._reset)
-        self._toggleState(self._model.isActive())
+        self._toggleState(self._model.isSet())
 
-        if self._model.isActive():
+        if self._model.isSet():
             self._sessionStarted()
 
     def setNightMode(self, enabled: bool):
-        self._toggleState(self.model().isActive())
+        self._nightMode = enabled
+        self._toggleState(self.model().isSet())
         stylesheet = f'border: 0px; color: {RELAXED_WHITE_COLOR}; background-color: rgba(0,0,0,0);'
         self.time.setStyleSheet(stylesheet)
+        self.time.installEventFilter(OpacityEventFilter(self.time, leaveOpacity=0.7))
         self.btnSessionControls.setStyleSheet(stylesheet)
         self.btnBreak.setStyleSheet(stylesheet)
         restyle(self.btnSessionControls)
@@ -327,7 +333,7 @@ class SprintWidget(QWidget):
         self._menuSetup.close()
 
     def _toggleState(self, running: bool):
-        self.btnTimerSetup.setHidden(running)
+        self.btnTimerSetup.setHidden(running or self._nightMode)
         self.btnSessionControls.setVisible(running)
         self.btnBreak.setHidden(True)
         self.time.setVisible(running)

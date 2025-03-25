@@ -81,7 +81,7 @@ class DistFreeDisplayBar(QFrame):
 
     def activate(self, timer: Optional[TimerModel] = None):
         self.btnExitDistFreeMode.setVisible(True)
-        if timer and timer.isActive():
+        if timer and timer.isSet():
             self.wdgSprint.setModel(timer)
             self.wdgSprint.setVisible(True)
         else:
