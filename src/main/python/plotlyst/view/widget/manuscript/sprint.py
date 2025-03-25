@@ -23,11 +23,11 @@ from dataclasses import dataclass
 from typing import Optional, List
 
 import qtanim
-from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt
+from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt, QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QWidget, QFrame
-from qthandy import vbox, incr_font, hbox, decr_icon, vline
+from qthandy import vbox, incr_font, hbox, decr_icon
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
@@ -37,7 +37,7 @@ from plotlyst.view.common import push_btn, ButtonIconSwitchEventFilter, frame, t
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
-from plotlyst.view.widget.display import MenuOverlayEventFilter, icon_text, TimerDisplay
+from plotlyst.view.widget.display import icon_text, TimerDisplay, MenuOverlayEventFilter
 from plotlyst.view.widget.input import DecoratedSpinBox, Toggle
 
 
@@ -121,6 +121,31 @@ class TimerModel(QObject):
             self.valueChanged.emit()
 
 
+class TimerControlsWidget(QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        hbox(self, 15, 8)
+        self.setProperty('bg', True)
+        self.setProperty('large-rounded', True)
+
+        self.btnPause = tool_btn(IconRegistry.pause_icon(color='grey'), transparent_=True, checkable=True)
+        self.btnPause.setIconSize(QSize(28, 28))
+        self.btnPause.installEventFilter(OpacityEventFilter(self.btnPause, leaveOpacity=0.7))
+        self.btnSkipNext = tool_btn(IconRegistry.from_name('mdi6.skip-next-circle-outline'), transparent_=True)
+        self.btnSkipNext.setIconSize(QSize(22, 22))
+        self.btnSkipNext.installEventFilter(OpacityEventFilter(self.btnSkipNext, leaveOpacity=0.7))
+        self.btnReset = tool_btn(QIcon(), transparent_=True)
+        self.btnReset.setIconSize(QSize(22, 22))
+        self.btnReset.installEventFilter(
+            ButtonIconSwitchEventFilter(self.btnReset, IconRegistry.from_name('fa5.stop-circle', 'grey'),
+                                        IconRegistry.from_name('fa5.stop-circle', '#ED6868')))
+        self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset, leaveOpacity=0.7))
+
+        self.layout().addWidget(self.btnPause)
+        self.layout().addWidget(self.btnSkipNext)
+        self.layout().addWidget(self.btnReset)
+
+
 class TimerSetupWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -199,48 +224,41 @@ class SprintWidget(QWidget):
         self.btnTimerSetup = tool_btn(IconRegistry.timer_icon(), transparent_=True)
         decr_icon(self.btnTimerSetup)
         self.btnTimerSetup.installEventFilter(OpacityEventFilter(self.btnTimerSetup, leaveOpacity=0.5))
+        self.btnTimerSetup.clicked.connect(self._showSetup)
 
         self.btnSessionControls = tool_btn(IconRegistry.from_name('mdi.timer'), transparent_=True)
         self.btnSessionControls.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.btnSessionControls.installEventFilter(OpacityEventFilter(self.btnSessionControls, leaveOpacity=0.5))
+        self.btnSessionControls.clicked.connect(self._showControls)
 
         self.btnBreak = tool_btn(IconRegistry.from_name('ph.coffee'), transparent_=True)
         self.btnBreak.setText('Break')
         self.btnBreak.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.btnBreak.installEventFilter(OpacityEventFilter(self.btnBreak, leaveOpacity=0.5))
+        self.btnBreak.clicked.connect(self._showControls)
 
-        self.btnPause = tool_btn(IconRegistry.pause_icon(color='grey'), transparent_=True, checkable=True)
-        self.btnPause.installEventFilter(OpacityEventFilter(self.btnPause, leaveOpacity=0.7))
-        self.btnSkipNext = tool_btn(IconRegistry.from_name('mdi6.skip-next-circle-outline'), transparent_=True)
-        self.btnSkipNext.installEventFilter(OpacityEventFilter(self.btnSkipNext, leaveOpacity=0.7))
-        self.btnReset = tool_btn(QIcon(), transparent_=True)
-        self.btnReset.installEventFilter(
-            ButtonIconSwitchEventFilter(self.btnReset, IconRegistry.from_name('fa5.stop-circle', 'grey'),
-                                        IconRegistry.from_name('fa5.stop-circle', '#ED6868')))
-        self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset, leaveOpacity=0.7))
+        self.wdgControls = TimerControlsWidget()
+        self._menuControls = MenuWidget()
+        transparent_menu(self._menuControls)
+        self._menuControls.addWidget(self.wdgControls)
 
         self.time = TimerDisplay()
-        self._vLine = vline()
 
         self.layout().addWidget(self.btnTimerSetup)
         self.layout().addWidget(self.btnSessionControls)
         self.layout().addWidget(self.time)
         self.layout().addWidget(self.btnBreak)
-        self.layout().addWidget(self._vLine)
-        self.layout().addWidget(self.btnPause)
-        self.layout().addWidget(self.btnSkipNext)
-        self.layout().addWidget(self.btnReset)
 
         self._timer_setup = TimerSetupWidget()
-        self._menu = MenuWidget(self.btnTimerSetup)
-        self._menu.addWidget(self._timer_setup)
-        transparent_menu(self._menu)
-        self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
+        self._menuSetup = MenuWidget()
+        transparent_menu(self._menuSetup)
+        self._menuSetup.addWidget(self._timer_setup)
+        self._menuSetup.installEventFilter(MenuOverlayEventFilter(self._menuSetup))
 
         self._timer_setup.btnStart.clicked.connect(self.start)
-        self.btnPause.clicked.connect(self._pauseStartTimer)
-        self.btnSkipNext.clicked.connect(self._skipNext)
-        self.btnReset.clicked.connect(self._reset)
+        self.wdgControls.btnPause.clicked.connect(self._pauseStartTimer)
+        self.wdgControls.btnSkipNext.clicked.connect(self._skipNext)
+        self.wdgControls.btnReset.clicked.connect(self._reset)
 
         self.setModel(TimerModel())
         self._soundWarmedUp = False
@@ -271,7 +289,7 @@ class SprintWidget(QWidget):
         self._toggleState(True)
         self._model.start(self._timer_setup.value(), self._timer_setup.cycles(), self._timer_setup.breakTime())
         self._updateTimer()
-        self._menu.close()
+        self._menuSetup.close()
 
     def _toggleState(self, running: bool):
         self.btnTimerSetup.setHidden(running)
@@ -280,18 +298,16 @@ class SprintWidget(QWidget):
         self.time.setVisible(running)
 
         if running:
-            self.btnPause.setChecked(True)
-            self.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
-        if self._compact:
-            self._vLine.setHidden(True)
-            self.btnPause.setHidden(True)
-            self.btnSkipNext.setHidden(True)
-            self.btnReset.setHidden(True)
-        else:
-            self._vLine.setVisible(running)
-            self.btnPause.setVisible(running)
-            self.btnSkipNext.setVisible(running)
-            self.btnReset.setVisible(running)
+            self.wdgControls.btnPause.setChecked(True)
+            self.wdgControls.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
+        # if self._compact:
+        #     self.btnPause.setHidden(True)
+        #     self.btnSkipNext.setHidden(True)
+        #     self.btnReset.setHidden(True)
+        # else:
+        #     self.btnPause.setVisible(running)
+        #     self.btnSkipNext.setVisible(running)
+        #     self.btnReset.setVisible(running)
 
     def _sessionStarted(self):
         info = self._model.cycle()
@@ -309,12 +325,18 @@ class SprintWidget(QWidget):
         time = datetime.time(minute=mins, second=secs)
         self.time.setTime(time)
 
+    def _showSetup(self):
+        self._menuSetup.exec(self.mapToGlobal(self.rect().bottomLeft()))
+
+    def _showControls(self):
+        self._menuControls.exec(self.mapToGlobal(self.rect().bottomLeft()))
+
     def _pauseStartTimer(self, played: bool):
         self.model().toggle()
         if played:
-            self.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
+            self.wdgControls.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
         else:
-            self.btnPause.setIcon(IconRegistry.play_icon())
+            self.wdgControls.btnPause.setIcon(IconRegistry.play_icon())
 
     def _skipNext(self):
         self._model.next()
