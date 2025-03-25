@@ -22,7 +22,7 @@ from functools import partial
 from PyQt6 import QtGui
 from PyQt6.QtCore import pyqtSignal, QTimer, Qt, QSize, QEvent
 from PyQt6.QtGui import QMouseEvent, QColor
-from PyQt6.QtWidgets import QWidget, QFrame, QAbstractButton, QGraphicsColorizeEffect
+from PyQt6.QtWidgets import QWidget, QFrame, QAbstractButton, QGraphicsColorizeEffect, QFontComboBox
 from overrides import overrides
 from qthandy import margins, vbox, decr_icon, pointy, vspacer, hbox, incr_font
 from qthandy.filter import OpacityEventFilter
@@ -289,6 +289,17 @@ class ManuscriptHeaderSettingWidget(QWidget):
 
 class ManuscriptFontSettingWidget(FontSectionSettingWidget):
 
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._btnCustomFont = push_btn(text='Select custom font', transparent_=True)
+        self._btnCustomFont.installEventFilter(OpacityEventFilter(self._btnCustomFont))
+        menu = MenuWidget(self._btnCustomFont)
+        self.customFontSelector = QFontComboBox()
+        menu.addWidget(self.customFontSelector)
+        self.customFontSelector.textActivated.connect(self._customFontSelected)
+
+        self.layout().addWidget(self._btnCustomFont, alignment=Qt.AlignmentFlag.AlignRight)
+
     @overrides
     def _activate(self):
         font_ = self._editor.manuscriptFont()
@@ -296,10 +307,22 @@ class ManuscriptFontSettingWidget(FontSectionSettingWidget):
             if btn.family() == font_.family():
                 btn.setChecked(True)
 
+        if not self._btnGroupFonts.checkedButton():
+            self._customFontButton.setFamily(font_.family())
+            self._customFontButton.setVisible(True)
+            self._customFontButton.setChecked(True)
+
     @overrides
     def _changeFont(self, btn: FontRadioButton, toggled):
         if toggled:
             self._editor.setManuscriptFontFamily(btn.family())
+
+    def _customFontSelected(self, family: str):
+        self._customFontButton.setFamily(family)
+        self._customFontButton.setChecked(True)
+        self._customFontButton.setVisible(True)
+        self._editor.setManuscriptFontFamily(family)
+        self.fontSelected.emit(family)
 
 
 class LineSpaceSettingWidget(SliderSectionWidget):
