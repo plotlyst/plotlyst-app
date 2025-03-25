@@ -57,7 +57,7 @@ from plotlyst.view.widget.input import BasePopupTextEditorToolbar, TextEditBase,
     GrammarHighlightStyle
 from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
-from plotlyst.view.widget.manuscript.sprint import SprintWidget, TimerModel
+from plotlyst.view.widget.manuscript.sprint import SprintWidget
 
 
 class DistFreeDisplayBar(QFrame):
@@ -73,19 +73,13 @@ class DistFreeDisplayBar(QFrame):
         self.btnExitDistFreeMode.installEventFilter(OpacityEventFilter(self.btnExitDistFreeMode, leaveOpacity=0.8))
         retain_when_hidden(self.btnExitDistFreeMode)
 
-        self.wdgSprint = SprintWidget(self)
-        self.wdgSprint.setNightMode(True)
-
-        self.layout().addWidget(self.wdgSprint, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(self.btnExitDistFreeMode, alignment=Qt.AlignmentFlag.AlignRight)
 
-    def activate(self, timer: Optional[TimerModel] = None):
+    def activate(self, sprint: SprintWidget):
         self.btnExitDistFreeMode.setVisible(True)
-        if timer and timer.isSet():
-            self.wdgSprint.setModel(timer)
-            self.wdgSprint.setVisible(True)
-        else:
-            self.wdgSprint.setHidden(True)
+        self.layout().insertWidget(0, sprint, alignment=Qt.AlignmentFlag.AlignLeft)
+        sprint.setNightMode(True)
+        sprint.setVisible(sprint.model().isSet())
         QTimer.singleShot(5000, self._hideItems)
 
     @overrides

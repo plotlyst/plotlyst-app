@@ -291,7 +291,7 @@ class ManuscriptView(AbstractNovelView):
         self.textEditor.setNightMode(True)
 
         self._dist_free_bottom_bar.setWordDisplay(self.ui.lblWordCount)
-        self._dist_free_top_bar.activate(self._wdgSprint.model())
+        self._dist_free_top_bar.activate(self._wdgSprint)
         self._dist_free_bottom_bar.activate()
         self.textEditor.setSentenceHighlighterEnabled(self._dist_free_bottom_bar.btnFocus.isChecked())
 
@@ -320,6 +320,9 @@ class ManuscriptView(AbstractNovelView):
         self.textEditor.setNightMode(False)
 
         self.ui.wdgBottom.layout().insertWidget(0, self.ui.lblWordCount, alignment=Qt.AlignmentFlag.AlignCenter)
+        self._wdgToolbar.layout().insertWidget(0, self._wdgSprint)
+        self._wdgSprint.setNightMode(False)
+        self._wdgSprint.setVisible(True)
         self.ui.lblWordCount.setNightModeEnabled(False)
         self.ui.lblWordCount.setVisible(True)
 

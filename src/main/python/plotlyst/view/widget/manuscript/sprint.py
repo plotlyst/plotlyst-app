@@ -20,18 +20,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import datetime
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import List
 
 import qtanim
 from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt, QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QWidget, QFrame
-from qthandy import vbox, incr_font, hbox, decr_icon
+from qthandy import vbox, incr_font, hbox, decr_icon, translucent
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import RELAXED_WHITE_COLOR
+from plotlyst.common import RELAXED_WHITE_COLOR, BLACK_COLOR
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import push_btn, ButtonIconSwitchEventFilter, frame, tool_btn, restyle
 from plotlyst.view.icons import IconRegistry
@@ -244,10 +244,14 @@ class TimerSetupWidget(QFrame):
 class SprintWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._model: Optional[TimerModel] = None
         self._nightMode: bool = False
-
         hbox(self, spacing=0)
+
+        self._model = TimerModel()
+        self._model.valueChanged.connect(self._updateTimer)
+        self._model.sessionStarted.connect(self._sessionStarted)
+        self._model.sessionFinished.connect(self._sessionFinished)
+        self._model.finished.connect(self._reset)
 
         self.btnTimerSetup = tool_btn(IconRegistry.timer_icon(), transparent_=True)
         decr_icon(self.btnTimerSetup)
@@ -289,42 +293,31 @@ class SprintWidget(QWidget):
         self.wdgControls.btnSkipNext.clicked.connect(self._skipNext)
         self.wdgControls.btnReset.clicked.connect(self._reset)
 
-        self.setModel(TimerModel())
-        self._soundWarmedUp = False
-
         self._player = QMediaPlayer()
         self._audio_output = QAudioOutput()
         self._player.setAudioOutput(self._audio_output)
         self._player.setSource(QUrl.fromLocalFile(resource_registry.cork))
         self._audio_output.setVolume(0.3)
 
+        self._toggleState(False)
+
     def model(self) -> TimerModel:
         return self._model
 
-    def setModel(self, model: TimerModel):
-        self._model = model
-        self._model.valueChanged.connect(self._updateTimer)
-        self._model.sessionStarted.connect(self._sessionStarted)
-        self._model.sessionFinished.connect(self._sessionFinished)
-        self._model.finished.connect(self._reset)
-        self._toggleState(self._model.isSet())
-
-        if self._model.isSet():
-            self._sessionStarted()
-
     def setNightMode(self, enabled: bool):
         self._nightMode = enabled
-        self._toggleState(self.model().isSet())
-        stylesheet = f'border: 0px; color: {RELAXED_WHITE_COLOR}; background-color: rgba(0,0,0,0);'
+        color = RELAXED_WHITE_COLOR if enabled else BLACK_COLOR
+        stylesheet = f'border: 0px; color: {color}; background-color: rgba(0,0,0,0);'
+
         self.time.setStyleSheet(stylesheet)
-        self.time.installEventFilter(OpacityEventFilter(self.time, leaveOpacity=0.7))
+        translucent(self.time, 0.7 if enabled else 1.0)
         self.btnSessionControls.setStyleSheet(stylesheet)
         self.btnBreak.setStyleSheet(stylesheet)
         restyle(self.btnSessionControls)
         restyle(self.btnBreak)
 
-        self.btnSessionControls.setIcon(IconRegistry.from_name('mdi.timer', RELAXED_WHITE_COLOR))
-        self.btnBreak.setIcon(IconRegistry.from_name('ph.coffee', RELAXED_WHITE_COLOR))
+        self.btnSessionControls.setIcon(IconRegistry.from_name('mdi.timer', color))
+        self.btnBreak.setIcon(IconRegistry.from_name('ph.coffee', color))
 
     def start(self):
         self._toggleState(True)
