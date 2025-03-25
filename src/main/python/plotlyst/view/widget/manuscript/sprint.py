@@ -87,13 +87,13 @@ class TimerModel(QObject):
 
     def previous(self):
         self.value = self._times[self._currentIndex]
-        if self.isActive():
+        if self.isRunning():
             self._timer.start()
         self.valueChanged.emit()
 
     def next(self):
         self.value = 0
-        if self.isActive():
+        if self.isRunning():
             self._timer.start()
         self._tick()
 
@@ -102,7 +102,7 @@ class TimerModel(QObject):
         seconds = self.value % 60
         return minutes, seconds
 
-    def isActive(self) -> bool:
+    def isRunning(self) -> bool:
         return self._timer.isActive()
 
     def isSet(self) -> bool:
@@ -119,7 +119,6 @@ class TimerModel(QObject):
 
     def _tick(self):
         if self.value == 0:
-            self._timer.stop()
             self.sessionFinished.emit()
             if self._currentIndex < len(self._times) - 1:
                 self._currentIndex += 1
@@ -128,6 +127,7 @@ class TimerModel(QObject):
                 if self._timer.isActive():
                     self._timer.start()
             else:
+                self._timer.stop()
                 self.finished.emit()
         else:
             self.value -= 1
@@ -244,7 +244,6 @@ class TimerSetupWidget(QFrame):
 class SprintWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._nightMode: bool = False
         hbox(self, spacing=0)
 
         self._model = TimerModel()
@@ -289,8 +288,8 @@ class SprintWidget(QWidget):
 
         self._timer_setup.btnStart.clicked.connect(self.start)
         self.wdgControls.btnPause.clicked.connect(self._pauseStartTimer)
-        self.wdgControls.btnPrevious.clicked.connect(self._jumpToPrevious)
-        self.wdgControls.btnSkipNext.clicked.connect(self._skipNext)
+        self.wdgControls.btnPrevious.clicked.connect(self._model.previous)
+        self.wdgControls.btnSkipNext.clicked.connect(self._model.next)
         self.wdgControls.btnReset.clicked.connect(self._reset)
 
         self._player = QMediaPlayer()
@@ -305,7 +304,6 @@ class SprintWidget(QWidget):
         return self._model
 
     def setNightMode(self, enabled: bool):
-        self._nightMode = enabled
         color = RELAXED_WHITE_COLOR if enabled else BLACK_COLOR
         stylesheet = f'border: 0px; color: {color}; background-color: rgba(0,0,0,0);'
 
@@ -326,7 +324,7 @@ class SprintWidget(QWidget):
         self._menuSetup.close()
 
     def _toggleState(self, running: bool):
-        self.btnTimerSetup.setHidden(running or self._nightMode)
+        self.btnTimerSetup.setHidden(running)
         self.btnSessionControls.setVisible(running)
         self.btnBreak.setHidden(True)
         self.time.setVisible(running)
@@ -353,18 +351,12 @@ class SprintWidget(QWidget):
         self._menuSetup.exec(self.mapToGlobal(self.rect().bottomLeft()))
 
     def _showControls(self):
-        self.wdgControls.setRunningState(self._model.isActive())
+        self.wdgControls.setRunningState(self._model.isRunning())
         self._menuControls.exec(self.mapToGlobal(self.rect().bottomLeft()))
 
     def _pauseStartTimer(self, _: bool):
         self.model().toggle()
-        self.wdgControls.setRunningState(self.model().isActive())
-
-    def _jumpToPrevious(self):
-        self._model.previous()
-
-    def _skipNext(self):
-        self._model.next()
+        self.wdgControls.setRunningState(self.model().isRunning())
 
     def _reset(self):
         self.model().stop()
