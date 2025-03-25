@@ -33,7 +33,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.resources import resource_registry
-from plotlyst.view.common import push_btn, ButtonIconSwitchEventFilter, frame, tool_btn
+from plotlyst.view.common import push_btn, ButtonIconSwitchEventFilter, frame, tool_btn, restyle
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
@@ -121,7 +121,8 @@ class TimerModel(QObject):
                 self._currentIndex += 1
                 self.value = self._times[self._currentIndex]
                 self.sessionStarted.emit()
-                self._timer.start()
+                if self._timer.isActive():
+                    self._timer.start()
             else:
                 self.finished.emit()
         else:
@@ -304,12 +305,17 @@ class SprintWidget(QWidget):
         self._model.finished.connect(self._reset)
         self._toggleState(self._model.isActive())
 
+        if self._model.isActive():
+            self._sessionStarted()
+
     def setNightMode(self, enabled: bool):
         self._toggleState(self.model().isActive())
         stylesheet = f'border: 0px; color: {RELAXED_WHITE_COLOR}; background-color: rgba(0,0,0,0);'
         self.time.setStyleSheet(stylesheet)
         self.btnSessionControls.setStyleSheet(stylesheet)
         self.btnBreak.setStyleSheet(stylesheet)
+        restyle(self.btnSessionControls)
+        restyle(self.btnBreak)
 
         self.btnSessionControls.setIcon(IconRegistry.from_name('mdi.timer', RELAXED_WHITE_COLOR))
         self.btnBreak.setIcon(IconRegistry.from_name('ph.coffee', RELAXED_WHITE_COLOR))
