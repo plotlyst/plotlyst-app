@@ -582,11 +582,11 @@ class IconRegistry:
 
     @staticmethod
     def pause_icon(**kwargs) -> QIcon:
-        return IconRegistry.from_name('fa5s.pause', **kwargs)
+        return IconRegistry.from_name('fa5.pause-circle', **kwargs)
 
     @staticmethod
     def play_icon() -> QIcon:
-        return IconRegistry.from_name('fa5s.play', PLOTLYST_SECONDARY_COLOR)
+        return IconRegistry.from_name('fa5.play-circle', PLOTLYST_SECONDARY_COLOR)
 
     @staticmethod
     def context_icon() -> QIcon:

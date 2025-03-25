@@ -84,8 +84,16 @@ class TimerModel(QObject):
         self._timer.stop()
         self.value = self.DefaultValue
 
+    def previous(self):
+        self.value = self._times[self._currentIndex]
+        if self.isActive():
+            self._timer.start()
+        self.valueChanged.emit()
+
     def next(self):
         self.value = 0
+        if self.isActive():
+            self._timer.start()
         self._tick()
 
     def remainingTime(self):
@@ -124,26 +132,31 @@ class TimerModel(QObject):
 class TimerControlsWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
-        hbox(self, 15, 8)
+        vbox(self, 15, 8)
         self.setProperty('bg', True)
         self.setProperty('large-rounded', True)
 
         self.btnPause = tool_btn(IconRegistry.pause_icon(color='grey'), transparent_=True, checkable=True)
-        self.btnPause.setIconSize(QSize(28, 28))
+        self.btnPause.setIconSize(QSize(32, 32))
         self.btnPause.installEventFilter(OpacityEventFilter(self.btnPause, leaveOpacity=0.7))
-        self.btnSkipNext = tool_btn(IconRegistry.from_name('mdi6.skip-next-circle-outline'), transparent_=True)
+
+        self.btnPrevious = tool_btn(IconRegistry.from_name('mdi.skip-previous'), transparent_=True)
+        self.btnPrevious.setIconSize(QSize(22, 22))
+        self.btnPrevious.installEventFilter(OpacityEventFilter(self.btnPrevious, leaveOpacity=0.7))
+
+        self.btnSkipNext = tool_btn(IconRegistry.from_name('mdi6.skip-next'), transparent_=True)
         self.btnSkipNext.setIconSize(QSize(22, 22))
         self.btnSkipNext.installEventFilter(OpacityEventFilter(self.btnSkipNext, leaveOpacity=0.7))
+
         self.btnReset = tool_btn(QIcon(), transparent_=True)
-        self.btnReset.setIconSize(QSize(22, 22))
         self.btnReset.installEventFilter(
             ButtonIconSwitchEventFilter(self.btnReset, IconRegistry.from_name('fa5.stop-circle', 'grey'),
                                         IconRegistry.from_name('fa5.stop-circle', '#ED6868')))
         self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset, leaveOpacity=0.7))
 
-        self.layout().addWidget(self.btnPause)
-        self.layout().addWidget(self.btnSkipNext)
-        self.layout().addWidget(self.btnReset)
+        self.layout().addWidget(group(self.btnPrevious, self.btnPause, self.btnSkipNext, spacing=15),
+                                alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
 
 
 class TimerSetupWidget(QFrame):
@@ -257,6 +270,7 @@ class SprintWidget(QWidget):
 
         self._timer_setup.btnStart.clicked.connect(self.start)
         self.wdgControls.btnPause.clicked.connect(self._pauseStartTimer)
+        self.wdgControls.btnPrevious.clicked.connect(self._jumpToPrevious)
         self.wdgControls.btnSkipNext.clicked.connect(self._skipNext)
         self.wdgControls.btnReset.clicked.connect(self._reset)
 
@@ -338,9 +352,14 @@ class SprintWidget(QWidget):
         else:
             self.wdgControls.btnPause.setIcon(IconRegistry.play_icon())
 
+    def _jumpToPrevious(self):
+        self._model.previous()
+
     def _skipNext(self):
         self._model.next()
 
     def _reset(self):
         self.model().stop()
         self._toggleState(False)
+        if self._menuControls.isVisible():
+            self._menuControls.hide()
