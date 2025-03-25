@@ -497,7 +497,6 @@ class StoryCreationDialog(PopupDialog):
         self.btnNewStory.setChecked(True)
         self.btnNewSeries = push_btn(IconRegistry.series_icon(color_on=RELAXED_WHITE_COLOR), 'Create a series',
                                      checkable=True, properties=['main-side-nav'])
-        self.btnNewSeries.setVisible(app_env.profile().get('series', False))
         self.btnScrivener = push_btn(IconRegistry.from_name('mdi.alpha-s-circle-outline', color_on=RELAXED_WHITE_COLOR),
                                      'Import from Scrivener', checkable=True, properties=['main-side-nav'])
         self.btnDocx = push_btn(IconRegistry.from_name('fa5.file-word', color_on=RELAXED_WHITE_COLOR),
@@ -518,6 +517,8 @@ class StoryCreationDialog(PopupDialog):
         self.wdgTypesContainer.layout().addWidget(self.btnScrivener)
         self.wdgTypesContainer.layout().addWidget(self.btnDocx)
         self.wdgTypesContainer.layout().addWidget(vspacer())
+
+        self.btnNewSeries.setVisible(app_env.profile().get('series', False))
 
         self.stackedWidget = QStackedWidget()
         self.wdgRight = QWidget()

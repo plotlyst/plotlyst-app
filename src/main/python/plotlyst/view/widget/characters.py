@@ -407,8 +407,6 @@ class AvatarSelectors(QWidget):
 
         self.wdgSelectors = QWidget()
         vbox(self.wdgSelectors, spacing=0)
-        if app_env.is_mac():
-            self.wdgSelectors.layout().setSpacing(15)
 
         self.btnImage = push_btn(text='Image', checkable=True, properties=['main-side-nav'])
         self.btnInitial = push_btn(IconRegistry.from_name('mdi.alpha-a-circle', color_on=RELAXED_WHITE_COLOR),

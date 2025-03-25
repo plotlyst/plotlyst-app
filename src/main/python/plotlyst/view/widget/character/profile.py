@@ -2055,6 +2055,7 @@ class CharacterNameEditorPopup(PopupDialog):
 
         completer = QCompleter(name.split(), self.lineDisplayName)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.popup().setFont(QApplication.font())
         self.lineDisplayName.setCompleter(completer)
 
     def _aliasChanged(self, alias: str):

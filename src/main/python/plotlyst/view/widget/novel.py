@@ -458,6 +458,9 @@ class GenreSelectorButton(SelectorToggleButton):
             self.setIcon(IconRegistry.from_name(self._icon))
         self.setText(self._name)
 
+        if app_env.is_mac():
+            incr_font(self)
+
     def name(self) -> str:
         return self._name
 
@@ -520,6 +523,8 @@ class DescriptorLabelSelector(QWidget):
     def setLabels(self, labels: List[str], selected: List[str]):
         for label in labels:
             btn = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=50)
+            if app_env.is_mac():
+                incr_font(btn)
             btn.setText(label)
             self.btnGroup.addButton(btn)
             if label in selected:
@@ -1015,9 +1020,11 @@ class NovelDescriptorsDisplay(QWidget):
             self.wdgStyle.layout().addWidget(lbl)
 
         for mood in self.novel.descriptors.mood:
-            lbl = label(mood, decr_font_diff=1)
+            lbl = label(mood)
             font = lbl.font()
             font.setFamily(app_env.sans_serif_font())
+            if app_env.is_mac():
+                font.setPointSize(font.pointSize() + 1)
             lbl.setFont(font)
             lbl.setStyleSheet(f'''
                                QLabel {{

@@ -54,6 +54,8 @@ class TaskWidget(QWidget):
         self.lblStatus = label(self.status.text)
         font = self.lblStatus.font()
         font.setCapitalization(QFont.Capitalization.SmallCaps)
+        if app_env.is_mac():
+            font.setPointSize(font.pointSize() + 1)
         font.setFamily(app_env.serif_font())
         self.lblStatus.setFont(font)
         self.lblStatus.setStyleSheet(f'''
