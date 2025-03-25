@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, busy
+from qthandy import vbox, busy, margins, decr_icon, decr_font
 
 from plotlyst.common import RELAXED_WHITE_COLOR, IGNORE_CAPITALIZATION_PROPERTY
 from plotlyst.core.domain import Novel
@@ -29,7 +29,7 @@ from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import NovelScenesOrganizationToggleEvent
 from plotlyst.service.manuscript import export_manuscript_to_docx
-from plotlyst.view.common import push_btn, exclusive_buttons, label, fade, frame
+from plotlyst.view.common import push_btn, exclusive_buttons, label, fade, frame, wrap
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.widget.button import SmallToggleButton
@@ -52,11 +52,14 @@ class ManuscriptExportWidget(QWidget, EventListener):
         self.nameFrame.setProperty('rounded', True)
         self.nameFrame.setProperty('bg', True)
         vbox(self.nameFrame, 4)
+        margins(self.nameFrame, left=10)
         self.lineName = DecoratedLineEdit(autoAdjustable=False)
         self.lineName.lineEdit.setPlaceholderText("Author's name")
         self.lineName.setIcon(IconRegistry.from_name('mdi.account'))
+        decr_icon(self.lineName.icon, 4)
+        decr_font(self.lineName.lineEdit)
         self.nameFrame.layout().addWidget(self.lineName)
-        self.layout().addWidget(self.nameFrame, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(wrap(self.nameFrame, margin_left=10), alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.emailFrame = frame()
         self.emailFrame.setProperty('rounded', True)
@@ -66,8 +69,10 @@ class ManuscriptExportWidget(QWidget, EventListener):
         self.lineEmail.lineEdit.setPlaceholderText('Email')
         self.lineEmail.lineEdit.setProperty(IGNORE_CAPITALIZATION_PROPERTY, True)
         self.lineEmail.setIcon(IconRegistry.from_name('fa5s.at'))
+        decr_icon(self.lineEmail.icon, 4)
+        decr_font(self.lineEmail.lineEdit)
         self.emailFrame.layout().addWidget(self.lineEmail)
-        self.layout().addWidget(self.emailFrame, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(wrap(self.emailFrame, margin_left=10), alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.toggleTitlePage.toggled.connect(self._titlePageToggled)
 
@@ -79,7 +84,7 @@ class ManuscriptExportWidget(QWidget, EventListener):
 
         self._btnExport = push_btn(IconRegistry.from_name('mdi.file-word-outline', RELAXED_WHITE_COLOR),
                                    'Export to docx',
-                                   properties=['base', 'positive'])
+                                   properties=['confirm', 'positive'])
         self._btnExport.clicked.connect(self._export)
 
         self.layout().addWidget(self.chapterForms)

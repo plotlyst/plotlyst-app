@@ -29,7 +29,7 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QObject, QEvent, QTimer, QPoint, QSize, pyqtSignal, QModelIndex, QItemSelectionModel
 from PyQt6.QtGui import QFont, QTextCursor, QTextCharFormat, QKeyEvent, QPaintEvent, QPainter, QBrush, QLinearGradient, \
     QColor, QSyntaxHighlighter, \
-    QTextDocument, QTextBlockUserData, QIcon, QResizeEvent, QFocusEvent
+    QTextDocument, QTextBlockUserData, QIcon, QResizeEvent, QFocusEvent, QTextBlockFormat
 from PyQt6.QtWidgets import QTextEdit, QFrame, QPushButton, QStylePainter, QStyleOptionButton, QStyle, QMenu, \
     QApplication, QToolButton, QLineEdit, QWidgetAction, QListView, QSpinBox, QWidget, QLabel, QDialog
 from language_tool_python import LanguageTool
@@ -45,7 +45,7 @@ from qttextedit.ops import BoldOperation, ItalicOperation, UnderlineOperation, S
     FormatOperation, ColorOperation, InsertLinkOperation, TextEditingSettingsOperation
 
 from plotlyst.common import IGNORE_CAPITALIZATION_PROPERTY, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, RED_COLOR, \
-    PLOTLYST_TERTIARY_COLOR
+    PLOTLYST_TERTIARY_COLOR, TRANS_PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import TextStatistics, Character, Label
 from plotlyst.core.text import wc
 from plotlyst.env import app_env
@@ -64,7 +64,7 @@ from plotlyst.view.style.base import apply_color
 from plotlyst.view.style.text import apply_texteditor_toolbar_style
 from plotlyst.view.widget._toggle import AnimatedToggle
 from plotlyst.view.widget.button import DotsMenuButton
-from plotlyst.view.widget.display import PopupDialog
+from plotlyst.view.widget.display import PopupDialog, Icon
 from plotlyst.view.widget.utility import IconSelectorDialog
 
 
@@ -1173,12 +1173,12 @@ class SpinBoxDialog(PopupDialog):
         self.lblDescription = label(description, description=True, wordWrap=True)
         self.lblDescription.setMinimumWidth(450)
 
-        self.spinBox = QSpinBox()
+        self.spinBox = DecoratedSpinBox()
         self.spinBox.setMinimum(min_value)
         self.spinBox.setMaximum(max_value)
         self.spinBox.setSingleStep(step)
         self.spinBox.setValue(value)
-        incr_font(self.spinBox, 4)
+        incr_font(self.spinBox.spinBox, 4)
         # self.spinBox.setProperty('white-bg', True)
         # self.spinBox.setProperty('rounded', True)
         self.spinBox.valueChanged.connect(self._valueChanged)
@@ -1195,7 +1195,7 @@ class SpinBoxDialog(PopupDialog):
         self.frame.layout().addWidget(self.lblDescription)
         if not description:
             self.lblDescription.setHidden(True)
-        self.frame.layout().addWidget(self.spinBox)
+        self.frame.layout().addWidget(self.spinBox, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm), alignment=Qt.AlignmentFlag.AlignRight)
 
     def display(self) -> Optional[int]:
@@ -1617,3 +1617,109 @@ class DecoratedTextEdit(AutoAdjustableTextEdit):
             self._indent(0)
             self._updateStylesheet()
             self._has_text = False
+
+
+class DecoratedSpinBox(QWidget):
+    valueChanged = pyqtSignal(int)
+
+    def __init__(self, parent=None, icon: Optional[QIcon] = None):
+        super().__init__(parent)
+        hbox(self, spacing=0)
+
+        self.icon = Icon()
+        if icon:
+            self.icon.setIcon(icon)
+
+        self.spinBox = QSpinBox()
+        self.spinBox.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.btnPlus = tool_btn(IconRegistry.from_name('mdi.chevron-up'), transparent_=True)
+        self.btnPlus.installEventFilter(OpacityEventFilter(self.btnPlus, 1.0, 0.7))
+        decr_icon(self.btnPlus, 5)
+        self.btnPlus.clicked.connect(self.spinBox.stepUp)
+
+        self.btnMinus = tool_btn(IconRegistry.from_name('mdi.chevron-down'), transparent_=True)
+        self.btnMinus.installEventFilter(OpacityEventFilter(self.btnMinus, 1.0, 0.7))
+        decr_icon(self.btnMinus, 5)
+        self.btnMinus.clicked.connect(self.spinBox.stepDown)
+        self.layout().addWidget(self.icon)
+        self.layout().addWidget(self.spinBox)
+        self.layout().addWidget(group(self.btnPlus, self.btnMinus, vertical=False, margin=0, spacing=0))
+
+        self.timerPlus = QTimer(self)
+        self.timerPlus.setInterval(100)
+        self.timerPlus.timeout.connect(self.spinBox.stepUp)
+
+        self.timerMinus = QTimer(self)
+        self.timerMinus.setInterval(100)
+        self.timerMinus.timeout.connect(self.spinBox.stepDown)
+
+        self.btnPlus.pressed.connect(self._startIncrementing)
+        self.btnPlus.released.connect(self.timerPlus.stop)
+
+        self.btnMinus.pressed.connect(self._startDecrementing)
+        self.btnMinus.released.connect(self.timerMinus.stop)
+
+        self.setStyleSheet(f"""
+            QSpinBox {{
+                border: 1px solid lightgrey;
+                border-radius: 6px;
+                background-color: {RELAXED_WHITE_COLOR};
+                padding: 4px 6px;
+                min-height: 24px;
+                selection-background-color: {TRANS_PLOTLYST_SECONDARY_COLOR};
+            }}
+
+            QSpinBox:focus {{
+                border-color: {PLOTLYST_TERTIARY_COLOR};
+                background-color: #F6F0F8;
+            }}
+        """)
+
+        self.spinBox.valueChanged.connect(self.valueChanged)
+
+    def setPrefix(self, prefix: str):
+        if prefix and not prefix.endswith(" "):
+            prefix += " "
+        self.spinBox.setPrefix(prefix)
+
+    def setSuffix(self, suffix: str):
+        if suffix and not suffix.startswith(" "):
+            suffix = " " + suffix
+        self.spinBox.setSuffix(suffix)
+
+    def setRange(self, min_value: int, max_value: int):
+        self.spinBox.setRange(min_value, max_value)
+
+    def minimum(self) -> int:
+        return self.spinBox.minimum()
+
+    def setMinimum(self, min_value: int):
+        self.spinBox.setMinimum(min_value)
+
+    def maximum(self) -> int:
+        return self.spinBox.maximum()
+
+    def setMaximum(self, max_value: int):
+        self.spinBox.setMaximum(max_value)
+
+    @overrides
+    def setFocus(self) -> None:
+        self.spinBox.setFocus()
+
+    def setSingleStep(self, step: int):
+        self.spinBox.setSingleStep(step)
+
+    def setValue(self, value: int):
+        self.spinBox.setValue(value)
+
+    def value(self) -> int:
+        return self.spinBox.value()
+
+    def text(self) -> str:
+        return self.spinBox.text()
+
+    def _startIncrementing(self):
+        self.timerPlus.start()
+
+    def _startDecrementing(self):
+        self.timerMinus.start()

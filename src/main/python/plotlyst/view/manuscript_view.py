@@ -47,12 +47,13 @@ from plotlyst.view.layout import group
 from plotlyst.view.style.theme import BG_DARK_COLOR
 from plotlyst.view.widget.display import Icon
 from plotlyst.view.widget.input import Toggle, SpinBoxDialog
-from plotlyst.view.widget.manuscript import SprintWidget, \
-    ManuscriptProgressCalendar, ManuscriptDailyProgress, ManuscriptProgressCalendarLegend, ManuscriptProgressWidget
+from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar, ManuscriptDailyProgress, \
+    ManuscriptProgressCalendarLegend, ManuscriptProgressWidget
 from plotlyst.view.widget.manuscript.editor import ManuscriptEditor, DistFreeControlsBar, DistFreeDisplayBar
 from plotlyst.view.widget.manuscript.export import ManuscriptExportWidget
 from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
+from plotlyst.view.widget.manuscript.sprint import SprintWidget
 from plotlyst.view.widget.scene.editor import SceneMiniEditor
 from plotlyst.view.widget.tree import TreeSettings
 
@@ -158,9 +159,6 @@ class ManuscriptView(AbstractNovelView):
         self._btnDistractionFree.clicked.connect(self._enter_distraction_free)
 
         self._wdgSprint = SprintWidget()
-        transparent(self._wdgSprint.btnTimer)
-        decr_icon(self._wdgSprint.btnTimer)
-        self._wdgSprint.btnTimer.installEventFilter(OpacityEventFilter(self._wdgSprint.btnTimer, leaveOpacity=0.5))
         self._spellCheckIcon = Icon()
         self._spellCheckIcon.setIcon(IconRegistry.from_name('fa5s.spell-check'))
         self._spellCheckIcon.setToolTip('Spellcheck')
@@ -293,7 +291,7 @@ class ManuscriptView(AbstractNovelView):
         self.textEditor.setNightMode(True)
 
         self._dist_free_bottom_bar.setWordDisplay(self.ui.lblWordCount)
-        self._dist_free_top_bar.activate(self._wdgSprint.model())
+        self._dist_free_top_bar.activate(self._wdgSprint)
         self._dist_free_bottom_bar.activate()
         self.textEditor.setSentenceHighlighterEnabled(self._dist_free_bottom_bar.btnFocus.isChecked())
 
@@ -322,6 +320,9 @@ class ManuscriptView(AbstractNovelView):
         self.textEditor.setNightMode(False)
 
         self.ui.wdgBottom.layout().insertWidget(0, self.ui.lblWordCount, alignment=Qt.AlignmentFlag.AlignCenter)
+        self._wdgToolbar.layout().insertWidget(0, self._wdgSprint)
+        self._wdgSprint.setNightMode(False)
+        self._wdgSprint.setVisible(True)
         self.ui.lblWordCount.setNightModeEnabled(False)
         self.ui.lblWordCount.setVisible(True)
 

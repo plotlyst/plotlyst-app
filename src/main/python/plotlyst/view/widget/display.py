@@ -24,12 +24,12 @@ from typing import Optional, Any, Tuple, List
 import emoji
 import qtanim
 from PyQt6.QtCharts import QChartView
-from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent, QPointF
+from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent, QPointF, QObject
 from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent, QIcon, QRadialGradient, \
     QPen
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
-    QApplication
+    QApplication, QTimeEdit, QAbstractSpinBox, QDateTimeEdit
 from overrides import overrides
 from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, pointy, hbox, busy, italic, decr_font, \
     margins, translucent, sp, decr_icon
@@ -343,6 +343,23 @@ class OverlayWidget(QFrame):
         window = QApplication.activeWindow()
         overlay = OverlayWidget(window, alpha)
         return overlay
+
+
+class MenuOverlayEventFilter(QObject):
+    def __init__(self, menu: MenuWidget):
+        super().__init__(menu)
+        self._overlay: Optional[OverlayWidget] = None
+        menu.aboutToShow.connect(self._aboutToShowMenu)
+        menu.aboutToHide.connect(self._aboutToHideMenu)
+
+    def _aboutToShowMenu(self):
+        self._overlay = OverlayWidget.getActiveWindowOverlay(alpha=75)
+        self._overlay.show()
+
+    def _aboutToHideMenu(self):
+        if self._overlay:
+            self._overlay.hide()
+            self._overlay = None
 
 
 class StageRecommendationBadge(QFrame):
@@ -758,3 +775,16 @@ def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional
         translucent(wdg, opacity)
 
     return wdg
+
+
+class TimerDisplay(QTimeEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.setWrapping(False)
+        self.setReadOnly(True)
+        self.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.setProperty("showGroupSeparator", False)
+        self.setDisplayFormat("mm:ss")
+        self.setCurrentSection(QDateTimeEdit.Section.MinuteSection)
+        transparent(self)

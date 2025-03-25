@@ -41,7 +41,6 @@ from plotlyst.common import RELAXED_WHITE_COLOR, DEFAULT_MANUSCRIPT_LINE_SPACE, 
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import DocumentProgress, Novel, Scene, TextStatistics, DocumentStatistics, FontSettings, \
     Chapter
-from plotlyst.core.sprint import TimerModel
 from plotlyst.env import app_env
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
@@ -56,9 +55,9 @@ from plotlyst.view.style.theme import BG_DARK_COLOR
 from plotlyst.view.widget.display import WordsDisplay, DividerWidget, SeparatorLineWithShadow
 from plotlyst.view.widget.input import BasePopupTextEditorToolbar, TextEditBase, GrammarHighlighter, \
     GrammarHighlightStyle
-from plotlyst.view.widget.manuscript import SprintWidget
 from plotlyst.view.widget.manuscript.find import ManuscriptFindWidget
 from plotlyst.view.widget.manuscript.settings import ManuscriptEditorSettingsWidget
+from plotlyst.view.widget.manuscript.sprint import SprintWidget
 
 
 class DistFreeDisplayBar(QFrame):
@@ -74,19 +73,13 @@ class DistFreeDisplayBar(QFrame):
         self.btnExitDistFreeMode.installEventFilter(OpacityEventFilter(self.btnExitDistFreeMode, leaveOpacity=0.8))
         retain_when_hidden(self.btnExitDistFreeMode)
 
-        self.wdgSprint = SprintWidget(self)
-        self.wdgSprint.setCompactMode(True)
-
-        self.layout().addWidget(self.wdgSprint, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(self.btnExitDistFreeMode, alignment=Qt.AlignmentFlag.AlignRight)
 
-    def activate(self, timer: Optional[TimerModel] = None):
+    def activate(self, sprint: SprintWidget):
         self.btnExitDistFreeMode.setVisible(True)
-        if timer and timer.isActive():
-            self.wdgSprint.setModel(timer)
-            self.wdgSprint.setVisible(True)
-        else:
-            self.wdgSprint.setHidden(True)
+        self.layout().insertWidget(0, sprint, alignment=Qt.AlignmentFlag.AlignLeft)
+        sprint.setNightMode(True)
+        sprint.setVisible(sprint.model().isSet())
         QTimer.singleShot(5000, self._hideItems)
 
     @overrides

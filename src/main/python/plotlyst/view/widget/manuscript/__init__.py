@@ -17,144 +17,40 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import datetime
 from functools import partial
 from typing import Optional
 
 import qtanim
 from PyQt6 import QtGui
 from PyQt6.QtCharts import QChart
-from PyQt6.QtCore import QUrl, pyqtSignal, QTimer, Qt, QRect, QDate, QPoint, QVariantAnimation, \
+from PyQt6.QtCore import pyqtSignal, QTimer, Qt, QRect, QDate, QPoint, QVariantAnimation, \
     QEasingCurve
 from PyQt6.QtGui import QTextDocument, QColor, QTextFormat, QPainter, QTextOption, \
     QShowEvent, QIcon
-from PyQt6.QtMultimedia import QSoundEffect
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView, \
     QPushButton, QToolButton, QWidgetItem, QGraphicsColorizeEffect, QGraphicsTextItem, QHeaderView
 from overrides import overrides
 from qthandy import retain_when_hidden, translucent, margins, vbox, bold, vline, decr_font, \
     underline, transparent, italic, decr_icon, pointy, hbox
 from qthandy.filter import OpacityEventFilter
-from qtmenu import MenuWidget, group
+from qtmenu import group
 from qttextedit import TextBlockState
 from textstat import textstat
 
 from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR, LIGHTGREY_ACTIVE_COLOR
 from plotlyst.core.domain import Novel, DocumentProgress, SnapshotType
-from plotlyst.core.sprint import TimerModel
 from plotlyst.core.text import wc, sentence_count, clean_text
 from plotlyst.env import app_env
-from plotlyst.resources import resource_registry
 from plotlyst.service.manuscript import find_daily_overall_progress
 from plotlyst.view.common import spin, ButtonPressResizeEventFilter, label, push_btn, \
     tool_btn
 from plotlyst.view.generated.manuscript_lang_setting_ui import Ui_ManuscriptLangSettingWidget
 from plotlyst.view.generated.readability_widget_ui import Ui_ReadabilityWidget
-from plotlyst.view.generated.sprint_widget_ui import Ui_SprintWidget
-from plotlyst.view.generated.timer_setup_widget_ui import Ui_TimerSetupWidget
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.button import SnapshotButton
 from plotlyst.view.widget.display import WordsDisplay, IconText, Emoji, ChartView
 from plotlyst.view.widget.progress import ProgressChart
-
-
-class TimerSetupWidget(QWidget, Ui_TimerSetupWidget):
-    def __init__(self, parent=None):
-        super(TimerSetupWidget, self).__init__(parent)
-        self.setupUi(self)
-
-    def value(self) -> int:
-        return self.sbTimer.value() * 60
-
-
-class SprintWidget(QWidget, Ui_SprintWidget):
-    def __init__(self, parent=None):
-        super(SprintWidget, self).__init__(parent)
-        self.setupUi(self)
-        self._model = None
-        self._compact: bool = False
-        self.setModel(TimerModel())
-
-        self._toggleState(False)
-        transparent(self.time)
-        transparent(self.btnPause)
-        transparent(self.btnReset)
-
-        self.btnTimer.setIcon(IconRegistry.timer_icon())
-        self.btnPause.installEventFilter(OpacityEventFilter(self.btnPause, leaveOpacity=0.7))
-        self.btnPause.installEventFilter(ButtonPressResizeEventFilter(self.btnPause))
-        self.btnReset.setIcon(IconRegistry.restore_alert_icon('#ED6868'))
-        self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset, leaveOpacity=0.7))
-        self.btnReset.installEventFilter(ButtonPressResizeEventFilter(self.btnReset))
-
-        self._timer_setup = TimerSetupWidget()
-        self._menu = MenuWidget(self.btnTimer)
-        self._menu.addWidget(self._timer_setup)
-
-        self._timer_setup.btnStart.clicked.connect(self.start)
-        self.btnPause.clicked.connect(self._pauseStartTimer)
-        self.btnReset.clicked.connect(self._reset)
-
-        self._effect: Optional[QSoundEffect] = None
-
-    def model(self) -> TimerModel:
-        return self._model
-
-    def setModel(self, model: TimerModel):
-        self._model = model
-        self._model.valueChanged.connect(self._updateTimer)
-        self._model.finished.connect(self._finished)
-        self._toggleState(self._model.isActive())
-
-    def setCompactMode(self, compact: bool):
-        self._compact = compact
-        self._toggleState(self.model().isActive())
-        self.time.setStyleSheet(f'border: 0px; color: {RELAXED_WHITE_COLOR}; background-color: rgba(0,0,0,0);')
-
-    def start(self):
-        self._toggleState(True)
-        self._model.start(self._timer_setup.value())
-        self._updateTimer()
-        self._menu.close()
-
-    def _toggleState(self, running: bool):
-        self.time.setVisible(running)
-        if running:
-            self.btnPause.setChecked(True)
-            self.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
-        if self._compact:
-            self.btnTimer.setHidden(running)
-            retain_when_hidden(self.btnPause)
-            retain_when_hidden(self.btnReset)
-            self.btnPause.setHidden(True)
-            self.btnReset.setHidden(True)
-        else:
-            self.btnPause.setVisible(running)
-            self.btnReset.setVisible(running)
-
-    def _updateTimer(self):
-        mins, secs = self._model.remainingTime()
-        time = datetime.time(minute=mins, second=secs)
-        self.time.setTime(time)
-
-    def _pauseStartTimer(self, played: bool):
-        self.model().toggle()
-        if played:
-            self.btnPause.setIcon(IconRegistry.pause_icon(color='grey'))
-        else:
-            self.btnPause.setIcon(IconRegistry.play_icon())
-
-    def _reset(self):
-        self.model().stop()
-        self._toggleState(False)
-
-    def _finished(self):
-        if self._effect is None:
-            self._effect = QSoundEffect()
-            self._effect.setSource(QUrl.fromLocalFile(resource_registry.cork))
-            self._effect.setVolume(0.3)
-        self._effect.play()
 
 
 class ManuscriptLanguageSettingWidget(QWidget, Ui_ManuscriptLangSettingWidget):
