@@ -112,6 +112,9 @@
           </property>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <property name="spacing">
+             <number>3</number>
+            </property>
             <item>
              <widget class="Emoji" name="label_9">
               <property name="text">
@@ -189,6 +192,9 @@
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_28">
+            <property name="spacing">
+             <number>3</number>
+            </property>
             <item>
              <widget class="Emoji" name="label_10">
               <property name="text">
