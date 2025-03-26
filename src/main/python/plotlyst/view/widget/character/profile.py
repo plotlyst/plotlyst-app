@@ -1437,11 +1437,11 @@ class EnneagramFieldWidget(TemplateFieldWidgetBase):
         emojiFear = Emoji()
         emojiFear.setText(emoji.emojize(':face_screaming_in_fear:'))
         emojiFear.setToolTip('Core fear')
-        self.lblDesire = label(wordWrap=True)
-        sp(self.lblDesire).h_exp()
+        self.lblDesire = AutoAdjustableTextEdit()
+        transparent(self.lblDesire)
         self.lblDesire.setToolTip('Core desire')
-        self.lblFear = label(wordWrap=True)
-        sp(self.lblFear).h_exp()
+        self.lblFear = AutoAdjustableTextEdit()
+        transparent(self.lblFear)
         self.lblFear.setToolTip('Core fear')
 
         decr_font(emojiDesire, 2)
@@ -1449,11 +1449,13 @@ class EnneagramFieldWidget(TemplateFieldWidgetBase):
         decr_font(emojiFear, 2)
         decr_font(self.lblFear)
 
-        self.wdgAttr = group(
-            group(dash_icon(), emojiDesire, self.lblDesire, spacer()),
-            group(dash_icon(), emojiFear, self.lblFear, spacer()),
-            vertical=False)
+        self.wdgAttr = QWidget()
+        vbox(self.wdgAttr)
         margins(self.wdgAttr, left=10)
+        self.wdgAttr.layout().addWidget(group(dash_icon(), emojiDesire, self.lblDesire),
+                                        alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgAttr.layout().addWidget(group(dash_icon(), emojiFear, self.lblFear),
+                                        alignment=Qt.AlignmentFlag.AlignLeft)
         _layout.addWidget(self.wdgAttr)
         self.wdgAttr.setHidden(True)
 
@@ -1506,7 +1508,8 @@ class MbtiFieldWidget(TemplateFieldWidgetBase):
         _layout = vbox(self)
         _layout.addWidget(self.wdgEditor)
 
-        self.lblKeywords = label(wordWrap=True)
+        self.lblKeywords = AutoAdjustableTextEdit()
+        transparent(self.lblKeywords)
         decr_font(self.lblKeywords)
 
         self.wdgAttr = group(dash_icon(), self.lblKeywords, spacer())
@@ -1561,7 +1564,8 @@ class LoveStyleFieldWidget(TemplateFieldWidgetBase):
         _layout.addWidget(self.wdgEditor, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.emoji = Emoji()
-        self.lblKeywords = label(wordWrap=True)
+        self.lblKeywords = AutoAdjustableTextEdit()
+        transparent(self.lblKeywords)
         decr_font(self.emoji, 2)
         decr_font(self.lblKeywords)
 
@@ -1612,7 +1616,8 @@ class WorkStyleFieldWidget(TemplateFieldWidgetBase):
         _layout.addWidget(self.wdgEditor, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.emoji = Emoji()
-        self.lblKeywords = label(wordWrap=True)
+        self.lblKeywords = AutoAdjustableTextEdit()
+        transparent(self.lblKeywords)
         decr_font(self.emoji, 2)
         decr_font(self.lblKeywords)
 
