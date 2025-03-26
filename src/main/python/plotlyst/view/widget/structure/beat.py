@@ -111,6 +111,9 @@ class BeatWidget(QFrame):
         self.textDescription.setText(self.beat.description)
         if self.beat.icon:
             self.btnIcon.setIcon(IconRegistry.from_name(self.beat.icon, self.beat.icon_color))
+        elif self.beat.seq:
+            self.btnIcon.setIcon(
+                IconRegistry.from_name(f'mdi.numeric-{self.beat.seq}', self.beat.icon_color, scale=1.5))
 
         self.lblTitle.setStyleSheet(f'''
             QLabel {{
