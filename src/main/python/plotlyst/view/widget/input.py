@@ -359,9 +359,9 @@ class GrammarPopup(PopupBase):
         if app_env.is_mac():
             margins(self.wdgReplacements, bottom=10)
         self.btnClose = RemovalButton()
-        self.lblMessage = label(description=True, wordWrap=True)
-        self.lblMessage.setMinimumWidth(200)
-        self.lblMessage.setMaximumWidth(300)
+        self.lblMessage = AutoAdjustableTextEdit(height=75)
+        translucent(self.lblMessage, 0.6)
+        transparent(self.lblMessage)
         decr_font(self.lblMessage)
 
         self.wdgTop = QWidget()
