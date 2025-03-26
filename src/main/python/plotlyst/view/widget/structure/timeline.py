@@ -58,7 +58,7 @@ class _BeatButton(QToolButton):
         self.setCheckable(self._selectable)
         self.toggled.connect(self._checked)
 
-        color = '#909BA6' if self._selectable else beat.icon_color
+        color = '#454E56' if self._selectable else beat.icon_color
 
         if self._selectable:
             self.installEventFilter(ButtonPressResizeEventFilter(self))
@@ -144,7 +144,7 @@ class _BeatButton(QToolButton):
             color_translucent = to_rgba_str(QColor(self.beat.icon_color), opacity)
         self.setStyleSheet(f'''
                             QToolButton {{
-                                            background-color: {RELAXED_WHITE_COLOR};
+                                            background: {RELAXED_WHITE_COLOR};
                                             border: 2px solid {color_translucent};
                                             border-radius: 17px;
                                             padding: 4px;
