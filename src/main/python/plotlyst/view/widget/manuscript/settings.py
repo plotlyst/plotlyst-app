@@ -312,6 +312,9 @@ class ManuscriptFontSettingWidget(FontSectionSettingWidget):
             self._customFontButton.setVisible(True)
             self._customFontButton.setChecked(True)
 
+        if not self._customFontButton.isChecked():
+            self._customFontButton.setHidden(True)
+
     @overrides
     def _changeFont(self, btn: FontRadioButton, toggled):
         if toggled:
