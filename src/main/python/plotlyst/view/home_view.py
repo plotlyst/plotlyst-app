@@ -138,9 +138,11 @@ class HomeView(AbstractView):
 
         self.ui.lblWelcomeMain.setText(home_page_welcome_text)
 
-        self.ui.btnFirstStory.setIcon(IconRegistry.book_icon())
-        self.ui.btnFirstStory.installEventFilter(OpacityEventFilter(self.ui.btnFirstStory, leaveOpacity=0.7))
-        self.ui.btnFirstStory.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnFirstStory))
+        self.ui.btnFullExperienceLink.setIcon(IconRegistry.from_name('ei.shopping-cart'))
+        self.ui.btnFullExperienceLink.installEventFilter(
+            OpacityEventFilter(self.ui.btnFullExperienceLink, leaveOpacity=0.7))
+        self.ui.btnFullExperienceLink.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnFullExperienceLink))
+        self.ui.btnFullExperienceLink.clicked.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
 
         self.novelDisplayCard = NovelDisplayCard()
         self.ui.pageNovelDisplay.layout().addWidget(self.novelDisplayCard)
