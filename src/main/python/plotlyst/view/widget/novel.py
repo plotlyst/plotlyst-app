@@ -725,7 +725,7 @@ class NovelDescriptorsEditorPopup(PopupDialog):
 
         self._addHeader('Audience', 'ei.group', 'Select the target audience of your novel')
         self.audienceSelector = DescriptorLabelSelector()
-        self.audienceSelector.setLabels(['Children', 'Middle grade', 'Young adult', 'New adult', 'Adult'],
+        self.audienceSelector.setLabels(['Children', 'Middle Grade', 'Young Adult', 'New Adult', 'Adult'],
                                         [self.novel.descriptors.audience])
         self.audienceSelector.selectionChanged.connect(self._audienceSelected)
         self.center.layout().addWidget(self.audienceSelector)
@@ -734,8 +734,9 @@ class NovelDescriptorsEditorPopup(PopupDialog):
                         ref='Source: The StoryGraph', refLink='https://www.thestorygraph.com/')
         self.moodSelector = DescriptorLabelSelector(exclusive=False)
         self.moodSelector.setLabels(
-            ['adventurous', 'challenging', 'dark', 'emotional', 'funny', 'hopeful', 'inspiring',
-             'lighthearted', 'mysterious', 'reflective', 'relaxing', 'sad', 'tense'], self.novel.descriptors.mood)
+            ['adventurous', 'challenging', 'dark', 'emotional', 'epic',
+             'funny', 'gritty', 'hopeful', 'inspiring', 'lighthearted', 'melancholic', 'mysterious', 'reflective',
+             'relaxing', 'romantic', 'sad', 'suspenseful', 'tense', 'whimsical'], self.novel.descriptors.mood)
         self.moodSelector.selectionChanged.connect(self._moodSelected)
         self.center.layout().addWidget(self.moodSelector)
 
