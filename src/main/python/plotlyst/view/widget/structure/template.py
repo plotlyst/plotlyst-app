@@ -423,6 +423,7 @@ class _ThreeActStructureEditor(_AbstractStructureEditor):
         wdgCustomization = QWidget()
         flow(wdgCustomization, spacing=10)
         margins(wdgCustomization, left=25, right=25)
+        sp(wdgCustomization).v_max()
         wdgCustomization.layout().addWidget(self.btnBeginning)
         wdgCustomization.layout().addWidget(self.btnFirstPlotPoint)
         wdgCustomization.layout().addWidget(self.btnMidpoint)
