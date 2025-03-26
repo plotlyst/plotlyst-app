@@ -197,23 +197,10 @@
            </attribute>
           </widget>
          </item>
-         <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
         </layout>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_6">
           <property name="topMargin">
            <number>0</number>
@@ -252,7 +239,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_7">
           <property name="topMargin">
            <number>0</number>
@@ -371,7 +358,7 @@
         </layout>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_8">
           <property name="topMargin">
            <number>0</number>
@@ -470,7 +457,7 @@
         </layout>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_9">
           <property name="topMargin">
            <number>0</number>
@@ -512,7 +499,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_10">
           <property name="topMargin">
            <number>0</number>
@@ -558,7 +545,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_11">
           <property name="topMargin">
            <number>0</number>
@@ -597,7 +584,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_12">
           <property name="topMargin">
            <number>0</number>
@@ -636,7 +623,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_13">
           <property name="topMargin">
            <number>0</number>
@@ -675,7 +662,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <property name="leftMargin">
            <number>40</number>
@@ -710,7 +697,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_14">
           <property name="topMargin">
            <number>0</number>
@@ -749,7 +736,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_15">
           <property name="topMargin">
            <number>0</number>
@@ -788,7 +775,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_16">
           <property name="topMargin">
            <number>0</number>
@@ -827,7 +814,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_17">
           <property name="topMargin">
            <number>0</number>
@@ -866,7 +853,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_18">
           <property name="topMargin">
            <number>0</number>
@@ -905,7 +892,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_19">
           <property name="topMargin">
            <number>0</number>
@@ -944,7 +931,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_20">
           <property name="topMargin">
            <number>0</number>
@@ -983,7 +970,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_21">
           <property name="topMargin">
            <number>0</number>
@@ -1022,7 +1009,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_22">
           <property name="topMargin">
            <number>0</number>
@@ -1061,7 +1048,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_23">
           <property name="topMargin">
            <number>0</number>
@@ -1100,7 +1087,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_24">
           <property name="topMargin">
            <number>0</number>
@@ -1139,7 +1126,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_25">
           <property name="topMargin">
            <number>0</number>
@@ -1178,7 +1165,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_26">
           <property name="topMargin">
            <number>0</number>
@@ -1217,7 +1204,7 @@
         </widget>
        </item>
        <item alignment="Qt::AlignLeft">
-        <widget class="QWidget" name="" native="true">
+        <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_27">
           <property name="topMargin">
            <number>0</number>
