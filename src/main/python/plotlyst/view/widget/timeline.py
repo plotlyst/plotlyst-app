@@ -380,9 +380,9 @@ class TimelineGridWidget(QFrame):
         self._columnWidth: int = 150
         self._rowHeight: int = 50
         self._headerHeight: int = 40
-        self._verticalHeaderWidth: int = 190
+        self._verticalHeaderWidth: int = 200
         self._spacing: int = 10
-        self._margins: int = 20
+        self._margins: int = 15
 
         self._rows: Dict[Any, QWidget] = {}
         self._columns: Dict[Any, TimelineGridLine] = {}

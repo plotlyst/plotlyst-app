@@ -445,7 +445,7 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         self.wdgEditor.setProperty('muted-bg', True)
 
         self.cardsView = SceneGridCardsView(spacing=self._spacing)
-        margins(self.cardsView, top=self._margins)
+        margins(self.cardsView, top=self._margins, left=self._margins, right=self._margins, bottom=self._margins)
         self.cardsView.cardSelected.connect(self.sceneCardSelected)
         self.cardsView.cardDoubleClicked.connect(self._cardDoubleClicked)
 
@@ -520,19 +520,20 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         QWidget().setLayout(self.wdgEditor.layout())
         if self._scenesInColumns:
             vbox(self.wdgEditor, 0, self._spacing)
-            margins(self.cardsView, 0, 0, 0, 0)
+            margins(self.cardsView, self._margins, 0, 0, 0)
             self._headerHeight = 150
             self.wdgEditor.layout().addWidget(vspacer())
+            margins(self.wdgColumns, 0)
         else:
             hbox(self.wdgEditor, 0, self._spacing)
-            margins(self.cardsView, 0, self._margins, 0, 0)
+            margins(self.cardsView, top=self._margins, left=self._margins, right=self._margins, bottom=self._margins)
             self._headerHeight = 40
             self.wdgEditor.layout().addWidget(spacer())
+            margins(self.wdgColumns, left=self._margins)
 
         self.scrollColumns.setFixedHeight(self._headerHeight)
         margins(self.wdgRows, top=self._headerHeight, right=self._spacing)
         margins(self.wdgEditor, left=self._margins, top=self._margins)
-        margins(self.wdgColumns, left=self._margins)
 
         self._emptyPlaceholder.setGeometry(0, 0, self._verticalHeaderWidth, self._headerHeight)
 
