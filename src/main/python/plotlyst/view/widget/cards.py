@@ -28,11 +28,11 @@ from PyQt6.QtGui import QDragEnterEvent, QDragMoveEvent, QColor, QAction, QIcon
 from PyQt6.QtWidgets import QFrame, QApplication, QToolButton, QTextBrowser, QWidget
 from overrides import overrides
 from qthandy import clear_layout, retain_when_hidden, transparent, flow, translucent, gc, incr_icon, vbox, pointy, \
-    incr_font, hbox
+    incr_font, hbox, margins
 from qthandy.filter import DragEventFilter, DropEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import act_color, PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Character, Scene, Novel, NovelSetting, CardSizeRatio, NovelDescriptor, LayoutType
 from plotlyst.core.help import enneagram_help, mbti_help
 from plotlyst.env import app_env
