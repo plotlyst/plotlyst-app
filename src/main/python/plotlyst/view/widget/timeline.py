@@ -25,7 +25,7 @@ from typing import List, Optional, Any, Dict
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QObject, QEvent
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
-    QLineEdit, QToolButton
+    QLineEdit, QToolButton, QFrame
 from overrides import overrides
 from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, bold, \
     margins, gc
@@ -371,7 +371,7 @@ class TimelineGridLine(QWidget):
             painter.drawRect(self.rect().width() // 2 - 4, 5, 8, self.rect().height())
 
 
-class TimelineGridWidget(QWidget):
+class TimelineGridWidget(QFrame):
     def __init__(self, parent=None, vertical: bool = False):
         super().__init__(parent)
         self._vertical = vertical

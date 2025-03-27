@@ -24,7 +24,7 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal, QEvent
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QWidget, QTextEdit, QButtonGroup, QVBoxLayout, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QTextEdit, QButtonGroup
 from overrides import overrides
 from qthandy import hbox, spacer, vbox
 from qthandy import margins, vspacer, line, incr_font, clear_layout, gc
@@ -441,6 +441,9 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         self.setRowHeight(120)
         self.scrollRows.setFixedWidth(self._verticalHeaderWidth)
 
+        self.wdgEditor.setProperty('large-rounded', True)
+        self.wdgEditor.setProperty('muted-bg', True)
+
         self.cardsView = SceneGridCardsView(spacing=self._spacing)
         self.cardsView.cardSelected.connect(self.sceneCardSelected)
         self.cardsView.cardDoubleClicked.connect(self._cardDoubleClicked)
@@ -514,7 +517,13 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
                                   alignment=Qt.AlignmentFlag.AlignCenter)
 
         QWidget().setLayout(self.wdgEditor.layout())
-        self.wdgEditor.setLayout(QVBoxLayout() if self._scenesInColumns else QHBoxLayout())
+        if self._scenesInColumns:
+            vbox(self.wdgEditor, 0, self._spacing)
+            # self.wdgEditor = rows(0, self._spacing)
+        else:
+            hbox(self.wdgEditor, 0, self._spacing)
+
+        # self.wdgEditor.setLayout(QVBoxLayout() if self._scenesInColumns else QHBoxLayout())
         if self._scenesInColumns:
             self._headerHeight = 150
             self.wdgEditor.layout().addWidget(vspacer())
