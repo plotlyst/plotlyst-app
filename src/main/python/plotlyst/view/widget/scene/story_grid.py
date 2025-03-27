@@ -365,13 +365,20 @@ class SceneGridCard(SceneCard):
 
         self.setFixedWidth(170)
 
+    @overrides
+    def copy(self) -> 'Card':
+        return SceneGridCard(self.scene, self.novel)
+
     def setSelected(self, selected: bool):
         self._setStyleSheet(selected=selected)
 
 
 class SceneGridCardsView(CardsView):
-    def __init__(self, parent=None, layoutType: LayoutType = LayoutType.VERTICAL, margin: int = 0, spacing: int = 15):
+    def __init__(self, width: int, height: int, parent=None, layoutType: LayoutType = LayoutType.VERTICAL,
+                 margin: int = 0, spacing: int = 15):
         super().__init__(parent, layoutType, margin, spacing)
+        self._width = width
+        self._height = height
 
     @overrides
     def remove(self, obj: Scene):
@@ -393,6 +400,15 @@ class SceneGridCardsView(CardsView):
         if self._selected and self._selected is not card:
             self._selected.clearSelection()
         super()._cardSelected(card)
+
+    @overrides
+    def _resizeCard(self, card: Card):
+        card.setFixedSize(self._width, self._height)
+
+    @overrides
+    def _dragStarted(self, card: Card):
+        super()._dragStarted(card)
+        self._dragPlaceholder.setFixedSize(self._width, self._height)
 
 
 class ScenesGridToolbar(QWidget):
@@ -429,6 +445,7 @@ class ScenesGridToolbar(QWidget):
 
 class ScenesGridWidget(TimelineGridWidget, EventListener):
     sceneCardSelected = pyqtSignal(Card)
+    sceneOrderChanged = pyqtSignal(list, Card)
 
     def __init__(self, novel: Novel, parent=None):
         self._scenesInColumns = False
@@ -444,15 +461,15 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         self.wdgEditor.setProperty('large-rounded', True)
         self.wdgEditor.setProperty('muted-bg', True)
 
-        self.cardsView = SceneGridCardsView(spacing=self._spacing)
+        self.cardsView = SceneGridCardsView(self._columnWidth, self._rowHeight, spacing=self._spacing)
         margins(self.cardsView, top=self._margins, left=self._margins, right=self._margins, bottom=self._margins)
         self.cardsView.cardSelected.connect(self.sceneCardSelected)
         self.cardsView.cardDoubleClicked.connect(self._cardDoubleClicked)
+        self.cardsView.orderChanged.connect(self.sceneOrderChanged)
 
         for i, scene in enumerate(self._novel.scenes):
             sceneCard = SceneGridCard(scene, self._novel)
             self.cardsView.addCard(sceneCard, alignment=Qt.AlignmentFlag.AlignCenter)
-            sceneCard.setFixedSize(self._columnWidth, self._rowHeight)
 
         self.repo = RepositoryPersistenceManager.instance()
         self.refresh()

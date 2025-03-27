@@ -255,6 +255,7 @@ class ScenesOutlineView(AbstractNovelView):
 
         self._storyGrid = ScenesGridWidget(self.novel)
         self._storyGrid.sceneCardSelected.connect(self._story_grid_card_selected)
+        self._storyGrid.sceneOrderChanged.connect(self._on_grid_scene_cards_swapped)
         self._storyGridToolbar = ScenesGridToolbar()
         self._storyGridToolbar.orientationChanged.connect(self._storyGrid.setOrientation)
         self.ui.pageStoryGrid.layout().addWidget(self._storyGridToolbar,
@@ -766,6 +767,10 @@ class ScenesOutlineView(AbstractNovelView):
             chapters = self.ui.treeChapters.selectedChapters()
             if chapters:
                 self.ui.treeChapters.removeChapter(chapters[0])
+
+    def _on_grid_scene_cards_swapped(self, scenes: List[Scene], droppedCard: SceneCard):
+        self._on_scene_cards_swapped(scenes, droppedCard)
+        self.ui.cards.reorderCards(self.novel.scenes)
 
     def _on_scene_cards_swapped(self, scenes: List[Scene], droppedCard: SceneCard):
         droppedScene = droppedCard.scene
