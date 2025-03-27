@@ -519,11 +519,9 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         QWidget().setLayout(self.wdgEditor.layout())
         if self._scenesInColumns:
             vbox(self.wdgEditor, 0, self._spacing)
-            # self.wdgEditor = rows(0, self._spacing)
         else:
             hbox(self.wdgEditor, 0, self._spacing)
 
-        # self.wdgEditor.setLayout(QVBoxLayout() if self._scenesInColumns else QHBoxLayout())
         if self._scenesInColumns:
             self._headerHeight = 150
             self.wdgEditor.layout().addWidget(vspacer())

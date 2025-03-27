@@ -22,19 +22,20 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Any, Dict
 
+import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QObject, QEvent
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
     QLineEdit, QToolButton, QFrame
 from overrides import overrides
 from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, bold, \
-    margins, gc
+    margins, gc, translucent
 from qthandy.filter import VisibilityToggleEventFilter
 
 from plotlyst.common import RELAXED_WHITE_COLOR, NEUTRAL_EMOTION_COLOR, \
     EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import BackstoryEvent
-from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end
+from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, insert_before_the_end
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.input import RemovalButton, AutoAdjustableTextEdit
@@ -334,7 +335,7 @@ class TimelineGridPlaceholder(QWidget):
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
         self.btn.setIcon(IconRegistry.plus_circle_icon(self.parent().ref.icon_color, RELAXED_WHITE_COLOR))
-        fade_in(self.btn)
+        qtanim.fade_in(self.btn, duration=150, teardown=lambda: translucent(self.btn, 0.5))
 
     @overrides
     def leaveEvent(self, a0: QEvent) -> None:
