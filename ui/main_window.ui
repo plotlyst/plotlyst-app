@@ -232,7 +232,7 @@
               <cursorShape>PointingHandCursor</cursorShape>
              </property>
              <property name="toolTip">
-              <string>Scenes</string>
+              <string>Narrative Manager</string>
              </property>
              <property name="text">
               <string/>
@@ -362,38 +362,6 @@
             </widget>
            </item>
            <item>
-            <spacer name="verticalSpacer_4">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>10</width>
-               <height>15</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <spacer name="verticalSpacer_8">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>3</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
             <widget class="QToolButton" name="btnNotes">
              <property name="sizePolicy">
               <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -443,7 +411,7 @@
             </widget>
            </item>
            <item>
-            <spacer name="verticalSpacer_10">
+            <spacer name="verticalSpacer_4">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>
@@ -452,8 +420,24 @@
              </property>
              <property name="sizeHint" stdset="0">
               <size>
-               <width>48</width>
+               <width>10</width>
                <height>15</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_8">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Fixed</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>3</height>
               </size>
              </property>
             </spacer>
@@ -508,38 +492,6 @@
             </widget>
            </item>
            <item>
-            <spacer name="verticalSpacer_5">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>10</width>
-               <height>15</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <spacer name="verticalSpacer_7">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>3</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
             <widget class="QToolButton" name="btnReports">
              <property name="sizePolicy">
               <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -589,20 +541,53 @@
             </widget>
            </item>
            <item>
-            <spacer name="verticalSpacer_9">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
+            <widget class="QToolButton" name="btnFormatting">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
              </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
+             <property name="minimumSize">
               <size>
-               <width>10</width>
-               <height>15</height>
+               <width>35</width>
+               <height>35</height>
               </size>
              </property>
-            </spacer>
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
+             </property>
+             <property name="toolTip">
+              <string>Formatting and typesetting</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="base" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="main-navbar" stdset="0">
+              <bool>true</bool>
+             </property>
+             <attribute name="buttonGroup">
+              <string notr="true">buttonGroup</string>
+             </attribute>
+            </widget>
            </item>
            <item>
             <spacer name="verticalSpacer">
@@ -871,6 +856,25 @@
               </property>
              </layout>
             </widget>
+            <widget class="QWidget" name="pageFormatting">
+             <layout class="QVBoxLayout" name="verticalLayout_12">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+             </layout>
+            </widget>
            </widget>
           </item>
          </layout>
@@ -995,24 +999,6 @@
     </widget>
     <addaction name="menuProject"/>
    </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>View</string>
-    </property>
-    <property name="toolTipsVisible">
-     <bool>true</bool>
-    </property>
-    <widget class="QMenu" name="menuToolbar">
-     <property name="title">
-      <string>Toolbar</string>
-     </property>
-     <property name="toolTipsVisible">
-      <bool>true</bool>
-     </property>
-     <addaction name="actionQuickCustomization"/>
-    </widget>
-    <addaction name="menuToolbar"/>
-   </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>Help</string>
@@ -1046,6 +1032,7 @@
     <addaction name="actionFeatureRequest"/>
     <addaction name="actionRoadmap"/>
     <addaction name="separator"/>
+    <addaction name="actionPurchase"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -1084,7 +1071,6 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
-   <addaction name="menuView"/>
    <addaction name="menuWindow"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
@@ -1205,22 +1191,6 @@
     <string>Open in explorer...</string>
    </property>
   </action>
-  <action name="actionExportToDocx">
-   <property name="text">
-    <string>Export to Docx</string>
-   </property>
-  </action>
-  <action name="actionQuickCustomization">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Quick panel customization</string>
-   </property>
-   <property name="toolTip">
-    <string>Display quick panel customization in the toolbar</string>
-   </property>
-  </action>
   <action name="actionLogs">
    <property name="text">
     <string>Logs</string>
@@ -1288,7 +1258,7 @@
   </action>
   <action name="actionDetachScenes">
    <property name="text">
-    <string>Detach scenes</string>
+    <string>Detach narrative manager</string>
    </property>
   </action>
   <action name="actionDetachWorldbuilding">
@@ -1324,6 +1294,11 @@
   <action name="actionPatronRecognitionBuilder">
    <property name="text">
     <string>Patron Recognition Builder</string>
+   </property>
+  </action>
+  <action name="actionPurchase">
+   <property name="text">
+    <string>Purchase</string>
    </property>
   </action>
  </widget>

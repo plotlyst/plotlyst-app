@@ -25,6 +25,7 @@ from overrides import overrides
 from qthandy import vline, line
 from qtmenu import GridMenuWidget
 
+from plotlyst.common import BLACK_COLOR
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Diagram, Relation, Node
 from plotlyst.core.domain import Novel, GraphicsItemType
@@ -71,7 +72,7 @@ class CharacterNetworkView(NetworkGraphicsView):
         self._novel = novel
         super(CharacterNetworkView, self).__init__(parent)
 
-        self._btnAddCharacter = self._newControlButton(IconRegistry.character_icon('#040406'), 'Add new character',
+        self._btnAddCharacter = self._newControlButton(IconRegistry.character_icon(BLACK_COLOR), 'Add new character',
                                                        GraphicsItemType.CHARACTER)
         self._controlsNavBar.layout().addWidget(line())
         self._btnAddNote = self._newControlButton(

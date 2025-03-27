@@ -36,4 +36,4 @@ def test_edit_novel(qtbot, filled_window: MainWindow):
     assert client.novels()[0].title == new_title
 
     novel_view: NovelView = go_to_novel(filled_window)
-    assert novel_view.ui.lblTitle.text() == new_title
+    assert novel_view.wdgDescriptors.lineNovelTitle.text() == new_title

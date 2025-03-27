@@ -53,7 +53,7 @@ class Label(QFrame):
         self.clicked.emit()
 
 
-class LabelsWidget(QWidget):
+class LabelsWidget(QFrame):
 
     def __init__(self, parent=None):
         super(LabelsWidget, self).__init__(parent)
@@ -380,7 +380,6 @@ class LabelsEditorWidget(QFrame):
         self.layout().addWidget(self.btnEdit, alignment=Qt.AlignmentFlag.AlignTop)
 
         self._wdgLabels = LabelsWidget()
-        self._wdgLabels.setStyleSheet('LabelsWidget {border: 1px solid black;}')
         self._wdgLabels.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.layout().addWidget(self._wdgLabels)
 

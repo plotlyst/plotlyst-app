@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import copy
+import uuid
 from functools import partial
 from typing import Optional
 
@@ -28,13 +29,13 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QPushButton, QSizePolicy, QButtonGroup
 from overrides import overrides
 from qthandy import translucent, gc, flow, hbox, clear_layout, vbox, sp, margins, vspacer, \
-    incr_font, bold, busy, italic, incr_icon, spacer, transparent
+    incr_font, bold, busy, italic, incr_icon, spacer, transparent, pointy
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import act_color, PLOTLYST_SECONDARY_COLOR, MAX_NUMBER_OF_ACTS
 from plotlyst.core.domain import StoryStructure, Novel, StoryBeat, \
-    Character, StoryBeatType, StoryStructureDisplayType
+    Character, StoryBeatType, StoryStructureDisplayType, TemplateStoryStructureType
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import NovelStoryStructureUpdated, CharacterChangedEvent, CharacterDeletedEvent, \
@@ -50,7 +51,7 @@ from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import IconText, PopupDialog, Icon
-from plotlyst.view.widget.input import AutoAdjustableTextEdit
+from plotlyst.view.widget.input import AutoAdjustableTextEdit, TextInputDialog
 from plotlyst.view.widget.settings import SettingBaseWidget
 from plotlyst.view.widget.structure.beat import BeatsPreview
 from plotlyst.view.widget.structure.outline import StoryStructureOutline
@@ -65,35 +66,38 @@ class _StoryStructureButton(QPushButton):
         self.novel = novel
         self.setText(structure.title)
         self.setCheckable(True)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        pointy(self)
         self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Maximum)
 
         self.setStyleSheet('''
             QPushButton {
                 background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 0,
                                       stop: 0 #f8edeb);
-                border: 2px solid #fec89a;
+                border: 1px solid #fec89a;
                 border-radius: 6px;
-                padding: 2px;
+                padding: 3px;
             }
             QPushButton:checked {
                 background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 0,
-                                      stop: 0 #ffd7ba);
-                border: 3px solid #FD9235;
-                padding: 1px;
+                                      stop: 0 #FFCBBA);
+                border: 2px solid #FD9235;
+                padding: 3px;
+
             }
             ''')
-
         self.refresh()
 
         self._toggled(self.isChecked())
         self.installEventFilter(OpacityEventFilter(self, 0.7, 0.5, ignoreCheckedButton=True))
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
         self.toggled.connect(self._toggled)
 
     def structure(self) -> StoryStructure:
         return self._structure
 
     def refresh(self, animated: bool = False):
+        self.setText(self._structure.title)
+
         if self._structure.character_id:
             self.setIcon(avatars.avatar(self._structure.character(self.novel)))
         elif self._structure.icon:
@@ -325,7 +329,7 @@ class StoryStructureEditor(QWidget, Ui_StoryStructureSettings, EventListener):
         self.btnNew.installEventFilter(ButtonPressResizeEventFilter(self.btnNew))
         menu = MenuWidget(self.btnNew)
         apply_white_menu(menu)
-        menu.addAction(action('Select a template structure (recommended)',
+        menu.addAction(action('Apply a template structure (recommended)',
                               icon=IconRegistry.template_icon(color=PLOTLYST_SECONDARY_COLOR),
                               slot=self._selectTemplateStructure))
         menu.addSeparator()
@@ -333,20 +337,19 @@ class StoryStructureEditor(QWidget, Ui_StoryStructureSettings, EventListener):
 
         self.btnDelete.setIcon(IconRegistry.trash_can_icon())
         self.btnDelete.installEventFilter(ButtonPressResizeEventFilter(self.btnDelete))
-        self.btnDelete.installEventFilter(OpacityEventFilter(self.btnDelete, leaveOpacity=0.8))
+        self.btnDelete.installEventFilter(OpacityEventFilter(self.btnDelete, leaveOpacity=0.6))
         self.btnDelete.clicked.connect(self._removeStructure)
         self.btnCopy.setIcon(IconRegistry.copy_icon())
         self.btnCopy.installEventFilter(ButtonPressResizeEventFilter(self.btnCopy))
-        self.btnCopy.installEventFilter(OpacityEventFilter(self.btnCopy, leaveOpacity=0.8))
+        self.btnCopy.installEventFilter(OpacityEventFilter(self.btnCopy, leaveOpacity=0.6))
         self.btnCopy.clicked.connect(self._duplicateStructure)
-        self.btnCopy.setHidden(True)
         self.btnEdit.setIcon(IconRegistry.edit_icon())
         self.btnEdit.installEventFilter(ButtonPressResizeEventFilter(self.btnEdit))
-        self.btnEdit.installEventFilter(OpacityEventFilter(self.btnEdit, leaveOpacity=0.8))
+        self.btnEdit.installEventFilter(OpacityEventFilter(self.btnEdit, leaveOpacity=0.6))
         self.btnEdit.clicked.connect(self._editStructure)
         self.btnLinkCharacter.setIcon(IconRegistry.character_icon())
         self.btnLinkCharacter.installEventFilter(ButtonPressResizeEventFilter(self.btnLinkCharacter))
-        self.btnLinkCharacter.installEventFilter(OpacityEventFilter(self.btnLinkCharacter, leaveOpacity=0.8))
+        self.btnLinkCharacter.installEventFilter(OpacityEventFilter(self.btnLinkCharacter, leaveOpacity=0.6))
         self.btnLinkCharacter.clicked.connect(self._showCharacterMenu)
         self.btnConfigure.setIcon(IconRegistry.cog_icon(color='grey'))
         italic(self.btnConfigure)
@@ -431,7 +434,6 @@ class StoryStructureEditor(QWidget, Ui_StoryStructureSettings, EventListener):
         self.wdgTemplates.layout().addWidget(btn)
         if structure.active:
             btn.setChecked(True)
-            self.btnEdit.setHidden(structure.custom)
             self._refreshStructure(structure)
         btn.toggled.connect(partial(self._activeStructureToggled, structure))
         btn.clicked.connect(partial(self._activeStructureClicked, structure))
@@ -446,6 +448,7 @@ class StoryStructureEditor(QWidget, Ui_StoryStructureSettings, EventListener):
         self.novel.story_structures.append(structure)
         self._addStructureWidget(structure)
         self.btnGroupStructure.buttons()[-1].setChecked(True)
+        self._save()
         self._emit()
 
     def _removeStructure(self):
@@ -483,13 +486,29 @@ class StoryStructureEditor(QWidget, Ui_StoryStructureSettings, EventListener):
 
     def _duplicateStructure(self):
         structure = copy.deepcopy(self.novel.active_story_structure)
+        structure.active = False
+        for beat in structure.beats:
+            if beat.custom:
+                beat.id = uuid.uuid4()
+            beat.notes = ''
         self._addNewStructure(structure)
-        self._editStructure()
 
     def _editStructure(self):
-        StoryStructureSelectorDialog.display(self.novel, self.novel.active_story_structure)
-        self._activeStructureToggled(self.novel.active_story_structure, True)
-        self._emit()
+        if self.novel.active_story_structure.custom:
+            name = TextInputDialog.edit('Rename story structure', 'Edit structure name',
+                                        value=self.novel.active_story_structure.title)
+            if name:
+                self.novel.active_story_structure.title = name
+                self.btnGroupStructure.checkedButton().refresh(animated=False)
+                self._save()
+                self._emit()
+        else:
+            StoryStructureSelectorDialog.popup(self.novel, self.novel.active_story_structure)
+            if self.novel.active_story_structure.template_type == TemplateStoryStructureType.CUSTOM:
+                self.btnGroupStructure.checkedButton().refresh(animated=False)
+
+            self._activeStructureToggled(self.novel.active_story_structure, True)
+            self._emit()
 
     def _showCharacterMenu(self):
         if self.novel.active_story_structure.character_id:
@@ -516,7 +535,7 @@ class StoryStructureEditor(QWidget, Ui_StoryStructureSettings, EventListener):
         self._emit()
 
     def _selectTemplateStructure(self):
-        structure: Optional[StoryStructure] = StoryStructureSelectorDialog.display(self.novel)
+        structure: Optional[StoryStructure] = StoryStructureSelectorDialog.popup(self.novel)
         if structure:
             self._addNewStructure(structure)
 
@@ -545,7 +564,6 @@ class StoryStructureEditor(QWidget, Ui_StoryStructureSettings, EventListener):
         for struct in self.novel.story_structures:
             struct.active = False
         structure.active = True
-        self.btnEdit.setHidden(structure.custom)
         acts_registry.refresh()
         QTimer.singleShot(20, lambda: self._refreshStructure(structure))
 

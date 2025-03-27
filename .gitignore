@@ -6,6 +6,8 @@ test.docx
 document.pdf
 src/build/settings/base.json
 resources/plotlyst.wxs
+profile.cbor
+profile.sig
 
 generated
 coverage

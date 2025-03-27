@@ -21,5 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 BG_PRIMARY_COLOR: str = '#EFEFF4'
 BG_SECONDARY_COLOR: str = '#F5F6F8'
 BG_MUTED_COLOR: str = '#E5E5EE'
+BG_ALT_COLOR: str = '#F0E6F4'
+BG_DARK_COLOR: str = '#272727'
 
 TEXT_COLOR_ON_DARK_BG: str = BG_SECONDARY_COLOR
+TEXT_SECONDARY_COLOR_ON_DARK_BG: str = '#CED3DD'

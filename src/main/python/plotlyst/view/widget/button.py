@@ -31,13 +31,18 @@ from qthandy import hbox, translucent, bold, incr_font, transparent, retain_when
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, PLOTLYST_MAIN_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, PLOTLYST_MAIN_COLOR, \
+    LIGHTGREY_IDLE_COLOR, LIGHTGREY_ACTIVE_COLOR
 from plotlyst.core.domain import SelectionItem, Novel, tag_characterization, tag_worldbuilding, \
     tag_brainstorming, tag_research, tag_writing, tag_plotting, tag_theme, tag_outlining, tag_revision, tag_drafting, \
-    tag_editing, tag_collect_feedback, tag_publishing, tag_marketing, tag_book_cover_design, tag_formatting
+    tag_editing, tag_collect_feedback, tag_publishing, tag_marketing, tag_book_cover_design, tag_formatting, \
+    SnapshotType
 from plotlyst.env import app_env
+from plotlyst.event.core import emit_event
+from plotlyst.events import SocialSnapshotRequested
 from plotlyst.service.importer import SyncImporter
-from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action, label
+from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action, label, \
+    ButtonIconSwitchEventFilter
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 
@@ -611,10 +616,13 @@ class ChargeButton(SecondaryActionToolButton):
 
 
 class SelectorToggleButton(QToolButton):
-    def __init__(self, button_style: Qt.ToolButtonStyle = Qt.ToolButtonStyle.ToolButtonTextUnderIcon):
-        super().__init__()
+    def __init__(self, button_style: Qt.ToolButtonStyle = Qt.ToolButtonStyle.ToolButtonTextUnderIcon,
+                 minWidth: int = 100, animated: bool = True, parent=None):
+        super().__init__(parent)
+        self._animated = animated
 
-        self.setMinimumWidth(100)
+        if minWidth:
+            self.setMinimumWidth(minWidth)
         self.installEventFilter(ButtonPressResizeEventFilter(self))
         self.setCheckable(True)
         self.setToolButtonStyle(button_style)
@@ -624,11 +632,10 @@ class SelectorToggleButton(QToolButton):
         if app_env.is_mac() and button_style == Qt.ToolButtonStyle.ToolButtonTextUnderIcon:
             incr_font(self)
 
-        # Configure style based on button_style
         if button_style == Qt.ToolButtonStyle.ToolButtonTextBesideIcon:
             radius = 6
             padding = 6
-        else:  # Default for ToolButtonTextUnderIcon
+        else:
             radius = 10
             padding = 2
 
@@ -646,7 +653,8 @@ class SelectorToggleButton(QToolButton):
                     }}
                     ''')
 
-        self.toggled.connect(self._toggled)
+        if self._animated:
+            self.toggled.connect(self._toggled)
 
     def _toggled(self, toggled: bool):
         if toggled:
@@ -690,15 +698,16 @@ class MinorRoleFilterButton(_RoleFilterButton):
 
 
 class SmallToggleButton(QToolButton):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, translucent: bool = True):
         super().__init__(parent)
         self.setIcon(IconRegistry.from_name('ph.toggle-left-thin'))
         self.setCheckable(True)
         pointy(self)
         transparent(self)
-        self.setIconSize(QSize(24, 24))
+        self.setIconSize(QSize(28, 28))
 
-        self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7, ignoreCheckedButton=True))
+        if translucent:
+            self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.installEventFilter(ButtonPressResizeEventFilter(self))
 
         self.toggled.connect(self._toggled)
@@ -735,3 +744,34 @@ class ToggleAllOnAndOff(QWidget):
         self.layout().addWidget(self.btnOn)
         self.layout().addWidget(label('/'))
         self.layout().addWidget(self.btnOff)
+
+
+class TopSelectorButton(QPushButton):
+    def __init__(self, icon: str = '', text: str = '', parent=None):
+        super().__init__(parent)
+        self.setText(text)
+        if icon:
+            self.setIcon(IconRegistry.from_name(icon, color_on=PLOTLYST_SECONDARY_COLOR))
+        self.setCheckable(True)
+        pointy(self)
+        self.setProperty('transparent-rounded-bg-on-hover', True)
+        self.setProperty('secondary-selector', True)
+
+        incr_icon(self, 4)
+        incr_font(self, 2)
+
+
+class SnapshotButton(QPushButton):
+
+    def __init__(self, novel: Novel, snapshotType: SnapshotType, parent=None):
+        super().__init__(parent)
+        self.setToolTip('Take a snapshot for social media')
+        transparent(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+        self.installEventFilter(
+            ButtonIconSwitchEventFilter(self, IconRegistry.from_name('mdi.camera', LIGHTGREY_IDLE_COLOR),
+                                        IconRegistry.from_name('mdi.camera', LIGHTGREY_ACTIVE_COLOR)))
+        pointy(self)
+
+        incr_icon(self, 6)
+        self.clicked.connect(lambda: emit_event(novel, SocialSnapshotRequested(self, snapshotType)))

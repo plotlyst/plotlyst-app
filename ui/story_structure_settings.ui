@@ -34,7 +34,7 @@
      <property name="rightMargin">
       <number>0</number>
      </property>
-     <item>
+     <item alignment="Qt::AlignTop">
       <widget class="QPushButton" name="btnNew">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -96,18 +96,11 @@
       <widget class="QWidget" name="wdgSidebar" native="true">
        <layout class="QVBoxLayout" name="verticalLayout">
         <property name="spacing">
-         <number>4</number>
+         <number>6</number>
         </property>
         <property name="leftMargin">
          <number>4</number>
         </property>
-        <item>
-         <widget class="Line" name="line_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
         <item alignment="Qt::AlignHCenter">
          <widget class="QToolButton" name="btnEdit">
           <property name="cursor">
@@ -118,6 +111,12 @@
           </property>
           <property name="text">
            <string/>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>22</width>
+            <height>22</height>
+           </size>
           </property>
           <property name="transparent" stdset="0">
            <bool>true</bool>
@@ -134,6 +133,12 @@
           </property>
           <property name="text">
            <string/>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>22</width>
+            <height>22</height>
+           </size>
           </property>
           <property name="transparent" stdset="0">
            <bool>true</bool>
@@ -158,8 +163,21 @@
           <property name="text">
            <string/>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>22</width>
+            <height>22</height>
+           </size>
+          </property>
           <property name="transparent" stdset="0">
            <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
@@ -173,6 +191,12 @@
           </property>
           <property name="text">
            <string/>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>22</width>
+            <height>22</height>
+           </size>
           </property>
           <property name="transparent" stdset="0">
            <bool>true</bool>
@@ -261,7 +285,7 @@
                 <x>0</x>
                 <y>0</y>
                 <width>512</width>
-                <height>237</height>
+                <height>245</height>
                </rect>
               </property>
               <property name="relaxed-white-bg" stdset="0">
@@ -325,8 +349,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>512</width>
-                <height>242</height>
+                <width>100</width>
+                <height>30</height>
                </rect>
               </property>
               <property name="sizePolicy">
@@ -379,8 +403,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>512</width>
-                <height>222</height>
+                <width>100</width>
+                <height>30</height>
                </rect>
               </property>
               <property name="relaxed-white-bg" stdset="0">

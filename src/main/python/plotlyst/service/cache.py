@@ -24,6 +24,7 @@ from overrides import overrides
 
 from plotlyst.common import recursive
 from plotlyst.core.domain import Novel, Scene, StoryBeat, Character, Location, NovelDescriptor
+from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneChangedEvent, SceneDeletedEvent, SceneStoryBeatChangedEvent, \
@@ -111,7 +112,7 @@ class EntitiesRegistry(EventListener):
             self._series[str(ser.id)] = ser
 
     def series(self, novel: NovelDescriptor) -> Optional[NovelDescriptor]:
-        if novel.parent:
+        if app_env.profile().get('series') and novel.parent:
             return self._series.get(str(novel.parent))
 
     def character(self, s_id: str) -> Optional[Character]:

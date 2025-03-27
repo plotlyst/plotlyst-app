@@ -34,7 +34,7 @@ from plotlyst.core.domain import Novel, SceneStage
 from plotlyst.core.template import RoleImportance
 from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
-from plotlyst.events import SceneStatusChangedEvent
+from plotlyst.events import SceneStatusChangedEvent, NovelStoryStructureUpdated
 from plotlyst.service.cache import acts_registry
 from plotlyst.view.common import icon_to_html_img
 from plotlyst.view.icons import IconRegistry
@@ -77,20 +77,16 @@ class SceneStageProgressCharts(QWidget, EventListener):
             self._stage = None
 
         dispatcher = event_dispatchers.instance(self.novel)
-        dispatcher.register(self, SceneStatusChangedEvent)
+        dispatcher.register(self, SceneStatusChangedEvent, NovelStoryStructureUpdated)
 
     @overrides
     def event_received(self, event: Event):
-        self.refresh(reset=False)
+        if isinstance(event, SceneStatusChangedEvent):
+            self.refresh(reset=False)
+        elif isinstance(event, NovelStoryStructureUpdated):
+            self.refresh()
 
     def charts(self) -> List[ProgressChartView]:
-        # views = []
-        # for i in range(self.layout().count()):
-        #     item = self.layout().itemAt(i)
-        #     if item and item.widget() and isinstance(item.widget(), ProgressChartView):
-        #         views.append(item.widget())
-        #
-        # return views
         return self._chartviews
 
     def stage(self) -> SceneStage:
@@ -98,7 +94,7 @@ class SceneStageProgressCharts(QWidget, EventListener):
 
     def setStage(self, stage: SceneStage):
         self._stage = stage
-        self.refresh()
+        self.refresh(reset=False)
 
     def refresh(self, reset: bool = True):
         if reset:
@@ -157,6 +153,8 @@ class ProgressChart(BaseChart):
         self._empty_slice_border: QColor = QColor(emptySliceBorder)
         self._value = value
         self._maxValue = maxValue
+        self._holeSize: float = 0.45
+        self._titleVisible: bool = True
 
         font = QFont()
         font.setBold(True)
@@ -178,11 +176,14 @@ class ProgressChart(BaseChart):
     def setMaxValue(self, value: int):
         self._maxValue = value
 
+    def percentage(self) -> int:
+        return min(int(100 * self.value() / self.maxValue()), 100)
+
     def refresh(self):
         self.reset()
 
         series = QPieSeries()
-        series.setHoleSize(0.45)
+        series.setHoleSize(self._holeSize)
         percentage_slice = QPieSlice('Progress', self._value)
         percentage_slice.setColor(self._color)
         percentage_slice.setBorderColor(self._color)
@@ -191,7 +192,8 @@ class ProgressChart(BaseChart):
         empty_slice.setBorderColor(self._empty_slice_border)
         series.append(percentage_slice)
         series.append(empty_slice)
-        self.setTitle(self._title_prefix + " {:.1f}%".format(100 * percentage_slice.percentage()))
+        if self._titleVisible:
+            self.setTitle(self._title_prefix + " {:.1f}%".format(100 * percentage_slice.percentage()))
 
         self.addSeries(series)
 

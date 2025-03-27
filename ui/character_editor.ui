@@ -516,7 +516,7 @@
        <enum>Qt::ClickFocus</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>5</number>
       </property>
       <widget class="QWidget" name="tabTopics">
        <property name="relaxed-white-bg" stdset="0">
@@ -714,8 +714,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>96</width>
-             <height>26</height>
+             <width>100</width>
+             <height>30</height>
             </rect>
            </property>
            <property name="relaxed-white-bg" stdset="0">
@@ -791,6 +791,31 @@
         <item>
          <widget class="DocumentTextEditor" name="textEdit" native="true"/>
         </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabBackstoryDummy">
+       <property name="bg-image" stdset="0">
+        <bool>true</bool>
+       </property>
+       <attribute name="title">
+        <string>Backstory</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_12">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
        </layout>
       </widget>
      </widget>

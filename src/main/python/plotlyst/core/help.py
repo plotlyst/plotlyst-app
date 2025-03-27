@@ -171,11 +171,9 @@ mid_revision_scene_structure_help = """<html>This panel is recommended for <b>mi
 <br/>During mid-revision, the writer might refine scene structure to ensure tension, escalation, and reader engagement.
 """
 
-home_page_welcome_text = """Plotlyst is an advanced writing software tailored for both aspiring and professional novelists.
+home_page_welcome_text = """Plotlyst is an indie novel writing software created by a solo developer with passion for writing and storytelling.
 
 It offers a range of tools to support various stages of novel writing, including outlining and planning, drafting, and early, mid, or late-stage revisions.
-
-Not every tool aligns with every individual's writing process, and not all tools are universally suitable for all genres. Plotlyst is highly customizable, allowing you to choose and tailor the features that fit your specific preferences and needs.
 
 Not every tool needs to be used right away. Several features prove most beneficial after the initial drafting phase.
 """
@@ -371,3 +369,16 @@ def character_role_examples(role: Role) -> List[CharacterRoleExample]:
 
 
 synopsis_editor_placeholder = "Summarize your story's main events"
+
+WELCOME_DOC_CONTENT: str = '''
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head><meta name="qrichtext" content="1" /><meta charset="utf-8" /><style type="text/css">
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: "\2610"; }
+li.checked::marker { content: "\2612"; }
+</style></head><body style=" font-family:'Fira Sans Semi-Light'; font-size:12pt; font-weight:400; font-style:normal;">
+<h1 style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;"><span style=" font-size:xx-large; font-weight:700;">Welcome to Plotlyst</span></h1>
+<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;">This is the Documents panel where you can add additional notes.</p>
+<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;">In <a href="https://plotlyst.com/pricing"><span style=" text-decoration: underline; color:#0000ff;">Plotlyst Plus</span></a>, you can also use create Mindmaps here.</p></body></html>
+'''

@@ -30,12 +30,14 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import recursive
 from plotlyst.core.domain import Document, Novel, DocumentType, Character, PremiseBuilder, Diagram, DiagramData
+from plotlyst.env import app_env
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import fade_out_and_gc, action
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
+from plotlyst.view.widget.display import PremiumMessagePopup
 from plotlyst.view.widget.tree import TreeView, ContainerNode, TreeSettings
 
 
@@ -57,16 +59,17 @@ class DocumentAdditionMenu(MenuWidget):
         self._character_menu.setTitle('Characters')
         self._character_menu.setIcon(IconRegistry.character_icon())
         self.addMenu(self._character_menu)
-        self.addSeparator()
 
-        self._otherMenu = MenuWidget()
-        self._otherMenu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
-        self._otherMenu.setTitle('Other')
-        self._otherMenu.addAction(action('Premise builder', IconRegistry.from_name('mdi.flower'),
-                                         lambda: self._premiseSelected(),
-                                         tooltip="Turn ideas into concepts, and develop a final premise"))
+        if app_env.profile().get('extra-docs', False):
+            self.addSeparator()
+            self._otherMenu = MenuWidget()
+            self._otherMenu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
+            self._otherMenu.setTitle('Other')
+            self._otherMenu.addAction(action('Premise builder', IconRegistry.from_name('mdi.flower'),
+                                             lambda: self._premiseSelected(),
+                                             tooltip="Turn ideas into concepts, and develop a final premise"))
 
-        self.addMenu(self._otherMenu)
+            self.addMenu(self._otherMenu)
 
         apply_white_menu(self)
 
@@ -84,10 +87,13 @@ class DocumentAdditionMenu(MenuWidget):
         self.documentTriggered.emit(doc)
 
     def _mindmapSelected(self):
-        doc = Document('Mindmap', type=DocumentType.MIND_MAP, icon='ri.mind-map', diagram=Diagram(''))
-        doc.diagram.data = DiagramData()
-        doc.diagram.loaded = True
-        self.documentTriggered.emit(doc)
+        if app_env.profile().get('mindmap', False):
+            doc = Document('Mindmap', type=DocumentType.MIND_MAP, icon='ri.mind-map', diagram=Diagram(''))
+            doc.diagram.data = DiagramData()
+            doc.diagram.loaded = True
+            self.documentTriggered.emit(doc)
+        else:
+            PremiumMessagePopup.popup('Mindmap', 'ri.mind-map', 'https://plotlyst.com/docs/characters/')
 
     def _premiseSelected(self):
         doc = Document('Premise', type=DocumentType.PREMISE, icon='mdi.flower')
@@ -120,6 +126,9 @@ class DocumentNode(ContainerNode):
         menu = DocumentAdditionMenu(self._novel, self._btnAdd)
         menu.documentTriggered.connect(self.added)
         self.refresh()
+
+        if doc.type == DocumentType.MIND_MAP and not app_env.profile().get('mindmap'):
+            self.setDisabled(True)
 
     def doc(self) -> Document:
         return self._doc

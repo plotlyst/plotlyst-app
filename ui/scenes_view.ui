@@ -117,9 +117,6 @@
             <property name="text">
              <string/>
             </property>
-            <property name="shortcut">
-             <string>1</string>
-            </property>
             <property name="checkable">
              <bool>true</bool>
             </property>
@@ -144,9 +141,6 @@
             </property>
             <property name="text">
              <string/>
-            </property>
-            <property name="shortcut">
-             <string>2</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -201,9 +195,6 @@
             <property name="text">
              <string/>
             </property>
-            <property name="shortcut">
-             <string>3</string>
-            </property>
             <property name="checkable">
              <bool>true</bool>
             </property>
@@ -224,13 +215,10 @@
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="toolTip">
-             <string>Character-scene distribution view</string>
+             <string>Distribution view</string>
             </property>
             <property name="text">
              <string/>
-            </property>
-            <property name="shortcut">
-             <string>4</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -260,9 +248,6 @@
             </property>
             <property name="text">
              <string/>
-            </property>
-            <property name="shortcut">
-             <string>5</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -382,7 +367,7 @@
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="toolTip">
-             <string>Add new scene</string>
+             <string>Add new scene or chapter</string>
             </property>
             <property name="text">
              <string/>
@@ -521,7 +506,7 @@
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Customize view&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Customize view</string>
             </property>
             <property name="text">
              <string/>
@@ -1311,25 +1296,25 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Toggle</class>
-   <extends>QCheckBox</extends>
-   <header>plotlyst.view.widget.input</header>
-  </customwidget>
-  <customwidget>
    <class>ScenesTreeView</class>
    <extends>QTreeView</extends>
    <header>plotlyst.view.widget.scene</header>
   </customwidget>
   <customwidget>
-   <class>StoryStructureTimelineWidget</class>
-   <extends>QWidget</extends>
-   <header>plotlyst.view.widget.structure.timeline</header>
-   <container>1</container>
+   <class>Toggle</class>
+   <extends>QCheckBox</extends>
+   <header>plotlyst.view.widget.input</header>
   </customwidget>
   <customwidget>
    <class>CardsView</class>
    <extends>QFrame</extends>
    <header>plotlyst.view.widget.cards</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>StoryStructureTimelineWidget</class>
+   <extends>QWidget</extends>
+   <header>plotlyst.view.widget.structure.timeline</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -1340,38 +1325,6 @@
  </customwidgets>
  <resources/>
  <connections>
-  <connection>
-   <sender>btnChaptersToggle</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>btnNew</receiver>
-   <slot>setHidden(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>67</x>
-     <y>45</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>119</x>
-     <y>48</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>btnChaptersToggle</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>btnNewWithMenu</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>81</x>
-     <y>51</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>174</x>
-     <y>54</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>
@@ -1390,7 +1343,7 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="btnGroupViews"/>
   <buttongroup name="btnGroupStoryMapView"/>
+  <buttongroup name="btnGroupViews"/>
  </buttongroups>
 </ui>

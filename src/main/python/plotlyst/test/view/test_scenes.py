@@ -2,11 +2,9 @@ from PyQt6.QtCharts import QPieSeries
 from PyQt6.QtCore import Qt, QModelIndex
 from PyQt6.QtWidgets import QSpinBox
 
-from plotlyst.core.client import client
 from plotlyst.model.scenes_model import ScenesTableModel, ScenesStageTableModel
 from plotlyst.test.common import create_character, start_new_scene_editor, assert_data, go_to_scenes, \
     click_on_item
-from plotlyst.view.comments_view import CommentWidget
 from plotlyst.view.main_window import MainWindow
 from plotlyst.view.scenes_view import ScenesOutlineView
 
@@ -63,9 +61,6 @@ def test_switch_views(qtbot, filled_window: MainWindow):
     pie_series: QPieSeries = charts[0].chart.series()[0]
     assert pie_series.count() == 2
     assert pie_series.slices()[0].percentage() == 0.5
-
-    view.ui.btnStorymap.click()
-    view.storymap_view.grab().toImage()
 
 
 def test_change_stage(qtbot, filled_window: MainWindow):
@@ -156,33 +151,6 @@ def test_character_distribution_display(qtbot, filled_window: MainWindow):
     view.characters_distribution.btnTags.click()
     model = view.characters_distribution.tblSceneDistribution.model()
     assert model.rowCount() == 7
-
-
-def _test_add_scene_comment(qtbot, filled_window: MainWindow):
-    view: ScenesOutlineView = go_to_scenes(filled_window)
-
-    card = view.ui.cards.cardAt(0)
-    qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
-
-    filled_window.btnComments.click()
-    assert filled_window.wdgSidebar.isVisible()
-
-    filled_window.comments_view.ui.btnNewComment.click()
-    assert filled_window.comments_view.ui.wdgComments.layout().count()
-    item = filled_window.comments_view.ui.wdgComments.layout().itemAt(0)
-    assert item
-    assert item.widget()
-    comment: CommentWidget = item.widget()
-
-    qtbot.keyClicks(comment.textEditor, 'Comment content')
-    assert comment.btnApply.isEnabled()
-    comment.btnApply.click()
-    assert view.novel.scenes[0].comments
-    assert view.novel.scenes[0].comments[0].text == 'Comment content'
-
-    persisted_novel = client.fetch_novel(view.novel.id)
-    assert len(persisted_novel.scenes[0].comments) == 1
-    assert persisted_novel.scenes[0].comments[0].text == 'Comment content'
 
 
 def test_scene_cards_resize(qtbot, filled_window: MainWindow):

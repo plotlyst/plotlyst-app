@@ -27,6 +27,7 @@ from PyQt6.QtGui import QBrush, QColor
 from PyQt6.QtWidgets import QApplication
 from overrides import overrides
 
+from plotlyst.common import ALT_BACKGROUND_COLOR
 from plotlyst.core.domain import Novel, Scene, CharacterArc, Character, \
     SelectionItem, SceneStage, SceneStructureAgenda, ScenePurposeType
 from plotlyst.event.core import emit_event
@@ -78,7 +79,6 @@ class ScenesTableModel(AbstractHorizontalHeaderBasedTableModel, BaseScenesTableM
         _headers[self.ColProgress] = ''
         _headers[self.ColSynopsis] = 'Synopsis'
         super().__init__(_headers, parent)
-        self._relax_colors = False
         self._dragEnabled: bool = True
 
         self._action_icon = IconRegistry.action_scene_icon()
@@ -232,8 +232,6 @@ class ScenesTableModel(AbstractHorizontalHeaderBasedTableModel, BaseScenesTableM
         self.orderChanged.emit()
         return True
 
-    def setRelaxColors(self, enabled: bool):
-        self._relax_colors = enabled
 
 
 class ScenesFilterProxyModel(QSortFilterProxyModel):
@@ -322,13 +320,13 @@ class ScenesStageTableModel(QAbstractTableModel, BaseScenesTableModel):
                 return emoji.emojize(':check_mark:')
         if role == Qt.ItemDataRole.BackgroundRole and index.column() > self.ColNoneStage and self._highlighted_stage:
             if self.novel.stages[index.column() - 2] == self._highlighted_stage:
-                return QBrush(QColor('#c1e0f7'))
+                return QBrush(QColor(ALT_BACKGROUND_COLOR))
         if role == Qt.ItemDataRole.DisplayRole and index.column() == self.ColTitle:
             return self._scene(index).title_or_index(self.novel)
 
     @overrides
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
-        if index.column() == self.ColTitle:
+        if index.column() == self.ColTitle or index.column() == self.ColNoneStage:
             return Qt.ItemFlag.ItemIsEnabled
         return super(ScenesStageTableModel, self).flags(index)
 

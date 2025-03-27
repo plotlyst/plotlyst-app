@@ -150,11 +150,11 @@ class OutlineItemWidget(QWidget):
         if desc is None:
             desc = self._descriptions()[self.item.type]
         self._text.setPlaceholderText(desc)
-        if tooltip is None:
-            tooltip = desc
-        self._btnName.setToolTip(tooltip)
-        self._text.setToolTip(tooltip)
-        self._btnIcon.setToolTip(tooltip)
+        # if tooltip is None:
+        #     tooltip = desc
+        # self._btnName.setToolTip(tooltip)
+        # self._text.setToolTip(tooltip)
+        # self._btnIcon.setToolTip(tooltip)
 
         if name is None:
             name = self.item.type.name
@@ -295,6 +295,8 @@ class OutlineTimelineWidget(QFrame):
             y = 0
             for i, wdg in enumerate(self._beatWidgets):
                 pos: QPoint = wdg.pos()
+                if pos.isNull():
+                    continue
                 pos.setY(pos.y() + wdg.layout().contentsMargins().top())
                 if isinstance(wdg, OutlineItemWidget):
                     pos.setY(pos.y() + wdg.iconFixedSize // 2)

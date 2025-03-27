@@ -27,7 +27,7 @@ from PyQt6.QtGui import QEnterEvent, QIcon, QMouseEvent, QColor, QCursor, QPalet
 from PyQt6.QtWidgets import QWidget, QTextEdit, QPushButton, QLabel, QFrame, QStackedWidget, QGridLayout, \
     QToolButton, QAbstractButton, QScrollArea, QButtonGroup
 from overrides import overrides
-from qthandy import vbox, vspacer, transparent, sp, line, incr_font, hbox, pointy, vline, retain_when_hidden, margins, \
+from qthandy import vbox, vspacer, transparent, sp, line, hbox, pointy, vline, retain_when_hidden, margins, \
     spacer, bold, grid, gc, clear_layout, ask_confirmation, decr_icon, italic, translucent
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
@@ -42,7 +42,7 @@ from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneChangedEvent, NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, NovelPanelCustomizationEvent, \
-    NovelPovTrackingToggleEvent
+    NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import DelayedSignalSlotConnector, action, wrap, label, scrolled, \
     ButtonPressResizeEventFilter, push_btn, tool_btn, insert_before_the_end, fade_out_and_gc
@@ -67,10 +67,8 @@ class SceneMiniEditor(QWidget, EventListener):
         self._currentScene: Optional[Scene] = None
         self._freeze = False
 
-        self._lblScene = QLabel()
-        incr_font(self._lblScene, 2)
+        self._lblScene = label(wordWrap=True)
         self._btnScenes = QPushButton()
-        incr_font(self._btnScenes, 2)
         transparent(self._btnScenes)
         sp(self._btnScenes).h_max()
         sp(self._lblScene).h_max()
@@ -83,18 +81,17 @@ class SceneMiniEditor(QWidget, EventListener):
 
         self._textSynopsis = QTextEdit()
         self._textSynopsis.setProperty('white-bg', True)
-        self._textSynopsis.setProperty('rounded', True)
-        self._textSynopsis.setPlaceholderText('Write a short summary of this scene')
-        self._textSynopsis.setMaximumSize(200, 200)
+        self._textSynopsis.setProperty('large-rounded', True)
+        self._textSynopsis.setMaximumSize(200, 150)
 
         self._layout = vbox(self)
-        self._layout.addWidget(self._charSelector, alignment=Qt.AlignmentFlag.AlignLeft)
-        self._layout.addWidget(self._btnScenes, alignment=Qt.AlignmentFlag.AlignCenter)
-        self._layout.addWidget(self._lblScene, alignment=Qt.AlignmentFlag.AlignCenter)
+        self._layout.addWidget(group(self._charSelector, self._lblScene, self._btnScenes),
+                               alignment=Qt.AlignmentFlag.AlignCenter)
         self._layout.addWidget(line())
-        self._layout.addWidget(label('Synopsis:', underline=True), alignment=Qt.AlignmentFlag.AlignLeft)
         self._layout.addWidget(self._textSynopsis)
         self._layout.addWidget(vspacer())
+
+        self._handle_scenes_organization()
 
         DelayedSignalSlotConnector(self._textSynopsis.textChanged, self._save, parent=self)
 
@@ -102,7 +99,7 @@ class SceneMiniEditor(QWidget, EventListener):
 
         self._repo = RepositoryPersistenceManager.instance()
         dispatcher = event_dispatchers.instance(self._novel)
-        dispatcher.register(self, SceneChangedEvent, NovelPovTrackingToggleEvent)
+        dispatcher.register(self, SceneChangedEvent, NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent)
 
     def setScene(self, scene: Scene):
         self.setScenes([scene])
@@ -155,11 +152,17 @@ class SceneMiniEditor(QWidget, EventListener):
                 self._freeze = False
         elif isinstance(event, NovelPovTrackingToggleEvent):
             self._charSelector.setVisible(event.toggled)
+        elif isinstance(event, NovelScenesOrganizationToggleEvent):
+            self._handle_scenes_organization()
 
     def _povChanged(self, character: Character):
         self._currentScene.pov = character
         self._repo.update_scene(self._currentScene)
         emit_event(self._novel, SceneChangedEvent(self, self._currentScene))
+
+    def _handle_scenes_organization(self):
+        unit = 'scene' if self._novel.prefs.is_scenes_organization() else 'chapter'
+        self._textSynopsis.setPlaceholderText(f'Briefly summarize this {unit}')
 
     def _save(self):
         if self._freeze:

@@ -36,7 +36,6 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR, PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, truncate_string, \
     RELAXED_WHITE_COLOR, IGNORE_CAPITALIZATION_PROPERTY
-from plotlyst.core.domain import Board, Task, TaskStatus
 from plotlyst.env import app_env
 from plotlyst.service.resource import JsonDownloadResult, JsonDownloadWorker
 from plotlyst.view.common import label, set_tab_enabled, push_btn, spin, scroll_area, wrap, frame, shadow, tool_btn, \
@@ -124,187 +123,6 @@ example_patron = Patron('Zsolt', web='https://plotlyst.com', bio='Fantasy Writer
 @dataclass
 class Community:
     patrons: List[Patron]
-
-
-class PlusTaskWidget(QWidget):
-    def __init__(self, task: Task, status: TaskStatus, parent=None, appendLine: bool = True):
-        super().__init__(parent)
-        self.task = task
-        self.status = status
-        vbox(self, 10, spacing=5)
-
-        self.lblStatus = label(self.status.text)
-        self.lblStatus.setStyleSheet(f'''
-            color: {self.status.color_hexa};
-        ''')
-
-        self.lblName = IconText()
-        incr_font(self.lblName, 4)
-        self.lblName.setText(self.task.title)
-        if self.task.icon:
-            self.lblName.setIcon(IconRegistry.from_name(self.task.icon))
-        self.lblDescription = label(self.task.summary, description=True, wordWrap=True)
-        self.lblDescription.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        incr_font(self.lblDescription)
-
-        self._btnOpenInExternal = tool_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'), transparent_=True,
-                                           tooltip='Open in browser')
-        decr_icon(self._btnOpenInExternal, 4)
-        self._btnOpenInExternal.clicked.connect(lambda: open_url(self.task.web_link))
-
-        self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.layout().addWidget(group(self.lblName, self._btnOpenInExternal), alignment=Qt.AlignmentFlag.AlignLeft)
-        self.layout().addWidget(self.lblDescription)
-        if appendLine:
-            self.layout().addWidget(line())
-
-
-class PlusFeaturesWidget(QWidget):
-    DOWNLOAD_THRESHOLD_SECONDS = 60 * 60 * 8  # 8 hours in seconds
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._last_fetched = None
-        self._downloading = False
-        self._board: Optional[Board] = None
-        self._thread_pool = QThreadPool()
-
-        vbox(self)
-
-        self._scroll = scroll_area(frameless=True)
-        self._scroll.setProperty('relaxed-white-bg', True)
-        self.centerWdg = QWidget()
-        self.centerWdg.setProperty('relaxed-white-bg', True)
-        vbox(self.centerWdg, spacing=15)
-        self._scroll.setWidget(self.centerWdg)
-        self.layout().addWidget(self._scroll)
-
-        self.lblLastUpdated = label('', description=True, decr_font_diff=1)
-        self.btnVisitRoadmap = push_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'), transparent_=True,
-                                        text='Visit online roadmap')
-        self.btnVisitRoadmap.clicked.connect(lambda: open_url(
-            'https://plotlyst.featurebase.app/?s=66cd8ba9b3152ae64e027821%2C66cd8ba9b3152ae64e02781f%2C66cd8ba9b3152ae64e027820%2C66cd8ba9b3152ae64e027822&t=66db16cff80243b72d39bcdd'))
-        self.btnVisitRoadmap.installEventFilter(OpacityEventFilter(self.btnVisitRoadmap, enterOpacity=0.7))
-
-        self.wdgTasks = QWidget()
-        vbox(self.wdgTasks)
-
-        self.wdgLoading = QWidget()
-        vbox(self.wdgLoading, 0, 0)
-        self.centerWdg.layout().addWidget(group(self.lblLastUpdated, self.btnVisitRoadmap),
-                                          alignment=Qt.AlignmentFlag.AlignRight)
-        self.centerWdg.layout().addWidget(self.wdgLoading)
-        self.centerWdg.layout().addWidget(self.wdgTasks)
-        self.centerWdg.layout().addWidget(vspacer())
-        self.wdgLoading.setHidden(True)
-
-    @overrides
-    def showEvent(self, event: QShowEvent):
-        super().showEvent(event)
-
-        if self._downloading:
-            return
-
-        if self._last_fetched is None or (
-                datetime.datetime.now() - self._last_fetched).total_seconds() > self.DOWNLOAD_THRESHOLD_SECONDS:
-            self._handle_downloading_status(True)
-            self._download_data()
-
-    def _download_data(self):
-        clear_layout(self.wdgTasks)
-        result = JsonDownloadResult()
-        runnable = JsonDownloadWorker("https://raw.githubusercontent.com/plotlyst/feed/refs/heads/main/plus.json",
-                                      result)
-        result.finished.connect(self._handle_downloaded_data)
-        result.failed.connect(self._handle_download_failure)
-        self._thread_pool.start(runnable)
-
-    def _handle_downloaded_data(self, data):
-        self._board: Board = Board.from_dict(data)
-
-        statuses = {}
-        for status in self._board.statuses:
-            statuses[str(status.id)] = status
-
-        toolbar = QWidget()
-        hbox(toolbar)
-        btnAll = push_btn(IconRegistry.from_name('msc.debug-stackframe-dot'), text='All',
-                          properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
-        btnAll.clicked.connect(self._displayAll)
-        btnAll.setChecked(True)
-        btnPlanned = push_btn(IconRegistry.from_name('fa5.calendar-alt'), text='Planned',
-                              properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
-        btnPlanned.clicked.connect(self._displayPlanned)
-        btnCompleted = push_btn(IconRegistry.from_name('fa5s.check'), text='Completed',
-                                properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
-        btnCompleted.clicked.connect(self._displayCompleted)
-        btnGroup = QButtonGroup(self)
-        btnGroup.addButton(btnAll)
-        btnGroup.addButton(btnPlanned)
-        btnGroup.addButton(btnCompleted)
-
-        self.wdgTasks.layout().addWidget(group(btnAll, vline(), btnPlanned, btnCompleted),
-                                         alignment=Qt.AlignmentFlag.AlignLeft)
-        self.wdgTasks.layout().addWidget(line())
-
-        allCounter = 0
-        plannedCounter = 0
-        completedCounter = 0
-        for i, task in enumerate(self._board.tasks):
-            status = statuses[str(task.status_ref)]
-            wdg = PlusTaskWidget(task, status, appendLine=i < len(self._board.tasks) - 1)
-            self.wdgTasks.layout().addWidget(wdg)
-
-            allCounter += 1
-            if status.text == 'Completed':
-                completedCounter += 1
-            else:
-                plannedCounter += 1
-
-        btnAll.setText(btnAll.text() + f' ({allCounter})')
-        btnPlanned.setText(btnPlanned.text() + f' ({plannedCounter})')
-        btnCompleted.setText(btnCompleted.text() + f' ({completedCounter})')
-
-        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        self.lblLastUpdated.setText(f"Last updated: {now}")
-        self._last_fetched = datetime.datetime.now()
-
-        self._handle_downloading_status(False)
-
-    def _handle_download_failure(self, status_code: int, message: str):
-        if self._board is None:
-            self.lblLastUpdated.setText("Failed to update data.")
-        self._handle_downloading_status(False)
-
-    def _handle_downloading_status(self, loading: bool):
-        self._downloading = loading
-        self.wdgLoading.setVisible(loading)
-        if loading:
-            btn = push_btn(transparent_=True)
-            btn.setIconSize(QSize(128, 128))
-            self.wdgLoading.layout().addWidget(btn,
-                                               alignment=Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
-            spin(btn, PLOTLYST_SECONDARY_COLOR)
-        else:
-            clear_layout(self.wdgLoading)
-
-    def _displayAll(self):
-        for i in range(self.wdgTasks.layout().count()):
-            wdg = self.wdgTasks.layout().itemAt(i).widget()
-            if isinstance(wdg, PlusTaskWidget):
-                wdg.setVisible(True)
-
-    def _displayPlanned(self):
-        for i in range(self.wdgTasks.layout().count()):
-            wdg = self.wdgTasks.layout().itemAt(i).widget()
-            if isinstance(wdg, PlusTaskWidget):
-                wdg.setVisible(wdg.status.text == 'Planned')
-
-    def _displayCompleted(self):
-        for i in range(self.wdgTasks.layout().count()):
-            wdg = self.wdgTasks.layout().itemAt(i).widget()
-            if isinstance(wdg, PlusTaskWidget):
-                wdg.setVisible(wdg.status.text == 'Completed')
 
 
 class GenreCard(Card):
@@ -598,7 +416,7 @@ class PatreonTiersWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         vbox(self)
-        margins(self, bottom=45)
+        margins(self, bottom=15)
 
         self._scroll = scroll_area(frameless=True)
         self._scroll.setProperty('relaxed-white-bg', True)
@@ -613,8 +431,9 @@ class PatreonTiersWidget(QWidget):
 
         title = label('Patreon Tiers', h2=True)
         desc = label(
-            'Plotlyst is an indie project created by a solo developer with a passion for writing and storytelling. Your support makes it possible to keep improving the software and keep it free for everyone. Every tier helps fund future development and allows you to play a key role in shaping the future of Plotlyst.',
+            'Plotlyst is an indie project created by a solo developer with a passion for writing and storytelling.',
             description=True, incr_font_diff=1, wordWrap=True)
+        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         btnPatreon = self._joinButton()
 
         self.centerWdg.layout().addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -629,9 +448,6 @@ class PatreonTiersWidget(QWidget):
             if tier.has_plotlyst_plus:
                 section.btnPlus.clicked.connect(self.showPlus)
 
-        btnPatreon = self._joinButton()
-        self.centerWdg.layout().addWidget(vspacer(max_height=40))
-        self.centerWdg.layout().addWidget(btnPatreon, alignment=Qt.AlignmentFlag.AlignCenter)
         self.centerWdg.layout().addWidget(vspacer())
 
     def _joinButton(self) -> QPushButton:
@@ -925,15 +741,22 @@ class PatronsWidget(QWidget):
 
         self.wdgTopHeader.layout().addWidget(spacer())
         self.wdgTopHeader.layout().addWidget(self.btnAll)
-        self.wdgTopHeader.layout().addWidget(line())
+        self.wdgTopHeader.layout().addWidget(vline())
         self.wdgTopHeader.layout().addWidget(self.btnArtists)
         self.wdgTopHeader.layout().addWidget(self.btnEditors)
         self.wdgTopHeader.layout().addWidget(self.btnContentCreators)
         self.wdgTopHeader.layout().addWidget(spacer())
 
+        self.btnVisitPatreon = push_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'), transparent_=True,
+                                        text='Visit Patreon')
+        self.btnVisitPatreon.clicked.connect(lambda: open_url(
+            'https://patreon.com/user?u=24283978&utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink'))
+        self.btnVisitPatreon.installEventFilter(OpacityEventFilter(self.btnVisitPatreon, enterOpacity=0.7))
+
         self.wdgLoading = QWidget()
         vbox(self.wdgLoading, 0, 0)
-        self.centerWdg.layout().addWidget(self.lblLastUpdated, alignment=Qt.AlignmentFlag.AlignRight)
+        self.centerWdg.layout().addWidget(group(self.lblLastUpdated, self.btnVisitPatreon),
+                                          alignment=Qt.AlignmentFlag.AlignRight)
         self.centerWdg.layout().addWidget(label('The following writers support the development of Plotlyst', h4=True),
                                           alignment=Qt.AlignmentFlag.AlignCenter)
         self.centerWdg.layout().addWidget(self.wdgTopHeader)
@@ -1225,8 +1048,7 @@ class PublishedNovelListWidget(QWidget):
 class PatronRecognitionBuilderPopup(PopupDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.patron = Patron('My name', web='https://plotlyst.com')
-        self.patronVip = Patron('My name', vip=True, web='https://plotlyst.com', novels=[
+        self.patronVip = Patron('My name', vip=True, web='', novels=[
             PatronNovelInfo(''), PatronNovelInfo(''), PatronNovelInfo('')
         ])
 
@@ -1250,9 +1072,10 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         self.tabExport.setProperty('muted-bg', True)
         vbox(self.tabExport, 10, 10)
 
-        self.tabWidget.addTab(self.tabMain, IconRegistry.from_name('fa5s.hand-holding-heart'),
+        self.tabWidget.addTab(self.tabMain, IconRegistry.from_name('mdi.account'),
                               'Basic info')
-        self.tabWidget.addTab(self.tabProfile, IconRegistry.from_name('ri.vip-diamond-fill'), 'VIP Profile')
+        self.tabWidget.addTab(self.tabProfile, IconRegistry.from_name('mdi.badge-account-horizontal-outline'),
+                              'Detailed Profile')
         self.tabWidget.addTab(self.tabExport, IconRegistry.from_name('mdi6.export-variant'), 'Export')
 
         self.textJson = QTextBrowser()
@@ -1333,7 +1156,7 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         self.websiteFrame = self.__framed(self.lineWebsite)
         hintWebsite = HintButton()
         hintWebsite.setHint(
-            'Users will be able to click on your Patron label and visit your website.')
+            'Users will be able to click on your Patron card and visit your website.')
         self.websiteFrame.layout().addWidget(hintWebsite, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.lineBio = self.__lineedit('Bio', iconEditable=False)
@@ -1342,22 +1165,14 @@ class PatronRecognitionBuilderPopup(PopupDialog):
 
         self.wdgPreview = QWidget()
         hbox(self.wdgPreview)
-        self.patronRecognition = PatronRecognitionWidget(self.patron)
-        self.framePatron = self.__framed(self.patronRecognition, margin=5)
         self.patronVipRecognition = PatronRecognitionWidget(self.patronVip)
         self.frameVipPatron = self.__framed(self.patronVipRecognition, margin=5)
-        self.patronLbl = label('Preview:')
-        self.patronVipLbl = label('VIP Preview:')
+        self.patronVipLbl = label('Preview:')
 
         self.wdgPreview.layout().addWidget(spacer())
-        self.wdgPreview.layout().addWidget(self.patronLbl)
-        self.wdgPreview.layout().addWidget(self.framePatron)
         self.wdgPreview.layout().addWidget(self.patronVipLbl)
         self.wdgPreview.layout().addWidget(self.frameVipPatron)
         self.wdgPreview.layout().addWidget(spacer())
-
-        self.patronVipLbl.setHidden(True)
-        self.frameVipPatron.setHidden(True)
 
         self.tabMain.layout().addWidget(self.wdgType)
         self.tabMain.layout().addWidget(self.nameFrame)
@@ -1411,35 +1226,15 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         self.frame.layout().addWidget(self.tabWidget)
         self.frame.layout().addWidget(self.btnCancel, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.tabWidget.currentChanged.connect(self._tabChanged)
-
     def display(self):
         self.exec()
 
-    def _tabChanged(self, index: int):
-        wdg = self.tabWidget.currentWidget()
-        if wdg is self.tabMain:
-            self.patronLbl.setVisible(True)
-            self.framePatron.setVisible(True)
-            self.patronVipLbl.setVisible(False)
-            self.frameVipPatron.setVisible(False)
-        elif wdg is self.tabProfile:
-            self.patronLbl.setVisible(False)
-            self.framePatron.setVisible(False)
-            self.patronVipLbl.setVisible(True)
-            self.frameVipPatron.setVisible(True)
-
     def _nameEdited(self, name: str):
-        self.patron.name = name
         self.patronVip.name = name
-
-        self.patronRecognition.refresh()
         self.patronVipRecognition.refresh()
-
         self._updateJson()
 
     def _genreChanged(self, genre: str):
-        self.patron.genre = genre
         self.patronVip.genre = genre
 
         self._updateJson()
@@ -1456,40 +1251,29 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         else:
             return
 
-        self.patron.profession = profession
         self.patronVip.profession = profession
 
         self._updateJson()
 
     def _iconChanged(self, name: str):
-        self.patron.icon = name
         self.patronVip.icon = name
 
-        self.patronRecognition.refresh()
         self.patronVipRecognition.refresh()
 
         self._updateJson()
 
     def _websiteEdited(self, web: str):
-        self.patron.web = web
         self.patronVip.web = web
-
         self.patronVipRecognition.refresh()
-
         self._updateJson()
 
     def _bioEdited(self, bio: str):
-        self.patron.bio = bio
         self.patronVip.bio = bio
-
         self.patronVipRecognition.refresh()
-
         self._updateJson()
 
     def _descEdited(self, desc: str):
-        self.patron.description = desc
         self.patronVip.description = desc
-
         self._updateJson()
 
     def _socialsChanged(self):
@@ -1504,7 +1288,7 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         self.lblCopied.trigger()
 
     def __lineedit(self, placeholder: str, iconEditable=False) -> DecoratedLineEdit:
-        editor = DecoratedLineEdit(iconEditable=iconEditable, autoAdjustable=False)
+        editor = DecoratedLineEdit(iconEditable=iconEditable, autoAdjustable=False, pickIconColor=False)
         editor.lineEdit.setPlaceholderText(placeholder)
         editor.lineEdit.setMinimumWidth(500)
         incr_font(editor.lineEdit, 3)
@@ -1539,17 +1323,16 @@ class PlotlystPlusWidget(QWidget):
         vbox(self.tabReport, 10, 5)
         self.tabPatreon = QWidget()
         vbox(self.tabPatreon, 10, 5)
-        self.tabPlus = QWidget()
-        vbox(self.tabPlus, 10, 5)
         self.tabPatrons = QWidget()
         vbox(self.tabPatrons, 10, 5)
 
-        self.tabWidget.addTab(self.tabReport, IconRegistry.from_name('mdi.crystal-ball', color_on=PLOTLYST_MAIN_COLOR),
-                              'Vision')
         self.tabWidget.addTab(self.tabPatreon, IconRegistry.from_name('fa5b.patreon', color_on=PLOTLYST_MAIN_COLOR),
                               'Patreon')
-        self.tabWidget.addTab(self.tabPlus, IconRegistry.from_name('mdi.certificate', color_on=PLOTLYST_MAIN_COLOR),
-                              'Plus Features')
+        self.tabWidget.addTab(self.tabReport, IconRegistry.from_name('mdi.crystal-ball', color_on=PLOTLYST_MAIN_COLOR),
+                              'Vision')
+        self.tabWidget.addTab(self.tabPatrons, IconRegistry.from_name('msc.organization', color_on=PLOTLYST_MAIN_COLOR),
+                              'Patrons')
+
         self.layout().addWidget(self.tabWidget)
 
         self.lblVisionLastUpdated = label('', description=True, decr_font_diff=1)
@@ -1557,18 +1340,18 @@ class PlotlystPlusWidget(QWidget):
         vbox(self.wdgLoading, 0, 0)
         self._patreonWdg = PatreonTiersWidget()
         self._patreonWdg.showResults.connect(lambda: self.tabWidget.setCurrentWidget(self.tabReport))
-        self._patreonWdg.showPlus.connect(lambda: self.tabWidget.setCurrentWidget(self.tabPlus))
         self._surveyWdg = SurveyResultsWidget()
         self._surveyWdg.showTiers.connect(lambda: self.tabWidget.setCurrentWidget(self.tabPatreon))
-        self._plusWdg = PlusFeaturesWidget()
 
         self.tabReport.layout().addWidget(self.lblVisionLastUpdated, alignment=Qt.AlignmentFlag.AlignRight)
         self.tabReport.layout().addWidget(self._surveyWdg)
         self.tabReport.layout().addWidget(self.wdgLoading)
         self.wdgLoading.setHidden(True)
 
+        self._patronsWidget = PatronsWidget()
+        self.tabPatrons.layout().addWidget(self._patronsWidget)
+
         self.tabPatreon.layout().addWidget(self._patreonWdg)
-        self.tabPlus.layout().addWidget(self._plusWdg)
 
         self._thread_pool = QThreadPool()
 

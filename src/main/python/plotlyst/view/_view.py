@@ -58,6 +58,7 @@ class AbstractView(QObject, EventListener):
         self._navigable_button_group = group
         for i, btn in enumerate(self._navigable_button_group.buttons()):
             self._navigable_button_group.setId(btn, i)
+            btn.setShortcut(f"{i + 1}")
 
     @overrides
     def event_received(self, event: Event):

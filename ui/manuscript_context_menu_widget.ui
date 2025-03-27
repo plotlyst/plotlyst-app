@@ -6,27 +6,9 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>300</width>
-    <height>767</height>
+    <width>298</width>
+    <height>957</height>
    </rect>
-  </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
-  <property name="minimumSize">
-   <size>
-    <width>200</width>
-    <height>300</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>300</width>
-    <height>16777215</height>
-   </size>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -39,7 +21,7 @@
     <number>0</number>
    </property>
    <property name="leftMargin">
-    <number>2</number>
+    <number>5</number>
    </property>
    <property name="topMargin">
     <number>2</number>
@@ -51,1469 +33,1397 @@
     <number>2</number>
    </property>
    <item>
-    <widget class="QScrollArea" name="scrollArea">
-     <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+    <widget class="QWidget" name="widget" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
-     <property name="horizontalScrollBarPolicy">
-      <enum>Qt::ScrollBarAlwaysOff</enum>
-     </property>
-     <property name="widgetResizable">
-      <bool>true</bool>
-     </property>
-     <property name="transparent" stdset="0">
-      <bool>true</bool>
-     </property>
-     <widget class="QWidget" name="scrollAreaWidgetContents">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>282</width>
-        <height>879</height>
-       </rect>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>3</number>
       </property>
-      <property name="relaxed-white-bg" stdset="0">
-       <bool>true</bool>
+      <property name="leftMargin">
+       <number>0</number>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <property name="spacing">
-        <number>3</number>
-       </property>
-       <property name="leftMargin">
-        <number>2</number>
-       </property>
-       <property name="topMargin">
-        <number>2</number>
-       </property>
-       <property name="rightMargin">
-        <number>2</number>
-       </property>
-       <property name="bottomMargin">
-        <number>2</number>
-       </property>
-       <item>
-        <widget class="QWidget" name="wdgShutDown" native="true">
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <property name="spacing">
-           <number>1</number>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="Emoji" name="label_2">
+          <property name="text">
+           <string/>
           </property>
-          <property name="leftMargin">
-           <number>0</number>
+          <property name="emoji" stdset="0">
+           <string>United_States</string>
           </property>
-          <property name="topMargin">
-           <number>0</number>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>English</string>
           </property>
-          <property name="rightMargin">
-           <number>3</number>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbEnglish">
+          <property name="text">
+           <string>CheckBox</string>
           </property>
-          <property name="bottomMargin">
-           <number>3</number>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
-          <item>
-           <widget class="QLabel" name="lblShutdownHint">
-            <property name="text">
-             <string>To apply a new language, please close this novel first.</string>
-            </property>
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item alignment="Qt::AlignHCenter">
-           <widget class="QPushButton" name="btnShutDown">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="cursor">
-             <cursorShape>PointingHandCursor</cursorShape>
-            </property>
-            <property name="text">
-             <string>Close novel</string>
-            </property>
-            <property name="base" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="highlighted" stdset="0">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="Emoji" name="label_2">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>United_States</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>English</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbEnglish">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout">
-         <property name="leftMargin">
-          <number>10</number>
-         </property>
-         <property name="topMargin">
-          <number>5</number>
-         </property>
-         <property name="bottomMargin">
-          <number>5</number>
-         </property>
-         <property name="spacing">
-          <number>1</number>
-         </property>
-         <item row="0" column="5">
-          <spacer name="horizontalSpacer_30">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>5</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="1" column="1">
-          <widget class="Toggle" name="cbEnglishNewZealand">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item row="1" column="3">
-          <widget class="Toggle" name="cbEnglishAustralian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="Emoji" name="label_11">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>New_Zealand</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="Toggle" name="cbEnglishBritish">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="Toggle" name="cbEnglishCanadian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="Emoji" name="label_50">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>South_Africa</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <widget class="Emoji" name="label_10">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Australia</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="Emoji" name="label_9">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>United_Kingdom</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="Toggle" name="cbEnglishSouthAfrican">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="Emoji" name="label_12">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Canada</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_7"/>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <widget class="Emoji" name="label_5">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Spain</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_6">
-           <property name="text">
-            <string>Spanish</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbSpanish">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_8">
-         <item>
-          <widget class="Emoji" name="label_13">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Portugal</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_14">
-           <property name="text">
-            <string>Portugese</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbPortugese">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_7">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_2">
-         <property name="leftMargin">
-          <number>10</number>
-         </property>
-         <property name="topMargin">
-          <number>5</number>
-         </property>
-         <property name="bottomMargin">
-          <number>5</number>
-         </property>
-         <property name="spacing">
-          <number>1</number>
-         </property>
-         <item row="0" column="1">
-          <widget class="Toggle" name="cbPortugeseBrazil">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="Emoji" name="label_53">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Mozambique</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="Emoji" name="label_51">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Angola</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="Emoji" name="label_52">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Brazil</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="Toggle" name="cbPortugeseAngola">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="Toggle" name="cbPortugeseMozambique">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item row="0" column="5">
-          <spacer name="horizontalSpacer_5">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>5</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <item>
-          <widget class="Emoji" name="label_7">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Germany</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string>German</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbGerman">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_3">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <property name="leftMargin">
-          <number>10</number>
-         </property>
-         <property name="topMargin">
-          <number>5</number>
-         </property>
-         <property name="bottomMargin">
-          <number>5</number>
-         </property>
-         <property name="spacing">
-          <number>1</number>
-         </property>
-         <item row="0" column="2">
-          <widget class="Emoji" name="label_54">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Switzerland</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="4">
-          <spacer name="horizontalSpacer_27">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>5</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="1">
-          <widget class="Toggle" name="cbGermanAustrian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="Emoji" name="label_55">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Austria</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="Toggle" name="cbGermanSwiss">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
-          <widget class="Emoji" name="label_3">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>France</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>French</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbFrench">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_4">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <item>
-          <widget class="Emoji" name="label_15">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>China</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_16">
-           <property name="text">
-            <string>Chinese</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbChinese">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_8">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_9">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QToolButton" name="btnArabicIcon">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="transparent" stdset="0">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_17">
-           <property name="text">
-            <string>Arabic</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbArabic">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_9">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_10">
-         <item>
-          <widget class="Emoji" name="label_18">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Denmark</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_19">
-           <property name="text">
-            <string>Danish</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbDanish">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_10">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_11">
-         <item>
-          <widget class="Emoji" name="label_20">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Netherlands</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_21">
-           <property name="text">
-            <string>Dutch</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbDutch">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_11">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_4">
-         <property name="leftMargin">
-          <number>10</number>
-         </property>
-         <property name="topMargin">
-          <number>5</number>
-         </property>
-         <property name="bottomMargin">
-          <number>5</number>
-         </property>
-         <property name="spacing">
-          <number>1</number>
-         </property>
-         <item row="0" column="0">
-          <widget class="Emoji" name="label_56">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Belgium</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <spacer name="horizontalSpacer_29">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="1">
-          <widget class="Toggle" name="cbDutchBelgian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_12">
-         <item>
-          <widget class="Emoji" name="label_22">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Greece</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_23">
-           <property name="text">
-            <string>Greek</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbGreek">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_12">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_13">
-         <item>
-          <widget class="Emoji" name="label_24">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Ireland</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_25">
-           <property name="text">
-            <string>Irish</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbIrish">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_13">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_14">
-         <item>
-          <widget class="Emoji" name="label_26">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Italy</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_27">
-           <property name="text">
-            <string>Italian</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbItalian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_14">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_15">
-         <item>
-          <widget class="Emoji" name="label_28">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Japan</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_29">
-           <property name="text">
-            <string>Japanese</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbJapanese">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_15">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_16">
-         <item>
-          <widget class="Emoji" name="label_30">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Norway</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_31">
-           <property name="text">
-            <string>Norwegian</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbNorwegian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_16">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_17">
-         <item>
-          <widget class="Emoji" name="label_32">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Iran</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_33">
-           <property name="text">
-            <string>Persian</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbPersian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_17">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_18">
-         <item>
-          <widget class="Emoji" name="label_34">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Poland</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_35">
-           <property name="text">
-            <string>Polish</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbPolish">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_18">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_19">
-         <item>
-          <widget class="Emoji" name="label_36">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Romania</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_37">
-           <property name="text">
-            <string>Romanian</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbRomanian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_19">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_20">
-         <item>
-          <widget class="Emoji" name="label_38">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Russia</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_39">
-           <property name="text">
-            <string>Russian</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbRussian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_20">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_21">
-         <item>
-          <widget class="Emoji" name="label_40">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Slovakia</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_41">
-           <property name="text">
-            <string>Slovak</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbSlovak">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_21">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_22">
-         <item>
-          <widget class="Emoji" name="label_42">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Slovenia</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_43">
-           <property name="text">
-            <string>Slovenian</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbSlovenian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_22">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_23">
-         <item>
-          <widget class="Emoji" name="label_44">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Sweden</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_45">
-           <property name="text">
-            <string>Swedish</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbSwedish">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_23">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_24">
-         <item>
-          <widget class="Emoji" name="label_46">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Philippines</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_47">
-           <property name="text">
-            <string>Tagalog</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbTagalog">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_24">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_25">
-         <item>
-          <widget class="Emoji" name="label_48">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="emoji" stdset="0">
-            <string>Ukraine</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_49">
-           <property name="text">
-            <string>Ukrainian</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Toggle" name="cbUkrainian">
-           <property name="text">
-            <string>CheckBox</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">btnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_25">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <property name="leftMargin">
+         <number>10</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item row="2" column="0">
+         <widget class="Emoji" name="label_50">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>South_Africa</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="Toggle" name="cbEnglishBritish">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <widget class="Toggle" name="cbEnglishAustralian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="Toggle" name="cbEnglishNewZealand">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="Emoji" name="label_10">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Australia</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="Emoji" name="label_11">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>New_Zealand</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="Emoji" name="label_12">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Canada</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="Toggle" name="cbEnglishSouthAfrican">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="Emoji" name="label_9">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>United_Kingdom</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="Toggle" name="cbEnglishCanadian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="0" column="5">
+         <spacer name="horizontalSpacer_30">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>5</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_7"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="Emoji" name="label_5">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Spain</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Spanish</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbSpanish">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <item>
+         <widget class="Emoji" name="label_13">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Portugal</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_14">
+          <property name="text">
+           <string>Portugese</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbPortugese">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_7">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <property name="leftMargin">
+         <number>10</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item row="0" column="1">
+         <widget class="Toggle" name="cbPortugeseBrazil">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="Emoji" name="label_53">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Mozambique</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="Emoji" name="label_51">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Angola</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="Emoji" name="label_52">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Brazil</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="Toggle" name="cbPortugeseAngola">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="Toggle" name="cbPortugeseMozambique">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="0" column="5">
+         <spacer name="horizontalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>5</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="Emoji" name="label_7">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Germany</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>German</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbGerman">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <property name="leftMargin">
+         <number>10</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item row="0" column="2">
+         <widget class="Emoji" name="label_54">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Switzerland</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="4">
+         <spacer name="horizontalSpacer_27">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>5</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="1">
+         <widget class="Toggle" name="cbGermanAustrian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="Emoji" name="label_55">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Austria</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="Toggle" name="cbGermanSwiss">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="Emoji" name="label_3">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>France</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>French</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbFrench">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="Emoji" name="label_15">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>China</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_16">
+          <property name="text">
+           <string>Chinese</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbChinese">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_8">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_9">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QToolButton" name="btnArabicIcon">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="transparent" stdset="0">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_17">
+          <property name="text">
+           <string>Arabic</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbArabic">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_9">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_10">
+        <item>
+         <widget class="Emoji" name="label_18">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Denmark</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_19">
+          <property name="text">
+           <string>Danish</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbDanish">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_10">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_11">
+        <item>
+         <widget class="Emoji" name="label_20">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Netherlands</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_21">
+          <property name="text">
+           <string>Dutch</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbDutch">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_11">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <property name="leftMargin">
+         <number>10</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item row="0" column="0">
+         <widget class="Emoji" name="label_56">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Belgium</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <spacer name="horizontalSpacer_29">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="1">
+         <widget class="Toggle" name="cbDutchBelgian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_12">
+        <item>
+         <widget class="Emoji" name="label_22">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Greece</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_23">
+          <property name="text">
+           <string>Greek</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbGreek">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_12">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_13">
+        <item>
+         <widget class="Emoji" name="label_24">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Ireland</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_25">
+          <property name="text">
+           <string>Irish</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbIrish">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_13">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_14">
+        <item>
+         <widget class="Emoji" name="label_26">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Italy</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_27">
+          <property name="text">
+           <string>Italian</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbItalian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_14">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_15">
+        <item>
+         <widget class="Emoji" name="label_28">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Japan</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_29">
+          <property name="text">
+           <string>Japanese</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbJapanese">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_15">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_16">
+        <item>
+         <widget class="Emoji" name="label_30">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Norway</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_31">
+          <property name="text">
+           <string>Norwegian</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbNorwegian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_16">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_17">
+        <item>
+         <widget class="Emoji" name="label_32">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Iran</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_33">
+          <property name="text">
+           <string>Persian</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbPersian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_17">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_18">
+        <item>
+         <widget class="Emoji" name="label_34">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Poland</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_35">
+          <property name="text">
+           <string>Polish</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbPolish">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_18">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_19">
+        <item>
+         <widget class="Emoji" name="label_36">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Romania</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_37">
+          <property name="text">
+           <string>Romanian</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbRomanian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_19">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_20">
+        <item>
+         <widget class="Emoji" name="label_38">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Russia</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_39">
+          <property name="text">
+           <string>Russian</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbRussian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_20">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_21">
+        <item>
+         <widget class="Emoji" name="label_40">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Slovakia</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_41">
+          <property name="text">
+           <string>Slovak</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbSlovak">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_21">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_22">
+        <item>
+         <widget class="Emoji" name="label_42">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Slovenia</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_43">
+          <property name="text">
+           <string>Slovenian</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbSlovenian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_22">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_23">
+        <item>
+         <widget class="Emoji" name="label_44">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Sweden</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_45">
+          <property name="text">
+           <string>Swedish</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbSwedish">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_23">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_24">
+        <item>
+         <widget class="Emoji" name="label_46">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Philippines</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_47">
+          <property name="text">
+           <string>Tagalog</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbTagalog">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_24">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_25">
+        <item>
+         <widget class="Emoji" name="label_48">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="emoji" stdset="0">
+           <string>Ukraine</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_49">
+          <property name="text">
+           <string>Ukrainian</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="cbUkrainian">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_25">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>10</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>
@@ -1533,6 +1443,6 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="btnGroup"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

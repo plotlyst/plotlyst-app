@@ -17,27 +17,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import random
 from enum import Enum
 from functools import partial
-from typing import Optional, List
+from typing import Optional
 
 from PyQt6 import QtGui
-from PyQt6.QtCore import Qt, QSize, QObject, QEvent, QPoint, QRect, pyqtSignal, QThreadPool
-from PyQt6.QtGui import QPixmap, QIcon, QPainter, QImage
-from PyQt6.QtNetwork import QNetworkAccessManager
-from PyQt6.QtWidgets import QDialog, QToolButton, QPushButton, QApplication
+from PyQt6.QtCore import Qt, QSize, QEvent, QPoint, QRect, pyqtSignal
+from PyQt6.QtGui import QPixmap, QIcon, QPainter
+from PyQt6.QtWidgets import QDialog, QToolButton, QPushButton, QApplication, QWidget
 from overrides import overrides
-from qthandy import FlowLayout, bold, underline
-from qthandy.filter import InstantTooltipEventFilter
+from qthandy import line, hbox, translucent, decr_icon
 
-from plotlyst.env import app_env
-from plotlyst.service.resource import JsonDownloadWorker, JsonDownloadResult, ImageDownloadResult, \
-    ImagesDownloadWorker
-from plotlyst.view.common import rounded_pixmap, open_url, calculate_resized_dimensions
-from plotlyst.view.generated.artbreeder_picker_dialog_ui import Ui_ArtbreederPickerDialog
-from plotlyst.view.generated.image_crop_dialog_ui import Ui_ImageCropDialog
+from plotlyst.common import PLOTLYST_TERTIARY_COLOR
+from plotlyst.view.common import rounded_pixmap, calculate_resized_dimensions, label, push_btn, restyle, tool_btn
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.layout import group
+from plotlyst.view.widget.display import PopupDialog
 
 
 class _AvatarButton(QToolButton):
@@ -51,101 +46,6 @@ class _AvatarButton(QToolButton):
                                          Qt.TransformationMode.SmoothTransformation)))
 
 
-class ArtbreederDialog(QDialog, Ui_ArtbreederPickerDialog):
-
-    def __init__(self, parent=None):
-        super(ArtbreederDialog, self).__init__(parent)
-        self.setupUi(self)
-        self.wdgPictures.setLayout(FlowLayout(spacing=4))
-        self.btnLicense.setIcon(IconRegistry.from_name('fa5b.creative-commons'))
-        self.btnLicense.installEventFilter(InstantTooltipEventFilter(self.btnLicense))
-        self._pixmap: Optional[QPixmap] = None
-        self._step = 0
-        self._step_size: int = 10 if app_env.test_env() else 50
-        self.urls = []
-        self.manager = QNetworkAccessManager()
-        self.resize(740, 500)
-        self.setMinimumSize(250, 250)
-        self.scrollArea.verticalScrollBar().valueChanged.connect(self._scrolled)
-        self.btnVisit.setIcon(IconRegistry.from_name('fa5s.external-link-alt', 'white'))
-        self.btnVisit.clicked.connect(lambda: open_url('https://www.artbreeder.com/'))
-
-        self._threadpool = QThreadPool(self)
-        self._runnables: List[ImagesDownloadWorker] = []
-
-    def display(self) -> Optional[QPixmap]:
-        self._step = 0
-        self.fetch()
-        result = self.exec()
-        if self._threadpool.activeThreadCount() > 1:
-            for runnable in self._runnables:
-                runnable.stop()
-        self._threadpool.clear()
-        if result == QDialog.DialogCode.Accepted:
-            return self._pixmap
-
-    def fetch(self):
-        def _listFetched(jsonResult):
-            self.urls = jsonResult
-            random.shuffle(self.urls)
-            self._loadImages()
-
-        result = JsonDownloadResult()
-        result.finished.connect(_listFetched)
-        runner = JsonDownloadWorker(
-            'https://raw.githubusercontent.com/plotlyst/artbreeder-scraper/main/resources/artbreeder/portraits.json',
-            result)
-        runner.setAutoDelete(True)
-        self._threadpool.start(runner)
-
-    @overrides
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if isinstance(watched, QToolButton):
-            if event.type() == QEvent.Type.Enter:
-                watched.setStyleSheet('border: 2px dashed darkBlue;')
-            elif event.type() == QEvent.Type.Leave:
-                watched.setStyleSheet('border: 1px solid black;')
-
-        return super(ArtbreederDialog, self).eventFilter(watched, event)
-
-    def _loadImages(self):
-        def downloadImages(urls_list: List[str]):
-            result = ImageDownloadResult()
-            result.downloaded.connect(self._imageDownloaded)
-            runner = ImagesDownloadWorker(urls_list, result)
-            runner.setAutoDelete(True)
-            self._runnables.append(runner)
-            self._threadpool.start(runner)
-
-        if self._step + self._step_size >= len(self.urls):
-            return
-
-        self._runnables.clear()
-
-        urls = self.urls[self._step:self._step + self._step_size]
-        half = len(urls) // 2
-        downloadImages(urls[:half])
-        downloadImages(urls[half:])
-
-        self._step += self._step_size
-
-    def _imageDownloaded(self, image: QImage):
-        pixmap = QPixmap.fromImage(image)
-        btn = _AvatarButton(pixmap)
-        btn.clicked.connect(partial(self._selected, btn))
-        btn.installEventFilter(self)
-        self.wdgPictures.layout().addWidget(btn)
-
-    def _selected(self, btn: _AvatarButton):
-        self._pixmap = btn.pixmap
-        self.accept()
-
-    def _scrolled(self, value: int):
-        if value == self.scrollArea.verticalScrollBar().maximum():
-            if self._threadpool.activeThreadCount() == 0:
-                self._loadImages()
-
-
 class Corner(Enum):
     TopLeft = 0
     TopRight = 1
@@ -153,39 +53,59 @@ class Corner(Enum):
     BottomLeft = 3
 
 
-class ImageCropDialog(QDialog, Ui_ImageCropDialog):
-    def __init__(self, parent=None):
-        super(ImageCropDialog, self).__init__(parent)
-        self.setupUi(self)
-
-        bold(self.lblPreviewTitle)
-        underline(self.lblPreviewTitle)
-        self.frame = self.CropFrame(self.lblImage)
-        self.frame.cropped.connect(self._updatePreview)
-        self.scaled = None
+class ImageCropDialog(PopupDialog):
+    def __init__(self, pixmap: QPixmap, parent=None):
+        super().__init__(parent)
+        self._pixmap = pixmap
         self.cropped = None
+        self.lblPreview = label()
+        self.lblImage = label()
 
-    def display(self, pixmap: QPixmap) -> Optional[QPixmap]:
-        w, h = calculate_resized_dimensions(pixmap.width(), pixmap.height(), max_size=512)
-
-        self.frame.setFixedSize(min(w, h), min(w, h))
+        self._cropFrame = self.CropFrame(self.lblImage)
+        w, h = calculate_resized_dimensions(pixmap.width(), pixmap.height(), max_size=300)
+        self._cropFrame.setGeometry(1, 1, w - 2, h - 2)
+        self._cropFrame.setFixedSize(min(w - 2, h - 2), min(w - 2, h - 2))
         self.scaled = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio,
                                     Qt.TransformationMode.SmoothTransformation)
         self.lblImage.setPixmap(self.scaled)
+
+        wdgFrameColors = QWidget()
+        hbox(wdgFrameColors, 0)
+        for color in ['#d90429', '#3a5a40', '#0077b6', PLOTLYST_TERTIARY_COLOR]:
+            btn = tool_btn(IconRegistry.from_name('mdi.crop-free', color=color), transparent_=True)
+            translucent(btn, 0.7)
+            decr_icon(btn, 4)
+            btn.clicked.connect(partial(self._cropFrame.setColor, color))
+            wdgFrameColors.layout().addWidget(btn)
+
+        self.btnConfirm = push_btn(text='Confirm', properties=['confirm', 'positive'])
+        self.btnConfirm.clicked.connect(self.accept)
+        self.btnCancel = push_btn(text='Cancel', properties=['confirm', 'cancel'])
+        self.btnCancel.clicked.connect(self.reject)
+
+        self.frame.layout().addWidget(label('Crop image', h4=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.lblPreview, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(line())
+        self.frame.layout().addWidget(wdgFrameColors, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.lblImage, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm), alignment=Qt.AlignmentFlag.AlignRight)
+
+        self._cropFrame.cropped.connect(self._updatePreview)
+
+    def display(self) -> Optional[QPixmap]:
         self._updatePreview()
         result = self.exec()
-        QApplication.restoreOverrideCursor()
         if result == QDialog.DialogCode.Accepted:
             return self.cropped
 
     def _updatePreview(self):
-        self.cropped = QPixmap(self.frame.width(), self.frame.height())
+        self.cropped = QPixmap(self._cropFrame.width(), self._cropFrame.height())
 
         painter = QPainter(self.cropped)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         cropped_rect = self.scaled.rect()
-        cropped_rect.setX(self.frame.pos().x())
-        cropped_rect.setY(self.frame.pos().y())
+        cropped_rect.setX(self._cropFrame.pos().x())
+        cropped_rect.setY(self._cropFrame.pos().y())
         cropped_rect.setWidth(self.cropped.width())
         cropped_rect.setHeight(self.cropped.height())
         painter.drawPixmap(self.cropped.rect(), self.scaled, cropped_rect)
@@ -198,14 +118,19 @@ class ImageCropDialog(QDialog, Ui_ImageCropDialog):
     class CropFrame(QPushButton):
         cropped = pyqtSignal()
         cornerRange: int = 15
+        minSize: int = 20
 
         def __init__(self, parent):
             super().__init__(parent)
-            self.setStyleSheet('QPushButton {border: 3px dashed red;}')
+            self.setStyleSheet(f'QPushButton {{border: 3px dashed {PLOTLYST_TERTIARY_COLOR};}}')
             self.setMouseTracking(True)
             self._pressedPoint: Optional[QPoint] = None
             self._resizeCorner: Optional[Corner] = None
             self._originalSize: QRect = self.geometry()
+
+        def setColor(self, color: str):
+            self.setStyleSheet(f'QPushButton {{border: 3px dashed {color};}}')
+            restyle(self)
 
         @overrides
         def enterEvent(self, event: QEvent) -> None:
@@ -217,18 +142,37 @@ class ImageCropDialog(QDialog, Ui_ImageCropDialog):
             if self._pressedPoint:
                 x_diff = event.pos().x() - self._pressedPoint.x()
                 y_diff = event.pos().y() - self._pressedPoint.y()
+                parent_rect = self.parent().rect()
+
                 if self._resizeCorner == Corner.TopLeft:
-                    self.setGeometry(self.geometry().x() + x_diff, self.geometry().y() + y_diff, self.width(),
-                                     self.height())
-                    self.setFixedSize(self.geometry().width() - x_diff, self.geometry().height() - y_diff)
+                    new_size = max(self.geometry().width() - x_diff, self.geometry().height() - y_diff)
+                    new_size = max(new_size, self.minSize)
+                    new_x = max(self.geometry().x() + (self.geometry().width() - new_size), 0)
+                    new_y = max(self.geometry().y() + (self.geometry().height() - new_size), 0)
+                    if new_x and new_y:
+                        self.setGeometry(new_x, new_y, new_size, new_size)
+                        self.setFixedSize(new_size, new_size)
                 elif self._resizeCorner == Corner.TopRight:
-                    self.setGeometry(self.geometry().x(), self.geometry().y() + y_diff, self.width(), self.height())
-                    self.setFixedSize(self._originalSize.width() + x_diff, self.geometry().height() - y_diff)
+                    new_size = max(self._originalSize.width() + x_diff, self.geometry().height() - y_diff)
+                    new_size = max(new_size, self.minSize)
+                    new_x = self.geometry().x()
+                    new_y = max(self.geometry().y() + (self.geometry().height() - new_size), 0)
+                    if new_y and new_x + new_size < parent_rect.width():
+                        self.setGeometry(new_x, new_y, new_size, new_size)
+                        self.setFixedSize(new_size, new_size)
                 elif self._resizeCorner == Corner.BottomRight:
-                    self.setFixedSize(self._originalSize.width() + x_diff, self._originalSize.height() + y_diff)
+                    size_diff = min(self._originalSize.width() + x_diff, self._originalSize.height() + y_diff)
+                    new_size = max(min(size_diff, parent_rect.right() - self.geometry().x(),
+                                       parent_rect.bottom() - self.geometry().y()), self.minSize)
+                    self.setFixedSize(new_size, new_size)
                 elif self._resizeCorner == Corner.BottomLeft:
-                    self.setGeometry(self.geometry().x() + x_diff, self.geometry().y(), self.width(), self.height())
-                    self.setFixedSize(self.geometry().width() - x_diff, self._originalSize.height() + y_diff)
+                    new_size = max(self.geometry().width() - x_diff, self._originalSize.height() + y_diff)
+                    new_size = max(new_size, self.minSize)
+                    new_x = max(self.geometry().x() + (self.geometry().width() - new_size), 0)
+                    new_y = self.geometry().y()
+                    if new_x and new_y:
+                        self.setGeometry(new_x, new_y, new_size, new_size)
+                        self.setFixedSize(new_size, new_size)
                 else:
                     if self._xMovementAllowed(x_diff):
                         self.setGeometry(self.geometry().x() + x_diff, self.geometry().y(), self.width(), self.height())

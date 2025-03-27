@@ -35,6 +35,7 @@ from qtmenu import MenuWidget
 from plotlyst.common import act_color, PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Character, Scene, Novel, NovelSetting, CardSizeRatio, NovelDescriptor, LayoutType
 from plotlyst.core.help import enneagram_help, mbti_help
+from plotlyst.env import app_env
 from plotlyst.service.cache import acts_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import fade, fade_in, fade_out, tool_btn, push_btn, action
@@ -57,6 +58,7 @@ class Card(QFrame):
     selected = pyqtSignal()
     doubleClicked = pyqtSignal()
     cursorEntered = pyqtSignal()
+    cursorLeft = pyqtSignal()
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -87,6 +89,7 @@ class Card(QFrame):
             color.setAlpha(175)
             qtanim.glow(self, color=color, radius=0, startRadius=12, reverseAnimation=False,
                         teardown=lambda: self.setGraphicsEffect(None))
+            self.cursorLeft.emit()
 
     @overrides
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
@@ -220,8 +223,11 @@ class SceneCard(Ui_SceneCard, Card):
 
         self._stageVisible = self.novel.prefs.toggled(NovelSetting.SCENE_CARD_STAGE)
         self.btnPov.setVisible(self.novel.prefs.toggled(NovelSetting.SCENE_CARD_POV))
-        self.lblType.setVisible(self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PURPOSE))
-        self.btnPlotProgress.setVisible(self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PLOT_PROGRESS))
+        self.lblType.setVisible(
+            self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PURPOSE, default=False) and app_env.profile().get('scene-purpose', False))
+        self.btnPlotProgress.setVisible(
+            self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PLOT_PROGRESS) and app_env.profile().get(
+                'scene-progression', False))
 
         incr_icon(self.btnPlotProgress, 4)
 
@@ -273,8 +279,7 @@ class SceneCard(Ui_SceneCard, Card):
         beat = self.scene.beat(self.novel)
         if beat:
             icon = beat.icon if beat.icon else f'ri.number-{beat.seq}'
-            self.btnBeat.setIcon(IconRegistry.scene_beat_badge_icon(icon, beat.icon_color, act_color(beat.act,
-                                                                                                     self.novel.active_story_structure.acts)))
+            self.btnBeat.setIcon(IconRegistry.scene_beat_badge_icon(icon, beat.icon_color, beat.icon_color))
             self.btnBeat.setToolTip(beat.text)
             self.btnBeat.setVisible(True)
         else:
@@ -509,6 +514,7 @@ class SceneCardFilter(CardFilter):
 class CardsView(QFrame):
     cardSelected = pyqtSignal(Card)
     cardEntered = pyqtSignal(Card)
+    cardLeft = pyqtSignal(Card)
     cardDoubleClicked = pyqtSignal(Card)
     cardCustomContextMenuRequested = pyqtSignal(Card, QPoint)
     orderChanged = pyqtSignal(list, Card)  # dropped Card
@@ -521,6 +527,7 @@ class CardsView(QFrame):
         self._spacing = spacing
         if layoutType == LayoutType.FLOW:
             self._layout = flow(self, self._margin, self._spacing)
+            margins(self, left=15, top=15)
         elif layoutType == LayoutType.VERTICAL:
             self._layout = vbox(self, self._margin, self._spacing)
         elif layoutType == LayoutType.HORIZONTAL:
@@ -660,6 +667,7 @@ class CardsView(QFrame):
         card.selected.connect(lambda: self._cardSelected(card))
         card.doubleClicked.connect(lambda: self.cardDoubleClicked.emit(card))
         card.cursorEntered.connect(lambda: self.cardEntered.emit(card))
+        card.cursorLeft.connect(lambda: self.cardLeft.emit(card))
         card.customContextMenuRequested.connect(partial(self.cardCustomContextMenuRequested.emit, card))
         card.installEventFilter(DropEventFilter(card, [card.mimeType()], motionDetection=Qt.Orientation.Horizontal,
                                                 motionSlot=partial(self._dragMoved, card),

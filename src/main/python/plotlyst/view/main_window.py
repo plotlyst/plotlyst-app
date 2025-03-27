@@ -27,14 +27,15 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QApplication, QLineEdit, QText
     QProgressDialog, QAbstractButton
 from fbs_runtime import platform
 from overrides import overrides
-from qthandy import spacer, busy, gc, pointy, decr_icon, translucent
+from qthandy import spacer, busy, gc, pointy, decr_icon
 from qthandy.filter import InstantTooltipEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 from qttextedit.ops import DEFAULT_FONT_FAMILIES
 from textstat import textstat
 
 from plotlyst.common import NAV_BAR_BUTTON_DEFAULT_COLOR, \
-    NAV_BAR_BUTTON_CHECKED_COLOR, PLOTLYST_MAIN_COLOR
+    NAV_BAR_BUTTON_CHECKED_COLOR, PLOTLYST_MAIN_COLOR, PLACEHOLDER_TEXT_COLOR, PLOTLYST_TERTIARY_COLOR, BLACK_COLOR, \
+    DEFAULT_PREMIUM_LINK
 from plotlyst.core.client import client
 from plotlyst.core.domain import Novel, NovelPanel, ScenesView, NovelSetting, NovelDescriptor
 from plotlyst.core.text import sentence_count
@@ -46,7 +47,7 @@ from plotlyst.event.handler import EventLogHandler, global_event_dispatcher, eve
 from plotlyst.events import NovelDeletedEvent, \
     NovelUpdatedEvent, OpenDistractionFreeMode, ExitDistractionFreeMode, CloseNovelEvent, NovelPanelCustomizationEvent, \
     NovelWorldBuildingToggleEvent, NovelCharactersToggleEvent, NovelScenesToggleEvent, NovelDocumentsToggleEvent, \
-    NovelManagementToggleEvent, NovelManuscriptToggleEvent
+    NovelManagementToggleEvent, NovelManuscriptToggleEvent, SocialSnapshotRequested, SelectNovelEvent, ShowRoadmapEvent
 from plotlyst.resources import resource_manager, ResourceType, ResourceDownloadedEvent
 from plotlyst.service.cache import acts_registry, entities_registry
 from plotlyst.service.common import try_shutdown_to_apply_change
@@ -56,16 +57,17 @@ from plotlyst.service.importer import ScrivenerSyncImporter
 from plotlyst.service.migration import migrate_novel
 from plotlyst.service.persistence import RepositoryPersistenceManager, flush_or_fail
 from plotlyst.service.resource import download_resource, download_nltk_resources, ResourceManagerDialog
+from plotlyst.service.snapshot import SocialSnapshotPopup
 from plotlyst.service.tour import TourService
 from plotlyst.settings import settings
 from plotlyst.view._view import AbstractView
 from plotlyst.view.board_view import BoardView
 from plotlyst.view.characters_view import CharactersView
-from plotlyst.view.comments_view import CommentsView
 from plotlyst.view.common import TooltipPositionEventFilter, ButtonPressResizeEventFilter, open_url, action
 from plotlyst.view.dialog.about import AboutDialog
 from plotlyst.view.dialog.novel import DetachedWindow
 from plotlyst.view.docs_view import DocumentsView
+from plotlyst.view.formating_view import FormattingView
 from plotlyst.view.generated.main_window_ui import Ui_MainWindow
 from plotlyst.view.home_view import HomeView
 from plotlyst.view.icons import IconRegistry
@@ -80,7 +82,7 @@ from plotlyst.view.widget.input import CapitalizationEventFilter
 from plotlyst.view.widget.labels import SeriesLabel
 from plotlyst.view.widget.log import LogsPopup
 from plotlyst.view.widget.patron import PatronRecognitionBuilderPopup
-from plotlyst.view.widget.settings import NovelQuickPanelCustomizationButton
+from plotlyst.view.widget.productivity import ProductivityButton
 from plotlyst.view.widget.tour.core import TutorialNovelOpenTourEvent, tutorial_novel, \
     TutorialNovelCloseTourEvent, NovelTopLevelButtonTourEvent, HomeTopLevelButtonTourEvent, NovelEditorDisplayTourEvent, \
     AllNovelViewsTourEvent, GeneralNovelViewTourEvent, CharacterViewTourEvent, ScenesViewTourEvent, \
@@ -100,15 +102,19 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         if app_env.is_prod():
             self.setWindowState(Qt.WindowState.WindowMaximized)
 
+        self.setWindowTitle(app_env.profile().get('title', 'Plotlyst'))
         self._detached_windows: List[DetachedWindow] = []
 
         palette = QApplication.palette()
-        palette.setColor(QPalette.ColorGroup.Active, QPalette.ColorRole.WindowText, QColor('#040406'))
-        palette.setColor(QPalette.ColorGroup.Active, QPalette.ColorRole.ButtonText, QColor('#040406'))
-        palette.setColor(QPalette.ColorGroup.Active, QPalette.ColorRole.Text, QColor('#040406'))
+        palette.setColor(QPalette.ColorGroup.Active, QPalette.ColorRole.WindowText, QColor(BLACK_COLOR))
+        palette.setColor(QPalette.ColorGroup.Active, QPalette.ColorRole.ButtonText, QColor(BLACK_COLOR))
+        palette.setColor(QPalette.ColorGroup.Active, QPalette.ColorRole.Text, QColor(BLACK_COLOR))
         palette.setColor(QPalette.ColorRole.ToolTipText, QColor(PLOTLYST_MAIN_COLOR))
-        palette.setColor(QPalette.ColorRole.PlaceholderText, QColor('#5E6C84'))
+        palette.setColor(QPalette.ColorRole.PlaceholderText, QColor(PLACEHOLDER_TEXT_COLOR))
         palette.setColor(QPalette.ColorRole.Window, QColor(BG_PRIMARY_COLOR))
+        palette.setColor(QPalette.ColorGroup.Active, QPalette.ColorRole.Highlight, QColor(PLOTLYST_TERTIARY_COLOR))
+        palette.setColor(QPalette.ColorGroup.Active, QPalette.ColorRole.HighlightedText,
+                         QColor(BLACK_COLOR))
         QApplication.setPalette(palette)
 
         if app_env.is_mac():
@@ -121,7 +127,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self._actionNovelEditor: Optional[QAction] = None
         self._actionScrivener: Optional[QAction] = None
         self._actionSeries: Optional[QAction] = None
-        self._actionSettings: Optional[QAction] = None
+        self._actionProgress: Optional[QAction] = None
         last_novel_id = settings.last_novel_id()
         if last_novel_id is not None:
             has_novel = client.has_novel(last_novel_id)
@@ -159,6 +165,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.btnManuscript.setIcon(
             IconRegistry.manuscript_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.btnReports.setIcon(IconRegistry.reports_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
+        self.btnFormatting.setIcon(IconRegistry.formatting_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.btnSettingsLink.setIcon(IconRegistry.cog_icon(color=NAV_BAR_BUTTON_DEFAULT_COLOR))
         self.btnSettingsLink.installEventFilter(ButtonPressResizeEventFilter(self.btnSettingsLink))
         self.btnSettingsLink.installEventFilter(OpacityEventFilter(self.btnSettingsLink, leaveOpacity=0.6))
@@ -167,6 +174,10 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.btnKbLink.installEventFilter(ButtonPressResizeEventFilter(self.btnKbLink))
         self.btnKbLink.installEventFilter(OpacityEventFilter(self.btnKbLink, leaveOpacity=0.6))
         self.btnKbLink.clicked.connect(self._kb_link_clicked)
+
+        self.btnFormatting.setDisabled(True)
+        self.btnFormatting.setHidden(True)
+        self.buttonGroup.removeButton(self.btnFormatting)
 
         for btn in self.buttonGroup.buttons():
             btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.7, ignoreCheckedButton=True))
@@ -185,7 +196,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
                                          GeneralNovelViewTourEvent,
                                          CharacterViewTourEvent, ScenesViewTourEvent, DocumentsViewTourEvent,
                                          ManuscriptViewTourEvent, AnalysisViewTourEvent, BoardViewTourEvent,
-                                         CloseNovelEvent)
+                                         CloseNovelEvent, SelectNovelEvent, ShowRoadmapEvent)
 
         self._init_views()
 
@@ -298,6 +309,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
                 self.novel.title = event.novel.title
                 self.novel.icon = event.novel.icon
                 self.novel.icon_color = event.novel.icon_color
+                self.novel.subtitle = event.novel.subtitle
                 self.novel.parent = event.novel.parent
                 self.outline_mode.setText(self.novel.title)
                 if self.novel.icon:
@@ -315,7 +327,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             elif self.novel and self.novel.parent == event.novel.id:
                 self.seriesLabel.setSeries(event.novel)
 
-
         elif isinstance(event, OpenDistractionFreeMode):
             self.btnComments.setChecked(False)
             self._toggle_fullscreen(on=True)
@@ -331,6 +342,14 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         elif isinstance(event, TutorialNovelCloseTourEvent):
             if self.novel and self.novel.tutorial:
                 self.close_novel()
+        elif isinstance(event, SocialSnapshotRequested):
+            SocialSnapshotPopup.popup(self.novel, event.snapshotType)
+        elif isinstance(event, SelectNovelEvent):
+            self.home_mode.setChecked(True)
+            self.home_view.selectNovel(event.novel)
+        elif isinstance(event, ShowRoadmapEvent):
+            self.home_mode.setChecked(True)
+            self.home_view.showRoadmap()
         elif isinstance(event, NovelPanelCustomizationEvent):
             self._handle_customization_event(event)
         elif isinstance(event, NovelEditorDisplayTourEvent):
@@ -383,10 +402,9 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         if not self.novel:
             for btn in self.buttonGroup.buttons():
                 btn.setHidden(True)
-            self._actionSettings.setVisible(False)
+            self._actionProgress.setVisible(False)
             self._actionScrivener.setVisible(False)
             self._actionSeries.setVisible(False)
-            self.actionQuickCustomization.setDisabled(True)
             self.menuDetachPanels.setDisabled(True)
             return
 
@@ -394,15 +412,14 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         dispatcher: EventDispatcher = event_dispatchers.instance(self.novel)
         sender.send.connect(dispatcher.dispatch)
         dispatcher.register(self, NovelCharactersToggleEvent, NovelScenesToggleEvent, NovelWorldBuildingToggleEvent,
-                            NovelDocumentsToggleEvent, NovelManuscriptToggleEvent, NovelManagementToggleEvent)
+                            NovelDocumentsToggleEvent, NovelManuscriptToggleEvent, NovelManagementToggleEvent,
+                            SocialSnapshotRequested)
 
         for btn in self.buttonGroup.buttons():
             btn.setVisible(True)
 
-        self._actionSettings.setVisible(settings.toolbar_quick_settings())
-        self.actionQuickCustomization.setEnabled(True)
+        self._actionProgress.setVisible(app_env.profile().get('productivity', False))
         self.menuDetachPanels.setEnabled(True)
-        self.btnSettings.setNovel(self.novel)
         self.outline_mode.setEnabled(True)
         self.outline_mode.setVisible(True)
 
@@ -420,6 +437,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         else:
             self._actionSeries.setVisible(False)
 
+        self.btnProgress.setNovel(self.novel)
+
         self._current_view: Optional[AbstractView] = None
         self.novel_view = NovelView(self.novel)
         self.characters_view = CharactersView(self.novel, main_window=self)
@@ -429,9 +448,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.board_view = BoardView(self.novel)
         self.manuscript_view = ManuscriptView(self.novel)
         self.reports_view = ReportsView(self.novel)
-        self.comments_view = CommentsView(self.novel)
-        self.pageComments.layout().addWidget(self.comments_view.widget)
-        self.wdgSidebar.setCurrentWidget(self.pageComments)
+        self.formatting_view = FormattingView(self.novel)
 
         self.pageNovel.layout().addWidget(self.novel_view.widget)
         self.pageCharacters.layout().addWidget(self.characters_view.widget)
@@ -441,6 +458,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.pageBoard.layout().addWidget(self.board_view.widget)
         self.pageManuscript.layout().addWidget(self.manuscript_view.widget)
         self.pageAnalysis.layout().addWidget(self.reports_view.widget)
+        self.pageFormatting.layout().addWidget(self.formatting_view.widget)
 
         if self.novel.prefs.panels.scenes_view == ScenesView.NOVEL:
             self.btnNovel.setChecked(True)
@@ -456,6 +474,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             self.btnManuscript.setChecked(True)
         elif self.novel.prefs.panels.scenes_view == ScenesView.REPORTS:
             self.btnReports.setChecked(True)
+        elif self.novel.prefs.panels.scenes_view == ScenesView.FORMATTING:
+            self.btnFormatting.setChecked(True)
         elif self.novel.prefs.panels.scenes_view == ScenesView.SCENES:
             self.btnScenes.setChecked(True)
         else:
@@ -472,6 +492,18 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.btnManuscript.setVisible(self.novel.prefs.toggled(NovelSetting.Manuscript))
         self.btnBoard.setVisible(self.novel.prefs.toggled(NovelSetting.Management))
         self.actionDetachTask.setEnabled(self.novel.prefs.toggled(NovelSetting.Management))
+
+        flag = app_env.profile().get('world-building', False)
+        self.btnWorld.setVisible(flag)
+        self.actionDetachWorldbuilding.setVisible(flag)
+        if self.btnWorld.isChecked():
+            self.btnNovel.setChecked(True)
+
+        flag = app_env.profile().get('tasks', False)
+        self.btnBoard.setVisible(flag)
+        self.actionDetachTask.setVisible(flag)
+        if self.btnBoard.isChecked():
+            self.btnNovel.setChecked(True)
 
     def _on_view_changed(self, btn=None, checked: bool = True):
         if not checked:
@@ -506,6 +538,9 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         elif self.btnReports.isChecked():
             self.stackedWidget.setCurrentWidget(self.pageAnalysis)
             self._current_view = self.reports_view
+        elif self.btnFormatting.isChecked():
+            self.stackedWidget.setCurrentWidget(self.pageFormatting)
+            self._current_view = self.formatting_view
         else:
             self._current_view = None
 
@@ -520,9 +555,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.actionCopy.triggered.connect(self._copy_text)
         self.actionPaste.setIcon(IconRegistry.paste_icon())
         self.actionPaste.triggered.connect(self._paste_text)
-
-        self.actionQuickCustomization.setChecked(settings.toolbar_quick_settings())
-        self.actionQuickCustomization.toggled.connect(self._toggle_quick_settings)
 
         self.actionDirPlaceholder.setText(settings.workspace())
         self.actionOpenProjectDir.setIcon(IconRegistry.from_name('fa5s.external-link-alt'))
@@ -581,6 +613,10 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.actionYoutube.triggered.connect(lambda: open_url('https://www.youtube.com/@Plotlyst'))
         self.actionPinterest.triggered.connect(lambda: open_url('https://pinterest.com/Plotlyst'))
 
+        self.actionPurchase.setIcon(IconRegistry.from_name('ei.shopping-cart'))
+        self.actionPurchase.triggered.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
+        self.actionPurchase.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
+
         if not app_env.is_mac():
             self.actionAbout.setIcon(IconRegistry.from_name('fa5s.info'))
         self.actionAbout.triggered.connect(lambda: AboutDialog.popup())
@@ -602,8 +638,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self._mode_btn_group.setExclusive(True)
         self._mode_btn_group.buttonToggled.connect(self._panel_toggled)
 
-        self.btnSettings = NovelQuickPanelCustomizationButton()
-        translucent(self.btnSettings, 0.7)
+        self.btnProgress = ProductivityButton()
 
         self.btnComments = QToolButton(self.toolBar)
         self.btnComments.setIcon(IconRegistry.from_name('mdi.comment-outline', color='#2e86ab'))
@@ -636,9 +671,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.toolBar.addWidget(spacer())
         self._actionScrivener = self.toolBar.addWidget(self.btnScrivener)
         self._actionSeries = self.toolBar.addWidget(self.seriesLabel)
-        self._actionSettings = self.toolBar.addWidget(self.btnSettings)
-        self._actionSettings.setVisible(settings.toolbar_quick_settings())
-        # self.toolBar.addWidget(self.btnComments)
+        self._actionProgress = self.toolBar.addWidget(self.btnProgress)
         self.toolBar.addWidget(spacer(10))
 
         self.wdgSidebar.setHidden(True)
@@ -674,10 +707,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         if workspace:
             settings.set_workspace(workspace)
             QTimer.singleShot(250, try_shutdown_to_apply_change)
-
-    def _toggle_quick_settings(self, toggled: bool):
-        self._actionSettings.setVisible(toggled)
-        settings.set_toolbar_quick_settings(toggled)
 
     @busy
     def _load_new_novel(self, novel: Novel):
@@ -756,23 +785,24 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         gc(self.board_view)
         self.board_view = None
 
-        self.pageBoard.layout().removeWidget(self.reports_view.widget)
+        self.pageAnalysis.layout().removeWidget(self.reports_view.widget)
         gc(self.reports_view.widget)
         gc(self.reports_view)
         self.reports_view = None
+
+        self.pageFormatting.layout().removeWidget(self.formatting_view.widget)
+        gc(self.formatting_view.widget)
+        gc(self.formatting_view)
+        self.formatting_view = None
 
         self.pageManuscript.layout().removeWidget(self.manuscript_view.widget)
         gc(self.manuscript_view.widget)
         gc(self.manuscript_view)
         self.manuscript_view = None
 
-        self.pageComments.layout().removeWidget(self.comments_view.widget)
-        gc(self.comments_view.widget)
-        gc(self.comments_view)
-        self.comments_view = None
-
-        self._actionSettings.setVisible(False)
-        self.actionQuickCustomization.setDisabled(True)
+        self._actionProgress.setVisible(False)
+        self._actionScrivener.setVisible(False)
+        self._actionSeries.setVisible(False)
         self.menuDetachPanels.setDisabled(True)
 
         self.outline_mode.setDisabled(True)
@@ -826,6 +856,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             scenes_view = ScenesView.MANUSCRIPT
         elif self.stackedWidget.currentWidget() == self.pageAnalysis:
             scenes_view = ScenesView.REPORTS
+        elif self.stackedWidget.currentWidget() == self.pageFormatting:
+            scenes_view = ScenesView.FORMATTING
         else:
             scenes_view = None
         self.novel.prefs.panels.scenes_view = scenes_view
@@ -837,24 +869,31 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             if not self.buttonGroup.checkedButton().isVisible():
                 self.btnNovel.setChecked(True)
 
+            btn.setGraphicsEffect(None)
+
         func = qtanim.fade_in if event.toggled else qtanim.fade_out
+
+        btn: Optional[QAbstractButton] = None
         if isinstance(event, NovelWorldBuildingToggleEvent):
-            func(self.btnWorld, teardown=teardown)
+            btn = self.btnWorld
             self.actionDetachWorldbuilding.setEnabled(event.toggled)
         elif isinstance(event, NovelCharactersToggleEvent):
-            func(self.btnCharacters, teardown=teardown)
+            btn = self.btnCharacters
             self.actionDetachCharacters.setEnabled(event.toggled)
         elif isinstance(event, NovelScenesToggleEvent):
-            func(self.btnScenes, teardown=teardown)
+            btn = self.btnScenes
             self.actionDetachScenes.setEnabled(event.toggled)
         elif isinstance(event, NovelDocumentsToggleEvent):
-            func(self.btnNotes, teardown=teardown)
+            btn = self.btnNotes
             self.actionDetachDocuments.setEnabled(event.toggled)
         elif isinstance(event, NovelManuscriptToggleEvent):
-            func(self.btnManuscript, teardown=teardown)
+            btn = self.btnManuscript
         elif isinstance(event, NovelManagementToggleEvent):
-            func(self.btnBoard, teardown=teardown)
+            btn = self.btnBoard
             self.actionDetachTask.setEnabled(event.toggled)
+
+        if btn:
+            func(btn, teardown=teardown)
 
     def _settings_link_clicked(self):
         self.btnNovel.setChecked(True)

@@ -69,7 +69,7 @@
         <number>0</number>
        </property>
        <item alignment="Qt::AlignRight">
-        <widget class="QWidget" name="widget" native="true">
+        <widget class="QWidget" name="wdgTop" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout">
           <property name="spacing">
            <number>0</number>

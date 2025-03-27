@@ -26,10 +26,11 @@ from plotlyst.service.persistence import RepositoryPersistenceManager
 
 
 class AbstractReport(QWidget):
-    def __init__(self, novel: Novel, parent=None):
+    def __init__(self, novel: Novel, parent=None, setupUi: bool = True):
         super(AbstractReport, self).__init__(parent)
         self.novel = novel
-        self.setupUi(self)
+        if setupUi:
+            self.setupUi(self)
 
         self.repo = RepositoryPersistenceManager.instance()
 

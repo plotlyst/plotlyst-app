@@ -17,6 +17,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import datetime
+
 from PyQt6.QtWidgets import QApplication
 
 from plotlyst.view.widget.confirm import asked
@@ -26,3 +28,8 @@ def try_shutdown_to_apply_change():
     if asked("To apply the change, the application needs to be closed first.",
              "Do you want to shutdown the application to apply the change?", btnConfirmText='Shutdown'):
         QApplication.quit()
+
+
+def today_str() -> str:
+    today = datetime.date.today()
+    return today.strftime("%Y-%m-%d")

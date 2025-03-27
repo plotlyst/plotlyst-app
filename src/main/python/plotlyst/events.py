@@ -24,7 +24,7 @@ from uuid import UUID
 from language_tool_python import LanguageTool
 
 from plotlyst.core.domain import Character, NovelDescriptor, Scene, SceneStage, Task, NovelSetting, \
-    StoryStructure, Novel, Plot, StoryBeat, Location, WorldBuildingEntity
+    StoryStructure, Novel, Plot, StoryBeat, Location, WorldBuildingEntity, SnapshotType
 from plotlyst.event.core import Event
 
 
@@ -185,6 +185,11 @@ class NovelSyncEvent(Event):
 
 
 @dataclass
+class SelectNovelEvent(Event):
+    novel: NovelDescriptor
+
+
+@dataclass
 class CloseNovelEvent(Event):
     novel: NovelDescriptor
 
@@ -227,6 +232,16 @@ class NovelCharacterWorkStyleToggleEvent(NovelPanelCustomizationEvent):
 
 @dataclass
 class NovelScenesToggleEvent(NovelPanelCustomizationEvent):
+    pass
+
+
+@dataclass
+class NovelScenesOrganizationToggleEvent(NovelPanelCustomizationEvent):
+    pass
+
+
+@dataclass
+class ScenesOrganizationResetEvent(Event):
     pass
 
 
@@ -328,3 +343,13 @@ class TaskChangedToWip(Event):
 @dataclass
 class TaskChangedFromWip(Event):
     task: Task
+
+
+@dataclass
+class SocialSnapshotRequested(Event):
+    snapshotType: SnapshotType
+
+
+@dataclass
+class ShowRoadmapEvent(Event):
+    pass

@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from PyQt6.QtGui import QColor, QPalette
 from PyQt6.QtWidgets import QWidget
 
-from plotlyst.view.style.theme import BG_SECONDARY_COLOR, TEXT_COLOR_ON_DARK_BG, BG_MUTED_COLOR
+from plotlyst.view.style.theme import BG_SECONDARY_COLOR, TEXT_COLOR_ON_DARK_BG, BG_MUTED_COLOR, \
+    TEXT_SECONDARY_COLOR_ON_DARK_BG
 
 label_style_description = """
     QLabel[description=true] {
@@ -39,6 +40,10 @@ label_style_error_night_mode = f"""
 
     QLabel[night-mode=true] {{
         color: {TEXT_COLOR_ON_DARK_BG};
+    }}
+    
+    QLabel[night-mode-secondary=true] {{
+        color: {TEXT_SECONDARY_COLOR_ON_DARK_BG};
     }}
 """
 

@@ -22,15 +22,16 @@ from typing import List, Optional
 from PyQt6.QtCore import pyqtSignal, QSize, Qt, QEvent, QObject
 from PyQt6.QtGui import QPixmap, QColor
 from overrides import overrides
-from qthandy import busy, vspacer, margins, pointy
+from qthandy import busy, vspacer, margins, pointy, retain_when_hidden
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import NAV_BAR_BUTTON_DEFAULT_COLOR, \
-    NAV_BAR_BUTTON_CHECKED_COLOR, RELAXED_WHITE_COLOR
+    NAV_BAR_BUTTON_CHECKED_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK
 from plotlyst.core.client import client
-from plotlyst.core.domain import NovelDescriptor, StoryType
-from plotlyst.core.help import home_page_welcome_text
+from plotlyst.core.domain import NovelDescriptor, StoryType, Novel, WELCOME_DOC_ID
+from plotlyst.core.help import home_page_welcome_text, WELCOME_DOC_CONTENT
+from plotlyst.env import app_env
 from plotlyst.event.core import emit_global_event, Event
 from plotlyst.event.handler import global_event_dispatcher
 from plotlyst.events import NovelDeletedEvent, NovelUpdatedEvent
@@ -49,7 +50,7 @@ from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.kb.browser import KnowledgeBaseWidget
 from plotlyst.view.widget.library import ShelvesTreeView, StoryCreationDialog, NovelDisplayCard, SeriesDisplayCard, \
     NovelSelectorPopup
-from plotlyst.view.widget.patron import PatronsWidget, PlotlystPlusWidget
+from plotlyst.view.widget.patron import PlotlystPlusWidget
 from plotlyst.view.widget.tour.core import LibraryTourEvent, NewStoryButtonTourEvent, \
     NewStoryDialogOpenTourEvent, TutorialNovelSelectTourEvent, NovelDisplayTourEvent, tutorial_novel, \
     NovelOpenButtonTourEvent, TutorialNovelCloseTourEvent
@@ -72,6 +73,7 @@ class HomeView(AbstractView):
         self.ui.lblBanner.setPixmap(
             QPixmap(resource_registry.banner).scaled(180, 60, Qt.AspectRatioMode.KeepAspectRatio,
                                                      Qt.TransformationMode.SmoothTransformation))
+        self.ui.btnPurchase.setIcon(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR))
         self.ui.btnJoinDiscord.setIcon(IconRegistry.from_name('fa5b.discord', RELAXED_WHITE_COLOR))
         self.ui.btnTwitter.setIcon(IconRegistry.from_name('fa5b.twitter', RELAXED_WHITE_COLOR))
         self.ui.btnInstagram.setIcon(IconRegistry.from_name('fa5b.instagram', RELAXED_WHITE_COLOR))
@@ -80,6 +82,7 @@ class HomeView(AbstractView):
         self.ui.btnFacebook.setIcon(IconRegistry.from_name('fa5b.facebook', RELAXED_WHITE_COLOR))
         self.ui.btnYoutube.setIcon(IconRegistry.from_name('fa5b.youtube', RELAXED_WHITE_COLOR))
         self.ui.btnPinterest.setIcon(IconRegistry.from_name('fa5b.pinterest', RELAXED_WHITE_COLOR))
+        self.ui.btnPurchase.installEventFilter(OpacityEventFilter(self.ui.btnPurchase, leaveOpacity=0.8))
         self.ui.btnJoinDiscord.installEventFilter(OpacityEventFilter(self.ui.btnJoinDiscord, leaveOpacity=0.8))
         self.ui.btnTwitter.installEventFilter(OpacityEventFilter(self.ui.btnTwitter, leaveOpacity=0.8))
         self.ui.btnInstagram.installEventFilter(OpacityEventFilter(self.ui.btnInstagram, leaveOpacity=0.8))
@@ -88,6 +91,7 @@ class HomeView(AbstractView):
         self.ui.btnFacebook.installEventFilter(OpacityEventFilter(self.ui.btnFacebook, leaveOpacity=0.8))
         self.ui.btnYoutube.installEventFilter(OpacityEventFilter(self.ui.btnYoutube, leaveOpacity=0.8))
         self.ui.btnPinterest.installEventFilter(OpacityEventFilter(self.ui.btnPinterest, leaveOpacity=0.8))
+        self.ui.btnPurchase.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnPurchase))
         self.ui.btnJoinDiscord.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnJoinDiscord))
         self.ui.btnTwitter.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnTwitter))
         self.ui.btnInstagram.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnInstagram))
@@ -97,6 +101,7 @@ class HomeView(AbstractView):
         self.ui.btnYoutube.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnYoutube))
         self.ui.btnPinterest.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnPinterest))
         self.ui.btnJoinDiscord.clicked.connect(lambda: open_url('https://discord.com/invite/9HZWnvNzM6'))
+        self.ui.btnPurchase.clicked.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
         self.ui.btnTwitter.clicked.connect(lambda: open_url('https://twitter.com/plotlyst'))
         self.ui.btnInstagram.clicked.connect(lambda: open_url('https://www.instagram.com/plotlyst'))
         self.ui.btnThreads.clicked.connect(lambda: open_url('https://threads.net/@plotlyst'))
@@ -106,9 +111,13 @@ class HomeView(AbstractView):
         self.ui.btnYoutube.clicked.connect(lambda: open_url('https://www.youtube.com/@Plotlyst'))
         self.ui.btnPinterest.clicked.connect(lambda: open_url('https://pinterest.com/Plotlyst'))
 
+        self.ui.btnPurchase.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
+        retain_when_hidden(self.ui.btnPurchase)
+
         self.ui.btnYoutube.setHidden(True)
         self.ui.btnPinterest.setHidden(True)
 
+        self.ui.btnPurchase.setStyleSheet(f'color: {RELAXED_WHITE_COLOR}; border: 1px hidden black;')
         apply_button_palette_color(self.ui.btnJoinDiscord, RELAXED_WHITE_COLOR)
         pointy(self.ui.lblBanner)
         self.ui.lblBanner.installEventFilter(OpacityEventFilter(self.ui.lblBanner, leaveOpacity=1.0, enterOpacity=0.8))
@@ -118,10 +127,8 @@ class HomeView(AbstractView):
             IconRegistry.from_name('mdi.bookshelf', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.ui.btnRoadmap.setIcon(
             IconRegistry.from_name('fa5s.road', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
-        self.ui.btnPlotlystPlus.setIcon(
-            IconRegistry.from_name('mdi.certificate', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.ui.btnPatrons.setIcon(
-            IconRegistry.from_name('msc.organization', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
+            IconRegistry.from_name('fa5b.patreon', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.ui.btnKnowledgeBase.setIcon(
             IconRegistry.from_name('fa5s.graduation-cap', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
 
@@ -131,9 +138,11 @@ class HomeView(AbstractView):
 
         self.ui.lblWelcomeMain.setText(home_page_welcome_text)
 
-        self.ui.btnFirstStory.setIcon(IconRegistry.book_icon())
-        self.ui.btnFirstStory.installEventFilter(OpacityEventFilter(self.ui.btnFirstStory, leaveOpacity=0.7))
-        self.ui.btnFirstStory.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnFirstStory))
+        self.ui.btnFullExperienceLink.setIcon(IconRegistry.from_name('ei.shopping-cart'))
+        self.ui.btnFullExperienceLink.installEventFilter(
+            OpacityEventFilter(self.ui.btnFullExperienceLink, leaveOpacity=0.7))
+        self.ui.btnFullExperienceLink.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnFullExperienceLink))
+        self.ui.btnFullExperienceLink.clicked.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
 
         self.novelDisplayCard = NovelDisplayCard()
         self.ui.pageNovelDisplay.layout().addWidget(self.novelDisplayCard)
@@ -184,7 +193,6 @@ class HomeView(AbstractView):
         link_buttons_to_pages(self.ui.stackedWidget,
                               [(self.ui.btnLibrary, self.ui.pageLibrary),
                                (self.ui.btnRoadmap, self.ui.pageRoadmap),
-                               (self.ui.btnPlotlystPlus, self.ui.pagePlotlystPlus),
                                (self.ui.btnPatrons, self.ui.pagePatrons),
                                (self.ui.btnKnowledgeBase, self.ui.pageKnowledgeBase),
                                ])
@@ -196,10 +204,7 @@ class HomeView(AbstractView):
         self.ui.pageKnowledgeBase.layout().addWidget(self._knowledgeBase)
 
         self._plotlystPlus = PlotlystPlusWidget()
-        self.ui.pagePlotlystPlus.layout().addWidget(self._plotlystPlus)
-
-        self._patronsWidget = PatronsWidget()
-        self.ui.pagePatrons.layout().addWidget(self._patronsWidget)
+        self.ui.pagePatrons.layout().addWidget(self._plotlystPlus)
 
         self.ui.btnLibrary.setChecked(True)
         self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageEmpty)
@@ -262,8 +267,17 @@ class HomeView(AbstractView):
     def showKnowledgeBase(self):
         self.ui.btnKnowledgeBase.setChecked(True)
 
+    def showRoadmap(self):
+        self.ui.btnRoadmap.setChecked(True)
+
     def selectSeries(self, series: NovelDescriptor):
         self._shelvesTreeView.selectNovel(series)
+
+    def selectNovel(self, novel: NovelDescriptor):
+        for novel_desc in self._novels:
+            if novel_desc.id == novel.id:
+                self._shelvesTreeView.selectNovel(novel_desc)
+                break
 
     def seriesNovels(self, series: NovelDescriptor) -> List[NovelDescriptor]:
         return self._shelvesTreeView.childrenNovels(series)
@@ -287,8 +301,14 @@ class HomeView(AbstractView):
         def flush():
             flush_or_fail()
 
-        novel = StoryCreationDialog.popup()
+        novel: Optional[Novel] = StoryCreationDialog.popup()
         if novel:
+            if not novel.prefs.is_scenes_organization():
+                for scene in novel.scenes:
+                    scene.chapter = None
+                    scene.title = ''
+                novel.chapters.clear()
+
             self.repo.insert_novel(novel)
             self._novels.append(novel)
             flush()
@@ -298,6 +318,11 @@ class HomeView(AbstractView):
                 self.repo.insert_scene(novel, scene)
                 if scene.manuscript:
                     self.repo.update_doc(novel, scene.manuscript)
+
+            for doc in novel.documents:
+                if doc.id == WELCOME_DOC_ID:
+                    doc.content = WELCOME_DOC_CONTENT
+                    self.repo.update_doc(novel, doc)
 
             flush()
 
@@ -316,6 +341,7 @@ class HomeView(AbstractView):
     def _subtitle_edited(self, subtitle: str):
         self._selected_novel.subtitle = subtitle
         self.repo.update_project_novel(self._selected_novel)
+        emit_global_event(NovelUpdatedEvent(self, self._selected_novel))
 
     def _short_synopsis_edited(self):
         if self._selected_novel:

@@ -22,6 +22,7 @@ import sys
 from collections import Counter
 from functools import partial
 from typing import Optional, Tuple, List, Union
+from uuid import UUID
 
 import qtanim
 import qtawesome
@@ -41,6 +42,7 @@ from qthandy.filter import DisabledClickEventFilter
 
 from plotlyst.common import WHITE_COLOR
 from plotlyst.env import app_env
+from plotlyst.settings import CHARACTER_INITIAL_AVATAR_COLOR_CODES
 from plotlyst.view.stylesheet import APP_STYLESHEET
 
 
@@ -194,6 +196,22 @@ class ButtonPressResizeEventFilter(QObject):
         if self._originalSize is None:
             self._calculateSize(watched)
         watched.setIconSize(self._originalSize)
+
+
+class ButtonIconSwitchEventFilter(QObject):
+    def __init__(self, parent: QAbstractButton, idleIcon: QIcon, activeIcon: QIcon):
+        super().__init__(parent)
+        self._idleIcon = idleIcon
+        self._activeIcon = activeIcon
+        parent.setIcon(self._idleIcon)
+
+    @overrides
+    def eventFilter(self, watched: QAbstractButton, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Enter:
+            watched.setIcon(self._activeIcon)
+        elif event.type() == QEvent.Type.Leave:
+            watched.setIcon(self._idleIcon)
+        return super().eventFilter(watched, event)
 
 
 class MouseEventDelegate(QObject):
@@ -537,6 +555,10 @@ class ExclusiveOptionalButtonGroup(QButtonGroup):
     def setExclusive(self, _: bool) -> None:
         super(ExclusiveOptionalButtonGroup, self).setExclusive(False)
 
+    def reset(self):
+        if self.checkedButton():
+            self.checkedButton().setChecked(False)
+
     def _buttonToggled(self, button: QAbstractButton, toggled: bool):
         if toggled and self._checkedButton and self._checkedButton is not button:
             self._checkedButton.setChecked(False)
@@ -670,7 +692,7 @@ def dominant_color(pixmap: QPixmap) -> QColor:
     dominant_rgb = color_counter.most_common(1)[0][0]
     return QColor(dominant_rgb)
 
-
+  
 def columns(margin: int = 2, spacing: int = 3) -> QWidget:
     wdg = QWidget()
     hbox(wdg, margin, spacing)
@@ -681,3 +703,15 @@ def rows(margin: int = 2, spacing: int = 3) -> QWidget:
     wdg = QWidget()
     vbox(wdg, margin, spacing)
     return wdg
+
+  
+def exclusive_buttons(parent: QObject, *buttons, optional=False) -> QButtonGroup:
+    btnGroup = ExclusiveOptionalButtonGroup(parent) if optional else QButtonGroup(parent)
+    btnGroup.setExclusive(True)
+    for btn in buttons:
+        btnGroup.addButton(btn)
+    return btnGroup
+
+
+def default_character_color(uuid_: UUID) -> str:
+    return CHARACTER_INITIAL_AVATAR_COLOR_CODES[uuid_.int % len(CHARACTER_INITIAL_AVATAR_COLOR_CODES)]

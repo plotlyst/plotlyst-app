@@ -30,11 +30,12 @@ from PyQt6.QtCore import Qt
 from dataclasses_json import dataclass_json, Undefined, config
 from overrides import overrides
 from qttextedit import DashInsertionMode
-from qttextedit.api import AutoCapitalizationMode
+from qttextedit.api import AutoCapitalizationMode, EllipsisInsertionMode
 
-from plotlyst.common import act_color, RED_COLOR
+from plotlyst.common import act_color, RED_COLOR, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.template import SelectionItem, exclude_if_empty, exclude_if_black, enneagram_choices, \
     mbti_choices, Role, exclude_if_false, antagonist_role, exclude_if_true
+from plotlyst.view.common import default_character_color
 
 
 @dataclass
@@ -627,6 +628,10 @@ class Character:
     personality: CharacterPersonality = field(default_factory=CharacterPersonality)
     alias: str = field(default='', metadata=config(exclude=exclude_if_empty))
     origin_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+
+    def __post_init__(self):
+        if self.prefs.avatar.icon_color == 'black':
+            self.prefs.avatar.icon_color = default_character_color(self.id)
 
     def enneagram(self) -> Optional[SelectionItem]:
         if self.prefs.toggled(NovelSetting.Character_enneagram):
@@ -2052,7 +2057,8 @@ class Scene:
         return self.__is_outcome(SceneOutcome.MOTION)
 
     def title_or_index(self, novel: 'Novel') -> str:
-        return self.title if self.title else f'Scene {novel.scenes.index(self) + 1}'
+        prefix = 'Scene' if novel.prefs.is_scenes_organization() else 'Chapter'
+        return self.title if self.title else f'{prefix} {novel.scenes.index(self) + 1}'
 
     def link_plot(self, plot: Plot) -> ScenePlotReference:
         ref = ScenePlotReference(plot)
@@ -2536,6 +2542,10 @@ class TemplateStoryStructureType(Enum):
     SPINE = 2
     TWISTS = 3
     FIVE_ACT = 4
+    PACE = 5
+    TENSION = 6
+    TRANSFORMATION = 7
+    CUSTOM = 8
 
 
 class StoryStructureDisplayType(Enum):
@@ -2564,7 +2574,7 @@ class StoryStructure(CharacterBased):
         self._character: Optional[Character] = None
 
     def act_beats(self) -> List[StoryBeat]:
-        return [x for x in self.beats if x.ends_act]
+        return [x for x in self.sorted_beats() if x.ends_act]
 
     def sorted_beats(self) -> List[StoryBeat]:
         return sorted(self.beats, key=lambda x: x.percentage)
@@ -2592,10 +2602,18 @@ class StoryStructure(CharacterBased):
                 if beat.ends_act:
                     act += 1
 
+    def normalize_beats(self):
+        if not self.beats or self.display_type != StoryStructureDisplayType.Sequential_timeline:
+            return
+
+        percentage_per_beat = 99.0 / len(self.beats)
+        for i, beat in enumerate(self.beats):
+            beat.percentage = percentage_per_beat * (i + 1)
+
 
 general_beat = StoryBeat(text='Beat',
                          id=uuid.UUID('3dc905df-1a9b-4e04-90f5-199ea908f2d5'),
-                         icon='mdi.lightning-bolt-outline',
+                         icon='mdi.lightning-bolt-outline', icon_color='grey',
                          description="A pivotal moment or event that advances the plot or develops a character",
                          act=1, percentage=1)
 
@@ -3062,6 +3080,112 @@ save_the_cat = StoryStructure(title='Save the Cat',
                                                act=3, percentage=99),
                                      ])
 
+pace_turn_beat_one = StoryBeat(text='Turn',
+                               id=uuid.UUID('15108852-1959-49ef-9c58-0ce55cb676ed'),
+                               icon='mdi.sign-direction',
+                               icon_color='#2a4494',
+                               description="A shift in the story's direction",
+                               percentage=25)
+
+pace_turn_beat_two = StoryBeat(text='Turn',
+                               id=uuid.UUID('98a8a1ce-43f5-4db7-80a6-ddba7fb17e05'),
+                               icon='mdi.sign-direction',
+                               icon_color='#6a0136',
+                               description="A shift in the story's direction",
+                               percentage=75)
+
+pace_driven_structure = StoryStructure(title="Pace-driven",
+                                       id=uuid.UUID('54f4e296-b281-4dc9-b3be-36a869ee48c3'),
+                                       icon='mdi.lightning-bolt-outline',
+                                       display_type=StoryStructureDisplayType.Sequential_timeline,
+                                       template_type=TemplateStoryStructureType.PACE,
+                                       acts=0,
+                                       beats=[
+                                           hook_beat,
+                                           inciting_incident_beat,
+                                           pace_turn_beat_one,
+                                           midpoint,
+                                           pace_turn_beat_two,
+                                           climax_beat,
+                                           resolution_beat
+                                       ]
+                                       )
+
+tension_first_conflict = StoryBeat(text='First conflict',
+                                   id=uuid.UUID('3610723f-c23e-47a0-9174-f328f6f8ebd6'),
+                                   icon='mdi.sword-cross',
+                                   icon_color='#f3a712',
+                                   description="A complication that forces the character to react",
+                                   percentage=25)
+
+tension_second_conflict = StoryBeat(text='Second conflict',
+                                    id=uuid.UUID('5f520c66-f3a5-4353-884f-cc6055b6952b'),
+                                    icon='mdi.sword-cross',
+                                    icon_color='#B88612',
+                                    description="Tension tightens and the plot complicates",
+                                    percentage=50)
+
+tension_third_conflict = StoryBeat(text='Third conflict',
+                                   id=uuid.UUID('a5172e05-4e08-4c2c-8346-7f05ff5573d3'),
+                                   icon='mdi.sword-cross',
+                                   icon_color='#CD533B',
+                                   description="A major revelation, twist, or dark moment",
+                                   percentage=75)
+
+tension_driven_structure = StoryStructure(title="Tension",
+                                          id=uuid.UUID('6b01f4e2-2116-4849-be88-85f519d2fbd4'),
+                                          icon='fa5s.fire',
+                                          display_type=StoryStructureDisplayType.Sequential_timeline,
+                                          template_type=TemplateStoryStructureType.TENSION,
+                                          acts=0,
+                                          beats=[
+                                              disturbance_beat,
+                                              tension_first_conflict,
+                                              tension_second_conflict,
+                                              tension_third_conflict,
+                                              climax_beat,
+                                              resolution_beat
+                                          ]
+                                          )
+
+transformation_need_beat = StoryBeat(text='Need',
+                                     id=uuid.UUID('929de7eb-b7db-44bc-8e9f-7eed5616aadd'),
+                                     icon='ri.key-fill',
+                                     icon_color='#457b9d',
+                                     description="The protagonist lacks something in their life even if they don't realize it",
+                                     percentage=1)
+
+transformation_aha_moment = StoryBeat(text='A-ha moment',
+                                      icon='fa5.lightbulb',
+                                      icon_color='#6a0136',
+                                      description="A choice or realization that changes the protagonist",
+                                      id=uuid.UUID('249d7977-2c8c-4c2f-b66a-1b9f329d8dd1'),
+                                      percentage=80)
+
+transformation_final_test = StoryBeat(text='Final test',
+                                      id=uuid.UUID('7af98db6-c8e2-4929-b90b-b8321882ce6c'),
+                                      icon='fa5s.chevron-up',
+                                      icon_color='#ce2d4f',
+                                      description="The protagonist has to prove their transformation through a final test",
+                                      percentage=95)
+
+transformation_driven_structure = StoryStructure(title="Transformation",
+                                                 id=uuid.UUID('b9aa5a84-6c19-4ac3-8589-73523b1fa897'),
+                                                 icon='mdi6.butterfly-outline',
+                                                 display_type=StoryStructureDisplayType.Sequential_timeline,
+                                                 template_type=TemplateStoryStructureType.TRANSFORMATION,
+                                                 acts=0,
+                                                 beats=[
+                                                     transformation_need_beat,
+                                                     inciting_incident_beat,
+                                                     refusal_beat,
+                                                     midpoint_mirror,
+                                                     transformation_aha_moment,
+                                                     transformation_final_test,
+                                                     contrast_beat
+                                                 ]
+                                                 )
+
 heros_journey = StoryStructure(title="Hero archetype",
                                id=uuid.UUID('d19e6f28-c6ed-4496-8f6b-064ab4306f17'),
                                icon='fa5s.mask',
@@ -3435,11 +3559,51 @@ class Document(CharacterBased, SceneBased):
         self._scene: Optional[Scene] = None
 
 
+WELCOME_DOC_ID = uuid.UUID('ec2a62d9-fc00-41dd-8a6c-b121156b6cf4')
+
+
 def default_documents() -> List[Document]:
-    return [Document('Story', id=uuid.UUID('ec2a62d9-fc00-41dd-8a6c-b121156b6cf4'), icon='fa5s.book-open'),
-            Document('Characters', id=uuid.UUID('8fa16650-bed0-489b-baa1-d239e5198d47'), icon='fa5s.user'),
-            Document('Locations', id=uuid.UUID('42739fb7-85a9-4716-b1e0-5ab4c751eebd'), icon='fa5s.map-marker'),
-            ]
+    return [Document('Welcome!', id=WELCOME_DOC_ID, icon='ph.hand-waving-fill')]
+
+
+@dataclass
+class ProductivityType(SelectionItem):
+    id: uuid.UUID = field(default_factory=uuid.uuid4)
+    enabled: bool = True
+
+    @overrides
+    def __eq__(self, other: 'ProductivityType'):
+        if isinstance(other, ProductivityType):
+            return self.id == other.id
+        return False
+
+    @overrides
+    def __hash__(self):
+        return hash(str(self.id))
+
+
+class SnapshotType(Enum):
+    Productivity = 0
+    Writing = 1
+
+
+def default_productivity_categories() -> List[ProductivityType]:
+    return [
+        ProductivityType('Writing', icon='fa5s.pen-fancy', icon_color=PLOTLYST_SECONDARY_COLOR),
+        ProductivityType('Planning', icon='fa5s.theater-masks', icon_color='#895F6D'),
+        ProductivityType('Research', icon='mdi.library', icon_color='#0066CC'),
+        ProductivityType('Character', icon='fa5s.user', icon_color='#219ebc'),
+        ProductivityType('Worldbuilding', icon='mdi.globe-model', icon_color='#40916c'),
+        ProductivityType('Editing', icon='fa5s.highlighter', icon_color='#FF7171'),
+    ]
+
+
+@dataclass
+class DailyProductivity:
+    overall_days: int = 0
+    categories: List[ProductivityType] = field(default_factory=default_productivity_categories)
+    progress: Dict[str, str] = field(default_factory=dict,
+                                     metadata=config(exclude=exclude_if_empty))
 
 
 class ReaderQuestionType(Enum):
@@ -3677,6 +3841,7 @@ class Connector:
     cp_y: Optional[float] = None
     start_arrow_enabled: bool = field(default=False, metadata=config(exclude=exclude_if_false))
     end_arrow_enabled: bool = field(default=True, metadata=config(exclude=exclude_if_true))
+    cp_controlled: Optional[bool] = None
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -3722,6 +3887,7 @@ class FontSettings:
     family: str = ''
     text_width: int = 0
     font_size: int = 0
+    line_space: int = 2
 
 
 @dataclass
@@ -3735,6 +3901,10 @@ class ManuscriptPreferences:
     font: Dict[str, FontSettings] = field(default_factory=dict)
     dash: DashInsertionMode = DashInsertionMode.INSERT_EM_DASH
     capitalization: AutoCapitalizationMode = AutoCapitalizationMode.PARAGRAPH
+    ellipsis: EllipsisInsertionMode = EllipsisInsertionMode.NONE
+    smart_quotes: bool = True
+    period: bool = True
+    header_variant: int = 1
 
 
 class NovelPanel(Enum):
@@ -3752,6 +3922,7 @@ class ScenesView(Enum):
     MANUSCRIPT = 'manuscript'
     BOARD = 'board'
     REPORTS = 'reports'
+    FORMATTING = 'formatting'
 
 
 @dataclass
@@ -3781,6 +3952,7 @@ class NovelSetting(Enum):
     World_building = 'world_building'
     Management = 'management'
     Reports = 'reports'
+    Formatting = 'formatting'
     SCENE_CARD_POV = 'scene_card_pov'
     SCENE_CARD_PURPOSE = 'scene_card_purpose'
     SCENE_CARD_PLOT_PROGRESS = 'scene_card_plot_progress'
@@ -3802,6 +3974,7 @@ class NovelSetting(Enum):
     CHARACTER_TABLE_OCCUPATION = 'character_table_occupation'
     CHARACTER_TABLE_ENNEAGRAM = 'character_table_enneagram'
     CHARACTER_TABLE_MBTI = 'character_table_mbti'
+    Scenes_organization = 'scenes_organization'
 
     def scene_card_setting(self) -> bool:
         return self.name.startswith('SCENE_CARD')
@@ -3824,6 +3997,9 @@ class NovelPreferences:
     def setting(self, setting: NovelSetting, default: Any) -> Any:
         return self.settings.get(setting.value, default)
 
+    def is_scenes_organization(self) -> bool:
+        return self.settings.get(NovelSetting.Scenes_organization.value, True)
+
 
 @dataclass
 class ManuscriptGoals:
@@ -3832,6 +4008,17 @@ class ManuscriptGoals:
 
 def default_locations() -> List[Location]:
     return [Location('New location')]
+
+
+@dataclass
+class NovelInfo:
+    audience: str = ''
+    style: str = ''
+    genres: List[str] = field(default_factory=list)
+    mood: List[str] = field(default_factory=list)
+    type: str = ''
+    has_spice: bool = False
+    spice: int = 1
 
 
 @dataclass
@@ -3860,6 +4047,8 @@ class Novel(NovelDescriptor):
     manuscript_progress: Dict[str, DocumentProgress] = field(default_factory=dict,
                                                              metadata=config(exclude=exclude_if_empty))
     questions: Dict[str, ReaderQuestion] = field(default_factory=dict)
+    productivity: DailyProductivity = field(default_factory=DailyProductivity)
+    descriptors: NovelInfo = field(default_factory=NovelInfo)
 
     def pov_characters(self) -> List[Character]:
         pov_ids = set()

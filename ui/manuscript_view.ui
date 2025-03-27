@@ -13,7 +13,10 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_9">
+  <property name="muted-bg" stdset="0">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_7">
    <property name="spacing">
     <number>0</number>
    </property>
@@ -37,9 +40,15 @@
      <property name="childrenCollapsible">
       <bool>false</bool>
      </property>
+     <property name="muted-bg" stdset="0">
+      <bool>true</bool>
+     </property>
      <widget class="QWidget" name="wdgLeftSide" native="true">
       <property name="bg" stdset="0">
        <bool>true</bool>
+      </property>
+      <property name="muted-bg" stdset="0">
+       <bool>false</bool>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="spacing">
@@ -130,6 +139,40 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="btnAddScene">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>130</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="toolTip">
+             <string>Add new scene</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="shortcut">
+             <string>Ctrl+N</string>
+            </property>
+            <property name="positive" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="base" stdset="0">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <spacer name="horizontalSpacer_5">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -151,7 +194,7 @@
        <item>
         <widget class="QFrame" name="frame">
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
@@ -184,872 +227,784 @@
        </item>
       </layout>
      </widget>
-     <widget class="QStackedWidget" name="stackedWidget">
-      <property name="styleSheet">
-       <string notr="true">#pageDistractionFree {
+     <widget class="QWidget" name="widget_2" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout_6">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QFrame" name="wdgTop">
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Sunken</enum>
+         </property>
+         <property name="relaxed-white-bg" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="muted-bg" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="bg" stdset="0">
+          <bool>false</bool>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>15</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item alignment="Qt::AlignLeft">
+           <widget class="QToolButton" name="btnTreeToggleSecondary">
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="toolTip">
+             <string>Toggle sidebar</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <property name="transparent-circle-bg-on-hover" stdset="0">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QStackedWidget" name="stackedWidget">
+         <property name="styleSheet">
+          <string notr="true">#pageDistractionFree {
                                 background-color: rgb(39, 39, 39);
                                 }
 
                             </string>
-      </property>
-      <property name="lineWidth">
-       <number>0</number>
-      </property>
-      <property name="currentIndex">
-       <number>0</number>
-      </property>
-      <widget class="QWidget" name="pageText">
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QFrame" name="wdgTop">
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Sunken</enum>
-          </property>
+         </property>
+         <property name="lineWidth">
+          <number>0</number>
+         </property>
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="pageText">
           <property name="relaxed-white-bg" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="muted-bg" stdset="0">
            <bool>true</bool>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_16">
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <property name="spacing">
+            <number>0</number>
+           </property>
            <property name="leftMargin">
-            <number>5</number>
+            <number>0</number>
            </property>
            <property name="topMargin">
             <number>0</number>
            </property>
            <property name="rightMargin">
-            <number>5</number>
+            <number>0</number>
            </property>
            <property name="bottomMargin">
             <number>0</number>
            </property>
            <item>
-            <widget class="QWidget" name="wdgTitle" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QScrollArea" name="scrollEditor">
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="widgetResizable">
+                <bool>true</bool>
+               </property>
+               <widget class="QWidget" name="wdgEditor">
+                <property name="geometry">
+                 <rect>
+                  <x>0</x>
+                  <y>0</y>
+                  <width>211</width>
+                  <height>422</height>
+                 </rect>
+                </property>
+                <property name="relaxed-white-bg" stdset="0">
+                 <bool>false</bool>
+                </property>
+                <property name="muted-bg" stdset="0">
+                 <bool>true</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_5">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="wdgSide">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>200</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Sunken</enum>
+               </property>
+               <property name="relaxed-white-bg" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="muted-bg" stdset="0">
+                <bool>false</bool>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_3">
+                <property name="spacing">
+                 <number>0</number>
+                </property>
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>14</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QWidget" name="widget_3" native="true">
+                  <property name="relaxed-white-bg" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_5">
+                   <property name="spacing">
+                    <number>0</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>5</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
+                   <item alignment="Qt::AlignLeft">
+                    <widget class="QToolButton" name="btnHideRightBar">
+                     <property name="cursor">
+                      <cursorShape>PointingHandCursor</cursorShape>
+                     </property>
+                     <property name="text">
+                      <string/>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QStackedWidget" name="stackSide">
+                  <widget class="QWidget" name="pageInfo">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_11">
+                    <property name="spacing">
+                     <number>6</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>25</number>
+                    </property>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="pageGoal">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_13">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>25</number>
+                    </property>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="pageReadability">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_12">
+                    <property name="spacing">
+                     <number>3</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>2</number>
+                    </property>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="pageExport">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_9">
+                    <property name="spacing">
+                     <number>3</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>25</number>
+                    </property>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="pageFind">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_4">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="pageSettings">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_18">
+                    <property name="spacing">
+                     <number>3</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>25</number>
+                    </property>
+                    <item>
+                     <widget class="QScrollArea" name="scrollArea_3">
+                      <property name="frameShape">
+                       <enum>QFrame::NoFrame</enum>
+                      </property>
+                      <property name="horizontalScrollBarPolicy">
+                       <enum>Qt::ScrollBarAlwaysOff</enum>
+                      </property>
+                      <property name="widgetResizable">
+                       <bool>true</bool>
+                      </property>
+                      <widget class="QWidget" name="scrollSettings">
+                       <property name="geometry">
+                        <rect>
+                         <x>0</x>
+                         <y>0</y>
+                         <width>68</width>
+                         <height>357</height>
+                        </rect>
+                       </property>
+                       <property name="relaxed-white-bg" stdset="0">
+                        <bool>true</bool>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_8">
+                        <property name="spacing">
+                         <number>0</number>
+                        </property>
+                        <property name="leftMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>0</number>
+                        </property>
+                       </layout>
+                      </widget>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="pageProgress">
+                   <property name="relaxed-white-bg" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_14">
+                    <property name="spacing">
+                     <number>3</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>25</number>
+                    </property>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="wdgSideBar">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Sunken</enum>
+               </property>
+               <property name="relaxed-white-bg" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="muted-bg" stdset="0">
+                <bool>true</bool>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_10">
+                <property name="leftMargin">
+                 <number>2</number>
+                </property>
+                <property name="topMargin">
+                 <number>25</number>
+                </property>
+                <property name="rightMargin">
+                 <number>10</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QToolButton" name="btnSceneInfo">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="toolTip">
+                   <string>Scene info</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>28</width>
+                    <height>28</height>
+                   </size>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="transparent-circle-bg-on-hover" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="large" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="btnProgress">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="toolTip">
+                   <string>Daily progress</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>28</width>
+                    <height>28</height>
+                   </size>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="transparent-circle-bg-on-hover" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="large" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="btnGoals">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="toolTip">
+                   <string>Goals</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>28</width>
+                    <height>28</height>
+                   </size>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="transparent-circle-bg-on-hover" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="large" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="btnReadability">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="toolTip">
+                   <string>Readability</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>28</width>
+                    <height>28</height>
+                   </size>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="transparent-circle-bg-on-hover" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="large" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="btnFind">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="toolTip">
+                   <string>Find and replace</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>28</width>
+                    <height>28</height>
+                   </size>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="transparent-circle-bg-on-hover" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="large" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="btnExport">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="toolTip">
+                   <string>Export</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>28</width>
+                    <height>28</height>
+                   </size>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="transparent-circle-bg-on-hover" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="large" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="Line" name="line_4">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="btnSettings">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="toolTip">
+                   <string>Settings</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>28</width>
+                    <height>28</height>
+                   </size>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="transparent-circle-bg-on-hover" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="large" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="verticalSpacer_2">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QWidget" name="wdgBottom" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_8">
               <property name="spacing">
-               <number>3</number>
-              </property>
-              <property name="leftMargin">
-               <number>9</number>
-              </property>
-              <property name="topMargin">
-               <number>4</number>
-              </property>
-              <property name="rightMargin">
-               <number>23</number>
-              </property>
-              <property name="bottomMargin">
                <number>0</number>
               </property>
-              <item alignment="Qt::AlignBottom">
-               <widget class="QToolButton" name="btnTreeToggleSecondary">
-                <property name="cursor">
-                 <cursorShape>PointingHandCursor</cursorShape>
-                </property>
-                <property name="toolTip">
-                 <string>Toggle sidebar</string>
-                </property>
+              <property name="leftMargin">
+               <number>2</number>
+              </property>
+              <property name="topMargin">
+               <number>1</number>
+              </property>
+              <property name="rightMargin">
+               <number>2</number>
+              </property>
+              <property name="bottomMargin">
+               <number>2</number>
+              </property>
+              <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+               <widget class="WordsDisplay" name="lblWordCount">
                 <property name="text">
-                 <string/>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
-                </property>
-                <property name="checked">
-                 <bool>false</bool>
-                </property>
-                <property name="transparent-circle-bg-on-hover" stdset="0">
-                 <bool>true</bool>
+                 <string>wc</string>
                 </property>
                </widget>
               </item>
               <item>
-               <spacer name="horizontalSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QToolButton" name="btnManuscript">
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="transparent" stdset="0">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="lblTitle">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Manuscript</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_3">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
+               <widget class="SceneStageButton" name="btnStage"/>
               </item>
              </layout>
             </widget>
            </item>
           </layout>
          </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QWidget" name="wdgEditor" native="true">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_5">
-             <property name="spacing">
-              <number>0</number>
-             </property>
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
-             <item>
-              <widget class="QSplitter" name="splitterEditor">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="childrenCollapsible">
-                <bool>false</bool>
-               </property>
-               <widget class="ManuscriptTextEditor" name="textEdit"/>
-               <widget class="QWidget" name="wdgAddon" native="true">
-                <layout class="QVBoxLayout" name="verticalLayout_8">
-                 <property name="spacing">
-                  <number>3</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>2</number>
-                 </property>
-                 <item alignment="Qt::AlignLeft">
-                  <widget class="IconText" name="icontext">
-                   <property name="font">
-                    <font>
-                     <underline>false</underline>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Notes</string>
-                   </property>
-                   <property name="iconName" stdset="0">
-                    <string>ei.file-edit</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QFrame" name="wdgSide">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>200</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Sunken</enum>
-            </property>
-            <property name="relaxed-white-bg" stdset="0">
-             <bool>true</bool>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_3">
-             <property name="spacing">
-              <number>0</number>
-             </property>
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
-             <item>
-              <widget class="QStackedWidget" name="stackSide">
-               <widget class="QWidget" name="pageInfo">
-                <layout class="QVBoxLayout" name="verticalLayout_11">
-                 <property name="spacing">
-                  <number>6</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>2</number>
-                 </property>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="pageGoal">
-                <property name="cursor">
-                 <cursorShape>UpArrowCursor</cursorShape>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_13">
-                 <property name="spacing">
-                  <number>0</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>0</number>
-                 </property>
-                 <item alignment="Qt::AlignHCenter">
-                  <widget class="QWidget" name="wdgGoalTitle" native="true">
-                   <layout class="QHBoxLayout" name="horizontalLayout_5">
-                    <item>
-                     <widget class="Emoji" name="emojiGoal">
-                      <property name="toolTip">
-                       <string>Manuscript word count target</string>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="emoji" stdset="0">
-                       <string>bullseye</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLabel" name="lblGoal">
-                      <property name="toolTip">
-                       <string>Manuscript word count target</string>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QToolButton" name="btnEditGoal">
-                      <property name="cursor">
-                       <cursorShape>PointingHandCursor</cursorShape>
-                      </property>
-                      <property name="toolTip">
-                       <string>Edit manuscript word count goal</string>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="Line" name="line_2">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="pageReadability">
-                <layout class="QVBoxLayout" name="verticalLayout_12">
-                 <property name="spacing">
-                  <number>3</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>2</number>
-                 </property>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="pageSettings">
-                <layout class="QVBoxLayout" name="verticalLayout_18">
-                 <property name="spacing">
-                  <number>3</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>2</number>
-                 </property>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="pageProgress">
-                <layout class="QVBoxLayout" name="verticalLayout_14">
-                 <property name="spacing">
-                  <number>3</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>25</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>25</number>
-                 </property>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="pageExport">
-                <layout class="QVBoxLayout" name="verticalLayout_15">
-                 <property name="spacing">
-                  <number>3</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>2</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>2</number>
-                 </property>
-                </layout>
-               </widget>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="Line" name="line">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QFrame" name="wdgSideBar">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::NoFrame</enum>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Sunken</enum>
-            </property>
-            <property name="relaxed-white-bg" stdset="0">
-             <bool>true</bool>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_10">
-             <property name="leftMargin">
-              <number>2</number>
-             </property>
-             <property name="topMargin">
-              <number>10</number>
-             </property>
-             <property name="rightMargin">
-              <number>10</number>
-             </property>
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
-             <item>
-              <widget class="QToolButton" name="btnSceneInfo">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>Scene info</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>28</width>
-                 <height>28</height>
-                </size>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="transparent-circle-bg-on-hover" stdset="0">
-                <bool>true</bool>
-               </property>
-               <property name="large" stdset="0">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="btnProgress">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>Daily progress</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>28</width>
-                 <height>28</height>
-                </size>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="transparent-circle-bg-on-hover" stdset="0">
-                <bool>true</bool>
-               </property>
-               <property name="large" stdset="0">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="btnGoals">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>Goals</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>28</width>
-                 <height>28</height>
-                </size>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="transparent-circle-bg-on-hover" stdset="0">
-                <bool>true</bool>
-               </property>
-               <property name="large" stdset="0">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="btnReadability">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>Readability</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>28</width>
-                 <height>28</height>
-                </size>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="transparent-circle-bg-on-hover" stdset="0">
-                <bool>true</bool>
-               </property>
-               <property name="large" stdset="0">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="btnExport">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>Export</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>28</width>
-                 <height>28</height>
-                </size>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="transparent-circle-bg-on-hover" stdset="0">
-                <bool>true</bool>
-               </property>
-               <property name="large" stdset="0">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="Line" name="line_4">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="btnSettings">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>Export</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>28</width>
-                 <height>28</height>
-                </size>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="transparent-circle-bg-on-hover" stdset="0">
-                <bool>true</bool>
-               </property>
-               <property name="large" stdset="0">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="verticalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>40</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <widget class="QWidget" name="wdgBottom" native="true">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">#wdgBottom {
-                                                                    background-color: qlineargradient(x1: 0, y1: 0, x2:
-                                                                    1, y2: 1,
-                                                                    stop: 0 #FFFFFF, stop: 0.5 #E1E1E1, stop: 1
-                                                                    #E7E7E7);
-                                                                    border-bottom-left-radius: 6px;
-                                                                    border-bottom-right-radius: 6px;
-                                                                    }
-                                                                </string>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <widget class="QWidget" name="pageEmpty">
+          <layout class="QVBoxLayout" name="verticalLayout_17">
            <property name="spacing">
-            <number>0</number>
+            <number>3</number>
            </property>
            <property name="leftMargin">
-            <number>2</number>
+            <number>15</number>
            </property>
            <property name="topMargin">
-            <number>1</number>
+            <number>15</number>
            </property>
            <property name="rightMargin">
-            <number>2</number>
+            <number>15</number>
            </property>
            <property name="bottomMargin">
-            <number>2</number>
+            <number>35</number>
            </property>
-           <item>
-            <widget class="QToolButton" name="btnNotes">
-             <property name="cursor">
-              <cursorShape>ArrowCursor</cursorShape>
+           <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+            <widget class="QLabel" name="lblEmptyPage">
+             <property name="text">
+              <string/>
              </property>
-             <property name="toolTip">
-              <string>Notes</string>
+             <property name="description" stdset="0">
+              <bool>true</bool>
              </property>
-             <property name="styleSheet">
-              <string notr="true">QToolButton {
-                                                                                border: 0px hidden black;
-                                                                                }
-                                                                                QToolButton:pressed {
-                                                                                border: 1px solid white;
-                                                                                }
-                                                                            </string>
-             </property>
-             <property name="checkable">
+             <property name="h4" stdset="0">
               <bool>true</bool>
              </property>
             </widget>
            </item>
-           <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
-            <widget class="WordsDisplay" name="lblWordCount">
-             <property name="text">
-              <string>wc</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="SceneStageButton" name="btnStage"/>
-           </item>
           </layout>
          </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="pageOverview">
-       <layout class="QVBoxLayout" name="verticalLayout_6">
-        <property name="spacing">
-         <number>3</number>
-        </property>
-        <property name="leftMargin">
-         <number>2</number>
-        </property>
-        <property name="topMargin">
-         <number>2</number>
-        </property>
-        <property name="rightMargin">
-         <number>2</number>
-        </property>
-        <property name="bottomMargin">
-         <number>2</number>
-        </property>
-        <item>
-         <widget class="QScrollArea" name="scrollArea">
-          <property name="widgetResizable">
-           <bool>true</bool>
-          </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>0</y>
-             <width>80</width>
-             <height>70</height>
-            </rect>
-           </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_7">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="ChartView" name="chartChaptersLength"/>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="pageEmpty">
-       <layout class="QVBoxLayout" name="verticalLayout_17">
-        <property name="spacing">
-         <number>3</number>
-        </property>
-        <property name="leftMargin">
-         <number>15</number>
-        </property>
-        <property name="topMargin">
-         <number>15</number>
-        </property>
-        <property name="rightMargin">
-         <number>15</number>
-        </property>
-        <property name="bottomMargin">
-         <number>35</number>
-        </property>
-        <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
-         <widget class="QLabel" name="lblEmptyPage">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="description" stdset="0">
-           <bool>true</bool>
-          </property>
-          <property name="h4" stdset="0">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="pageDistractionFree">
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <property name="spacing">
-         <number>3</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-       </layout>
-      </widget>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </widget>
    </item>
@@ -1067,29 +1022,9 @@
    <header>plotlyst.view.widget.display</header>
   </customwidget>
   <customwidget>
-   <class>ChartView</class>
-   <extends>QGraphicsView</extends>
-   <header>plotlyst.view.widget.display</header>
-  </customwidget>
-  <customwidget>
    <class>SceneStageButton</class>
    <extends>QToolButton</extends>
    <header>plotlyst.view.widget.scenes</header>
-  </customwidget>
-  <customwidget>
-   <class>IconText</class>
-   <extends>QPushButton</extends>
-   <header>plotlyst.view.widget.display</header>
-  </customwidget>
-  <customwidget>
-   <class>ManuscriptTextEditor</class>
-   <extends>QTextEdit</extends>
-   <header>plotlyst.view.widget.manuscript</header>
-  </customwidget>
-  <customwidget>
-   <class>Emoji</class>
-   <extends>QLabel</extends>
-   <header>plotlyst.view.widget.display</header>
   </customwidget>
  </customwidgets>
  <resources/>

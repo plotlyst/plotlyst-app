@@ -39,6 +39,8 @@ class AppEnvironment:
         nltk.data.path.insert(0, self._nltk_data)
         os.environ['LTP_PATH'] = os.path.join(self._plotlyst_cache_dir, 'language_tool_python')
 
+        self._profile = {}
+
     @property
     def mode(self) -> AppMode:
         return self._mode
@@ -105,6 +107,14 @@ class AppEnvironment:
         elif self.is_windows():
             return 'Times New Roman'
 
+    def mono_font(self) -> str:
+        if self.is_linux():
+            return 'Monospace'
+        elif self.is_mac():
+            return 'Courier New'
+        elif self.is_windows():
+            return 'Courier New'
+
     def cursive_font(self) -> str:
         if self.is_linux():
             return 'Cursive'
@@ -112,6 +122,12 @@ class AppEnvironment:
             return 'Apple Chancery'
         elif self.is_windows():
             return 'Segoe Print'
+
+    def profile(self):
+        return self._profile
+
+    def setProfile(self, profile):
+        self._profile = profile
 
 
 app_env = AppEnvironment()

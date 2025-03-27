@@ -323,6 +323,9 @@ class ScenesPreferencesWidget(QWidget, Ui_ScenesViewPreferences):
         self.btnStorylines.setIcon(IconRegistry.storylines_icon())
         self.btnStage.setIcon(IconRegistry.progress_check_icon())
 
+        self.wdgPurpose.setVisible(app_env.profile().get('scene-purpose', False))
+        self.wdgProgress.setVisible(app_env.profile().get('scene-progression', False))
+
         self.bottomLeftButtonGroup = ExclusiveOptionalButtonGroup()
         self.bottomLeftButtonGroup.addButton(self.cbPurpose)
         self.bottomLeftButtonGroup.addButton(self.cbPlotProgress)
@@ -332,6 +335,10 @@ class ScenesPreferencesWidget(QWidget, Ui_ScenesViewPreferences):
         self.btnTableCharacters.setIcon(IconRegistry.character_icon())
         self.btnTablePurpose.setIcon(IconRegistry.from_name('fa5s.yin-yang'))
         self.btnTablePlotProgress.setIcon(IconRegistry.from_name('mdi.chevron-double-up'))
+
+        self.wdgTablePurpose.setVisible(app_env.profile().get('scene-purpose', False))
+        self.wdgTableProgress.setVisible(app_env.profile().get('scene-progression', False))
+        self.wdgTableStorylines.setVisible(app_env.profile().get('storylines', False))
 
         self.tabCards.layout().insertWidget(1, line(color='lightgrey'))
         self.tabCards.layout().insertWidget(5, wrap(line(color='lightgrey'), margin_left=10))
