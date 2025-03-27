@@ -39,7 +39,7 @@ from plotlyst.events import SceneChangedEvent, StorylineCreatedEvent, SceneAdded
     SceneOrderChangedEvent, StorylineRemovedEvent, StorylineChangedEvent, SceneEditRequested, SceneSelectedEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import tool_btn, fade_out_and_gc, insert_before_the_end, \
-    label, push_btn, shadow, fade_in, to_rgba_str
+    label, push_btn, shadow, fade_in
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.cards import SceneCard, CardsView, Card, CardFilter
 from plotlyst.view.widget.input import RemovalButton
@@ -306,23 +306,24 @@ class SceneStorylineAssociation(QWidget):
         self.textedit = QTextEdit()
         self.textedit.setTabChangesFocus(True)
         self.textedit.setPlaceholderText('How does the story move forward')
+        self.textedit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.textedit.setStyleSheet(f'''
                  QTextEdit {{
-                    border-radius: 6px;
+                    border-radius: 8px;
                     padding: 4px;
                     background-color: {RELAXED_WHITE_COLOR};
                     border: 1px solid lightgrey;
                 }}
-
-                QTextEdit:focus {{
-                    border: 1px inset {to_rgba_str(QColor(self.plot.icon_color), 155)};
-                }}
                 ''')
+        # QTextEdit: focus
+        # {{
+        #     border: 1px inset {to_rgba_str(QColor(self.plot.icon_color), 125)};
+        # }}
         qcolor = QColor(self.plot.icon_color)
-        qcolor.setAlpha(125)
+        qcolor.setAlpha(75)
         shadow(self.textedit, color=qcolor)
         self.textedit.setText(self.ref.data.comment)
-        self.textedit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.textedit.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         vbox(self, 2, 0).addWidget(self.textedit)
 

@@ -363,7 +363,7 @@ class TimelineGridLine(QWidget):
         color = self.ref.icon_color if self.ref.icon_color else 'lightgrey'
         painter.setPen(QColor(color))
         painter.setBrush(QColor(color))
-        painter.setOpacity(0.35)
+        painter.setOpacity(0.25)
 
         if self._vertical:
             painter.drawRect(5, self.rect().height() // 2 - 4, self.rect().width(), 8)
