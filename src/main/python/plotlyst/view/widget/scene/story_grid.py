@@ -24,7 +24,7 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal, QEvent
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QWidget, QTextEdit, QButtonGroup, QVBoxLayout, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QTextEdit, QButtonGroup
 from overrides import overrides
 from qthandy import hbox, spacer, vbox
 from qthandy import margins, vspacer, line, incr_font, clear_layout, gc
@@ -365,13 +365,20 @@ class SceneGridCard(SceneCard):
 
         self.setFixedWidth(170)
 
+    @overrides
+    def copy(self) -> 'Card':
+        return SceneGridCard(self.scene, self.novel)
+
     def setSelected(self, selected: bool):
         self._setStyleSheet(selected=selected)
 
 
 class SceneGridCardsView(CardsView):
-    def __init__(self, parent=None, layoutType: LayoutType = LayoutType.VERTICAL, margin: int = 0, spacing: int = 15):
+    def __init__(self, width: int, height: int, parent=None, layoutType: LayoutType = LayoutType.VERTICAL,
+                 margin: int = 0, spacing: int = 15):
         super().__init__(parent, layoutType, margin, spacing)
+        self._width = width
+        self._height = height
 
     @overrides
     def remove(self, obj: Scene):
@@ -393,6 +400,15 @@ class SceneGridCardsView(CardsView):
         if self._selected and self._selected is not card:
             self._selected.clearSelection()
         super()._cardSelected(card)
+
+    @overrides
+    def _resizeCard(self, card: Card):
+        card.setFixedSize(self._width, self._height)
+
+    @overrides
+    def _dragStarted(self, card: Card):
+        super()._dragStarted(card)
+        self._dragPlaceholder.setFixedSize(self._width, self._height)
 
 
 class ScenesGridToolbar(QWidget):
@@ -429,6 +445,7 @@ class ScenesGridToolbar(QWidget):
 
 class ScenesGridWidget(TimelineGridWidget, EventListener):
     sceneCardSelected = pyqtSignal(Card)
+    sceneOrderChanged = pyqtSignal(list, Card)
 
     def __init__(self, novel: Novel, parent=None):
         self._scenesInColumns = False
@@ -441,14 +458,18 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         self.setRowHeight(120)
         self.scrollRows.setFixedWidth(self._verticalHeaderWidth)
 
-        self.cardsView = SceneGridCardsView(spacing=self._spacing)
+        self.wdgEditor.setProperty('large-rounded', True)
+        self.wdgEditor.setProperty('muted-bg', True)
+
+        self.cardsView = SceneGridCardsView(self._columnWidth, self._rowHeight, spacing=self._spacing)
+        margins(self.cardsView, top=self._margins, left=self._margins, right=self._margins, bottom=self._margins)
         self.cardsView.cardSelected.connect(self.sceneCardSelected)
         self.cardsView.cardDoubleClicked.connect(self._cardDoubleClicked)
+        self.cardsView.orderChanged.connect(self.sceneOrderChanged)
 
         for i, scene in enumerate(self._novel.scenes):
             sceneCard = SceneGridCard(scene, self._novel)
             self.cardsView.addCard(sceneCard, alignment=Qt.AlignmentFlag.AlignCenter)
-            sceneCard.setFixedSize(self._columnWidth, self._rowHeight)
 
         self.repo = RepositoryPersistenceManager.instance()
         self.refresh()
@@ -514,16 +535,23 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
                                   alignment=Qt.AlignmentFlag.AlignCenter)
 
         QWidget().setLayout(self.wdgEditor.layout())
-        self.wdgEditor.setLayout(QVBoxLayout() if self._scenesInColumns else QHBoxLayout())
         if self._scenesInColumns:
+            vbox(self.wdgEditor, 0, self._spacing)
+            margins(self.cardsView, self._margins, 0, 0, 0)
             self._headerHeight = 150
             self.wdgEditor.layout().addWidget(vspacer())
+            margins(self.wdgColumns, 0)
         else:
+            hbox(self.wdgEditor, 0, self._spacing)
+            margins(self.cardsView, top=self._margins, left=self._margins, right=self._margins, bottom=self._margins)
             self._headerHeight = 40
             self.wdgEditor.layout().addWidget(spacer())
+            margins(self.wdgColumns, left=self._margins)
 
         self.scrollColumns.setFixedHeight(self._headerHeight)
         margins(self.wdgRows, top=self._headerHeight, right=self._spacing)
+        margins(self.wdgEditor, left=self._margins, top=self._margins)
+
         self._emptyPlaceholder.setGeometry(0, 0, self._verticalHeaderWidth, self._headerHeight)
 
         self.refresh()
