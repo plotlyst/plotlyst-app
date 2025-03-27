@@ -27,7 +27,8 @@ from PyQt6.QtCore import Qt, QModelIndex, \
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QWidget, QHeaderView
 from overrides import overrides
-from qthandy import incr_font, translucent, busy, bold, sp, transparent, incr_icon, retain_when_hidden
+from qthandy import incr_font, translucent, clear_layout, busy, bold, sp, transparent, incr_icon, retain_when_hidden, \
+    margins
 from qthandy.filter import InstantTooltipEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -42,7 +43,7 @@ from plotlyst.events import SceneChangedEvent, SceneDeletedEvent, NovelStoryStru
     CharacterDeletedEvent, \
     NovelAboutToSyncEvent, NovelSyncEvent, NovelStoryStructureActivationRequest, NovelPanelCustomizationEvent, \
     NovelStorylinesToggleEvent, NovelStructureToggleEvent, NovelPovTrackingToggleEvent, SceneAddedEvent, \
-    SceneStoryBeatChangedEvent, ActiveSceneStageChanged, NovelScenesOrganizationToggleEvent
+    SceneStoryBeatChangedEvent, ActiveSceneStageChanged, SceneEditRequested, NovelScenesOrganizationToggleEvent
 from plotlyst.events import SceneOrderChangedEvent
 from plotlyst.model.novel import NovelStagesModel
 from plotlyst.model.scenes_model import ScenesTableModel, ScenesFilterProxyModel, ScenesStageTableModel
@@ -63,6 +64,7 @@ from plotlyst.view.widget.input import RotatedButtonOrientation
 from plotlyst.view.widget.items_editor import ItemsEditorPopup
 from plotlyst.view.widget.novel import StoryStructureSelectorMenu
 from plotlyst.view.widget.progress import SceneStageProgressCharts
+from plotlyst.view.widget.scene.story_grid import ScenesGridWidget, ScenesGridToolbar
 from plotlyst.view.widget.scene.story_map import StoryMap, StoryMapDisplayMode
 from plotlyst.view.widget.scenes import SceneFilterWidget, \
     ScenesPreferencesWidget, ScenesDistributionWidget, ScenePreferencesTabType
@@ -127,7 +129,7 @@ class ScenesOutlineView(AbstractNovelView):
         super().__init__(novel,
                          [NovelStoryStructureUpdated, CharacterChangedEvent, SceneAddedEvent, SceneChangedEvent,
                           SceneDeletedEvent,
-                          SceneOrderChangedEvent, NovelAboutToSyncEvent, NovelStorylinesToggleEvent,
+                          SceneOrderChangedEvent, SceneEditRequested, NovelAboutToSyncEvent, NovelStorylinesToggleEvent,
                           NovelStructureToggleEvent, NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent,
                           SceneStoryBeatChangedEvent])
         self.ui = Ui_ScenesView()
@@ -197,6 +199,7 @@ class ScenesOutlineView(AbstractNovelView):
         self._actFilter.reset.connect(self._proxy.resetActsFilter)
 
         self.ui.btnCardsView.setIcon(IconRegistry.cards_icon())
+        self.ui.btnTimelineView.setIcon(IconRegistry.from_name('mdi.timeline', color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnTableView.setIcon(IconRegistry.table_icon())
         self.ui.btnStoryStructure.setIcon(IconRegistry.story_structure_icon(color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnStoryStructureSelector.setIcon(IconRegistry.from_name('mdi.chevron-down'))
@@ -249,6 +252,16 @@ class ScenesOutlineView(AbstractNovelView):
         self.ui.cards.cardEntered.connect(lambda x: self.ui.wdgStoryStructure.highlightScene(x.scene))
         self.ui.cards.cardLeft.connect(lambda x: self.ui.wdgStoryStructure.clearHighlights())
         self.ui.cards.cardCustomContextMenuRequested.connect(self._show_card_menu)
+
+        self._storyGrid = ScenesGridWidget(self.novel)
+        self._storyGrid.sceneCardSelected.connect(self._story_grid_card_selected)
+        self._storyGridToolbar = ScenesGridToolbar()
+        self._storyGridToolbar.orientationChanged.connect(self._storyGrid.setOrientation)
+        self.ui.pageStoryGrid.layout().addWidget(self._storyGridToolbar,
+                                                 alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        self.ui.pageStoryGrid.layout().addWidget(self._storyGrid)
+        margins(self.ui.pageStoryGrid, left=35)
+        margins(self._storyGridToolbar, top=15, bottom=10)
 
         self.ui.btnPreferences.setIcon(IconRegistry.preferences_icon())
         self.prefs_widget = ScenesPreferencesWidget(self.novel)
@@ -333,6 +346,10 @@ class ScenesOutlineView(AbstractNovelView):
             self.ui.cards.insertAt(i, card)
             self._handle_scene_added()
             return
+        elif isinstance(event, SceneEditRequested):
+            if self.ui.stackedWidget.currentWidget() is self.ui.pageView:
+                self._switch_to_editor(event.scene)
+            return
         elif isinstance(event, SceneOrderChangedEvent):
             self.ui.cards.reorderCards(self.novel.scenes)
             self._handle_scene_order_changed()
@@ -407,6 +424,9 @@ class ScenesOutlineView(AbstractNovelView):
             self.ui.stackScenes.setCurrentWidget(self.ui.pageCards)
             self.ui.tblScenes.clearSelection()
             self.prefs_widget.showCardsTab()
+        elif self.ui.btnTimelineView.isChecked():
+            self.ui.stackScenes.setCurrentWidget(self.ui.pageStoryGrid)
+            self.ui.tblScenes.clearSelection()
         elif self.ui.btnStorymap.isChecked():
             self.ui.stackScenes.setCurrentWidget(self.ui.pageStorymap)
             self.ui.tblScenes.clearSelection()
@@ -493,7 +513,7 @@ class ScenesOutlineView(AbstractNovelView):
             self._switch_to_editor(scene)
 
     def _selected_scene(self) -> Optional[Scene]:
-        if self.ui.btnCardsView.isChecked() and self.selected_card:
+        if (self.ui.btnCardsView.isChecked() or self.ui.btnTimelineView.isChecked()) and self.selected_card:
             return self.selected_card.scene
         scenes = self.ui.treeChapters.selectedScenes()
         if scenes:
@@ -578,6 +598,7 @@ class ScenesOutlineView(AbstractNovelView):
         self._card_filter.setActsFilter(self._actFilter.actFilters())
         self._card_filter.setActivePovs(self._scene_filter.povFilter.characters(all=False))
         self.ui.cards.applyFilter(self._card_filter)
+        self._storyGrid.applyFilter(self._card_filter)
 
     def _story_structure_toggled(self, toggled: bool):
         if toggled:
@@ -610,6 +631,10 @@ class ScenesOutlineView(AbstractNovelView):
             self.ui.treeChapters.selectScene(card.scene)
         emit_event(self.novel, SceneSelectedEvent(self, card.scene))
 
+    def _story_grid_card_selected(self, card: SceneCard):
+        real_card = self.ui.cards.card(card.scene)
+        real_card.select()
+
     def _storymap_scene_selected(self, scene: Scene):
         self.ui.wdgStoryStructure.highlightScene(scene)
         if self.ui.treeChapters.isVisible():
@@ -619,6 +644,7 @@ class ScenesOutlineView(AbstractNovelView):
         self._enable_action_buttons(False)
         self.selected_card = None
         self.ui.treeChapters.clearSelection()
+        self._storyGrid.cardsView.clearSelection()
 
     def _enable_action_buttons(self, enabled: bool):
         if not self.novel.is_readonly():

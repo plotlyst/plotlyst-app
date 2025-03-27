@@ -90,6 +90,11 @@ class SceneAddedEvent(Event):
 
 
 @dataclass
+class SceneEditRequested(Event):
+    scene: Scene
+
+
+@dataclass
 class SceneChangedEvent(Event):
     scene: Scene
 
@@ -287,11 +292,16 @@ class NovelWorldBuildingToggleEvent(NovelPanelCustomizationEvent):
 
 @dataclass
 class StorylineCreatedEvent(Event):
-    pass
+    storyline: Plot
 
 
 @dataclass
 class StorylineRemovedEvent(Event):
+    storyline: Plot
+
+
+@dataclass
+class StorylineChangedEvent(Event):
     storyline: Plot
 
 

@@ -157,6 +157,31 @@
            </widget>
           </item>
           <item>
+           <widget class="QToolButton" name="btnTimelineView">
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="toolTip">
+             <string>Story grid view</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <property name="base" stdset="0">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">btnGroupViews</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
            <widget class="QToolButton" name="btnStorymap">
             <property name="cursor">
              <cursorShape>PointingHandCursor</cursorShape>
@@ -662,7 +687,7 @@
            <item>
             <widget class="QStackedWidget" name="stackScenes">
              <property name="currentIndex">
-              <number>1</number>
+              <number>3</number>
              </property>
              <widget class="QWidget" name="pageCards">
               <property name="relaxed-white-bg" stdset="0">
@@ -924,6 +949,25 @@
                  </item>
                 </layout>
                </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="pageStoryGrid">
+              <layout class="QVBoxLayout" name="verticalLayout_11">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
               </layout>
              </widget>
              <widget class="QWidget" name="pageCharactersDistribution">

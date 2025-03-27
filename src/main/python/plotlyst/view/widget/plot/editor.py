@@ -40,7 +40,7 @@ from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, StorylineCreatedEvent, \
-    StorylineRemovedEvent, StorylineCharacterAssociationChanged
+    StorylineRemovedEvent, StorylineCharacterAssociationChanged, StorylineChangedEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, ButtonPressResizeEventFilter, \
@@ -642,7 +642,7 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         self._wdgList.selectPlot(plot)
         self._wdgImpactMatrix.refresh()
 
-        emit_event(self.novel, StorylineCreatedEvent(self))
+        emit_event(self.novel, StorylineCreatedEvent(self, plot))
 
     def _plotSelected(self, plot: Plot) -> PlotWidget:
         self.btnImpactMatrix.setChecked(False)
@@ -650,14 +650,18 @@ class PlotEditor(QWidget, Ui_PlotEditor):
 
         widget = PlotWidget(self.novel, plot, self.pageDisplay)
         widget.removalRequested.connect(partial(self._remove, widget))
-        widget.titleChanged.connect(partial(self._wdgList.refreshPlot, widget.plot))
-        widget.iconChanged.connect(partial(self._wdgList.refreshPlot, widget.plot))
+        widget.titleChanged.connect(partial(self._plotChanged, widget.plot))
+        widget.iconChanged.connect(partial(self._plotChanged, widget.plot))
         widget.characterChanged.connect(self._wdgList.refreshCharacters)
 
         clear_layout(self.pageDisplay)
         self.pageDisplay.layout().addWidget(widget)
 
         return widget
+
+    def _plotChanged(self, plot: Plot):
+        self._wdgList.refreshPlot(plot)
+        emit_event(self.novel, StorylineChangedEvent(self, plot), delay=20)
 
     def _remove(self, wdg: PlotWidget):
         self._wdgList.removePlot(wdg.plot)

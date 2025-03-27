@@ -25,15 +25,15 @@ import qtanim
 from PyQt6 import QtGui
 from PyQt6.QtCore import pyqtSignal, QSize, Qt, QEvent, QPoint, QMimeData, QTimer
 from PyQt6.QtGui import QDragEnterEvent, QDragMoveEvent, QColor, QAction, QIcon
-from PyQt6.QtWidgets import QFrame, QApplication, QToolButton, QTextBrowser
+from PyQt6.QtWidgets import QFrame, QApplication, QToolButton, QTextBrowser, QWidget
 from overrides import overrides
 from qthandy import clear_layout, retain_when_hidden, transparent, flow, translucent, gc, incr_icon, vbox, pointy, \
-    incr_font, margins
+    incr_font, hbox, margins
 from qthandy.filter import DragEventFilter, DropEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
-from plotlyst.core.domain import Character, Scene, Novel, NovelSetting, CardSizeRatio, NovelDescriptor
+from plotlyst.core.domain import Character, Scene, Novel, NovelSetting, CardSizeRatio, NovelDescriptor, LayoutType
 from plotlyst.core.help import enneagram_help, mbti_help
 from plotlyst.env import app_env
 from plotlyst.service.cache import acts_registry
@@ -520,11 +520,19 @@ class CardsView(QFrame):
     orderChanged = pyqtSignal(list, Card)  # dropped Card
     selectionCleared = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, layoutType: LayoutType = LayoutType.FLOW, margin: int = 9, spacing: int = 15):
         super().__init__(parent)
         self._cards: Dict[Any, Card] = {}
-        self._layout = flow(self, 9, 15)
-        margins(self, left=15, top=15)
+        self._margin = margin
+        self._spacing = spacing
+        if layoutType == LayoutType.FLOW:
+            self._layout = flow(self, self._margin, self._spacing)
+            margins(self, left=15, top=15)
+        elif layoutType == LayoutType.VERTICAL:
+            self._layout = vbox(self, self._margin, self._spacing)
+        elif layoutType == LayoutType.HORIZONTAL:
+            self._layout = hbox(self, self._margin, self._spacing)
+
         self.setAcceptDrops(True)
         self._droppedTo: Optional[Card] = None
         self._selected: Optional[Card] = None
@@ -558,9 +566,12 @@ class CardsView(QFrame):
         self._cards.clear()
         clear_layout(self._layout)
 
-    def addCard(self, card: Card):
+    def addCard(self, card: Card, alignment=None):
         self._initCardWidget(card)
-        self._layout.addWidget(card)
+        if alignment:
+            self._layout.addWidget(card, alignment=alignment)
+        else:
+            self._layout.addWidget(card)
 
     def insertAfter(self, ref: Card, card: Card):
         self._initCardWidget(card)
@@ -616,6 +627,28 @@ class CardsView(QFrame):
     def setCardsSizeRatio(self, ratio: CardSizeRatio):
         self._cardsRatio = ratio
         self._resizeAllCards()
+
+    def swapLayout(self, layoutType: LayoutType, alignment=None):
+        cards = []
+        for i in range(self._layout.count()):
+            item = self._layout.itemAt(i)
+            if item and item.widget() and isinstance(item.widget(), Card):
+                cards.append(item.widget())
+        clear_layout(self._layout, auto_delete=False)
+        QWidget().setLayout(self.layout())
+
+        if layoutType == LayoutType.FLOW:
+            self._layout = flow(self, self._margin, self._spacing)
+        elif layoutType == LayoutType.VERTICAL:
+            self._layout = vbox(self, self._margin, self._spacing)
+        elif layoutType == LayoutType.HORIZONTAL:
+            self._layout = hbox(self, self._margin, self._spacing)
+
+        for card in cards:
+            if alignment:
+                self._layout.addWidget(card, alignment=alignment)
+            else:
+                self._layout.addWidget(card)
 
     def setSetting(self, setting: NovelSetting, value: Any):
         for card in self._cards.values():

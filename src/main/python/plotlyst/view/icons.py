@@ -107,8 +107,18 @@ class IconRegistry:
         return qtawesome.icon('fa5s.plus', color=color)
 
     @staticmethod
-    def plus_circle_icon(color: str = 'black') -> QIcon:
-        return qtawesome.icon('ei.plus-sign', color=color)
+    def plus_circle_icon(color: str = 'black', background: Optional[str] = None) -> QIcon:
+        if background is None:
+            return qtawesome.icon('ei.plus-sign', color=color)
+        else:
+            return qtawesome.icon('fa5s.circle', 'ei.plus-sign', options=[
+                {'color': background},
+                {'color': color}
+            ])
+
+        # return qtawesome.icon('fa5s.circle', 'fa5s.yin-yang',
+        #                       options=[{'color': 'white', 'scale_factor': 1},
+        #                                {'color': color, 'color_disabled': 'black'}])
 
     @staticmethod
     def minus_icon(color: str = 'red') -> QIcon:
@@ -734,6 +744,7 @@ class IconRegistry:
     @staticmethod
     def from_selection_item(item: SelectionItem) -> QIcon:
         return IconRegistry.from_name(item.icon, item.icon_color)
+
 
     @staticmethod
     def from_name(name: str, color: str = BLACK_COLOR, color_on: str = '', scale: Optional[float] = None,

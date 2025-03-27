@@ -57,7 +57,7 @@ from plotlyst.model.common import proxy
 from plotlyst.service.grammar import language_tool_proxy, dictionary
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import action, label, push_btn, tool_btn, insert_before, fade_out_and_gc, shadow, emoji_font, \
-    fade_in
+    fade_in, ButtonPressResizeEventFilter
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_color
@@ -1042,11 +1042,9 @@ class RemovalButton(QToolButton):
         self.setIcon(IconRegistry.close_icon(self._colorOff))
         pointy(self)
         self.installEventFilter(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
         self.setIconSize(QSize(12, 12))
         transparent(self)
-
-        self.pressed.connect(lambda: self.setIcon(IconRegistry.close_icon(colorOn)))
-        self.released.connect(lambda: self.setIcon(IconRegistry.close_icon(colorOff)))
 
     @overrides
     def eventFilter(self, watched: 'QObject', event: 'QEvent') -> bool:
