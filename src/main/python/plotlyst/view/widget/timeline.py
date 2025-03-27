@@ -382,6 +382,7 @@ class TimelineGridWidget(QFrame):
         self._headerHeight: int = 40
         self._verticalHeaderWidth: int = 190
         self._spacing: int = 10
+        self._margins: int = 20
 
         self._rows: Dict[Any, QWidget] = {}
         self._columns: Dict[Any, TimelineGridLine] = {}
@@ -406,6 +407,10 @@ class TimelineGridWidget(QFrame):
             self.wdgEditor = rows(0, self._spacing)
         else:
             self.wdgEditor = columns(0, self._spacing)
+
+        margins(self.wdgEditor, left=self._margins, top=self._margins)
+        margins(self.wdgColumns, left=self._margins)
+        margins(self.wdgRows, top=self._headerHeight)
 
         sp(self.wdgEditor).v_exp().h_exp()
         self.scrollEditor = scroll_area(frameless=True)
