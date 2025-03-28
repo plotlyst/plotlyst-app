@@ -25,14 +25,14 @@ from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 from PyQt6.QtGui import QColor, QIcon, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QAbstractButton
 from overrides import overrides
-from qthandy import vbox, incr_icon, incr_font, flow, margins, vspacer, hbox, clear_layout, pointy, gc
+from qthandy import vbox, margins, hbox, pointy, gc, flow
 from qthandy.filter import OpacityEventFilter, ObjectReferenceMimeData
-from qtmenu import MenuWidget, ActionTooltipDisplayMode
+from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import push_btn, tool_btn, action, shadow, label, fade_out_and_gc, fade_in
+from plotlyst.view.common import tool_btn, action, shadow, label, fade_out_and_gc, fade_in, frame, spawn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorButton
@@ -356,99 +356,104 @@ class SceneFunctionsWidget(QWidget):
 
         vbox(self)
         margins(self, left=15)
-        self.btnPrimary = push_btn(IconRegistry.from_name('mdi6.note-text-outline', 'grey'), 'Primary functions',
-                                   transparent_=True)
-        incr_icon(self.btnPrimary, 1)
-        incr_font(self.btnPrimary, 1)
-        self.btnPrimary.installEventFilter(OpacityEventFilter(self.btnPrimary, leaveOpacity=0.7))
-        self.btnPrimaryPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
-        self.btnPrimaryPlus.installEventFilter(OpacityEventFilter(self.btnPrimaryPlus, leaveOpacity=0.7))
-        self.menuPrimary = MenuWidget(self.btnPrimaryPlus, largeIcons=True)
-        self.menuPrimary.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
-        self.menuPrimary.addSection('Select a primary function that this scene fulfills')
-        self.menuPrimary.addSeparator()
-        self.menuPrimary.addAction(action('Advance story', IconRegistry.storylines_icon(),
-                                          slot=partial(self._addPrimary, StoryElementType.Plot),
-                                          tooltip="This scene primarily advances or complicates the story \nby affecting the plot, character development, or relationships",
-                                          incr_font_=2))
-        self.menuPrimary.addAction(
-            action('Character insight', IconRegistry.character_icon(),
-                   slot=partial(self._addPrimary, StoryElementType.Character),
-                   tooltip="This scene primarily provides new information, layers, \nor development about a character",
-                   incr_font_=2))
-        self.menuPrimary.addAction(action('Mystery', IconRegistry.from_name('ei.question-sign'),
-                                          slot=partial(self._addPrimary, StoryElementType.Mystery),
-                                          tooltip="This scene primarily introduces or deepens a mystery \nthat drives the narrative forward",
-                                          incr_font_=2))
-        self.menuPrimary.addAction(action('Resonance', IconRegistry.theme_icon('black'),
-                                          slot=partial(self._addPrimary, StoryElementType.Resonance),
-                                          tooltip="This scene primarily establishes an emotional or thematic impact",
-                                          incr_font_=2))
-        self.btnPrimary.clicked.connect(self.btnPrimaryPlus.click)
 
-        self.btnSecondary = push_btn(IconRegistry.from_name('fa5s.list', 'grey'), 'Secondary functions',
-                                     transparent_=True)
-        self.btnSecondary.installEventFilter(OpacityEventFilter(self.btnSecondary, leaveOpacity=0.7))
-        incr_icon(self.btnSecondary, 1)
-        incr_font(self.btnSecondary, 1)
-        self.btnSecondaryPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
-        self.btnSecondaryPlus.installEventFilter(OpacityEventFilter(self.btnPrimaryPlus, leaveOpacity=0.7))
-        self.menuSecondary = MenuWidget(self.btnSecondaryPlus)
-        self.menuSecondary.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
-        self.menuSecondary.addSection('Select a secondary function that this scene also fulfills')
-        self.menuSecondary.addSeparator()
-        self.menuSecondary.addAction(
-            action('Setup', IconRegistry.setup_scene_icon('black'),
-                   slot=partial(self._addSecondary, StoryElementType.Setup),
-                   tooltip="Sets up a story element for a later payoff", incr_font_=1))
-        self.menuSecondary.addAction(
-            action('Information', IconRegistry.general_info_icon('black'),
-                   slot=partial(self._addSecondary, StoryElementType.Information),
-                   tooltip="New information to be conveyed", incr_font_=1))
-        self.menuSecondary.addAction(
-            action('Character insight', IconRegistry.character_icon(),
-                   slot=partial(self._addSecondary, StoryElementType.Character),
-                   tooltip="New information about a character", incr_font_=1))
-        self.menuSecondary.addAction(
-            action('Mystery', IconRegistry.from_name('ei.question-sign'),
-                   slot=partial(self._addSecondary, StoryElementType.Mystery),
-                   tooltip="A smaller mystery to be introduced or deepened", incr_font_=1))
-        self.menuSecondary.addAction(
-            action('Resonance', IconRegistry.theme_icon('black'),
-                   slot=partial(self._addSecondary, StoryElementType.Resonance),
-                   tooltip="Emotional or thematic impact", incr_font_=1))
+        self.wdgPrimary = frame()
+        flow(self.wdgPrimary)
 
-        self.btnSecondary.clicked.connect(self.btnSecondaryPlus.click)
-
-        self.wdgPrimary = QWidget()
-        flow(self.wdgPrimary, spacing=13)
-        margins(self.wdgPrimary, left=20, top=0)
-
-        self.listSecondary = SecondaryFunctionsList(self._novel)
-
-        wdgPrimaryHeader = QWidget()
-        hbox(wdgPrimaryHeader, 0, 0)
-        wdgPrimaryHeader.layout().addWidget(self.btnPrimary)
-        wdgPrimaryHeader.layout().addWidget(self.btnPrimaryPlus, alignment=Qt.AlignmentFlag.AlignBottom)
-        self.layout().addWidget(wdgPrimaryHeader, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(self.wdgPrimary)
-
-        wdgSecondaryHeader = QWidget()
-        hbox(wdgSecondaryHeader, 0, 0)
-        wdgSecondaryHeader.layout().addWidget(self.btnSecondary)
-        wdgSecondaryHeader.layout().addWidget(self.btnSecondaryPlus, alignment=Qt.AlignmentFlag.AlignBottom)
-        self.layout().addWidget(wdgSecondaryHeader, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.layout().addWidget(self.listSecondary)
-        self.layout().addWidget(vspacer())
+        # self.btnPrimary = push_btn(IconRegistry.from_name('mdi6.note-text-outline', 'grey'), 'Primary functions',
+        #                            transparent_=True)
+        # incr_icon(self.btnPrimary, 1)
+        # incr_font(self.btnPrimary, 1)
+        # self.btnPrimary.installEventFilter(OpacityEventFilter(self.btnPrimary, leaveOpacity=0.7))
+        # self.btnPrimaryPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
+        # self.btnPrimaryPlus.installEventFilter(OpacityEventFilter(self.btnPrimaryPlus, leaveOpacity=0.7))
+        # self.menuPrimary = MenuWidget(self.btnPrimaryPlus, largeIcons=True)
+        # self.menuPrimary.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
+        # self.menuPrimary.addSection('Select a primary function that this scene fulfills')
+        # self.menuPrimary.addSeparator()
+        # self.menuPrimary.addAction(action('Advance story', IconRegistry.storylines_icon(),
+        #                                   slot=partial(self._addPrimary, StoryElementType.Plot),
+        #                                   tooltip="This scene primarily advances or complicates the story \nby affecting the plot, character development, or relationships",
+        #                                   incr_font_=2))
+        # self.menuPrimary.addAction(
+        #     action('Character insight', IconRegistry.character_icon(),
+        #            slot=partial(self._addPrimary, StoryElementType.Character),
+        #            tooltip="This scene primarily provides new information, layers, \nor development about a character",
+        #            incr_font_=2))
+        # self.menuPrimary.addAction(action('Mystery', IconRegistry.from_name('ei.question-sign'),
+        #                                   slot=partial(self._addPrimary, StoryElementType.Mystery),
+        #                                   tooltip="This scene primarily introduces or deepens a mystery \nthat drives the narrative forward",
+        #                                   incr_font_=2))
+        # self.menuPrimary.addAction(action('Resonance', IconRegistry.theme_icon('black'),
+        #                                   slot=partial(self._addPrimary, StoryElementType.Resonance),
+        #                                   tooltip="This scene primarily establishes an emotional or thematic impact",
+        #                                   incr_font_=2))
+        # self.btnPrimary.clicked.connect(self.btnPrimaryPlus.click)
+        #
+        # self.btnSecondary = push_btn(IconRegistry.from_name('fa5s.list', 'grey'), 'Secondary functions',
+        #                              transparent_=True)
+        # self.btnSecondary.installEventFilter(OpacityEventFilter(self.btnSecondary, leaveOpacity=0.7))
+        # incr_icon(self.btnSecondary, 1)
+        # incr_font(self.btnSecondary, 1)
+        # self.btnSecondaryPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
+        # self.btnSecondaryPlus.installEventFilter(OpacityEventFilter(self.btnPrimaryPlus, leaveOpacity=0.7))
+        # self.menuSecondary = MenuWidget(self.btnSecondaryPlus)
+        # self.menuSecondary.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
+        # self.menuSecondary.addSection('Select a secondary function that this scene also fulfills')
+        # self.menuSecondary.addSeparator()
+        # self.menuSecondary.addAction(
+        #     action('Setup', IconRegistry.setup_scene_icon('black'),
+        #            slot=partial(self._addSecondary, StoryElementType.Setup),
+        #            tooltip="Sets up a story element for a later payoff", incr_font_=1))
+        # self.menuSecondary.addAction(
+        #     action('Information', IconRegistry.general_info_icon('black'),
+        #            slot=partial(self._addSecondary, StoryElementType.Information),
+        #            tooltip="New information to be conveyed", incr_font_=1))
+        # self.menuSecondary.addAction(
+        #     action('Character insight', IconRegistry.character_icon(),
+        #            slot=partial(self._addSecondary, StoryElementType.Character),
+        #            tooltip="New information about a character", incr_font_=1))
+        # self.menuSecondary.addAction(
+        #     action('Mystery', IconRegistry.from_name('ei.question-sign'),
+        #            slot=partial(self._addSecondary, StoryElementType.Mystery),
+        #            tooltip="A smaller mystery to be introduced or deepened", incr_font_=1))
+        # self.menuSecondary.addAction(
+        #     action('Resonance', IconRegistry.theme_icon('black'),
+        #            slot=partial(self._addSecondary, StoryElementType.Resonance),
+        #            tooltip="Emotional or thematic impact", incr_font_=1))
+        #
+        # self.btnSecondary.clicked.connect(self.btnSecondaryPlus.click)
+        #
+        # self.wdgPrimary = QWidget()
+        # flow(self.wdgPrimary, spacing=13)
+        # margins(self.wdgPrimary, left=20, top=0)
+        #
+        # self.listSecondary = SecondaryFunctionsList(self._novel)
+        #
+        # wdgPrimaryHeader = QWidget()
+        # hbox(wdgPrimaryHeader, 0, 0)
+        # wdgPrimaryHeader.layout().addWidget(self.btnPrimary)
+        # wdgPrimaryHeader.layout().addWidget(self.btnPrimaryPlus, alignment=Qt.AlignmentFlag.AlignBottom)
+        # self.layout().addWidget(wdgPrimaryHeader, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.layout().addWidget(self.wdgPrimary)
+        #
+        # wdgSecondaryHeader = QWidget()
+        # hbox(wdgSecondaryHeader, 0, 0)
+        # wdgSecondaryHeader.layout().addWidget(self.btnSecondary)
+        # wdgSecondaryHeader.layout().addWidget(self.btnSecondaryPlus, alignment=Qt.AlignmentFlag.AlignBottom)
+        # self.layout().addWidget(wdgSecondaryHeader, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.layout().addWidget(self.listSecondary)
+        # self.layout().addWidget(vspacer())
 
     def setScene(self, scene: Scene):
         self._scene = scene
-        clear_layout(self.wdgPrimary)
-        self.listSecondary.clear()
-        for function in self._scene.functions.primary:
-            self.__initPrimaryWidget(function)
-
-        self.listSecondary.setScene(self._scene)
+        # clear_layout(self.wdgPrimary)
+        # self.listSecondary.clear()
+        # for function in self._scene.functions.primary:
+        #     self.__initPrimaryWidget(function)
+        #
+        # self.listSecondary.setScene(self._scene)
 
     def addPrimaryType(self, type_: StoryElementType, storyline: Optional[Plot] = None):
         self._addPrimary(type_, storyline)
