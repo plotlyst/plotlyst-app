@@ -18,21 +18,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from functools import partial
-from typing import Optional
+from typing import Optional, Union
 
 import qtanim
 from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 from PyQt6.QtGui import QColor, QIcon, QEnterEvent
-from PyQt6.QtWidgets import QWidget, QAbstractButton
+from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame, QScrollArea, QSplitter
 from overrides import overrides
-from qthandy import vbox, margins, hbox, pointy, gc, flow
+from qthandy import vbox, margins, hbox, pointy, gc, transparent, sp
 from qthandy.filter import OpacityEventFilter, ObjectReferenceMimeData
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import tool_btn, action, shadow, label, fade_out_and_gc, fade_in, frame, spawn
+from plotlyst.view.common import tool_btn, action, shadow, label, fade_out_and_gc, fade_in, frame, scroll_area, \
+    columns, rows
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorButton
@@ -344,7 +345,7 @@ class SecondaryFunctionsList(ListView):
         self._scene.functions.secondary[:] = items
 
 
-class SceneFunctionsWidget(QWidget):
+class SceneFunctionsWidget(QFrame):
     storylineLinked = pyqtSignal(ScenePlotReference)
     storylineRemoved = pyqtSignal(ScenePlotReference)
     storylineCharged = pyqtSignal()
@@ -353,14 +354,56 @@ class SceneFunctionsWidget(QWidget):
         super().__init__(parent)
         self._novel = novel
         self._scene: Optional[Scene] = None
+        self.setProperty('muted-bg', True)
 
         vbox(self)
         margins(self, left=15)
 
-        self.wdgPrimary = frame()
-        flow(self.wdgPrimary)
+        self.splitter = QSplitter()
+        self.splitter.setChildrenCollapsible(False)
 
-        self.layout().addWidget(self.wdgPrimary)
+        self.wdgCenter = QWidget()
+        vbox(self.wdgCenter)
+        self.wdgInfo = self._frame(scroll=True, v_on=True)
+        vbox(self.wdgInfo.widget())
+
+        self.splitter.addWidget(self.wdgCenter)
+        self.splitter.addWidget(self.wdgInfo)
+        self.splitter.setSizes([500, 150])
+
+        self.wdgPlots = self._frame(scroll=True, h_on=True)
+        hbox(self.wdgPlots.widget())
+
+        self.wdgCharacter = self._frame(scroll=True, v_on=True)
+        vbox(self.wdgCharacter.widget())
+
+        self.wdgResonance = self._frame(scroll=True, h_on=True)
+        hbox(self.wdgResonance.widget())
+
+        self.wdgPivotal = self._frame(scroll=True)
+        vbox(self.wdgPivotal.widget())
+        self.wdgPivotal.setMaximumWidth(150)
+
+        self.wdgMystery = self._frame(scroll=True, v_on=True)
+        vbox(self.wdgMystery.widget())
+        sp(self.wdgMystery).h_exp()
+
+        self.wdgMiddleContainer = columns()
+        self.wdgMiddleContainer.layout().addWidget(self.wdgPivotal)
+        self.wdgMiddleContainer.layout().addWidget(self.wdgMystery)
+
+        self.wdgBottomContainer = rows()
+        self.wdgBottomContainer.layout().addWidget(self.wdgMiddleContainer)
+        self.wdgBottomContainer.layout().addWidget(self.wdgResonance)
+
+        self.wdgLeftContainer = columns()
+        self.wdgLeftContainer.layout().addWidget(self.wdgCharacter)
+        self.wdgLeftContainer.layout().addWidget(self.wdgBottomContainer)
+
+        self.wdgCenter.layout().addWidget(self.wdgPlots)
+        self.wdgCenter.layout().addWidget(self.wdgLeftContainer)
+        self.layout().addWidget(self.splitter)
+
         # self.btnPrimary = push_btn(IconRegistry.from_name('mdi6.note-text-outline', 'grey'), 'Primary functions',
         #                            transparent_=True)
         # incr_icon(self.btnPrimary, 1)
@@ -459,13 +502,13 @@ class SceneFunctionsWidget(QWidget):
         self._addPrimary(type_, storyline)
 
     def storylineRemovedEvent(self, storyline: Plot):
-        for i in range(self.wdgPrimary.layout().count()):
-            widget = self.wdgPrimary.layout().itemAt(i).widget()
+        for i in range(self.wdgPlots.layout().count()):
+            widget = self.wdgPlots.layout().itemAt(i).widget()
             if widget and isinstance(widget, _StorylineAssociatedFunctionWidget):
                 if widget.function.ref == storyline.id:
                     self._scene.functions.primary.remove(widget.function)
                     self._scene.plot_values.remove(widget.plotRef())
-                    fade_out_and_gc(self.wdgPrimary, widget)
+                    fade_out_and_gc(self.wdgPlots, widget)
                     return
 
     def _addPrimary(self, type_: StoryElementType, storyline: Optional[Plot] = None):
@@ -488,7 +531,7 @@ class SceneFunctionsWidget(QWidget):
                 self._scene.plot_values.remove(ref)
                 self.storylineRemoved.emit(ref)
 
-        fade_out_and_gc(self.wdgPrimary, wdg)
+        fade_out_and_gc(self.wdgPlots, wdg)
 
     def __initPrimaryWidget(self, function: SceneFunction, storyline: Optional[Plot] = None):
         if function.type == StoryElementType.Character:
@@ -511,5 +554,17 @@ class SceneFunctionsWidget(QWidget):
             for ref in self._scene.plot_values:
                 if ref.plot.id == function.ref:
                     wdg.setPlotRef(ref)
-        self.wdgPrimary.layout().addWidget(wdg)
+        self.wdgPlots.layout().addWidget(wdg)
         return wdg
+
+    def _frame(self, scroll: bool = False, h_on: bool = False, v_on: bool = False) -> Union[QFrame, QScrollArea]:
+        if scroll:
+            frame_ = scroll_area(h_on, v_on)
+            wdg = QWidget()
+            transparent(wdg)
+            frame_.setWidget(wdg)
+        else:
+            frame_ = frame()
+        frame_.setProperty('large-rounded', True)
+        frame_.setProperty('bg', True)
+        return frame_
