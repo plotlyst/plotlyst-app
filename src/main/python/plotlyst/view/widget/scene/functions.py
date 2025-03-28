@@ -23,7 +23,7 @@ from typing import Optional, Union
 import qtanim
 from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 from PyQt6.QtGui import QColor, QIcon, QEnterEvent
-from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame, QScrollArea, QSplitter
+from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame, QScrollArea
 from overrides import overrides
 from qthandy import vbox, margins, hbox, pointy, gc, transparent, sp
 from qthandy.filter import OpacityEventFilter, ObjectReferenceMimeData
@@ -33,7 +33,7 @@ from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import tool_btn, action, shadow, label, fade_out_and_gc, fade_in, frame, scroll_area, \
-    columns, rows
+    columns, rows, h_splitter, v_splitter
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorButton
@@ -359,17 +359,11 @@ class SceneFunctionsWidget(QFrame):
         vbox(self)
         margins(self, left=15)
 
-        self.splitter = QSplitter()
-        self.splitter.setChildrenCollapsible(False)
+        # self.splitter.setChildrenCollapsible(False)
 
-        self.wdgCenter = QWidget()
-        vbox(self.wdgCenter)
-        self.wdgInfo = self._frame(scroll=True, v_on=True)
-        vbox(self.wdgInfo.widget())
-
-        self.splitter.addWidget(self.wdgCenter)
-        self.splitter.addWidget(self.wdgInfo)
-        self.splitter.setSizes([500, 150])
+        # self.splitter.addWidget(self.wdgCenter)
+        # self.splitter.addWidget(self.wdgInfo)
+        # self.splitter.setSizes([500, 150])
 
         self.wdgPlots = self._frame(scroll=True, h_on=True)
         hbox(self.wdgPlots.widget())
@@ -396,12 +390,16 @@ class SceneFunctionsWidget(QFrame):
         self.wdgBottomContainer.layout().addWidget(self.wdgMiddleContainer)
         self.wdgBottomContainer.layout().addWidget(self.wdgResonance)
 
-        self.wdgLeftContainer = columns()
-        self.wdgLeftContainer.layout().addWidget(self.wdgCharacter)
-        self.wdgLeftContainer.layout().addWidget(self.wdgBottomContainer)
+        self.wdgLeftContainer = h_splitter(self.wdgCharacter, self.wdgBottomContainer, [250, 150])
 
-        self.wdgCenter.layout().addWidget(self.wdgPlots)
-        self.wdgCenter.layout().addWidget(self.wdgLeftContainer)
+        self.wdgCenter = v_splitter(self.wdgPlots, self.wdgLeftContainer, [200, 400])
+        self.wdgInfo = self._frame(scroll=True, v_on=True)
+        vbox(self.wdgInfo.widget())
+
+        self.splitter = h_splitter(self.wdgCenter, self.wdgInfo, [500, 150])
+
+        # self.wdgCenter.layout().addWidget(self.wdgPlots)
+        # self.wdgCenter.layout().addWidget(self.wdgLeftContainer)
         self.layout().addWidget(self.splitter)
 
         # self.btnPrimary = push_btn(IconRegistry.from_name('mdi6.note-text-outline', 'grey'), 'Primary functions',
