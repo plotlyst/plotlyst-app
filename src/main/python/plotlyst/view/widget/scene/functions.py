@@ -25,7 +25,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 from PyQt6.QtGui import QColor, QIcon, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame, QScrollArea
 from overrides import overrides
-from qthandy import vbox, margins, hbox, pointy, gc, transparent, sp, clear_layout
+from qthandy import vbox, margins, hbox, pointy, gc, sp, clear_layout, incr_font, transparent, incr_icon, flow
 from qthandy.filter import OpacityEventFilter, ObjectReferenceMimeData
 from qtmenu import MenuWidget
 
@@ -33,11 +33,11 @@ from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, frame, scroll_area, \
-    columns, rows, h_splitter, v_splitter
+    columns, rows, h_splitter
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorButton
-from plotlyst.view.widget.display import Icon
+from plotlyst.view.widget.display import Icon, icon_text
 from plotlyst.view.widget.input import TextEditBubbleWidget
 from plotlyst.view.widget.list import ListView, ListItemWidget
 from plotlyst.view.widget.scene.plot import ScenePlotGeneralProgressEditor, \
@@ -55,8 +55,6 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
         self._textedit.setMinimumSize(165, 100)
         self._textedit.setMaximumSize(190, 110)
         self._textedit.setText(self.function.text)
-
-        margins(self, top=16)
 
     @overrides
     def _textChanged(self):
@@ -343,6 +341,35 @@ class SecondaryFunctionsList(ListView):
         self._scene.functions.secondary[:] = items
 
 
+class PlotFunctionsWidget(QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        vbox(self)
+        # transparent(self)
+
+        self.setProperty('large-rounded', True)
+        self.setProperty('bg', True)
+
+        self.header = QWidget()
+        self.container = QWidget()
+        flow(self.container)
+        # self.container.layout().addWidget(spacer())
+
+        header = icon_text('fa5s.theater-masks', 'Storylines', opacity=0.7)
+        incr_font(header, 2)
+        incr_icon(header, 2)
+        self.layout().addWidget(header, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.container)
+
+    def clear(self):
+        clear_layout(self.container)
+        # self.container.layout().addWidget(spacer())
+
+    def addWidget(self, wdg: PrimarySceneFunctionWidget):
+        # insert_before_the_end(self.container, wdg)
+        self.container.layout().addWidget(wdg)
+
+
 class SceneFunctionsWidget(QFrame):
     storylineLinked = pyqtSignal(ScenePlotReference)
     storylineRemoved = pyqtSignal(ScenePlotReference)
@@ -357,11 +384,17 @@ class SceneFunctionsWidget(QFrame):
         vbox(self)
         margins(self, left=15)
 
-        self.wdgPlots = self._frame(scroll=True, h_on=True)
-        hbox(self.wdgPlots.widget())
+        # self.wdgPlots = self._frame(scroll=True, h_on=True)
+        # self.wdgPlotFunctions = PlotFunctionsWidget()
+        self.wdgPlots = PlotFunctionsWidget()
+        # self.wdgPlotFunctions = PlotFunctionsWidget()
+        sp(self.wdgPlots).v_max()
+        # sp(self.wdgPlotFunctions).v_max()
+        # self.wdgPlots.setWidget(self.wdgPlotFunctions)
 
         self.wdgCharacter = self._frame(scroll=True, v_on=True)
         vbox(self.wdgCharacter.widget())
+        sp(self.wdgCharacter).v_exp()
 
         self.wdgResonance = self._frame(scroll=True, h_on=True)
         hbox(self.wdgResonance.widget())
@@ -383,8 +416,13 @@ class SceneFunctionsWidget(QFrame):
         self.wdgBottomContainer.layout().addWidget(self.wdgResonance)
 
         self.wdgLeftContainer = h_splitter(self.wdgCharacter, self.wdgBottomContainer, [250, 150])
+        sp(self.wdgLeftContainer).v_exp()
 
-        self.wdgCenter = v_splitter(self.wdgPlots, self.wdgLeftContainer, [200, 400])
+        self.wdgCenter = rows()
+        self.wdgCenter.layout().addWidget(self.wdgPlots)
+        self.wdgCenter.layout().addWidget(self.wdgLeftContainer)
+
+        # self.wdgCenter = v_splitter(self.wdgPlots, self.wdgLeftContainer, [200, 400])
         self.wdgInfo = self._frame(scroll=True, v_on=True)
         vbox(self.wdgInfo.widget())
 
@@ -481,7 +519,7 @@ class SceneFunctionsWidget(QFrame):
 
     def setScene(self, scene: Scene):
         self._scene = scene
-        clear_layout(self.wdgPlots.widget())
+        self.wdgPlots.clear()
         clear_layout(self.wdgCharacter.widget())
         clear_layout(self.wdgMystery)
         clear_layout(self.wdgResonance.widget())
@@ -489,7 +527,6 @@ class SceneFunctionsWidget(QFrame):
         self.listSecondary.clear()
         for function in self._scene.functions.primary:
             self.__initPrimaryWidget(function)
-            # self._addPrimaryWidget(function.type, wdg)
 
         self.listSecondary.setScene(self._scene)
 
@@ -517,7 +554,7 @@ class SceneFunctionsWidget(QFrame):
 
     def _addPrimaryWidget(self, type_: StoryElementType, wdg: PrimarySceneFunctionWidget):
         if type_ == StoryElementType.Plot:
-            self.wdgPlots.widget().layout().addWidget(wdg)
+            self.wdgPlots.addWidget(wdg)
         elif type_ == StoryElementType.Character:
             self.wdgCharacter.widget().layout().addWidget(wdg)
         elif type_ == StoryElementType.Mystery:
@@ -572,5 +609,5 @@ class SceneFunctionsWidget(QFrame):
         else:
             frame_ = frame()
         frame_.setProperty('large-rounded', True)
-        frame_.setProperty('relaxed-white-bg', True)
+        frame_.setProperty('bg', True)
         return frame_

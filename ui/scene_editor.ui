@@ -420,13 +420,6 @@
         </widget>
        </item>
        <item>
-        <widget class="Line" name="middleLine">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QWidget" name="wdgMidbar" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <property name="spacing">
@@ -532,8 +525,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>371</width>
-                    <height>282</height>
+                    <width>100</width>
+                    <height>30</height>
                    </rect>
                   </property>
                   <property name="relaxed-white-bg" stdset="0">
@@ -643,8 +636,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>367</width>
-                        <height>254</height>
+                        <width>100</width>
+                        <height>30</height>
                        </rect>
                       </property>
                       <property name="relaxed-white" stdset="0">
