@@ -25,14 +25,14 @@ from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 from PyQt6.QtGui import QColor, QIcon, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame, QScrollArea
 from overrides import overrides
-from qthandy import vbox, margins, hbox, pointy, gc, transparent, sp
+from qthandy import vbox, margins, hbox, pointy, gc, transparent, sp, clear_layout
 from qthandy.filter import OpacityEventFilter, ObjectReferenceMimeData
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import tool_btn, action, shadow, label, fade_out_and_gc, fade_in, frame, scroll_area, \
+from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, frame, scroll_area, \
     columns, rows, h_splitter, v_splitter
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
@@ -57,8 +57,6 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
         self._textedit.setText(self.function.text)
 
         margins(self, top=16)
-
-        shadow(self._textedit)
 
     @overrides
     def _textChanged(self):
@@ -359,12 +357,6 @@ class SceneFunctionsWidget(QFrame):
         vbox(self)
         margins(self, left=15)
 
-        # self.splitter.setChildrenCollapsible(False)
-
-        # self.splitter.addWidget(self.wdgCenter)
-        # self.splitter.addWidget(self.wdgInfo)
-        # self.splitter.setSizes([500, 150])
-
         self.wdgPlots = self._frame(scroll=True, h_on=True)
         hbox(self.wdgPlots.widget())
 
@@ -396,10 +388,11 @@ class SceneFunctionsWidget(QFrame):
         self.wdgInfo = self._frame(scroll=True, v_on=True)
         vbox(self.wdgInfo.widget())
 
+        self.listSecondary = SecondaryFunctionsList(self._novel)
+        self.wdgInfo.widget().layout().addWidget(self.listSecondary)
+
         self.splitter = h_splitter(self.wdgCenter, self.wdgInfo, [500, 150])
 
-        # self.wdgCenter.layout().addWidget(self.wdgPlots)
-        # self.wdgCenter.layout().addWidget(self.wdgLeftContainer)
         self.layout().addWidget(self.splitter)
 
         # self.btnPrimary = push_btn(IconRegistry.from_name('mdi6.note-text-outline', 'grey'), 'Primary functions',
@@ -470,7 +463,6 @@ class SceneFunctionsWidget(QFrame):
         # flow(self.wdgPrimary, spacing=13)
         # margins(self.wdgPrimary, left=20, top=0)
         #
-        # self.listSecondary = SecondaryFunctionsList(self._novel)
         #
         # wdgPrimaryHeader = QWidget()
         # hbox(wdgPrimaryHeader, 0, 0)
@@ -489,12 +481,17 @@ class SceneFunctionsWidget(QFrame):
 
     def setScene(self, scene: Scene):
         self._scene = scene
-        # clear_layout(self.wdgPrimary)
-        # self.listSecondary.clear()
-        # for function in self._scene.functions.primary:
-        #     self.__initPrimaryWidget(function)
-        #
-        # self.listSecondary.setScene(self._scene)
+        clear_layout(self.wdgPlots.widget())
+        clear_layout(self.wdgCharacter.widget())
+        clear_layout(self.wdgMystery)
+        clear_layout(self.wdgResonance.widget())
+
+        self.listSecondary.clear()
+        for function in self._scene.functions.primary:
+            self.__initPrimaryWidget(function)
+            # self._addPrimaryWidget(function.type, wdg)
+
+        self.listSecondary.setScene(self._scene)
 
     def addPrimaryType(self, type_: StoryElementType, storyline: Optional[Plot] = None):
         self._addPrimary(type_, storyline)
@@ -514,7 +511,19 @@ class SceneFunctionsWidget(QFrame):
         self._scene.functions.primary.append(function)
 
         wdg = self.__initPrimaryWidget(function, storyline)
+        # self._addPrimaryWidget(type_, wdg)
+
         qtanim.fade_in(wdg, teardown=lambda: wdg.setGraphicsEffect(None))
+
+    def _addPrimaryWidget(self, type_: StoryElementType, wdg: PrimarySceneFunctionWidget):
+        if type_ == StoryElementType.Plot:
+            self.wdgPlots.widget().layout().addWidget(wdg)
+        elif type_ == StoryElementType.Character:
+            self.wdgCharacter.widget().layout().addWidget(wdg)
+        elif type_ == StoryElementType.Mystery:
+            self.wdgMystery.layout().addWidget(wdg)
+        elif type_ == StoryElementType.Resonance:
+            self.wdgResonance.widget().layout().addWidget(wdg)
 
     def _addSecondary(self, type_: StoryElementType):
         function = SceneFunction(type_)
@@ -543,7 +552,6 @@ class SceneFunctionsWidget(QFrame):
 
         wdg.removed.connect(partial(self._removePrimary, wdg))
         if isinstance(wdg, _StorylineAssociatedFunctionWidget):
-
             wdg.storylineSelected.connect(self.storylineLinked)
             wdg.storylineRemoved.connect(self.storylineRemoved)
             wdg.storylineCharged.connect(self.storylineCharged)
@@ -552,7 +560,7 @@ class SceneFunctionsWidget(QFrame):
             for ref in self._scene.plot_values:
                 if ref.plot.id == function.ref:
                     wdg.setPlotRef(ref)
-        self.wdgPlots.layout().addWidget(wdg)
+        self._addPrimaryWidget(function.type, wdg)
         return wdg
 
     def _frame(self, scroll: bool = False, h_on: bool = False, v_on: bool = False) -> Union[QFrame, QScrollArea]:
@@ -564,5 +572,5 @@ class SceneFunctionsWidget(QFrame):
         else:
             frame_ = frame()
         frame_.setProperty('large-rounded', True)
-        frame_.setProperty('bg', True)
+        frame_.setProperty('relaxed-white-bg', True)
         return frame_
