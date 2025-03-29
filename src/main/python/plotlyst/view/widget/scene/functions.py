@@ -25,11 +25,12 @@ from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 from PyQt6.QtGui import QColor, QIcon, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame, QScrollArea
 from overrides import overrides
-from qthandy import vbox, margins, hbox, pointy, gc, sp, clear_layout, incr_font, incr_icon, flow
-from qthandy.filter import OpacityEventFilter, ObjectReferenceMimeData
+from qthandy import vbox, margins, hbox, pointy, gc, sp, clear_layout, incr_font, incr_icon, flow, vspacer, transparent, \
+    bold
+from qthandy.filter import ObjectReferenceMimeData
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR, LIGHTGREY_ACTIVE_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, frame, shadow, columns
@@ -51,10 +52,18 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
         self.function = function
         self._removalEnabled = True
 
-        self._textedit.setMinimumSize(170, 100)
-        self._textedit.setMaximumSize(170, 100)
+        self.setProperty('large-rounded', True)
+        self.setProperty('relaxed-white-bg', True)
+
+        bold(self._title, False)
+
+        # self._textedit.setMinimumSize(170, 100)
+        # self._textedit.setFixedSize(170, 120)
+        self.setMaximumSize(190, 140)
         self._textedit.setText(self.function.text)
+        transparent(self._textedit)
         # self.setFixedSize(190, 120)
+        shadow(self)
 
     @overrides
     def _textChanged(self):
@@ -74,10 +83,14 @@ class _StorylineAssociatedFunctionWidget(PrimarySceneFunctionWidget):
         self._menu.plotSelected.connect(self._plotSelected)
         self._menu.setScene(scene)
 
-        self._btnProgress = tool_btn(IconRegistry.from_name('mdi.chevron-double-up', color='grey'),
+        self._btnProgress = tool_btn(IconRegistry.from_name('mdi.chevron-double-up', LIGHTGREY_ACTIVE_COLOR),
                                      transparent_=True,
                                      tooltip='Track progress', parent=self)
-        self._btnProgress.installEventFilter(OpacityEventFilter(self._btnProgress, leaveOpacity=0.7))
+        # self._btnProgress.installEventFilter(OpacityEventFilter(self._btnProgress, leaveOpacity=0.7))
+        # self._btnProgress.installEventFilter(
+        #     ButtonIconSwitchEventFilter(self._btnProgress,
+        #                                 IconRegistry.from_name('mdi.chevron-double-up', LIGHTGREY_IDLE_COLOR),
+        #                                 IconRegistry.from_name('mdi.chevron-double-up', LIGHTGREY_ACTIVE_COLOR)))
         self._btnProgress.setGeometry(0, 4, 20, 20)
         self._btnProgress.setHidden(True)
 
@@ -343,17 +356,16 @@ class SecondaryFunctionsList(ListView):
 class PlotFunctionsWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
-        vbox(self)
-        # transparent(self)
+        vbox(self, 5, 5)
+        margins(self, bottom=10)
 
         self.setProperty('large-rounded', True)
         self.setProperty('bg', True)
 
         self.header = QWidget()
         self.container = QWidget()
-        flow(self.container)
+        flow(self.container, spacing=5)
         sp(self.container).v_max()
-        # self.container.layout().addWidget(spacer())
 
         header = icon_text('fa5s.theater-masks', 'Storylines', opacity=0.7)
         incr_font(header, 2)
@@ -379,40 +391,47 @@ class SceneFunctionsWidget(QFrame):
         super().__init__(parent)
         self._novel = novel
         self._scene: Optional[Scene] = None
-        self.setProperty('muted-bg', True)
+        # self.setProperty('muted-bg', True)
 
-        vbox(self, 10, 10)
+        vbox(self, 5, 5)
 
-        self.wdgPlots = PlotFunctionsWidget()
-        sp(self.wdgPlots).v_max()
+        self.wdgDrive = PlotFunctionsWidget()
+        # shadow(self.wdgDrive)
+        sp(self.wdgDrive).v_max()
 
-        self.wdgCharacter = self._frame(scroll=True, v_on=True)
-        self.wdgCharacter.setMinimumWidth(200)
-        self.wdgCharacter.setMaximumWidth(250)
-        vbox(self.wdgCharacter)
-        sp(self.wdgCharacter).v_exp()
+        self.wdgImpact = PlotFunctionsWidget()
+        # shadow(self.wdgImpact)
+        sp(self.wdgImpact).v_max()
 
-        self.wdgResonance = self._frame(scroll=True, h_on=True)
-        vbox(self.wdgResonance)
-        sp(self.wdgResonance).v_max()
-        self.wdgResonance.setFixedSize(200, 200)
+        # self.wdgCharacter = self._frame(scroll=True, v_on=True)
+        # self.wdgCharacter.setMinimumWidth(200)
+        # self.wdgCharacter.setMaximumWidth(250)
+        # vbox(self.wdgCharacter)
+        # sp(self.wdgCharacter).v_exp()
+
+        # self.wdgResonance = self._frame(scroll=True, h_on=True)
+        # vbox(self.wdgResonance)
+        # sp(self.wdgResonance).v_max()
+        # self.wdgResonance.setFixedSize(200, 200)
         # self.wdgResonance.setMaximumSize(250, 250)
 
-        self.wdgInfo = self._frame(scroll=True, v_on=True)
-        vbox(self.wdgInfo)
-        self.listSecondary = SecondaryFunctionsList(self._novel)
-        self.wdgInfo.layout().addWidget(self.listSecondary)
+        # self.wdgInfo = self._frame(scroll=True, v_on=True)
+        # vbox(self.wdgInfo)
+        # self.listSecondary = SecondaryFunctionsList(self._novel)
+        # self.wdgInfo.layout().addWidget(self.listSecondary)
 
         self.wdgTop = columns(3, 10)
-        self.wdgTop.layout().addWidget(self.wdgPlots)
-        self.wdgTop.layout().addWidget(self.wdgResonance, alignment=Qt.AlignmentFlag.AlignTop)
+        self.wdgTop.layout().addWidget(self.wdgDrive, alignment=Qt.AlignmentFlag.AlignTop)
+        self.wdgTop.layout().addWidget(self.wdgImpact, alignment=Qt.AlignmentFlag.AlignTop)
+        # self.wdgTop.layout().addWidget(self.wdgResonance, alignment=Qt.AlignmentFlag.AlignTop)
 
-        self.wdgCenter = columns(3, 20)
-        self.wdgCenter.layout().addWidget(self.wdgCharacter)
-        self.wdgCenter.layout().addWidget(self.wdgInfo)
+        # self.wdgCenter = columns(3, 20)
+        # self.wdgCenter.layout().addWidget(self.wdgCharacter)
+        # self.wdgCenter.layout().addWidget(self.wdgInfo)
 
         self.layout().addWidget(self.wdgTop)
-        self.layout().addWidget(self.wdgCenter)
+        self.layout().addWidget(vspacer())
+        # self.layout().addWidget(self.wdgCenter)
 
         # self.wdgPivotal = self._frame(scroll=True)
         # vbox(self.wdgPivotal)
@@ -435,10 +454,10 @@ class SceneFunctionsWidget(QFrame):
         # sp(self.wdgLeftContainer).v_exp()
 
         # self.wdgCenter = rows()
-        # self.wdgCenter.layout().addWidget(self.wdgPlots)
+        # self.wdgCenter.layout().addWidget(self.wdgDrive)
         # self.wdgCenter.layout().addWidget(self.wdgLeftContainer)
 
-        # self.wdgCenter = v_splitter(self.wdgPlots, self.wdgLeftContainer, [200, 400])
+        # self.wdgCenter = v_splitter(self.wdgDrive, self.wdgLeftContainer, [200, 400])
 
         # self.splitter = h_splitter(self.wdgCenter, self.wdgInfo, [500, 150])
 
@@ -530,28 +549,28 @@ class SceneFunctionsWidget(QFrame):
 
     def setScene(self, scene: Scene):
         self._scene = scene
-        self.wdgPlots.clear()
-        clear_layout(self.wdgCharacter)
+        self.wdgDrive.clear()
+        # clear_layout(self.wdgCharacter)
         # clear_layout(self.wdgMystery)
-        clear_layout(self.wdgResonance)
+        # clear_layout(self.wdgResonance)
 
-        self.listSecondary.clear()
+        # self.listSecondary.clear()
         for function in self._scene.functions.primary:
             self.__initPrimaryWidget(function)
 
-        self.listSecondary.setScene(self._scene)
+        # self.listSecondary.setScene(self._scene)
 
     def addPrimaryType(self, type_: StoryElementType, storyline: Optional[Plot] = None):
         self._addPrimary(type_, storyline)
 
     def storylineRemovedEvent(self, storyline: Plot):
-        for i in range(self.wdgPlots.layout().count()):
-            widget = self.wdgPlots.layout().itemAt(i).widget()
+        for i in range(self.wdgDrive.layout().count()):
+            widget = self.wdgDrive.layout().itemAt(i).widget()
             if widget and isinstance(widget, _StorylineAssociatedFunctionWidget):
                 if widget.function.ref == storyline.id:
                     self._scene.functions.primary.remove(widget.function)
                     self._scene.plot_values.remove(widget.plotRef())
-                    fade_out_and_gc(self.wdgPlots, widget)
+                    fade_out_and_gc(self.wdgDrive, widget)
                     return
 
     def _addPrimary(self, type_: StoryElementType, storyline: Optional[Plot] = None):
@@ -565,13 +584,13 @@ class SceneFunctionsWidget(QFrame):
 
     def _addPrimaryWidget(self, type_: StoryElementType, wdg: PrimarySceneFunctionWidget):
         if type_ == StoryElementType.Plot:
-            self.wdgPlots.addWidget(wdg)
-        elif type_ == StoryElementType.Character:
-            self.wdgCharacter.layout().addWidget(wdg)
+            self.wdgDrive.addWidget(wdg)
+        # elif type_ == StoryElementType.Character:
+        #     self.wdgCharacter.layout().addWidget(wdg)
         # elif type_ == StoryElementType.Mystery:
         #     self.wdgMystery.layout().addWidget(wdg)
-        elif type_ == StoryElementType.Resonance:
-            self.wdgResonance.layout().addWidget(wdg)
+        # elif type_ == StoryElementType.Resonance:
+        #     self.wdgResonance.layout().addWidget(wdg)
 
     def _addSecondary(self, type_: StoryElementType):
         function = SceneFunction(type_)
@@ -586,7 +605,7 @@ class SceneFunctionsWidget(QFrame):
                 self._scene.plot_values.remove(ref)
                 self.storylineRemoved.emit(ref)
 
-        fade_out_and_gc(self.wdgPlots, wdg)
+        fade_out_and_gc(self.wdgDrive, wdg)
 
     def __initPrimaryWidget(self, function: SceneFunction, storyline: Optional[Plot] = None):
         if function.type == StoryElementType.Character:

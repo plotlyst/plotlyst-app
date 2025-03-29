@@ -84,7 +84,9 @@ class SceneEditor(QObject, EventListener):
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabAgency, IconRegistry.character_icon())
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabCuriosity,
                      IconRegistry.from_name('ei.question-sign', color_on=PLOTLYST_SECONDARY_COLOR))
-        set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabInformation,
+        set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabDramaticFunctions,
+                     IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
+        set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
                      IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabFunctions, app_env.profile().get('scene-functions', False))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
