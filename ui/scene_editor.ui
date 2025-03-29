@@ -481,7 +481,7 @@
               <enum>QTabWidget::West</enum>
              </property>
              <property name="currentIndex">
-              <number>3</number>
+              <number>0</number>
              </property>
              <widget class="QWidget" name="tabFunctions">
               <property name="sizePolicy">
@@ -525,8 +525,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>100</width>
-                    <height>30</height>
+                    <width>371</width>
+                    <height>285</height>
                    </rect>
                   </property>
                   <property name="relaxed-white-bg" stdset="0">
@@ -636,8 +636,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>100</width>
-                        <height>30</height>
+                        <width>367</width>
+                        <height>257</height>
                        </rect>
                       </property>
                       <property name="relaxed-white" stdset="0">

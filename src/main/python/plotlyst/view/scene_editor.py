@@ -88,7 +88,7 @@ class SceneEditor(QObject, EventListener):
                      IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabFunctions, app_env.profile().get('scene-functions', False))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
-        # set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
+        set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
 
         if app_env.is_mac():
             incr_font(self.ui.lineTitle)
@@ -167,7 +167,7 @@ class SceneEditor(QObject, EventListener):
         self._plotSelectorMenu.plotSelected.connect(self._storyline_selected_from_toolbar)
         hbox(self.ui.wdgStorylines)
         self.ui.wdgMidbar.layout().insertWidget(1, self._btnPlotSelector)
-        self.ui.wdgMidbar.setHidden(True)
+        # self.ui.wdgMidbar.setHidden(True)
         self._btnPlotSelector.setVisible(app_env.profile().get('storylines', False))
         self.ui.wdgStorylines.setVisible(app_env.profile().get('storylines', False))
 
@@ -244,9 +244,9 @@ class SceneEditor(QObject, EventListener):
         # self.ui.wdgSceneStructure.setScene(self.novel, self.scene)
         # self.tag_selector.setScene(self.scene)
         self._functionsEditor.setScene(self.scene)
-        self._agencyEditor.setScene(self.scene)
-        self._curiosityEditor.setScene(self.scene)
-        self._informationEditor.setScene(self.scene)
+        # self._agencyEditor.setScene(self.scene)
+        # self._curiosityEditor.setScene(self.scene)
+        # self._informationEditor.setScene(self.scene)
         self._progressEditor.setScene(self.scene)
         self._structureSelector.setScene(self.scene)
 
