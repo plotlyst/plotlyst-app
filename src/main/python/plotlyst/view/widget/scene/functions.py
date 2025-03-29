@@ -32,7 +32,7 @@ from qtmenu import MenuWidget
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, frame, rows, h_splitter, shadow
+from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, frame, shadow, columns
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorButton
@@ -51,9 +51,10 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
         self.function = function
         self._removalEnabled = True
 
-        self._textedit.setMinimumSize(165, 100)
-        self._textedit.setMaximumSize(190, 110)
+        self._textedit.setMinimumSize(170, 100)
+        self._textedit.setMaximumSize(170, 100)
         self._textedit.setText(self.function.text)
+        # self.setFixedSize(190, 120)
 
     @overrides
     def _textChanged(self):
@@ -77,7 +78,7 @@ class _StorylineAssociatedFunctionWidget(PrimarySceneFunctionWidget):
                                      transparent_=True,
                                      tooltip='Track progress', parent=self)
         self._btnProgress.installEventFilter(OpacityEventFilter(self._btnProgress, leaveOpacity=0.7))
-        self._btnProgress.setGeometry(0, 18, 20, 20)
+        self._btnProgress.setGeometry(0, 4, 20, 20)
         self._btnProgress.setHidden(True)
 
         self._progressMenu = MenuWidget(self._btnProgress)
@@ -381,29 +382,42 @@ class SceneFunctionsWidget(QFrame):
         self.setProperty('muted-bg', True)
 
         vbox(self, 10, 10)
-        # margins(self, left=15)
 
-        # self.wdgPlots = self._frame(scroll=True, h_on=True)
-        # self.wdgPlotFunctions = PlotFunctionsWidget()
         self.wdgPlots = PlotFunctionsWidget()
         sp(self.wdgPlots).v_max()
-        # self.wdgPlotFunctions = PlotFunctionsWidget()
-        # sp(self.wdgPlotFunctions).v_max()
-        # self.wdgPlots.setWidget(self.wdgPlotFunctions)
 
         self.wdgCharacter = self._frame(scroll=True, v_on=True)
-        self.wdgCharacter.setMaximumWidth(200)
+        self.wdgCharacter.setMinimumWidth(200)
+        self.wdgCharacter.setMaximumWidth(250)
         vbox(self.wdgCharacter)
         sp(self.wdgCharacter).v_exp()
 
         self.wdgResonance = self._frame(scroll=True, h_on=True)
-        flow(self.wdgResonance)
+        vbox(self.wdgResonance)
         sp(self.wdgResonance).v_max()
+        self.wdgResonance.setFixedSize(200, 200)
+        # self.wdgResonance.setMaximumSize(250, 250)
 
-        self.wdgPivotal = self._frame(scroll=True)
-        vbox(self.wdgPivotal)
-        self.wdgPivotal.setMinimumSize(150, 150)
-        self.wdgPivotal.setMaximumSize(200, 200)
+        self.wdgInfo = self._frame(scroll=True, v_on=True)
+        vbox(self.wdgInfo)
+        self.listSecondary = SecondaryFunctionsList(self._novel)
+        self.wdgInfo.layout().addWidget(self.listSecondary)
+
+        self.wdgTop = columns(3, 10)
+        self.wdgTop.layout().addWidget(self.wdgPlots)
+        self.wdgTop.layout().addWidget(self.wdgResonance, alignment=Qt.AlignmentFlag.AlignTop)
+
+        self.wdgCenter = columns(3, 20)
+        self.wdgCenter.layout().addWidget(self.wdgCharacter)
+        self.wdgCenter.layout().addWidget(self.wdgInfo)
+
+        self.layout().addWidget(self.wdgTop)
+        self.layout().addWidget(self.wdgCenter)
+
+        # self.wdgPivotal = self._frame(scroll=True)
+        # vbox(self.wdgPivotal)
+        # self.wdgPivotal.setMinimumSize(150, 150)
+        # self.wdgPivotal.setMaximumSize(200, 200)
 
         # self.wdgMystery = self._frame(scroll=True, v_on=True)
         # vbox(self.wdgMystery.widget())
@@ -413,27 +427,22 @@ class SceneFunctionsWidget(QFrame):
         # self.wdgMiddleContainer.layout().addWidget(self.wdgPivotal)
         # self.wdgMiddleContainer.layout().addWidget(self.wdgMystery)
 
-        self.wdgBottomContainer = rows()
-        self.wdgBottomContainer.layout().addWidget(self.wdgPivotal, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.wdgBottomContainer.layout().addWidget(self.wdgResonance)
+        # self.wdgBottomContainer = rows()
+        # self.wdgBottomContainer.layout().addWidget(self.wdgPivotal, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.wdgBottomContainer.layout().addWidget(self.wdgResonance)
+        #
+        # self.wdgLeftContainer = h_splitter(self.wdgCharacter, self.wdgBottomContainer, [250, 150])
+        # sp(self.wdgLeftContainer).v_exp()
 
-        self.wdgLeftContainer = h_splitter(self.wdgCharacter, self.wdgBottomContainer, [250, 150])
-        sp(self.wdgLeftContainer).v_exp()
-
-        self.wdgCenter = rows()
-        self.wdgCenter.layout().addWidget(self.wdgPlots)
-        self.wdgCenter.layout().addWidget(self.wdgLeftContainer)
+        # self.wdgCenter = rows()
+        # self.wdgCenter.layout().addWidget(self.wdgPlots)
+        # self.wdgCenter.layout().addWidget(self.wdgLeftContainer)
 
         # self.wdgCenter = v_splitter(self.wdgPlots, self.wdgLeftContainer, [200, 400])
-        self.wdgInfo = self._frame(scroll=True, v_on=True)
-        vbox(self.wdgInfo)
 
-        self.listSecondary = SecondaryFunctionsList(self._novel)
-        self.wdgInfo.layout().addWidget(self.listSecondary)
+        # self.splitter = h_splitter(self.wdgCenter, self.wdgInfo, [500, 150])
 
-        self.splitter = h_splitter(self.wdgCenter, self.wdgInfo, [500, 150])
-
-        self.layout().addWidget(self.splitter)
+        # self.layout().addWidget(self.splitter)
 
         # self.btnPrimary = push_btn(IconRegistry.from_name('mdi6.note-text-outline', 'grey'), 'Primary functions',
         #                            transparent_=True)
