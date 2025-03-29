@@ -84,11 +84,13 @@ class SceneEditor(QObject, EventListener):
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabAgency, IconRegistry.character_icon())
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabCuriosity,
                      IconRegistry.from_name('ei.question-sign', color_on=PLOTLYST_SECONDARY_COLOR))
-        set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabInformation,
+        set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabDramaticFunctions,
+                     IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
+        set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
                      IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabFunctions, app_env.profile().get('scene-functions', False))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
-        set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
+        # set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
 
         if app_env.is_mac():
             incr_font(self.ui.lineTitle)
@@ -124,7 +126,7 @@ class SceneEditor(QObject, EventListener):
 
         self._structureSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Structure))
         self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
-        self.ui.middleLine.setVisible(app_env.profile().get('license_type', 'FREE') != 'FREE')
+        # self.ui.middleLine.setVisible(app_env.profile().get('license_type', 'FREE') != 'FREE')
 
         self.ui.textNotes.setTitleVisible(False)
         self.ui.textNotes.setToolbarVisible(False)
@@ -167,6 +169,7 @@ class SceneEditor(QObject, EventListener):
         self._plotSelectorMenu.plotSelected.connect(self._storyline_selected_from_toolbar)
         hbox(self.ui.wdgStorylines)
         self.ui.wdgMidbar.layout().insertWidget(1, self._btnPlotSelector)
+        # self.ui.wdgMidbar.setHidden(True)
         self._btnPlotSelector.setVisible(app_env.profile().get('storylines', False))
         self.ui.wdgStorylines.setVisible(app_env.profile().get('storylines', False))
 
@@ -175,7 +178,7 @@ class SceneEditor(QObject, EventListener):
         self._functionsEditor.storylineRemoved.connect(self._storyline_removed_from_function)
         self._functionsEditor.storylineCharged.connect(self._update_progress)
 
-        self.ui.scrollAreaFunctions.layout().addWidget(self._functionsEditor)
+        self.ui.scrollAreaWidgetDramaticFunctions.layout().addWidget(self._functionsEditor)
 
         self._agencyEditor = SceneAgencyEditor(self.novel)
         self._agencyEditor.setUnsetCharacterSlot(self._character_not_selected_notification)
@@ -186,7 +189,7 @@ class SceneEditor(QObject, EventListener):
         self.ui.tabCuriosity.layout().addWidget(self._curiosityEditor)
 
         self._informationEditor = ReaderInformationEditor(self.novel)
-        self.ui.tabInformation.layout().addWidget(self._informationEditor)
+        self.ui.tabInformationFunctions.layout().addWidget(self._informationEditor)
 
         self.ui.btnClose.clicked.connect(self._on_close)
 
@@ -243,9 +246,9 @@ class SceneEditor(QObject, EventListener):
         # self.ui.wdgSceneStructure.setScene(self.novel, self.scene)
         # self.tag_selector.setScene(self.scene)
         self._functionsEditor.setScene(self.scene)
-        # self._agencyEditor.setScene(self.scene)
-        # self._curiosityEditor.setScene(self.scene)
-        # self._informationEditor.setScene(self.scene)
+        self._agencyEditor.setScene(self.scene)
+        self._curiosityEditor.setScene(self.scene)
+        self._informationEditor.setScene(self.scene)
         self._progressEditor.setScene(self.scene)
         self._structureSelector.setScene(self.scene)
 

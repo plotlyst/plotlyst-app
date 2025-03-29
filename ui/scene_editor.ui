@@ -135,7 +135,7 @@
         <number>5</number>
        </property>
        <property name="topMargin">
-        <number>20</number>
+        <number>10</number>
        </property>
        <property name="bottomMargin">
         <number>5</number>
@@ -420,13 +420,6 @@
         </widget>
        </item>
        <item>
-        <widget class="Line" name="middleLine">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QWidget" name="wdgMidbar" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <property name="spacing">
@@ -488,7 +481,10 @@
               <enum>QTabWidget::West</enum>
              </property>
              <property name="currentIndex">
-              <number>3</number>
+              <number>0</number>
+             </property>
+             <property name="transparent" stdset="0">
+              <bool>true</bool>
              </property>
              <widget class="QWidget" name="tabFunctions">
               <property name="sizePolicy">
@@ -498,6 +494,9 @@
                </sizepolicy>
               </property>
               <property name="relaxed-white-bg" stdset="0">
+               <bool>false</bool>
+              </property>
+              <property name="bg" stdset="0">
                <bool>true</bool>
               </property>
               <attribute name="title">
@@ -520,28 +519,26 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QScrollArea" name="scrollArea">
-                 <property name="frameShape">
-                  <enum>QFrame::NoFrame</enum>
+                <widget class="QTabWidget" name="tabWidgetFunctions">
+                 <property name="currentIndex">
+                  <number>0</number>
                  </property>
-                 <property name="widgetResizable">
+                 <property name="centered" stdset="0">
                   <bool>true</bool>
                  </property>
-                 <widget class="QWidget" name="scrollAreaFunctions">
-                  <property name="geometry">
-                   <rect>
-                    <x>0</x>
-                    <y>0</y>
-                    <width>371</width>
-                    <height>282</height>
-                   </rect>
-                  </property>
+                 <property name="transparent" stdset="0">
+                  <bool>true</bool>
+                 </property>
+                 <widget class="QWidget" name="tabDramaticFunctions">
                   <property name="relaxed-white-bg" stdset="0">
                    <bool>true</bool>
                   </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_16">
+                  <attribute name="title">
+                   <string>Dramatic functions</string>
+                  </attribute>
+                  <layout class="QVBoxLayout" name="verticalLayout_5">
                    <property name="spacing">
-                    <number>3</number>
+                    <number>0</number>
                    </property>
                    <property name="leftMargin">
                     <number>0</number>
@@ -555,7 +552,59 @@
                    <property name="bottomMargin">
                     <number>0</number>
                    </property>
+                   <item>
+                    <widget class="QScrollArea" name="scrollArea">
+                     <property name="frameShape">
+                      <enum>QFrame::NoFrame</enum>
+                     </property>
+                     <property name="widgetResizable">
+                      <bool>true</bool>
+                     </property>
+                     <widget class="QWidget" name="scrollAreaWidgetDramaticFunctions">
+                      <property name="geometry">
+                       <rect>
+                        <x>0</x>
+                        <y>0</y>
+                        <width>367</width>
+                        <height>267</height>
+                       </rect>
+                      </property>
+                      <property name="muted-bg" stdset="0">
+                       <bool>true</bool>
+                      </property>
+                      <property name="relaxed-white-bg" stdset="0">
+                       <bool>false</bool>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_16">
+                       <property name="spacing">
+                        <number>0</number>
+                       </property>
+                       <property name="leftMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="topMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="rightMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="bottomMargin">
+                        <number>0</number>
+                       </property>
+                      </layout>
+                     </widget>
+                    </widget>
+                   </item>
                   </layout>
+                 </widget>
+                 <widget class="QWidget" name="tabInformationFunctions">
+                  <property name="muted-bg" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <attribute name="title">
+                   <string>Reader's information</string>
+                  </attribute>
+                  <layout class="QVBoxLayout" name="verticalLayout_19"/>
                  </widget>
                 </widget>
                </item>
@@ -644,7 +693,7 @@
                         <x>0</x>
                         <y>0</y>
                         <width>367</width>
-                        <height>254</height>
+                        <height>267</height>
                        </rect>
                       </property>
                       <property name="relaxed-white" stdset="0">

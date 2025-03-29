@@ -767,10 +767,11 @@ class PlotlystFooter(QWidget):
         self.layout().addWidget(wrap(footer, margin_bottom=2))
 
 
-def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional[float] = None) -> IconText:
+def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional[float] = None,
+              icon_v_flip: bool = False, icon_h_flip: bool = False) -> IconText:
     wdg = IconText()
     wdg.setText(text)
-    wdg.setIcon(IconRegistry.from_name(icon, icon_color))
+    wdg.setIcon(IconRegistry.from_name(icon, icon_color, vflip=icon_v_flip, hflip=icon_h_flip))
     if opacity:
         translucent(wdg, opacity)
 

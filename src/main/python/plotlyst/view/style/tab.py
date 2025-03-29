@@ -131,4 +131,8 @@ QTabWidget::pane[large-rounded=true] {{
 QTabWidget::pane[relaxed-white-bg=true] {{
     background-color: {BG_SECONDARY_COLOR};
 }}
+
+QTabWidget[transparent=true] {{
+    border: 0px;
+}}
 '''
