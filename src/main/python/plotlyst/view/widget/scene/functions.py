@@ -18,22 +18,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from functools import partial
-from typing import Optional, Union
+from typing import Optional
 
 import qtanim
-from PyQt6.QtCore import Qt, pyqtSignal, QEvent
+from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QSize
 from PyQt6.QtGui import QColor, QIcon, QEnterEvent
-from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame, QScrollArea
+from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame
 from overrides import overrides
 from qthandy import vbox, margins, hbox, pointy, gc, sp, clear_layout, incr_font, incr_icon, flow, vspacer, transparent, \
-    bold
+    bold, translucent
 from qthandy.filter import ObjectReferenceMimeData
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR, LIGHTGREY_ACTIVE_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR, LIGHTGREY_ACTIVE_COLOR, LIGHTGREY_IDLE_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, frame, shadow, columns
+from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, shadow, columns, \
+    insert_before_the_end, rows, push_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorButton
@@ -56,6 +57,7 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
         self.setProperty('relaxed-white-bg', True)
 
         bold(self._title, False)
+        translucent(self._title, 0.7)
 
         # self._textedit.setMinimumSize(170, 100)
         # self._textedit.setFixedSize(170, 120)
@@ -353,33 +355,75 @@ class SecondaryFunctionsList(ListView):
         self._scene.functions.secondary[:] = items
 
 
-class PlotFunctionsWidget(QFrame):
+class _PrimaryFunctionsWidget(QFrame):
+    newFunctionSelected = pyqtSignal(StoryElementType)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         vbox(self, 5, 5)
         margins(self, bottom=10)
-
         self.setProperty('large-rounded', True)
         self.setProperty('bg', True)
 
-        self.header = QWidget()
         self.container = QWidget()
         flow(self.container, spacing=5)
         sp(self.container).v_max()
 
-        header = icon_text('fa5s.theater-masks', 'Storylines', opacity=0.7)
+        self.btnPlus: Optional[QAbstractButton] = None
+
+    def clear(self):
+        clear_layout(self.container)
+        wdg = rows()
+        wdg.setFixedHeight(140)
+        self.btnPlus = push_btn(IconRegistry.plus_icon(LIGHTGREY_IDLE_COLOR))
+        self.btnPlus.setIconSize(QSize(36, 36))
+        self.btnPlus.setStyleSheet(f'color: {LIGHTGREY_ACTIVE_COLOR}; border: 0px;')
+        self.btnPlus.clicked.connect(self._plusClicked)
+        wdg.layout().addWidget(self.btnPlus, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.container.layout().addWidget(wdg)
+
+    def addWidget(self, wdg: PrimarySceneFunctionWidget):
+        insert_before_the_end(self.container, wdg)
+        self.btnPlus.setText('')
+
+    def _plusClicked(self):
+        pass
+
+
+class DriveFunctionsWidget(_PrimaryFunctionsWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        header = icon_text('mdi.yin-yang', 'Drive', icon_color='#E19999', opacity=0.9, icon_h_flip=True)
         incr_font(header, 2)
         incr_icon(header, 2)
         self.layout().addWidget(header, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.container)
 
+    @overrides
     def clear(self):
-        clear_layout(self.container)
-        # self.container.layout().addWidget(spacer())
+        super().clear()
+        self.btnPlus.setText('Advance the story')
 
-    def addWidget(self, wdg: PrimarySceneFunctionWidget):
-        # insert_before_the_end(self.container, wdg)
-        self.container.layout().addWidget(wdg)
+    @overrides
+    def _plusClicked(self):
+        self.newFunctionSelected.emit(StoryElementType.Plot)
+
+
+class ImpactFunctionsWidget(_PrimaryFunctionsWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        header = icon_text('mdi.yin-yang', 'Impact', icon_color='#A5C3D9', opacity=0.9)
+        incr_font(header, 2)
+        incr_icon(header, 2)
+        self.layout().addWidget(header, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.container)
+
+    @overrides
+    def clear(self):
+        super().clear()
+        self.btnPlus.setText('Emotional, dramatic, or thematic impact')
 
 
 class SceneFunctionsWidget(QFrame):
@@ -391,17 +435,16 @@ class SceneFunctionsWidget(QFrame):
         super().__init__(parent)
         self._novel = novel
         self._scene: Optional[Scene] = None
-        # self.setProperty('muted-bg', True)
 
         vbox(self, 5, 5)
 
-        self.wdgDrive = PlotFunctionsWidget()
-        # shadow(self.wdgDrive)
+        self.wdgDrive = DriveFunctionsWidget()
         sp(self.wdgDrive).v_max()
+        self.wdgDrive.newFunctionSelected.connect(self.addPrimaryType)
 
-        self.wdgImpact = PlotFunctionsWidget()
-        # shadow(self.wdgImpact)
+        self.wdgImpact = ImpactFunctionsWidget()
         sp(self.wdgImpact).v_max()
+        self.wdgImpact.newFunctionSelected.connect(self.addPrimaryType)
 
         # self.wdgCharacter = self._frame(scroll=True, v_on=True)
         # self.wdgCharacter.setMinimumWidth(200)
@@ -550,18 +593,17 @@ class SceneFunctionsWidget(QFrame):
     def setScene(self, scene: Scene):
         self._scene = scene
         self.wdgDrive.clear()
-        # clear_layout(self.wdgCharacter)
-        # clear_layout(self.wdgMystery)
-        # clear_layout(self.wdgResonance)
+        self.wdgImpact.clear()
 
-        # self.listSecondary.clear()
         for function in self._scene.functions.primary:
             self.__initPrimaryWidget(function)
 
-        # self.listSecondary.setScene(self._scene)
-
     def addPrimaryType(self, type_: StoryElementType, storyline: Optional[Plot] = None):
-        self._addPrimary(type_, storyline)
+        function = SceneFunction(type_)
+        self._scene.functions.primary.append(function)
+
+        wdg = self.__initPrimaryWidget(function, storyline)
+        qtanim.fade_in(wdg, teardown=lambda: wdg.setGraphicsEffect(None))
 
     def storylineRemovedEvent(self, storyline: Plot):
         for i in range(self.wdgDrive.layout().count()):
@@ -573,29 +615,10 @@ class SceneFunctionsWidget(QFrame):
                     fade_out_and_gc(self.wdgDrive, widget)
                     return
 
-    def _addPrimary(self, type_: StoryElementType, storyline: Optional[Plot] = None):
-        function = SceneFunction(type_)
-        self._scene.functions.primary.append(function)
-
-        wdg = self.__initPrimaryWidget(function, storyline)
-        # self._addPrimaryWidget(type_, wdg)
-
-        qtanim.fade_in(wdg, teardown=lambda: wdg.setGraphicsEffect(None))
-
-    def _addPrimaryWidget(self, type_: StoryElementType, wdg: PrimarySceneFunctionWidget):
-        if type_ == StoryElementType.Plot:
-            self.wdgDrive.addWidget(wdg)
-        # elif type_ == StoryElementType.Character:
-        #     self.wdgCharacter.layout().addWidget(wdg)
-        # elif type_ == StoryElementType.Mystery:
-        #     self.wdgMystery.layout().addWidget(wdg)
-        # elif type_ == StoryElementType.Resonance:
-        #     self.wdgResonance.layout().addWidget(wdg)
-
-    def _addSecondary(self, type_: StoryElementType):
-        function = SceneFunction(type_)
-        self._scene.functions.secondary.append(function)
-        self.listSecondary.addItem(function)
+    # def _addSecondary(self, type_: StoryElementType):
+    #     function = SceneFunction(type_)
+    #     self._scene.functions.secondary.append(function)
+    #     self.listSecondary.addItem(function)
 
     def _removePrimary(self, wdg: PrimarySceneFunctionWidget):
         self._scene.functions.primary.remove(wdg.function)
@@ -627,18 +650,17 @@ class SceneFunctionsWidget(QFrame):
             for ref in self._scene.plot_values:
                 if ref.plot.id == function.ref:
                     wdg.setPlotRef(ref)
-        self._addPrimaryWidget(function.type, wdg)
+
+        if function.type == StoryElementType.Plot:
+            self.wdgDrive.addWidget(wdg)
+        elif function.type == StoryElementType.Resonance:
+            self.wdgImpact.addWidget(wdg)
+
         return wdg
 
-    def _frame(self, scroll: bool = False, h_on: bool = False, v_on: bool = False) -> Union[QFrame, QScrollArea]:
-        # if scroll:
-        #     frame_ = scroll_area(h_on, v_on)
-        #     wdg = QWidget()
-        #     transparent(wdg)
-        #     frame_.setWidget(wdg)
-        # else:
-        frame_ = frame()
-        frame_.setProperty('large-rounded', True)
-        frame_.setProperty('bg', True)
-        shadow(frame_)
-        return frame_
+    # def _frame(self) -> Union[QFrame, QScrollArea]:
+    #     frame_ = frame()
+    #     frame_.setProperty('large-rounded', True)
+    #     frame_.setProperty('bg', True)
+    #     shadow(frame_)
+    #     return frame_
