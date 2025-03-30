@@ -371,6 +371,8 @@ class _PrimaryFunctionsWidget(QFrame):
 
         self.btnPlus: Optional[QAbstractButton] = None
 
+        sp(self).v_max()
+
     def clear(self):
         clear_layout(self.container)
         wdg = rows()
@@ -403,7 +405,7 @@ class DriveFunctionsWidget(_PrimaryFunctionsWidget):
     @overrides
     def clear(self):
         super().clear()
-        self.btnPlus.setText('Advance the story')
+        self.btnPlus.setText('Drive the story')
 
     @overrides
     def _plusClicked(self):
@@ -426,6 +428,17 @@ class ImpactFunctionsWidget(_PrimaryFunctionsWidget):
         self.btnPlus.setText('Emotional, dramatic, or thematic impact')
 
 
+class SetupFunctionsWidget(_PrimaryFunctionsWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        header = icon_text('fa5s.seedling', 'Setup', icon_color='grey', opacity=0.9)
+        incr_font(header, 2)
+        incr_icon(header, 2)
+        self.layout().addWidget(header, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.container)
+
+
 class SceneFunctionsWidget(QFrame):
     storylineLinked = pyqtSignal(ScenePlotReference)
     storylineRemoved = pyqtSignal(ScenePlotReference)
@@ -436,75 +449,23 @@ class SceneFunctionsWidget(QFrame):
         self._novel = novel
         self._scene: Optional[Scene] = None
 
-        vbox(self, 5, 5)
+        vbox(self, 5, 15)
 
         self.wdgDrive = DriveFunctionsWidget()
-        sp(self.wdgDrive).v_max()
         self.wdgDrive.newFunctionSelected.connect(self.addPrimaryType)
 
         self.wdgImpact = ImpactFunctionsWidget()
-        sp(self.wdgImpact).v_max()
         self.wdgImpact.newFunctionSelected.connect(self.addPrimaryType)
-
-        # self.wdgCharacter = self._frame(scroll=True, v_on=True)
-        # self.wdgCharacter.setMinimumWidth(200)
-        # self.wdgCharacter.setMaximumWidth(250)
-        # vbox(self.wdgCharacter)
-        # sp(self.wdgCharacter).v_exp()
-
-        # self.wdgResonance = self._frame(scroll=True, h_on=True)
-        # vbox(self.wdgResonance)
-        # sp(self.wdgResonance).v_max()
-        # self.wdgResonance.setFixedSize(200, 200)
-        # self.wdgResonance.setMaximumSize(250, 250)
-
-        # self.wdgInfo = self._frame(scroll=True, v_on=True)
-        # vbox(self.wdgInfo)
-        # self.listSecondary = SecondaryFunctionsList(self._novel)
-        # self.wdgInfo.layout().addWidget(self.listSecondary)
 
         self.wdgTop = columns(3, 10)
         self.wdgTop.layout().addWidget(self.wdgDrive, alignment=Qt.AlignmentFlag.AlignTop)
         self.wdgTop.layout().addWidget(self.wdgImpact, alignment=Qt.AlignmentFlag.AlignTop)
-        # self.wdgTop.layout().addWidget(self.wdgResonance, alignment=Qt.AlignmentFlag.AlignTop)
 
-        # self.wdgCenter = columns(3, 20)
-        # self.wdgCenter.layout().addWidget(self.wdgCharacter)
-        # self.wdgCenter.layout().addWidget(self.wdgInfo)
+        self.wdgSetup = SetupFunctionsWidget()
 
         self.layout().addWidget(self.wdgTop)
+        self.layout().addWidget(self.wdgSetup)
         self.layout().addWidget(vspacer())
-        # self.layout().addWidget(self.wdgCenter)
-
-        # self.wdgPivotal = self._frame(scroll=True)
-        # vbox(self.wdgPivotal)
-        # self.wdgPivotal.setMinimumSize(150, 150)
-        # self.wdgPivotal.setMaximumSize(200, 200)
-
-        # self.wdgMystery = self._frame(scroll=True, v_on=True)
-        # vbox(self.wdgMystery.widget())
-        # sp(self.wdgMystery).h_exp()
-
-        # self.wdgMiddleContainer = columns()
-        # self.wdgMiddleContainer.layout().addWidget(self.wdgPivotal)
-        # self.wdgMiddleContainer.layout().addWidget(self.wdgMystery)
-
-        # self.wdgBottomContainer = rows()
-        # self.wdgBottomContainer.layout().addWidget(self.wdgPivotal, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.wdgBottomContainer.layout().addWidget(self.wdgResonance)
-        #
-        # self.wdgLeftContainer = h_splitter(self.wdgCharacter, self.wdgBottomContainer, [250, 150])
-        # sp(self.wdgLeftContainer).v_exp()
-
-        # self.wdgCenter = rows()
-        # self.wdgCenter.layout().addWidget(self.wdgDrive)
-        # self.wdgCenter.layout().addWidget(self.wdgLeftContainer)
-
-        # self.wdgCenter = v_splitter(self.wdgDrive, self.wdgLeftContainer, [200, 400])
-
-        # self.splitter = h_splitter(self.wdgCenter, self.wdgInfo, [500, 150])
-
-        # self.layout().addWidget(self.splitter)
 
         # self.btnPrimary = push_btn(IconRegistry.from_name('mdi6.note-text-outline', 'grey'), 'Primary functions',
         #                            transparent_=True)
@@ -594,6 +555,7 @@ class SceneFunctionsWidget(QFrame):
         self._scene = scene
         self.wdgDrive.clear()
         self.wdgImpact.clear()
+        self.wdgSetup.clear()
 
         for function in self._scene.functions.primary:
             self.__initPrimaryWidget(function)
