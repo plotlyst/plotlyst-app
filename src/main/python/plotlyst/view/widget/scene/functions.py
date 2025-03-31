@@ -59,12 +59,9 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
         bold(self._title, False)
         translucent(self._title, 0.7)
 
-        # self._textedit.setMinimumSize(170, 100)
-        # self._textedit.setFixedSize(170, 120)
         self.setMaximumSize(170, 130)
         self._textedit.setText(self.function.text)
         transparent(self._textedit)
-        # self.setFixedSize(190, 120)
 
     def activate(self):
         shadow(self)
@@ -90,11 +87,6 @@ class _StorylineAssociatedFunctionWidget(PrimarySceneFunctionWidget):
         self._btnProgress = tool_btn(IconRegistry.from_name('mdi.chevron-double-up', LIGHTGREY_ACTIVE_COLOR),
                                      transparent_=True,
                                      tooltip='Track progress', parent=self)
-        # self._btnProgress.installEventFilter(OpacityEventFilter(self._btnProgress, leaveOpacity=0.7))
-        # self._btnProgress.installEventFilter(
-        #     ButtonIconSwitchEventFilter(self._btnProgress,
-        #                                 IconRegistry.from_name('mdi.chevron-double-up', LIGHTGREY_IDLE_COLOR),
-        #                                 IconRegistry.from_name('mdi.chevron-double-up', LIGHTGREY_ACTIVE_COLOR)))
         self._btnProgress.setGeometry(0, 4, 20, 20)
         self._btnProgress.setHidden(True)
 
@@ -312,9 +304,6 @@ class SecondaryFunctionListItemWidget(ListItemWidget):
         self._lineEdit.setToolTip(tip)
 
         self.layout().insertWidget(1, self._icon)
-        # lblName = label(function.type.name, description=True)
-        # lblName.setFixedWidth(90)
-        # self.layout().insertWidget(2, lblName)
 
         self._lineEdit.setText(self._function.text)
 
@@ -389,9 +378,6 @@ class _PrimaryFunctionsWidget(QFrame):
         super().__init__(parent)
         self._novel = novel
         vbox(self, 5, 5)
-        # margins(self, bottom=10)
-        # self.setProperty('large-rounded', True)
-        # self.setProperty('bg', True)
 
         self.container = QWidget()
         flow(self.container, spacing=5)
@@ -506,79 +492,6 @@ class SceneFunctionsWidget(QFrame):
         self.layout().addWidget(self.wdgDrive, alignment=Qt.AlignmentFlag.AlignTop)
         self.layout().addWidget(self.wdgImpact, alignment=Qt.AlignmentFlag.AlignTop)
 
-        # self.menuPrimary.addAction(action('Advance story', IconRegistry.storylines_icon(),
-        #                                   slot=partial(self._addPrimary, StoryElementType.Plot),
-        #                                   tooltip="This scene primarily advances or complicates the story \nby affecting the plot, character development, or relationships",
-        #                                   incr_font_=2))
-        # self.menuPrimary.addAction(
-        #     action('Character insight', IconRegistry.character_icon(),
-        #            slot=partial(self._addPrimary, StoryElementType.Character),
-        #            tooltip="This scene primarily provides new information, layers, \nor development about a character",
-        #            incr_font_=2))
-        # self.menuPrimary.addAction(action('Mystery', IconRegistry.from_name('ei.question-sign'),
-        #                                   slot=partial(self._addPrimary, StoryElementType.Mystery),
-        #                                   tooltip="This scene primarily introduces or deepens a mystery \nthat drives the narrative forward",
-        #                                   incr_font_=2))
-        # self.menuPrimary.addAction(action('Resonance', IconRegistry.theme_icon('black'),
-        #                                   slot=partial(self._addPrimary, StoryElementType.Resonance),
-        #                                   tooltip="This scene primarily establishes an emotional or thematic impact",
-        #                                   incr_font_=2))
-        # self.btnPrimary.clicked.connect(self.btnPrimaryPlus.click)
-        #
-        # self.btnSecondary = push_btn(IconRegistry.from_name('fa5s.list', 'grey'), 'Secondary functions',
-        #                              transparent_=True)
-        # self.btnSecondary.installEventFilter(OpacityEventFilter(self.btnSecondary, leaveOpacity=0.7))
-        # incr_icon(self.btnSecondary, 1)
-        # incr_font(self.btnSecondary, 1)
-        # self.btnSecondaryPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
-        # self.btnSecondaryPlus.installEventFilter(OpacityEventFilter(self.btnPrimaryPlus, leaveOpacity=0.7))
-        # self.menuSecondary = MenuWidget(self.btnSecondaryPlus)
-        # self.menuSecondary.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
-        # self.menuSecondary.addSection('Select a secondary function that this scene also fulfills')
-        # self.menuSecondary.addSeparator()
-        # self.menuSecondary.addAction(
-        #     action('Setup', IconRegistry.setup_scene_icon('black'),
-        #            slot=partial(self._addSecondary, StoryElementType.Setup),
-        #            tooltip="Sets up a story element for a later payoff", incr_font_=1))
-        # self.menuSecondary.addAction(
-        #     action('Information', IconRegistry.general_info_icon('black'),
-        #            slot=partial(self._addSecondary, StoryElementType.Information),
-        #            tooltip="New information to be conveyed", incr_font_=1))
-        # self.menuSecondary.addAction(
-        #     action('Character insight', IconRegistry.character_icon(),
-        #            slot=partial(self._addSecondary, StoryElementType.Character),
-        #            tooltip="New information about a character", incr_font_=1))
-        # self.menuSecondary.addAction(
-        #     action('Mystery', IconRegistry.from_name('ei.question-sign'),
-        #            slot=partial(self._addSecondary, StoryElementType.Mystery),
-        #            tooltip="A smaller mystery to be introduced or deepened", incr_font_=1))
-        # self.menuSecondary.addAction(
-        #     action('Resonance', IconRegistry.theme_icon('black'),
-        #            slot=partial(self._addSecondary, StoryElementType.Resonance),
-        #            tooltip="Emotional or thematic impact", incr_font_=1))
-        #
-        # self.btnSecondary.clicked.connect(self.btnSecondaryPlus.click)
-        #
-        # self.wdgPrimary = QWidget()
-        # flow(self.wdgPrimary, spacing=13)
-        # margins(self.wdgPrimary, left=20, top=0)
-        #
-        #
-        # wdgPrimaryHeader = QWidget()
-        # hbox(wdgPrimaryHeader, 0, 0)
-        # wdgPrimaryHeader.layout().addWidget(self.btnPrimary)
-        # wdgPrimaryHeader.layout().addWidget(self.btnPrimaryPlus, alignment=Qt.AlignmentFlag.AlignBottom)
-        # self.layout().addWidget(wdgPrimaryHeader, alignment=Qt.AlignmentFlag.AlignLeft)
-        # self.layout().addWidget(self.wdgPrimary)
-        #
-        # wdgSecondaryHeader = QWidget()
-        # hbox(wdgSecondaryHeader, 0, 0)
-        # wdgSecondaryHeader.layout().addWidget(self.btnSecondary)
-        # wdgSecondaryHeader.layout().addWidget(self.btnSecondaryPlus, alignment=Qt.AlignmentFlag.AlignBottom)
-        # self.layout().addWidget(wdgSecondaryHeader, alignment=Qt.AlignmentFlag.AlignLeft)
-        # self.layout().addWidget(self.listSecondary)
-        # self.layout().addWidget(vspacer())
-
     def setScene(self, scene: Scene):
         self._scene = scene
         self.wdgDrive.clear()
@@ -604,11 +517,6 @@ class SceneFunctionsWidget(QFrame):
                     self._scene.plot_values.remove(widget.plotRef())
                     fade_out_and_gc(self.wdgDrive, widget)
                     return
-
-    # def _addSecondary(self, type_: StoryElementType):
-    #     function = SceneFunction(type_)
-    #     self._scene.functions.secondary.append(function)
-    #     self.listSecondary.addItem(function)
 
     def _removePrimary(self, wdg: PrimarySceneFunctionWidget):
         self._scene.functions.primary.remove(wdg.function)
@@ -654,10 +562,3 @@ class SceneFunctionsWidget(QFrame):
             self.wdgImpact.addWidget(wdg)
 
         return wdg
-
-    # def _frame(self) -> Union[QFrame, QScrollArea]:
-    #     frame_ = frame()
-    #     frame_.setProperty('large-rounded', True)
-    #     frame_.setProperty('bg', True)
-    #     shadow(frame_)
-    #     return frame_

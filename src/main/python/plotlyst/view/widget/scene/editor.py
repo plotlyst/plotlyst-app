@@ -212,16 +212,14 @@ class ScenePurposeTypeButton(QPushButton):
     def refresh(self):
         if self._scene is None:
             return
-        IconRegistry.action_scene_icon()
+
         if self._scene.purpose == ScenePurposeType.Other:
             self.setText('Type...')
-            # self.setToolTip('Scene type not selected')
             self.setIcon(QIcon())
         else:
             purpose = scene_purposes.get(self._scene.purpose)
             tip = purpose.display_name.replace('\n', ' ')
             self.setText(tip)
-            # self.setToolTip(f'Scene purpose: {tip}')
 
         if self._scene.purpose == ScenePurposeType.Other:
             italic(self, True)
@@ -235,7 +233,6 @@ class ScenePurposeTypeButton(QPushButton):
             trade_off = self._scene.outcome == SceneOutcome.TRADE_OFF
             motion = self._scene.outcome == SceneOutcome.MOTION
 
-            # self.setIcon(IconRegistry.action_scene_icon(resolution, trade_off, motion))
             if resolution:
                 # bgColor = '#14CE93'
                 borderColor = '#0b6e4f'
