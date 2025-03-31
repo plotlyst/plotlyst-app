@@ -26,9 +26,9 @@ from PyQt6.QtGui import QColor, QIcon, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame
 from overrides import overrides
 from qthandy import vbox, margins, hbox, pointy, gc, sp, clear_layout, incr_font, incr_icon, flow, transparent, \
-    bold, translucent
+    bold, translucent, line
 from qthandy.filter import ObjectReferenceMimeData
-from qtmenu import MenuWidget
+from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR, LIGHTGREY_ACTIVE_COLOR, LIGHTGREY_IDLE_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
@@ -65,6 +65,8 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
         self._textedit.setText(self.function.text)
         transparent(self._textedit)
         # self.setFixedSize(190, 120)
+
+    def activate(self):
         shadow(self)
 
     @overrides
@@ -249,7 +251,32 @@ class ResonancePrimarySceneFunctionWidget(PrimarySceneFunctionWidget):
 
         self._title.setIcon(IconRegistry.theme_icon())
         self._title.setText('Resonance')
-        self._textedit.setPlaceholderText("What emotional or thematic impact does this scene have")
+        self._textedit.setPlaceholderText("Emotional or thematic effects that stay with the reader")
+
+
+class ReactionPrimarySceneFunctionWidget(PrimarySceneFunctionWidget):
+    def __init__(self, novel: Novel, scene: Scene, function: SceneFunction, parent=None):
+        super().__init__(novel, scene, function, parent)
+
+        self._title.setIcon(IconRegistry.from_name('fa5s.heartbeat'))
+        self._title.setText('Reaction')
+        self._textedit.setPlaceholderText("Emotional or physical responses to events")
+
+
+class ReflectionPrimarySceneFunctionWidget(PrimarySceneFunctionWidget):
+    def __init__(self, novel: Novel, scene: Scene, function: SceneFunction, parent=None):
+        super().__init__(novel, scene, function, parent)
+        self._title.setIcon(IconRegistry.from_name('mdi.thought-bubble-outline'))
+        self._title.setText('Reflection')
+        self._textedit.setPlaceholderText("Internal processing and contemplation of events")
+
+
+class RepercussionPrimarySceneFunctionWidget(PrimarySceneFunctionWidget):
+    def __init__(self, novel: Novel, scene: Scene, function: SceneFunction, parent=None):
+        super().__init__(novel, scene, function, parent)
+        self._title.setIcon(IconRegistry.from_name('fa5s.radiation'))
+        self._title.setText('Repercussion')
+        self._textedit.setPlaceholderText("The consequences or fallout from previous actions")
 
 
 class SecondaryFunctionListItemWidget(ListItemWidget):
@@ -358,8 +385,9 @@ class SecondaryFunctionsList(ListView):
 class _PrimaryFunctionsWidget(QFrame):
     newFunctionSelected = pyqtSignal(StoryElementType)
 
-    def __init__(self, parent=None):
+    def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
+        self._novel = novel
         vbox(self, 5, 5)
         # margins(self, bottom=10)
         # self.setProperty('large-rounded', True)
@@ -393,13 +421,14 @@ class _PrimaryFunctionsWidget(QFrame):
 
 
 class DriveFunctionsWidget(_PrimaryFunctionsWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(novel, parent)
 
         header = icon_text('mdi.yin-yang', 'Drive', icon_color='#E19999', opacity=0.9, icon_h_flip=True)
         incr_font(header, 2)
         incr_icon(header, 2)
         self.layout().addWidget(header, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(line(color='#E19999'))
         self.layout().addWidget(self.container)
 
     @overrides
@@ -413,8 +442,8 @@ class DriveFunctionsWidget(_PrimaryFunctionsWidget):
 
 
 class ImpactFunctionsWidget(_PrimaryFunctionsWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(novel, parent)
 
         header = icon_text('mdi.yin-yang', 'Impact', icon_color='#A5C3D9', opacity=0.9)
         incr_font(header, 2)
@@ -427,16 +456,33 @@ class ImpactFunctionsWidget(_PrimaryFunctionsWidget):
         super().clear()
         self.btnPlus.setText('Emotional, dramatic, or thematic impact')
 
+    @overrides
+    def _plusClicked(self):
+        unit = 'scene' if self._novel.prefs.is_scenes_organization() else 'chapter'
+        menu = MenuWidget(largeIcons=True)
+        menu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
+        menu.addSection(
+            f"This {unit} primarily reflects the aftermath of events, deepening emotions, themes, or consequences")
+        menu.addSeparator()
 
-class SetupFunctionsWidget(_PrimaryFunctionsWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+        menu.addAction(action('Reaction', IconRegistry.from_name('fa5s.heartbeat'),
+                              slot=partial(self.newFunctionSelected.emit, StoryElementType.Reaction),
+                              tooltip="Emotional or physical responses to events",
+                              incr_font_=2))
+        menu.addAction(action('Reflection', IconRegistry.from_name('mdi.thought-bubble-outline'),
+                              slot=partial(self.newFunctionSelected.emit, StoryElementType.Reflection),
+                              tooltip="Internal processing and contemplation of events. Might include analysis of a situation or mystery.",
+                              incr_font_=2))
+        menu.addAction(action('Repercussion', IconRegistry.from_name('fa5s.radiation'),
+                              slot=partial(self.newFunctionSelected.emit, StoryElementType.Repercussion),
+                              tooltip="The consequences or fallout from previous actions",
+                              incr_font_=2))
+        menu.addAction(action('Resonance', IconRegistry.theme_icon('black'),
+                              slot=partial(self.newFunctionSelected.emit, StoryElementType.Resonance),
+                              tooltip="Lingering emotional or thematic effects that stay with the reader",
+                              incr_font_=2))
 
-        header = icon_text('fa5s.seedling', 'Setup', icon_color='grey', opacity=0.9)
-        incr_font(header, 2)
-        incr_icon(header, 2)
-        self.layout().addWidget(header, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(self.container)
+        menu.exec()
 
 
 class SceneFunctionsWidget(QFrame):
@@ -451,10 +497,10 @@ class SceneFunctionsWidget(QFrame):
 
         hbox(self, 10, 8)
 
-        self.wdgDrive = DriveFunctionsWidget()
+        self.wdgDrive = DriveFunctionsWidget(self._novel)
         self.wdgDrive.newFunctionSelected.connect(self.addPrimaryType)
 
-        self.wdgImpact = ImpactFunctionsWidget()
+        self.wdgImpact = ImpactFunctionsWidget(self._novel)
         self.wdgImpact.newFunctionSelected.connect(self.addPrimaryType)
 
         self.layout().addWidget(self.wdgDrive, alignment=Qt.AlignmentFlag.AlignTop)
@@ -539,14 +585,15 @@ class SceneFunctionsWidget(QFrame):
         self.wdgImpact.clear()
 
         for function in self._scene.functions.primary:
-            self.__initPrimaryWidget(function)
+            wdg = self.__initPrimaryWidget(function)
+            wdg.activate()
 
     def addPrimaryType(self, type_: StoryElementType, storyline: Optional[Plot] = None):
         function = SceneFunction(type_)
         self._scene.functions.primary.append(function)
 
         wdg = self.__initPrimaryWidget(function, storyline)
-        qtanim.fade_in(wdg, teardown=lambda: wdg.setGraphicsEffect(None))
+        qtanim.fade_in(wdg, teardown=wdg.activate)
 
     def storylineRemovedEvent(self, storyline: Plot):
         for i in range(self.wdgDrive.layout().count()):
@@ -580,6 +627,12 @@ class SceneFunctionsWidget(QFrame):
             wdg = MysteryPrimarySceneFunctionWidget(self._novel, self._scene, function)
         elif function.type == StoryElementType.Resonance:
             wdg = ResonancePrimarySceneFunctionWidget(self._novel, self._scene, function)
+        elif function.type == StoryElementType.Reaction:
+            wdg = ReactionPrimarySceneFunctionWidget(self._novel, self._scene, function)
+        elif function.type == StoryElementType.Reflection:
+            wdg = ReflectionPrimarySceneFunctionWidget(self._novel, self._scene, function)
+        elif function.type == StoryElementType.Repercussion:
+            wdg = RepercussionPrimarySceneFunctionWidget(self._novel, self._scene, function)
         else:
             wdg = PlotPrimarySceneFunctionWidget(self._novel, self._scene, function)
 
@@ -596,7 +649,8 @@ class SceneFunctionsWidget(QFrame):
 
         if function.type == StoryElementType.Plot:
             self.wdgDrive.addWidget(wdg)
-        elif function.type == StoryElementType.Resonance:
+        elif function.type in [StoryElementType.Resonance, StoryElementType.Reaction, StoryElementType.Reflection,
+                               StoryElementType.Repercussion]:
             self.wdgImpact.addWidget(wdg)
 
         return wdg

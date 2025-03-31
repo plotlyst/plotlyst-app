@@ -257,9 +257,8 @@ class ScenePlotLabels(QWidget):
 
         self._btnReset = RemovalButton()
         self._btnReset.clicked.connect(self.reset.emit)
-        # retain_when_hidden(self._btnReset)
+        retain_when_hidden(self._btnReset)
 
-        # self.layout().addWidget(vline())
         self.layout().addWidget(self._icon)
         self.layout().addWidget(self._btnReset)
 
