@@ -25,7 +25,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QTableView
 from overrides import overrides
-from qthandy import incr_font, margins, pointy, clear_layout, busy, flow, retain_when_hidden
+from qthandy import incr_font, margins, pointy, clear_layout, busy, flow, retain_when_hidden, translucent
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -42,7 +42,7 @@ from plotlyst.events import NovelAboutToSyncEvent, SceneStoryBeatChangedEvent, \
 from plotlyst.model.characters_model import CharactersSceneAssociationTableModel
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import emoji_font, set_tab_icon, \
-    push_btn, fade_out_and_gc, set_tab_visible, scroll_to_bottom
+    push_btn, fade_out_and_gc, set_tab_visible, scroll_to_bottom, link_buttons_to_pages
 from plotlyst.view.generated.scene_editor_ui import Ui_SceneEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
@@ -52,7 +52,7 @@ from plotlyst.view.widget.scene.editor import ScenePurposeTypeButton, SceneProgr
 from plotlyst.view.widget.scene.functions import SceneFunctionsWidget
 from plotlyst.view.widget.scene.plot import ScenePlotLabels, \
     ScenePlotSelectorMenu
-from plotlyst.view.widget.scene.reader_drive import ReaderCuriosityEditor
+from plotlyst.view.widget.scene.reader_drive import ReaderCuriosityEditor, ReaderInformationEditor
 from plotlyst.view.widget.structure.selector import StructureBeatSelectorButton
 from plotlyst.view.widget.tree import TreeSettings
 
@@ -82,13 +82,20 @@ class SceneEditor(QObject, EventListener):
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabAgency, IconRegistry.character_icon())
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabCuriosity,
                      IconRegistry.from_name('ei.question-sign', color_on=PLOTLYST_SECONDARY_COLOR))
-        set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabDramaticFunctions,
-                     IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
+        # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabDramaticFunctions,
+        #              IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
         # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
         #              IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabFunctions, app_env.profile().get('scene-functions', False))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
         set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
+
+        self.ui.btnDramaticFunctions.setIcon(
+            IconRegistry.from_name('mdi.yin-yang', 'grey', color_on=PLOTLYST_SECONDARY_COLOR))
+        self.ui.btnReaderInfo.setIcon(
+            IconRegistry.from_name('fa5s.book-reader', 'grey', color_on=PLOTLYST_SECONDARY_COLOR))
+        translucent(self.ui.btnDramaticFunctions, 0.6)
+        translucent(self.ui.btnReaderInfo, 0.6)
 
         if app_env.is_mac():
             incr_font(self.ui.lineTitle)
@@ -179,8 +186,14 @@ class SceneEditor(QObject, EventListener):
         self._curiosityEditor = ReaderCuriosityEditor(self.novel)
         self.ui.tabCuriosity.layout().addWidget(self._curiosityEditor)
 
-        # self._informationEditor = ReaderInformationEditor(self.novel)
-        # self.ui.tabInformationFunctions.layout().addWidget(self._informationEditor)
+        self._informationEditor = ReaderInformationEditor(self.novel)
+        self.ui.pageInfo.layout().addWidget(self._informationEditor)
+
+        link_buttons_to_pages(self.ui.stackedWidgetFunctions,
+                              [
+                                  (self.ui.btnDramaticFunctions, self.ui.pageDramaticFunctions),
+                                  (self.ui.btnReaderInfo, self.ui.pageInfo),
+                              ])
 
         self.ui.btnClose.clicked.connect(self._on_close)
 
@@ -237,7 +250,7 @@ class SceneEditor(QObject, EventListener):
         self._functionsEditor.setScene(self.scene)
         # self._agencyEditor.setScene(self.scene)
         # self._curiosityEditor.setScene(self.scene)
-        # self._informationEditor.setScene(self.scene)
+        self._informationEditor.setScene(self.scene)
         self._progressEditor.setScene(self.scene)
         self._structureSelector.setScene(self.scene)
 
