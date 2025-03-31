@@ -96,9 +96,9 @@ class SceneEditor(QObject, EventListener):
             IconRegistry.from_name('fa5s.book-reader', 'grey', color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnReaderQuestions.setIcon(
             IconRegistry.from_name('ei.question-sign', 'grey', color_on=PLOTLYST_SECONDARY_COLOR))
-        translucent(self.ui.btnDramaticFunctions, 0.6)
-        translucent(self.ui.btnReaderInfo, 0.6)
-        translucent(self.ui.btnReaderQuestions, 0.6)
+        translucent(self.ui.btnDramaticFunctions, 0.7)
+        translucent(self.ui.btnReaderInfo, 0.7)
+        translucent(self.ui.btnReaderQuestions, 0.7)
 
         if app_env.is_mac():
             incr_font(self.ui.lineTitle)

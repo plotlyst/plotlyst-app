@@ -23,11 +23,11 @@ from typing import Optional, Dict
 
 import qtanim
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QResizeEvent, QAction, QIcon
-from PyQt6.QtWidgets import QWidget, QButtonGroup, QStackedWidget, QTextEdit
+from PyQt6.QtGui import QColor, QResizeEvent, QAction
+from PyQt6.QtWidgets import QWidget, QButtonGroup, QStackedWidget, QTextEdit, QFrame
 from overrides import overrides
 from qthandy import vbox, hbox, spacer, sp, flow, vline, clear_layout, bold, incr_font, italic, translucent, line, \
-    vspacer, incr_icon, margins, retain_when_hidden, decr_icon, decr_font
+    vspacer, incr_icon, margins
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
@@ -485,13 +485,15 @@ class ReaderCuriosityEditor(LazyWidget):
         return wdg
 
 
-class ReaderInformationWidget(QWidget):
+class ReaderInformationWidget(QFrame):
     removed = pyqtSignal()
 
     def __init__(self, info: SceneReaderInformation, parent=None):
         super().__init__(parent)
         self.info = info
-        vbox(self, 10)
+        vbox(self)
+        self.setProperty('white-bg', True)
+        self.setProperty('rounded', True)
 
         self._label = push_btn(
             IconRegistry.general_info_icon('black'), 'Information',
@@ -505,34 +507,29 @@ class ReaderInformationWidget(QWidget):
         self.installEventFilter(VisibilityToggleEventFilter(self.btnRemove, self))
 
         self.textedit = QTextEdit(self)
-        self.textedit.setProperty('white-bg', True)
-        self.textedit.setProperty('rounded', True)
+        self.textedit.setProperty('transparent', True)
         self.textedit.setTabChangesFocus(True)
         if app_env.is_mac():
             incr_font(self.textedit)
-        self.textedit.setMinimumSize(170, 100)
-        self.textedit.setMaximumSize(190, 120)
-        self.textedit.verticalScrollBar().setVisible(False)
-        shadow(self.textedit, offset=4 if self.info.revelation else 2, color=QColor(self.info.type.color()))
+        self.textedit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.textedit.setPlaceholderText('What new information is conveyed to the reader?')
         self.textedit.setText(self.info.text)
         self.textedit.textChanged.connect(self._infoChanged)
 
-        self.btnRevelation = push_btn(IconRegistry.from_name('mdi.puzzle-star'), 'Mark as revelation',
-                                      transparent_=True)
-        self.btnRevelation.installEventFilter(OpacityEventFilter(self.btnRevelation))
-        retain_when_hidden(self.btnRevelation)
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnRevelation, self))
-        self.btnRevelation.clicked.connect(self._toggleRelevation)
+        # self.btnRevelation = push_btn(IconRegistry.from_name('mdi.puzzle-star'), 'Mark as revelation',
+        #                               transparent_=True)
+        # self.btnRevelation.installEventFilter(OpacityEventFilter(self.btnRevelation))
+        # retain_when_hidden(self.btnRevelation)
+        # self.installEventFilter(VisibilityToggleEventFilter(self.btnRevelation, self))
+        # self.btnRevelation.clicked.connect(self._toggleRelevation)
 
         self.layout().addWidget(self._label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.textedit)
-        self.layout().addWidget(self.btnRevelation, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        if self.info.revelation:
-            self._refreshRevelation()
+        self.setMaximumHeight(110)
 
-        sp(self).v_max()
+    def activate(self):
+        shadow(self)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -541,44 +538,44 @@ class ReaderInformationWidget(QWidget):
     def _infoChanged(self):
         self.info.text = self.textedit.toPlainText()
 
-    def _toggleRelevation(self):
-        def finished():
-            shadow(self.textedit, offset=4 if self.info.revelation else 2, color=QColor(self.info.type.color()))
+    # def _toggleRelevation(self):
+    #     def finished():
+    #         shadow(self.textedit, offset=4 if self.info.revelation else 2, color=QColor(self.info.type.color()))
+    #
+    #     self.info.revelation = not self.info.revelation
+    #     if self.info.revelation:
+    #         qtanim.glow(self.textedit, 500, radius=15, color=QColor(self.info.type.color()), teardown=finished)
+    #     else:
+    #         qtanim.glow(self.textedit, duration=100, color=QColor('lightgrey'), teardown=finished)
 
-        self.info.revelation = not self.info.revelation
-        if self.info.revelation:
-            qtanim.glow(self.textedit, 500, radius=15, color=QColor(self.info.type.color()), teardown=finished)
-        else:
-            qtanim.glow(self.textedit, duration=100, color=QColor('lightgrey'), teardown=finished)
+    # self._refreshRevelation()
 
-        self._refreshRevelation()
-
-    def _refreshRevelation(self):
-        bold(self._label, self.info.revelation)
-        italic(self.btnRevelation, self.info.revelation)
-        if self.info.revelation:
-            icon = IconRegistry.from_name('mdi.puzzle-star')
-            title = 'Revelation'
-            incr_icon(self._label, 4)
-            incr_font(self._label, 2)
-            self.btnRevelation.setText('Demote revelation')
-            self.btnRevelation.setIcon(QIcon())
-
-            self.textedit.setMinimumSize(195, 125)
-            self.textedit.setMaximumSize(215, 135)
-        else:
-            icon = IconRegistry.general_info_icon('black')
-            title = 'Information'
-            decr_icon(self._label, 4)
-            decr_font(self._label, 2)
-            self.btnRevelation.setText('Mark as revelation')
-            self.btnRevelation.setIcon(IconRegistry.from_name('mdi.puzzle-star'))
-
-            self.textedit.setMinimumSize(170, 100)
-            self.textedit.setMaximumSize(190, 120)
-
-        self._label.setIcon(icon)
-        self._label.setText(title)
+    # def _refreshRevelation(self):
+    #     bold(self._label, self.info.revelation)
+    #     italic(self.btnRevelation, self.info.revelation)
+    #     if self.info.revelation:
+    #         icon = IconRegistry.from_name('mdi.puzzle-star')
+    #         title = 'Revelation'
+    #         incr_icon(self._label, 4)
+    #         incr_font(self._label, 2)
+    #         self.btnRevelation.setText('Demote revelation')
+    #         self.btnRevelation.setIcon(QIcon())
+    #
+    #         self.textedit.setMinimumSize(195, 125)
+    #         self.textedit.setMaximumSize(215, 135)
+    #     else:
+    #         icon = IconRegistry.general_info_icon('black')
+    #         title = 'Information'
+    #         decr_icon(self._label, 4)
+    #         decr_font(self._label, 2)
+    #         self.btnRevelation.setText('Mark as revelation')
+    #         self.btnRevelation.setIcon(IconRegistry.from_name('mdi.puzzle-star'))
+    #
+    #         self.textedit.setMinimumSize(170, 100)
+    #         self.textedit.setMaximumSize(190, 120)
+    #
+    #     self._label.setIcon(icon)
+    #     self._label.setText(title)
 
 
 class ReaderInformationColumn(QWidget):
@@ -626,17 +623,18 @@ class ReaderInformationColumn(QWidget):
 
     def clear(self):
         clear_layout(self.wdgEditor)
+        self.wdgEditor.layout().addWidget(vspacer())
 
     def addInfo(self, info: SceneReaderInformation) -> ReaderInformationWidget:
         wdg = ReaderInformationWidget(info)
         wdg.removed.connect(partial(self._remove, wdg))
-        self.wdgEditor.layout().addWidget(wdg, alignment=Qt.AlignmentFlag.AlignCenter)
+        insert_before_the_end(self.wdgEditor, wdg)
         return wdg
 
     def _addNew(self):
         info = SceneReaderInformation(self.infoType)
         wdg = self.addInfo(info)
-        qtanim.fade_in(wdg, teardown=lambda: wdg.setGraphicsEffect(None))
+        qtanim.fade_in(wdg, teardown=wdg.activate)
         self.added.emit(info)
 
     def _remove(self, wdg: ReaderInformationWidget):
@@ -696,11 +694,14 @@ class ReaderInformationEditor(LazyWidget):
 
         for info in self._scene.info:
             if info.type == ReaderInformationType.Story:
-                self.wdgStory.addInfo(info)
+                wdg = self.wdgStory.addInfo(info)
             elif info.type == ReaderInformationType.Character:
-                self.wdgCharacters.addInfo(info)
+                wdg = self.wdgCharacters.addInfo(info)
             elif info.type == ReaderInformationType.World:
-                self.wdgWorld.addInfo(info)
+                wdg = self.wdgWorld.addInfo(info)
+            else:
+                continue
+            wdg.activate()
 
         super().refresh()
 
