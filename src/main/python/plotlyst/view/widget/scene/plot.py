@@ -25,8 +25,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QSize, QEvent
 from PyQt6.QtGui import QColor, QEnterEvent, QResizeEvent
 from PyQt6.QtWidgets import QWidget, QToolButton, QGraphicsDropShadowEffect
 from overrides import overrides
-from qthandy import vbox, hbox, retain_when_hidden, sp, decr_icon, vline, \
-    margins, italic, translucent
+from qthandy import vbox, hbox, retain_when_hidden, sp, decr_icon, margins, italic, translucent
 from qthandy.filter import VisibilityToggleEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget
 
@@ -249,18 +248,18 @@ class ScenePlotLabels(QWidget):
         super().__init__(parent)
         self._scene = scene
         self._plotref = plotref
-        hbox(self)
+        hbox(self, 0, 0)
 
         self._icon = Icon()
         self._icon.setIcon(IconRegistry.from_name(self._plotref.plot.icon, self._plotref.plot.icon_color))
         self._icon.setToolTip(plotref.plot.text)
-        translucent(self._icon, 0.7)
+        translucent(self._icon, 0.5)
 
         self._btnReset = RemovalButton()
         self._btnReset.clicked.connect(self.reset.emit)
-        retain_when_hidden(self._btnReset)
+        # retain_when_hidden(self._btnReset)
 
-        self.layout().addWidget(vline())
+        # self.layout().addWidget(vline())
         self.layout().addWidget(self._icon)
         self.layout().addWidget(self._btnReset)
 

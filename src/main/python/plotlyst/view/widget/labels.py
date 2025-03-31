@@ -24,12 +24,12 @@ from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QMouseEvent
 from PyQt6.QtWidgets import QWidget, QLabel, QFrame, QToolButton, QSizePolicy, QPushButton
 from overrides import overrides
-from qthandy import hbox, vline, vbox, clear_layout, transparent, flow, incr_font, translucent, italic
+from qthandy import hbox, vbox, clear_layout, transparent, flow, incr_font, translucent, italic
 from qthandy.filter import VisibilityToggleEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import truncate_string, RELAXED_WHITE_COLOR, RED_COLOR, PLOTLYST_TERTIARY_COLOR, \
-    PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR
+from plotlyst.common import truncate_string, RELAXED_WHITE_COLOR, RED_COLOR, PLOTLYST_SECONDARY_COLOR, \
+    PLOTLYST_MAIN_COLOR
 from plotlyst.core.domain import Character, Conflict, SelectionItem, Novel, ScenePlotReference, \
     CharacterGoal, PlotValue, Scene, GoalReference, NovelDescriptor
 from plotlyst.env import app_env
@@ -88,22 +88,22 @@ class CharacterLabel(Label):
         self.layout().addWidget(self.btnAvatar)
         self.layout().addWidget(QLabel(truncate_string(character.displayed_name())))
 
-        role = self.character.role
-        if role:
-            if not self.character.prefs.avatar.use_role:
-                self.lblRole = QLabel()
-                self.lblRole.setPixmap(IconRegistry.from_name(role.icon, role.icon_color).pixmap(QSize(24, 24)))
-                self.layout().addWidget(vline())
-                self.layout().addWidget(self.lblRole)
-            border_color = role.icon_color
-        else:
-            border_color = PLOTLYST_TERTIARY_COLOR
+        # role = self.character.role
+        # if role:
+        #     if not self.character.prefs.avatar.use_role:
+        #         self.lblRole = QLabel()
+        #         self.lblRole.setPixmap(IconRegistry.from_name(role.icon, role.icon_color).pixmap(QSize(24, 24)))
+        #         self.layout().addWidget(vline())
+        #         self.layout().addWidget(self.lblRole)
+        #     border_color = role.icon_color
+        # else:
+        #     border_color = PLOTLYST_TERTIARY_COLOR
 
-        self.setStyleSheet(f'''
-        CharacterLabel {{
-            border: 2px solid {border_color}; 
-            border-radius: 8px; padding-left: 3px; padding-right: 3px;}}
-        ''')
+        # self.setStyleSheet(f'''
+        # CharacterLabel {{
+        #     border: 2px solid {border_color};
+        #     border-radius: 8px; padding-left: 3px; padding-right: 3px;}}
+        # ''')
 
 
 class CharacterAvatarLabel(QToolButton):

@@ -26,7 +26,7 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QTableView
 from overrides import overrides
 from qtanim import fade_in
-from qthandy import incr_font, margins, pointy, hbox, clear_layout, busy, vbox, retain_when_hidden
+from qthandy import incr_font, margins, pointy, clear_layout, busy, flow
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -49,12 +49,11 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.labels import CharacterLabel
 from plotlyst.view.widget.scene.agency import SceneAgencyEditor
-from plotlyst.view.widget.scene.editor import ScenePurposeSelectorWidget, ScenePurposeTypeButton, \
-    SceneProgressEditor
+from plotlyst.view.widget.scene.editor import ScenePurposeSelectorWidget, ScenePurposeTypeButton
 from plotlyst.view.widget.scene.functions import SceneFunctionsWidget
 from plotlyst.view.widget.scene.plot import ScenePlotLabels, \
     ScenePlotSelectorMenu
-from plotlyst.view.widget.scene.reader_drive import ReaderCuriosityEditor, ReaderInformationEditor
+from plotlyst.view.widget.scene.reader_drive import ReaderCuriosityEditor
 from plotlyst.view.widget.structure.selector import StructureBeatSelectorButton
 from plotlyst.view.widget.tree import TreeSettings
 
@@ -86,8 +85,8 @@ class SceneEditor(QObject, EventListener):
                      IconRegistry.from_name('ei.question-sign', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabDramaticFunctions,
                      IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
-        set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
-                     IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
+        # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
+        #              IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabFunctions, app_env.profile().get('scene-functions', False))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
         # set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
@@ -101,6 +100,7 @@ class SceneEditor(QObject, EventListener):
         self.ui.iconTitle.setIcon(IconRegistry.scene_icon('grey'))
         self.ui.iconSynopsis.setIcon(IconRegistry.from_name('mdi.text-short', 'grey'))
         self.ui.iconCharacters.setIcon(IconRegistry.character_icon('grey'))
+        self.ui.iconType.setIcon(IconRegistry.from_name('fa5s.yin-yang', 'grey'))
 
         self._povMenu = CharacterSelectorMenu(self.novel, self.ui.wdgPov.btnAvatar)
         self._povMenu.selected.connect(self._pov_changed)
@@ -111,22 +111,21 @@ class SceneEditor(QObject, EventListener):
         self.ui.wdgCharacters.setProperty('relaxed-white-bg', True)
         self.ui.wdgCharacters.setProperty('rounded', True)
 
-        self._progressEditor = SceneProgressEditor()
-        retain_when_hidden(self._progressEditor)
-        self._progressEditor.progressCharged.connect(self._update_outcome)
+        # self._progressEditor = SceneProgressEditor()
+        # retain_when_hidden(self._progressEditor)
+        # self._progressEditor.progressCharged.connect(self._update_outcome)
         self._structureSelector = StructureBeatSelectorButton(self.novel)
         self._structureSelector.selected.connect(self._beat_selected)
         self._structureSelector.removed.connect(self._beat_removed)
-        self.wdgProgression = QWidget()
-        vbox(self.wdgProgression, 0)
-        self.wdgProgression.layout().addWidget(self._structureSelector)
-        self.wdgProgression.layout().addWidget(self._progressEditor, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.wdgProgression = QWidget()
+        # vbox(self.wdgProgression, 0)
+        self.ui.wdgStructureParent.layout().addWidget(self._structureSelector, alignment=Qt.AlignmentFlag.AlignRight)
+        # self.wdgProgression.layout().addWidget(self._progressEditor, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.ui.wdgTop.layout().addWidget(self.wdgProgression)
+        # self.ui.wdgTop.layout().addWidget(self.wdgProgression)
 
         self._structureSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Structure))
-        self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
-        # self.ui.middleLine.setVisible(app_env.profile().get('license_type', 'FREE') != 'FREE')
+        # self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
 
         self.ui.textNotes.setTitleVisible(False)
         self.ui.textNotes.setToolbarVisible(False)
@@ -159,17 +158,16 @@ class SceneEditor(QObject, EventListener):
 
         self._btnPurposeType = ScenePurposeTypeButton()
         self._btnPurposeType.reset.connect(self._reset_purpose_editor)
-        self.ui.wdgMidbar.layout().insertWidget(0, self._btnPurposeType)
+        self.ui.wdgSceneType.layout().insertWidget(1, self._btnPurposeType)
         self._btnPurposeType.setVisible(app_env.profile().get('scene-purpose', False))
 
-        self._btnPlotSelector = push_btn(IconRegistry.storylines_icon(), 'Storylines',
+        self._btnPlotSelector = push_btn(IconRegistry.storylines_icon(color='grey'), 'Storylines',
                                          tooltip='Link storylines to this scene', transparent_=True)
         self._btnPlotSelector.installEventFilter(OpacityEventFilter(self._btnPlotSelector, leaveOpacity=0.8))
         self._plotSelectorMenu = ScenePlotSelectorMenu(self.novel, self._btnPlotSelector)
         self._plotSelectorMenu.plotSelected.connect(self._storyline_selected_from_toolbar)
-        hbox(self.ui.wdgStorylines)
-        self.ui.wdgMidbar.layout().insertWidget(1, self._btnPlotSelector)
-        # self.ui.wdgMidbar.setHidden(True)
+        flow(self.ui.wdgStorylines)
+        self.ui.wdgStorylinesParent.layout().insertWidget(0, self._btnPlotSelector)
         self._btnPlotSelector.setVisible(app_env.profile().get('storylines', False))
         self.ui.wdgStorylines.setVisible(app_env.profile().get('storylines', False))
 
@@ -188,8 +186,8 @@ class SceneEditor(QObject, EventListener):
         self._curiosityEditor = ReaderCuriosityEditor(self.novel)
         self.ui.tabCuriosity.layout().addWidget(self._curiosityEditor)
 
-        self._informationEditor = ReaderInformationEditor(self.novel)
-        self.ui.tabInformationFunctions.layout().addWidget(self._informationEditor)
+        # self._informationEditor = ReaderInformationEditor(self.novel)
+        # self.ui.tabInformationFunctions.layout().addWidget(self._informationEditor)
 
         self.ui.btnClose.clicked.connect(self._on_close)
 
@@ -248,8 +246,8 @@ class SceneEditor(QObject, EventListener):
         self._functionsEditor.setScene(self.scene)
         self._agencyEditor.setScene(self.scene)
         self._curiosityEditor.setScene(self.scene)
-        self._informationEditor.setScene(self.scene)
-        self._progressEditor.setScene(self.scene)
+        # self._informationEditor.setScene(self.scene)
+        # self._progressEditor.setScene(self.scene)
         self._structureSelector.setScene(self.scene)
 
         self.ui.lineTitle.setText(self.scene.title)
@@ -351,7 +349,7 @@ class SceneEditor(QObject, EventListener):
                     break
 
     def _update_progress(self):
-        self._progressEditor.refresh()
+        # self._progressEditor.refresh()
         self._update_outcome()
 
     def _update_outcome(self):

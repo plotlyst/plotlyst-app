@@ -25,7 +25,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QSize
 from PyQt6.QtGui import QColor, QIcon, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame
 from overrides import overrides
-from qthandy import vbox, margins, hbox, pointy, gc, sp, clear_layout, incr_font, incr_icon, flow, vspacer, transparent, \
+from qthandy import vbox, margins, hbox, pointy, gc, sp, clear_layout, incr_font, incr_icon, flow, transparent, \
     bold, translucent
 from qthandy.filter import ObjectReferenceMimeData
 from qtmenu import MenuWidget
@@ -33,8 +33,8 @@ from qtmenu import MenuWidget
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR, LIGHTGREY_ACTIVE_COLOR, LIGHTGREY_IDLE_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, shadow, columns, \
-    insert_before_the_end, rows, push_btn
+from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, shadow, insert_before_the_end, rows, \
+    push_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorButton
@@ -61,7 +61,7 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
 
         # self._textedit.setMinimumSize(170, 100)
         # self._textedit.setFixedSize(170, 120)
-        self.setMaximumSize(190, 140)
+        self.setMaximumSize(170, 130)
         self._textedit.setText(self.function.text)
         transparent(self._textedit)
         # self.setFixedSize(190, 120)
@@ -361,9 +361,9 @@ class _PrimaryFunctionsWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         vbox(self, 5, 5)
-        margins(self, bottom=10)
-        self.setProperty('large-rounded', True)
-        self.setProperty('bg', True)
+        # margins(self, bottom=10)
+        # self.setProperty('large-rounded', True)
+        # self.setProperty('bg', True)
 
         self.container = QWidget()
         flow(self.container, spacing=5)
@@ -449,7 +449,7 @@ class SceneFunctionsWidget(QFrame):
         self._novel = novel
         self._scene: Optional[Scene] = None
 
-        vbox(self, 5, 15)
+        hbox(self, 10, 8)
 
         self.wdgDrive = DriveFunctionsWidget()
         self.wdgDrive.newFunctionSelected.connect(self.addPrimaryType)
@@ -457,27 +457,9 @@ class SceneFunctionsWidget(QFrame):
         self.wdgImpact = ImpactFunctionsWidget()
         self.wdgImpact.newFunctionSelected.connect(self.addPrimaryType)
 
-        self.wdgTop = columns(3, 10)
-        self.wdgTop.layout().addWidget(self.wdgDrive, alignment=Qt.AlignmentFlag.AlignTop)
-        self.wdgTop.layout().addWidget(self.wdgImpact, alignment=Qt.AlignmentFlag.AlignTop)
+        self.layout().addWidget(self.wdgDrive, alignment=Qt.AlignmentFlag.AlignTop)
+        self.layout().addWidget(self.wdgImpact, alignment=Qt.AlignmentFlag.AlignTop)
 
-        self.wdgSetup = SetupFunctionsWidget()
-
-        self.layout().addWidget(self.wdgTop)
-        self.layout().addWidget(self.wdgSetup)
-        self.layout().addWidget(vspacer())
-
-        # self.btnPrimary = push_btn(IconRegistry.from_name('mdi6.note-text-outline', 'grey'), 'Primary functions',
-        #                            transparent_=True)
-        # incr_icon(self.btnPrimary, 1)
-        # incr_font(self.btnPrimary, 1)
-        # self.btnPrimary.installEventFilter(OpacityEventFilter(self.btnPrimary, leaveOpacity=0.7))
-        # self.btnPrimaryPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
-        # self.btnPrimaryPlus.installEventFilter(OpacityEventFilter(self.btnPrimaryPlus, leaveOpacity=0.7))
-        # self.menuPrimary = MenuWidget(self.btnPrimaryPlus, largeIcons=True)
-        # self.menuPrimary.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
-        # self.menuPrimary.addSection('Select a primary function that this scene fulfills')
-        # self.menuPrimary.addSeparator()
         # self.menuPrimary.addAction(action('Advance story', IconRegistry.storylines_icon(),
         #                                   slot=partial(self._addPrimary, StoryElementType.Plot),
         #                                   tooltip="This scene primarily advances or complicates the story \nby affecting the plot, character development, or relationships",
@@ -555,7 +537,6 @@ class SceneFunctionsWidget(QFrame):
         self._scene = scene
         self.wdgDrive.clear()
         self.wdgImpact.clear()
-        self.wdgSetup.clear()
 
         for function in self._scene.functions.primary:
             self.__initPrimaryWidget(function)
