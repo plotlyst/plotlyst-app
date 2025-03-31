@@ -26,7 +26,7 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QTableView
 from overrides import overrides
 from qtanim import fade_in
-from qthandy import incr_font, margins, pointy, clear_layout, busy, flow
+from qthandy import incr_font, margins, pointy, clear_layout, busy, flow, retain_when_hidden
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -49,7 +49,7 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.labels import CharacterLabel
 from plotlyst.view.widget.scene.agency import SceneAgencyEditor
-from plotlyst.view.widget.scene.editor import ScenePurposeSelectorWidget, ScenePurposeTypeButton
+from plotlyst.view.widget.scene.editor import ScenePurposeSelectorWidget, ScenePurposeTypeButton, SceneProgressEditor
 from plotlyst.view.widget.scene.functions import SceneFunctionsWidget
 from plotlyst.view.widget.scene.plot import ScenePlotLabels, \
     ScenePlotSelectorMenu
@@ -111,9 +111,6 @@ class SceneEditor(QObject, EventListener):
         self.ui.wdgCharacters.setProperty('relaxed-white-bg', True)
         self.ui.wdgCharacters.setProperty('rounded', True)
 
-        # self._progressEditor = SceneProgressEditor()
-        # retain_when_hidden(self._progressEditor)
-        # self._progressEditor.progressCharged.connect(self._update_outcome)
         self._structureSelector = StructureBeatSelectorButton(self.novel)
         self._structureSelector.selected.connect(self._beat_selected)
         self._structureSelector.removed.connect(self._beat_removed)
@@ -125,7 +122,6 @@ class SceneEditor(QObject, EventListener):
         # self.ui.wdgTop.layout().addWidget(self.wdgProgression)
 
         self._structureSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Structure))
-        # self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
 
         self.ui.textNotes.setTitleVisible(False)
         self.ui.textNotes.setToolbarVisible(False)
@@ -160,6 +156,12 @@ class SceneEditor(QObject, EventListener):
         self._btnPurposeType.reset.connect(self._reset_purpose_editor)
         self.ui.wdgSceneType.layout().insertWidget(1, self._btnPurposeType)
         self._btnPurposeType.setVisible(app_env.profile().get('scene-purpose', False))
+
+        self._progressEditor = SceneProgressEditor()
+        self._progressEditor.progressCharged.connect(self._update_outcome)
+        retain_when_hidden(self._progressEditor)
+        self.ui.wdgSceneType.layout().insertWidget(2, self._progressEditor)
+        self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
 
         self._btnPlotSelector = push_btn(IconRegistry.storylines_icon(color='grey'), 'Storylines',
                                          tooltip='Link storylines to this scene', transparent_=True)
@@ -247,7 +249,7 @@ class SceneEditor(QObject, EventListener):
         self._agencyEditor.setScene(self.scene)
         self._curiosityEditor.setScene(self.scene)
         # self._informationEditor.setScene(self.scene)
-        # self._progressEditor.setScene(self.scene)
+        self._progressEditor.setScene(self.scene)
         self._structureSelector.setScene(self.scene)
 
         self.ui.lineTitle.setText(self.scene.title)
@@ -349,9 +351,8 @@ class SceneEditor(QObject, EventListener):
                     break
 
     def _update_progress(self):
-        pass
-        # self._progressEditor.refresh()
-        # self._update_outcome()
+        self._progressEditor.refresh()
+        self._update_outcome()
 
     def _update_outcome(self):
         charge = self._progressEditor.charge()

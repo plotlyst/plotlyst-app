@@ -647,7 +647,7 @@ class SceneFunctionsWidget(QFrame):
                 if ref.plot.id == function.ref:
                     wdg.setPlotRef(ref)
 
-        if function.type == StoryElementType.Plot:
+        if function.type in [StoryElementType.Plot, StoryElementType.Mystery]:
             self.wdgDrive.addWidget(wdg)
         elif function.type in [StoryElementType.Resonance, StoryElementType.Reaction, StoryElementType.Reflection,
                                StoryElementType.Repercussion]:
