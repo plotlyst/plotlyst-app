@@ -595,6 +595,9 @@ class CharacterPrimarySceneFunctionWidget(ReaderInformationWidget):
 
         self._updateCharacter()
 
+    def setCharacter(self, character: Character):
+        self._characterSelected(character)
+
     def _characterSelected(self, character: Character):
         self.info.character_id = character.id
         self._updateCharacter()
@@ -613,7 +616,8 @@ class ReaderInformationColumn(QWidget):
     def __init__(self, novel: Novel, infoType: ReaderInformationType, parent=None):
         super().__init__(parent)
         vbox(self, spacing=5)
-        self.novel = novel
+        self._novel = novel
+        self._scene: Optional[Scene] = None
         self.infoType = infoType
 
         self.title = IconText()
@@ -628,7 +632,6 @@ class ReaderInformationColumn(QWidget):
             self.title.setText('World')
             self.title.setIcon(
                 IconRegistry.world_building_icon(color=self.infoType.color(), color_on=self.infoType.color()))
-        # self.title.setStyleSheet(f'border:0px; color: {self.infoType.color()};')
         incr_font(self.title, 2)
         incr_icon(self.title, 4)
         translucent(self.title, 0.9)
@@ -654,9 +657,12 @@ class ReaderInformationColumn(QWidget):
         clear_layout(self.wdgEditor)
         self.wdgEditor.layout().addWidget(vspacer())
 
+    def setScene(self, scene: Scene):
+        self._scene = scene
+
     def addInfo(self, info: SceneReaderInformation) -> ReaderInformationWidget:
         if info.type == ReaderInformationType.Character:
-            wdg = CharacterPrimarySceneFunctionWidget(self.novel, info)
+            wdg = CharacterPrimarySceneFunctionWidget(self._novel, info)
         else:
             wdg = ReaderInformationWidget(info)
         wdg.removed.connect(partial(self._remove, wdg))
@@ -666,6 +672,10 @@ class ReaderInformationColumn(QWidget):
     def _addNew(self):
         info = SceneReaderInformation(self.infoType)
         wdg = self.addInfo(info)
+
+        if self.wdgEditor.layout().count() == 2 and self._scene.pov:
+            wdg.setCharacter(self._scene.pov)
+
         qtanim.fade_in(wdg, teardown=wdg.activate)
         self.added.emit(info)
 
@@ -723,6 +733,10 @@ class ReaderInformationEditor(LazyWidget):
         self.wdgStory.clear()
         self.wdgCharacters.clear()
         self.wdgWorld.clear()
+
+        self.wdgStory.setScene(self._scene)
+        self.wdgCharacters.setScene(self._scene)
+        self.wdgWorld.setScene(self._scene)
 
         for info in self._scene.info:
             if info.type == ReaderInformationType.Story:
