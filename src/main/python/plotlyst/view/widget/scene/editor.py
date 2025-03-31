@@ -192,8 +192,6 @@ def purpose_icon(purpose_type: ScenePurposeType) -> QIcon:
 
 
 class ScenePurposeTypeButton(QPushButton):
-    reset = pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self._scene: Optional[Scene] = None
@@ -205,9 +203,6 @@ class ScenePurposeTypeButton(QPushButton):
         self._opacityFilter = OpacityEventFilter(self, 0.8, 1.0, ignoreCheckedButton=True)
         self.installEventFilter(self._opacityFilter)
 
-        self._menu = MenuWidget(self)
-        self._menu.addAction(action('Select new purpose', slot=self.reset.emit))
-
         self.refresh()
 
     def setScene(self, scene: Scene):
@@ -215,18 +210,18 @@ class ScenePurposeTypeButton(QPushButton):
         self.refresh()
 
     def refresh(self):
-        if self._scene is None or self._scene.purpose is None:
+        if self._scene is None:
             return
         IconRegistry.action_scene_icon()
         if self._scene.purpose == ScenePurposeType.Other:
-            self.setText('Purpose...')
-            self.setToolTip('Scene purpose not selected')
+            self.setText('Type...')
+            # self.setToolTip('Scene type not selected')
             self.setIcon(QIcon())
         else:
             purpose = scene_purposes.get(self._scene.purpose)
             tip = purpose.display_name.replace('\n', ' ')
             self.setText(tip)
-            self.setToolTip(f'Scene purpose: {tip}')
+            # self.setToolTip(f'Scene purpose: {tip}')
 
         if self._scene.purpose == ScenePurposeType.Other:
             italic(self, True)
@@ -260,7 +255,12 @@ class ScenePurposeTypeButton(QPushButton):
             # bgColor = 'lightgrey'
             borderColor = 'grey'
 
-        if self._scene.progress:
+        if self._scene.plot_pos_progress or self._scene.plot_neg_progress:
+            if self._scene.plot_pos_progress > abs(self._scene.plot_neg_progress):
+                self.setIcon(IconRegistry.charge_icon(self._scene.plot_pos_progress, borderColor))
+            else:
+                self.setIcon(IconRegistry.charge_icon(self._scene.plot_neg_progress, borderColor))
+        elif self._scene.progress:
             self.setIcon(IconRegistry.charge_icon(self._scene.progress, borderColor))
         else:
             self.setIcon(QIcon())

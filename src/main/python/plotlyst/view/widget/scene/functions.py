@@ -41,7 +41,7 @@ from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.display import Icon, icon_text
 from plotlyst.view.widget.input import TextEditBubbleWidget
 from plotlyst.view.widget.list import ListView, ListItemWidget
-from plotlyst.view.widget.scene.plot import ScenePlotGeneralProgressEditor, \
+from plotlyst.view.widget.scene.plot import SceneStorylineProgressEditor, \
     ScenePlotSelectorMenu
 
 
@@ -129,7 +129,7 @@ class _StorylineAssociatedFunctionWidget(PrimarySceneFunctionWidget):
         if self._plotRef.data.charge:
             self._btnProgress.setVisible(True)
 
-        editor = ScenePlotGeneralProgressEditor(self._plotRef)
+        editor = SceneStorylineProgressEditor(self._plotRef)
         editor.charged.connect(self._chargeClicked)
         self._progressMenu.clear()
         self._progressMenu.addWidget(editor)

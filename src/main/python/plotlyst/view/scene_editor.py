@@ -25,7 +25,6 @@ from PyQt6.QtCore import QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QTableView
 from overrides import overrides
-from qtanim import fade_in
 from qthandy import incr_font, margins, pointy, clear_layout, busy, flow, retain_when_hidden
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
@@ -33,7 +32,7 @@ from qtmenu import MenuWidget
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Scene, Document, StoryBeat, \
-    Character, ScenePurposeType, ScenePurpose, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome
+    Character, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome, ScenePurposeType
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -49,7 +48,7 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.labels import CharacterLabel
 from plotlyst.view.widget.scene.agency import SceneAgencyEditor
-from plotlyst.view.widget.scene.editor import ScenePurposeSelectorWidget, ScenePurposeTypeButton, SceneProgressEditor
+from plotlyst.view.widget.scene.editor import ScenePurposeTypeButton, SceneProgressEditor
 from plotlyst.view.widget.scene.functions import SceneFunctionsWidget
 from plotlyst.view.widget.scene.plot import ScenePlotLabels, \
     ScenePlotSelectorMenu
@@ -141,14 +140,7 @@ class SceneEditor(QObject, EventListener):
         self.ui.treeScenes.setNovel(self.novel, readOnly=True)
         self.ui.treeScenes.sceneSelected.connect(self._scene_selected)
 
-        self._purposeSelector = ScenePurposeSelectorWidget()
-        margins(self._purposeSelector, top=25)
-        self.ui.pagePurpose.layout().addWidget(self._purposeSelector)
-        self._purposeSelector.skipped.connect(self._purpose_skipped)
-        self._purposeSelector.selected.connect(self._purpose_changed)
-
         self._btnPurposeType = ScenePurposeTypeButton()
-        self._btnPurposeType.reset.connect(self._reset_purpose_editor)
         self.ui.wdgSceneType.layout().insertWidget(1, self._btnPurposeType)
         self._btnPurposeType.setVisible(app_env.profile().get('scene-purpose', False))
 
@@ -165,13 +157,17 @@ class SceneEditor(QObject, EventListener):
         self._plotSelectorMenu.plotSelected.connect(self._storyline_selected_from_toolbar)
         flow(self.ui.wdgStorylines)
         self.ui.wdgStorylinesParent.layout().insertWidget(0, self._btnPlotSelector)
-        self._btnPlotSelector.setVisible(app_env.profile().get('storylines', False))
-        self.ui.wdgStorylines.setVisible(app_env.profile().get('storylines', False))
+        if app_env.profile().get('storylines', False):
+            self._btnPlotSelector.setVisible(app_env.profile().get('storylines', False))
+            self.ui.wdgStorylines.setVisible(app_env.profile().get('storylines', False))
+        else:
+            self._btnPlotSelector.setHidden(True)
+            self.ui.wdgStorylines.setHidden(True)
 
         self._functionsEditor = SceneFunctionsWidget(self.novel)
         self._functionsEditor.storylineLinked.connect(self._storyline_linked_from_function)
         self._functionsEditor.storylineRemoved.connect(self._storyline_removed_from_function)
-        self._functionsEditor.storylineCharged.connect(self._update_progress)
+        self._functionsEditor.storylineCharged.connect(self._update_storyline_progress)
 
         self.ui.scrollAreaWidgetDramaticFunctions.layout().addWidget(self._functionsEditor)
 
@@ -255,11 +251,9 @@ class SceneEditor(QObject, EventListener):
         else:
             self.ui.textNotes.clear()
 
+        if self.scene.purpose is None or self.scene.purpose == ScenePurposeType.Other:
+            self.scene.purpose = ScenePurposeType.Story
         self._btnPurposeType.setScene(self.scene)
-        if self.scene.purpose is None:
-            self._reset_purpose_editor()
-        else:
-            self._close_purpose_editor()
 
         self._plotSelectorMenu.setScene(self.scene)
         clear_layout(self.ui.wdgStorylines)
@@ -329,7 +323,7 @@ class SceneEditor(QObject, EventListener):
 
     def _storyline_removed(self, labels: ScenePlotLabels):
         fade_out_and_gc(self.ui.wdgStorylines.layout(), labels)
-        self._update_progress()
+        self._update_storyline_progress()
 
     def _storyline_linked_from_function(self, ref: ScenePlotReference):
         labels = self._add_plot_ref(ref)
@@ -343,7 +337,7 @@ class SceneEditor(QObject, EventListener):
                     self._storyline_removed(widget)
                     break
 
-    def _update_progress(self):
+    def _update_storyline_progress(self):
         self._progressEditor.refresh()
         self._update_outcome()
 
@@ -379,35 +373,6 @@ class SceneEditor(QObject, EventListener):
             self.ui.wdgCharacters.addLabel(CharacterLabel(character))
 
         self._agencyEditor.updateAvailableCharacters()
-
-    def _purpose_skipped(self):
-        self.scene.purpose = ScenePurposeType.Other
-        self._close_purpose_editor()
-
-    def _purpose_changed(self, purpose: ScenePurpose):
-        self.scene.purpose = purpose.type
-        self._close_purpose_editor()
-
-    def _close_purpose_editor(self):
-        self._btnPurposeType.refresh()
-        if app_env.profile().get('scene-purpose', False):
-            if not self._btnPurposeType.isVisible():
-                fade_in(self._btnPurposeType)
-        if app_env.profile().get('storylines', False):
-            self.ui.wdgStorylines.setVisible(self.novel.prefs.toggled(NovelSetting.Storylines))
-            self._btnPlotSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Storylines))
-        # to avoid segfault for some reason, we disable it first before changing the stack widget
-        self._purposeSelector.setDisabled(True)
-        self.ui.stackedWidget.setCurrentWidget(self.ui.pageEditor)
-
-    def _reset_purpose_editor(self):
-        self.scene.purpose = None
-        self._btnPurposeType.setHidden(True)
-        self.ui.wdgStorylines.setHidden(True)
-        self._btnPlotSelector.setHidden(True)
-        if app_env.profile().get('scene-purpose', False):
-            self.ui.stackedWidget.setCurrentWidget(self.ui.pagePurpose)
-        self._purposeSelector.setEnabled(True)
 
     def _save_scene(self):
         self.scene.title = self.ui.lineTitle.text()

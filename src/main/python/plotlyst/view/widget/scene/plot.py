@@ -76,15 +76,15 @@ class PlotValuesDisplay(QWidget):
 class ProgressEditor(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        hbox(self, spacing=0)
+        hbox(self, spacing=3)
         self._chargeEnabled: bool = True
 
         self.posCharge = tool_btn(IconRegistry.charge_icon(2, 'grey'), transparent_=True)
-        decr_icon(self.posCharge, 4)
+        decr_icon(self.posCharge, 2)
         self.posCharge.clicked.connect(lambda: self._changeCharge(1))
 
         self.negCharge = tool_btn(IconRegistry.charge_icon(-2, 'grey'), transparent_=True)
-        decr_icon(self.negCharge, 4)
+        decr_icon(self.negCharge, 2)
         self.negCharge.clicked.connect(lambda: self._changeCharge(-1))
 
         self.btnLock = Icon()
@@ -92,8 +92,8 @@ class ProgressEditor(QWidget):
         self.btnLock.installEventFilter(InstantTooltipEventFilter(self.btnLock))
         self.btnLock.setHidden(True)
 
-        self.layout().addWidget(self.posCharge, alignment=Qt.AlignmentFlag.AlignVCenter)
         self.layout().addWidget(self.negCharge, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.layout().addWidget(self.posCharge, alignment=Qt.AlignmentFlag.AlignVCenter)
         self.layout().addWidget(self.btnLock, alignment=Qt.AlignmentFlag.AlignVCenter)
 
     @overrides
@@ -135,7 +135,7 @@ class ProgressEditor(QWidget):
             self.negCharge.setDisabled(True)
 
 
-class ScenePlotGeneralProgressEditor(ProgressEditor):
+class SceneStorylineProgressEditor(ProgressEditor):
     charged = pyqtSignal()
 
     def __init__(self, plotReference: ScenePlotReference, parent=None):

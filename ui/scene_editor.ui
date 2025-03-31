@@ -634,7 +634,7 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>367</width>
+                        <width>434</width>
                         <height>357</height>
                        </rect>
                       </property>
@@ -752,8 +752,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>367</width>
-                        <height>333</height>
+                        <width>100</width>
+                        <height>30</height>
                        </rect>
                       </property>
                       <property name="relaxed-white" stdset="0">
@@ -895,47 +895,6 @@
              </widget>
             </widget>
            </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="pagePurpose">
-          <property name="relaxed-white-bg" stdset="0">
-           <bool>true</bool>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_10">
-           <property name="spacing">
-            <number>0</number>
-           </property>
-           <property name="leftMargin">
-            <number>10</number>
-           </property>
-           <property name="topMargin">
-            <number>10</number>
-           </property>
-           <property name="rightMargin">
-            <number>10</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="pageOutcome">
-          <layout class="QVBoxLayout" name="verticalLayout_11">
-           <property name="spacing">
-            <number>0</number>
-           </property>
-           <property name="leftMargin">
-            <number>10</number>
-           </property>
-           <property name="topMargin">
-            <number>10</number>
-           </property>
-           <property name="rightMargin">
-            <number>10</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
           </layout>
          </widget>
         </widget>
