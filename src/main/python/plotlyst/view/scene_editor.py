@@ -80,8 +80,8 @@ class SceneEditor(QObject, EventListener):
         set_tab_icon(self.ui.tabWidget, self.ui.tabNotes, IconRegistry.document_edition_icon())
 
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabAgency, IconRegistry.character_icon())
-        set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabCuriosity,
-                     IconRegistry.from_name('ei.question-sign', color_on=PLOTLYST_SECONDARY_COLOR))
+        # set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabCuriosity,
+        #              IconRegistry.from_name('ei.question-sign', color_on=PLOTLYST_SECONDARY_COLOR))
         # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabDramaticFunctions,
         #              IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
         # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
@@ -94,8 +94,11 @@ class SceneEditor(QObject, EventListener):
             IconRegistry.from_name('mdi.yin-yang', 'grey', color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnReaderInfo.setIcon(
             IconRegistry.from_name('fa5s.book-reader', 'grey', color_on=PLOTLYST_SECONDARY_COLOR))
+        self.ui.btnReaderQuestions.setIcon(
+            IconRegistry.from_name('ei.question-sign', 'grey', color_on=PLOTLYST_SECONDARY_COLOR))
         translucent(self.ui.btnDramaticFunctions, 0.6)
         translucent(self.ui.btnReaderInfo, 0.6)
+        translucent(self.ui.btnReaderQuestions, 0.6)
 
         if app_env.is_mac():
             incr_font(self.ui.lineTitle)
@@ -183,16 +186,17 @@ class SceneEditor(QObject, EventListener):
         self._agencyEditor.agencyAdded.connect(lambda: scroll_to_bottom(self.ui.scrollArea_2))
         self.ui.scrollAgency.layout().addWidget(self._agencyEditor)
 
-        self._curiosityEditor = ReaderCuriosityEditor(self.novel)
-        self.ui.tabCuriosity.layout().addWidget(self._curiosityEditor)
-
         self._informationEditor = ReaderInformationEditor(self.novel)
         self.ui.pageInfo.layout().addWidget(self._informationEditor)
+
+        self._curiosityEditor = ReaderCuriosityEditor(self.novel)
+        self.ui.pageQuestions.layout().addWidget(self._curiosityEditor)
 
         link_buttons_to_pages(self.ui.stackedWidgetFunctions,
                               [
                                   (self.ui.btnDramaticFunctions, self.ui.pageDramaticFunctions),
                                   (self.ui.btnReaderInfo, self.ui.pageInfo),
+                                  (self.ui.btnReaderQuestions, self.ui.pageQuestions),
                               ])
 
         self.ui.btnClose.clicked.connect(self._on_close)
@@ -249,7 +253,7 @@ class SceneEditor(QObject, EventListener):
         # self.tag_selector.setScene(self.scene)
         self._functionsEditor.setScene(self.scene)
         # self._agencyEditor.setScene(self.scene)
-        # self._curiosityEditor.setScene(self.scene)
+        self._curiosityEditor.setScene(self.scene)
         self._informationEditor.setScene(self.scene)
         self._progressEditor.setScene(self.scene)
         self._structureSelector.setScene(self.scene)

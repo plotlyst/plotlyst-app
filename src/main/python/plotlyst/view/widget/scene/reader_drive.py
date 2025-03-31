@@ -602,11 +602,12 @@ class ReaderInformationColumn(QWidget):
             self.title.setText('World')
             self.title.setIcon(
                 IconRegistry.world_building_icon(color=self.infoType.color(), color_on=self.infoType.color()))
-        self.title.setStyleSheet(f'border:0px; color: {self.infoType.color()};')
+        # self.title.setStyleSheet(f'border:0px; color: {self.infoType.color()};')
         incr_font(self.title, 2)
         incr_icon(self.title, 4)
+        translucent(self.title, 0.9)
 
-        self.btnAdd = tool_btn(IconRegistry.plus_icon(self.infoType.color()), transparent_=True)
+        self.btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
         self.btnAdd.installEventFilter(OpacityEventFilter(self.btnAdd))
         self.btnAdd.clicked.connect(self._addNew)
 
@@ -650,26 +651,29 @@ class ReaderInformationEditor(LazyWidget):
         self._scene: Optional[Scene] = None
 
         vbox(self, 10, 10)
+        self.setProperty('muted-bg', True)
         margins(self, top=15)
         self.layout().addWidget(label(
-            "Track what essential information is conveyed to the reader, and in which category: plot, character, or world\nMark the most important ones as revelations.",
-            description=True, wordWrap=True))
+            "Track what essential information is conveyed to the reader.", description=True),
+            alignment=Qt.AlignmentFlag.AlignRight)
         self._scrollarea, self._wdgCenter = scrolled(self, frameless=True)
-        self._wdgCenter.setProperty('relaxed-white-bg', True)
+        self._wdgCenter.setProperty('muted-bg', True)
         hbox(self._wdgCenter)
+
         self.wdgStory = ReaderInformationColumn(ReaderInformationType.Story)
         self.wdgStory.added.connect(self._infoAdded)
         self.wdgStory.removed.connect(self._infoRemoved)
+
         self.wdgCharacters = ReaderInformationColumn(ReaderInformationType.Character)
         self.wdgCharacters.added.connect(self._infoAdded)
         self.wdgCharacters.removed.connect(self._infoRemoved)
+
         self.wdgWorld = ReaderInformationColumn(ReaderInformationType.World)
         self.wdgWorld.added.connect(self._infoAdded)
         self.wdgWorld.removed.connect(self._infoRemoved)
+
         self._wdgCenter.layout().addWidget(self.wdgStory)
-        self._wdgCenter.layout().addWidget(vline())
         self._wdgCenter.layout().addWidget(self.wdgCharacters)
-        self._wdgCenter.layout().addWidget(vline())
         self._wdgCenter.layout().addWidget(self.wdgWorld)
         spacer_ = spacer()
         sp(spacer_).h_preferred()

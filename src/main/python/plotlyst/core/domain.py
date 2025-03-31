@@ -1931,12 +1931,11 @@ class ReaderInformationType(Enum):
 
     def color(self) -> str:
         if self == ReaderInformationType.Story:
-            return '#4B0763'
+            return '#C9A2D7'
         elif self == ReaderInformationType.Character:
-            return '#219ebc'
-            # return '#0077b6'
+            return '#73A9B6'
         elif self == ReaderInformationType.World:
-            return '#40916c'
+            return '#70A88F'
 
 
 @dataclass
