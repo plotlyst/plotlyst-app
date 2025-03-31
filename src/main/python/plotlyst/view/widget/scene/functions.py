@@ -550,7 +550,7 @@ class SceneFunctionsWidget(QFrame):
 
     def storylineRemovedEvent(self, storyline: Plot):
         for i in range(self.wdgDrive.layout().count()):
-            widget = self.wdgDrive.layout().itemAt(i).widget()
+            widget = self.wdgDrive.container.layout().itemAt(i).widget()
             if widget and isinstance(widget, _StorylineAssociatedFunctionWidget):
                 if widget.function.ref == storyline.id:
                     self._scene.functions.primary.remove(widget.function)

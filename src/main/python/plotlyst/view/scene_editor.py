@@ -349,8 +349,9 @@ class SceneEditor(QObject, EventListener):
                     break
 
     def _update_progress(self):
+        pass
         # self._progressEditor.refresh()
-        self._update_outcome()
+        # self._update_outcome()
 
     def _update_outcome(self):
         charge = self._progressEditor.charge()
