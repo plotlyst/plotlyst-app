@@ -1944,6 +1944,7 @@ class SceneReaderInformation:
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     text: str = ''
     revelation: bool = field(default=False, metadata=config(exclude=exclude_if_false))
+    character_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
     def sid(self) -> str:
         return str(self.id)

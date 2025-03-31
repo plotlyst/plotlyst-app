@@ -27,20 +27,22 @@ from PyQt6.QtGui import QColor, QResizeEvent, QAction
 from PyQt6.QtWidgets import QWidget, QButtonGroup, QStackedWidget, QTextEdit, QFrame
 from overrides import overrides
 from qthandy import vbox, hbox, spacer, sp, flow, vline, clear_layout, bold, incr_font, italic, translucent, line, \
-    vspacer, incr_icon, margins
+    vspacer, incr_icon, margins, pointy
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Novel, Scene, ReaderQuestion, SceneReaderQuestion, ReaderQuestionType, \
-    ReaderInformationType, SceneReaderInformation
+    ReaderInformationType, SceneReaderInformation, Character
 from plotlyst.env import app_env
+from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import push_btn, link_buttons_to_pages, shadow, scroll_area, \
     insert_before_the_end, wrap, fade_out_and_gc, action, label, scrolled, tool_btn
-from plotlyst.view.icons import IconRegistry
+from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.button import DotsMenuButton
+from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import LazyWidget, Icon, IconText
 from plotlyst.view.widget.input import RemovalButton
@@ -578,13 +580,40 @@ class ReaderInformationWidget(QFrame):
     #     self._label.setText(title)
 
 
+class CharacterPrimarySceneFunctionWidget(ReaderInformationWidget):
+    def __init__(self, novel: Novel, info: SceneReaderInformation, parent=None):
+        super().__init__(info, parent)
+        self._novel = novel
+
+        self._label.setIcon(IconRegistry.from_name('ph.user-circle-plus-light'))
+        self._label.setText('Character insight')
+        pointy(self._label)
+        self.textedit.setPlaceholderText("What do we learn about a character")
+
+        self._menu = CharacterSelectorMenu(self._novel, self._label)
+        self._menu.selected.connect(self._characterSelected)
+
+        self._updateCharacter()
+
+    def _characterSelected(self, character: Character):
+        self.info.character_id = character.id
+        self._updateCharacter()
+
+    def _updateCharacter(self):
+        if self.info.character_id:
+            character = entities_registry.character(str(self.info.character_id))
+            if character:
+                self._label.setIcon(avatars.avatar(character))
+
+
 class ReaderInformationColumn(QWidget):
     added = pyqtSignal(SceneReaderInformation)
     removed = pyqtSignal(SceneReaderInformation)
 
-    def __init__(self, infoType: ReaderInformationType, parent=None):
+    def __init__(self, novel: Novel, infoType: ReaderInformationType, parent=None):
         super().__init__(parent)
         vbox(self, spacing=5)
+        self.novel = novel
         self.infoType = infoType
 
         self.title = IconText()
@@ -626,7 +655,10 @@ class ReaderInformationColumn(QWidget):
         self.wdgEditor.layout().addWidget(vspacer())
 
     def addInfo(self, info: SceneReaderInformation) -> ReaderInformationWidget:
-        wdg = ReaderInformationWidget(info)
+        if info.type == ReaderInformationType.Character:
+            wdg = CharacterPrimarySceneFunctionWidget(self.novel, info)
+        else:
+            wdg = ReaderInformationWidget(info)
         wdg.removed.connect(partial(self._remove, wdg))
         insert_before_the_end(self.wdgEditor, wdg)
         return wdg
@@ -658,15 +690,15 @@ class ReaderInformationEditor(LazyWidget):
         self._wdgCenter.setProperty('muted-bg', True)
         hbox(self._wdgCenter)
 
-        self.wdgStory = ReaderInformationColumn(ReaderInformationType.Story)
+        self.wdgStory = ReaderInformationColumn(self._novel, ReaderInformationType.Story)
         self.wdgStory.added.connect(self._infoAdded)
         self.wdgStory.removed.connect(self._infoRemoved)
 
-        self.wdgCharacters = ReaderInformationColumn(ReaderInformationType.Character)
+        self.wdgCharacters = ReaderInformationColumn(self._novel, ReaderInformationType.Character)
         self.wdgCharacters.added.connect(self._infoAdded)
         self.wdgCharacters.removed.connect(self._infoRemoved)
 
-        self.wdgWorld = ReaderInformationColumn(ReaderInformationType.World)
+        self.wdgWorld = ReaderInformationColumn(self._novel, ReaderInformationType.World)
         self.wdgWorld.added.connect(self._infoAdded)
         self.wdgWorld.removed.connect(self._infoRemoved)
 

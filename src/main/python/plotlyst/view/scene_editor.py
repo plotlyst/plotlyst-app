@@ -23,7 +23,7 @@ from typing import Optional
 import qtanim
 from PyQt6.QtCore import QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QWidget, QTableView
+from PyQt6.QtWidgets import QWidget, QTableView, QFrame
 from overrides import overrides
 from qthandy import incr_font, margins, pointy, clear_layout, busy, flow, retain_when_hidden, translucent
 from qthandy.filter import OpacityEventFilter
@@ -132,6 +132,7 @@ class SceneEditor(QObject, EventListener):
         self.ui.textNotes.textEdit.setDocumentMargin(20)
 
         self.tblCharacters = QTableView()
+        self.tblCharacters.setFrameShape(QFrame.Shape.NoFrame)
         self.tblCharacters.setShowGrid(False)
         self.tblCharacters.verticalHeader().setVisible(False)
         self.tblCharacters.horizontalHeader().setVisible(False)
