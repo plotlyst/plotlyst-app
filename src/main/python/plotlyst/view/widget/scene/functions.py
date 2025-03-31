@@ -22,7 +22,7 @@ from typing import Optional
 
 import qtanim
 from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QSize
-from PyQt6.QtGui import QColor, QIcon, QEnterEvent
+from PyQt6.QtGui import QIcon, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QAbstractButton, QFrame
 from overrides import overrides
 from qthandy import vbox, margins, hbox, pointy, gc, sp, clear_layout, incr_font, incr_icon, flow, transparent, \
@@ -57,7 +57,6 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
         self.setProperty('relaxed-white-bg', True)
 
         bold(self._title, False)
-        translucent(self._title, 0.7)
 
         self.setMaximumSize(170, 130)
         self._textedit.setText(self.function.text)
@@ -65,6 +64,7 @@ class PrimarySceneFunctionWidget(TextEditBubbleWidget):
 
     def activate(self):
         shadow(self)
+        translucent(self._title, 0.7)
 
     @overrides
     def _textChanged(self):
@@ -164,7 +164,6 @@ class _StorylineAssociatedFunctionWidget(PrimarySceneFunctionWidget):
         ref = ScenePlotReference(plot)
         self.scene.plot_values.append(ref)
         self.setPlotRef(ref)
-        qtanim.glow(self._storylineParent(), color=QColor(plot.icon_color))
         self.storylineSelected.emit(self._plotRef)
 
     def _plotRemoved(self):
