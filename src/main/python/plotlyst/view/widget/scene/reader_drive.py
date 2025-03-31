@@ -580,7 +580,7 @@ class ReaderInformationWidget(QFrame):
     #     self._label.setText(title)
 
 
-class CharacterPrimarySceneFunctionWidget(ReaderInformationWidget):
+class CharacterInsightWidget(ReaderInformationWidget):
     def __init__(self, novel: Novel, info: SceneReaderInformation, parent=None):
         super().__init__(info, parent)
         self._novel = novel
@@ -662,7 +662,7 @@ class ReaderInformationColumn(QWidget):
 
     def addInfo(self, info: SceneReaderInformation) -> ReaderInformationWidget:
         if info.type == ReaderInformationType.Character:
-            wdg = CharacterPrimarySceneFunctionWidget(self._novel, info)
+            wdg = CharacterInsightWidget(self._novel, info)
         else:
             wdg = ReaderInformationWidget(info)
         wdg.removed.connect(partial(self._remove, wdg))
