@@ -25,15 +25,14 @@ from PyQt6.QtCore import QObject, pyqtSignal, QTimer, Qt
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QTableView
 from overrides import overrides
-from qtanim import fade_in
-from qthandy import incr_font, margins, pointy, hbox, clear_layout, busy, vbox, retain_when_hidden
+from qthandy import incr_font, margins, pointy, clear_layout, busy, flow, retain_when_hidden
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Scene, Document, StoryBeat, \
-    Character, ScenePurposeType, ScenePurpose, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome
+    Character, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome, ScenePurposeType
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -49,12 +48,11 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.labels import CharacterLabel
 from plotlyst.view.widget.scene.agency import SceneAgencyEditor
-from plotlyst.view.widget.scene.editor import ScenePurposeSelectorWidget, ScenePurposeTypeButton, \
-    SceneProgressEditor
+from plotlyst.view.widget.scene.editor import ScenePurposeTypeButton, SceneProgressEditor
 from plotlyst.view.widget.scene.functions import SceneFunctionsWidget
 from plotlyst.view.widget.scene.plot import ScenePlotLabels, \
     ScenePlotSelectorMenu
-from plotlyst.view.widget.scene.reader_drive import ReaderCuriosityEditor, ReaderInformationEditor
+from plotlyst.view.widget.scene.reader_drive import ReaderCuriosityEditor
 from plotlyst.view.widget.structure.selector import StructureBeatSelectorButton
 from plotlyst.view.widget.tree import TreeSettings
 
@@ -84,8 +82,10 @@ class SceneEditor(QObject, EventListener):
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabAgency, IconRegistry.character_icon())
         set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabCuriosity,
                      IconRegistry.from_name('ei.question-sign', color_on=PLOTLYST_SECONDARY_COLOR))
-        set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabInformation,
-                     IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
+        set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabDramaticFunctions,
+                     IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
+        # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
+        #              IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabFunctions, app_env.profile().get('scene-functions', False))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
         set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
@@ -99,6 +99,7 @@ class SceneEditor(QObject, EventListener):
         self.ui.iconTitle.setIcon(IconRegistry.scene_icon('grey'))
         self.ui.iconSynopsis.setIcon(IconRegistry.from_name('mdi.text-short', 'grey'))
         self.ui.iconCharacters.setIcon(IconRegistry.character_icon('grey'))
+        self.ui.iconType.setIcon(IconRegistry.from_name('fa5s.yin-yang', 'grey'))
 
         self._povMenu = CharacterSelectorMenu(self.novel, self.ui.wdgPov.btnAvatar)
         self._povMenu.selected.connect(self._pov_changed)
@@ -109,22 +110,12 @@ class SceneEditor(QObject, EventListener):
         self.ui.wdgCharacters.setProperty('relaxed-white-bg', True)
         self.ui.wdgCharacters.setProperty('rounded', True)
 
-        self._progressEditor = SceneProgressEditor()
-        retain_when_hidden(self._progressEditor)
-        self._progressEditor.progressCharged.connect(self._update_outcome)
         self._structureSelector = StructureBeatSelectorButton(self.novel)
         self._structureSelector.selected.connect(self._beat_selected)
         self._structureSelector.removed.connect(self._beat_removed)
-        self.wdgProgression = QWidget()
-        vbox(self.wdgProgression, 0)
-        self.wdgProgression.layout().addWidget(self._structureSelector)
-        self.wdgProgression.layout().addWidget(self._progressEditor, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        self.ui.wdgTop.layout().addWidget(self.wdgProgression)
+        self.ui.wdgStructureParent.layout().addWidget(self._structureSelector, alignment=Qt.AlignmentFlag.AlignRight)
 
         self._structureSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Structure))
-        self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
-        self.ui.middleLine.setVisible(app_env.profile().get('license_type', 'FREE') != 'FREE')
 
         self.ui.textNotes.setTitleVisible(False)
         self.ui.textNotes.setToolbarVisible(False)
@@ -149,33 +140,36 @@ class SceneEditor(QObject, EventListener):
         self.ui.treeScenes.setNovel(self.novel, readOnly=True)
         self.ui.treeScenes.sceneSelected.connect(self._scene_selected)
 
-        self._purposeSelector = ScenePurposeSelectorWidget()
-        margins(self._purposeSelector, top=25)
-        self.ui.pagePurpose.layout().addWidget(self._purposeSelector)
-        self._purposeSelector.skipped.connect(self._purpose_skipped)
-        self._purposeSelector.selected.connect(self._purpose_changed)
-
         self._btnPurposeType = ScenePurposeTypeButton()
-        self._btnPurposeType.reset.connect(self._reset_purpose_editor)
-        self.ui.wdgMidbar.layout().insertWidget(0, self._btnPurposeType)
+        self.ui.wdgSceneType.layout().insertWidget(1, self._btnPurposeType)
         self._btnPurposeType.setVisible(app_env.profile().get('scene-purpose', False))
 
-        self._btnPlotSelector = push_btn(IconRegistry.storylines_icon(), 'Storylines',
+        self._progressEditor = SceneProgressEditor()
+        self._progressEditor.progressCharged.connect(self._update_outcome)
+        retain_when_hidden(self._progressEditor)
+        self.ui.wdgSceneType.layout().insertWidget(2, self._progressEditor)
+        self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
+
+        self._btnPlotSelector = push_btn(IconRegistry.storylines_icon(color='grey'), 'Storylines',
                                          tooltip='Link storylines to this scene', transparent_=True)
         self._btnPlotSelector.installEventFilter(OpacityEventFilter(self._btnPlotSelector, leaveOpacity=0.8))
         self._plotSelectorMenu = ScenePlotSelectorMenu(self.novel, self._btnPlotSelector)
         self._plotSelectorMenu.plotSelected.connect(self._storyline_selected_from_toolbar)
-        hbox(self.ui.wdgStorylines)
-        self.ui.wdgMidbar.layout().insertWidget(1, self._btnPlotSelector)
-        self._btnPlotSelector.setVisible(app_env.profile().get('storylines', False))
-        self.ui.wdgStorylines.setVisible(app_env.profile().get('storylines', False))
+        flow(self.ui.wdgStorylines)
+        self.ui.wdgStorylinesParent.layout().insertWidget(0, self._btnPlotSelector)
+        if app_env.profile().get('storylines', False):
+            self._btnPlotSelector.setVisible(app_env.profile().get('storylines', False))
+            self.ui.wdgStorylines.setVisible(app_env.profile().get('storylines', False))
+        else:
+            self._btnPlotSelector.setHidden(True)
+            self.ui.wdgStorylines.setHidden(True)
 
         self._functionsEditor = SceneFunctionsWidget(self.novel)
         self._functionsEditor.storylineLinked.connect(self._storyline_linked_from_function)
         self._functionsEditor.storylineRemoved.connect(self._storyline_removed_from_function)
-        self._functionsEditor.storylineCharged.connect(self._update_progress)
+        self._functionsEditor.storylineCharged.connect(self._update_storyline_progress)
 
-        self.ui.scrollAreaFunctions.layout().addWidget(self._functionsEditor)
+        self.ui.scrollAreaWidgetDramaticFunctions.layout().addWidget(self._functionsEditor)
 
         self._agencyEditor = SceneAgencyEditor(self.novel)
         self._agencyEditor.setUnsetCharacterSlot(self._character_not_selected_notification)
@@ -185,12 +179,10 @@ class SceneEditor(QObject, EventListener):
         self._curiosityEditor = ReaderCuriosityEditor(self.novel)
         self.ui.tabCuriosity.layout().addWidget(self._curiosityEditor)
 
-        self._informationEditor = ReaderInformationEditor(self.novel)
-        self.ui.tabInformation.layout().addWidget(self._informationEditor)
+        # self._informationEditor = ReaderInformationEditor(self.novel)
+        # self.ui.tabInformationFunctions.layout().addWidget(self._informationEditor)
 
         self.ui.btnClose.clicked.connect(self._on_close)
-
-        # self.ui.wdgSceneStructure.timeline.outcomeChanged.connect(self._btnPurposeType.refresh)
 
         if app_env.profile().get('scene-functions', False):
             self.ui.tabWidget.setCurrentWidget(self.ui.tabFunctions)
@@ -259,11 +251,9 @@ class SceneEditor(QObject, EventListener):
         else:
             self.ui.textNotes.clear()
 
+        if self.scene.purpose is None or self.scene.purpose == ScenePurposeType.Other:
+            self.scene.purpose = ScenePurposeType.Story
         self._btnPurposeType.setScene(self.scene)
-        if self.scene.purpose is None:
-            self._reset_purpose_editor()
-        else:
-            self._close_purpose_editor()
 
         self._plotSelectorMenu.setScene(self.scene)
         clear_layout(self.ui.wdgStorylines)
@@ -333,7 +323,7 @@ class SceneEditor(QObject, EventListener):
 
     def _storyline_removed(self, labels: ScenePlotLabels):
         fade_out_and_gc(self.ui.wdgStorylines.layout(), labels)
-        self._update_progress()
+        self._update_storyline_progress()
 
     def _storyline_linked_from_function(self, ref: ScenePlotReference):
         labels = self._add_plot_ref(ref)
@@ -347,7 +337,7 @@ class SceneEditor(QObject, EventListener):
                     self._storyline_removed(widget)
                     break
 
-    def _update_progress(self):
+    def _update_storyline_progress(self):
         self._progressEditor.refresh()
         self._update_outcome()
 
@@ -383,35 +373,6 @@ class SceneEditor(QObject, EventListener):
             self.ui.wdgCharacters.addLabel(CharacterLabel(character))
 
         self._agencyEditor.updateAvailableCharacters()
-
-    def _purpose_skipped(self):
-        self.scene.purpose = ScenePurposeType.Other
-        self._close_purpose_editor()
-
-    def _purpose_changed(self, purpose: ScenePurpose):
-        self.scene.purpose = purpose.type
-        self._close_purpose_editor()
-
-    def _close_purpose_editor(self):
-        self._btnPurposeType.refresh()
-        if app_env.profile().get('scene-purpose', False):
-            if not self._btnPurposeType.isVisible():
-                fade_in(self._btnPurposeType)
-        if app_env.profile().get('storylines', False):
-            self.ui.wdgStorylines.setVisible(self.novel.prefs.toggled(NovelSetting.Storylines))
-            self._btnPlotSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Storylines))
-        # to avoid segfault for some reason, we disable it first before changing the stack widget
-        self._purposeSelector.setDisabled(True)
-        self.ui.stackedWidget.setCurrentWidget(self.ui.pageEditor)
-
-    def _reset_purpose_editor(self):
-        self.scene.purpose = None
-        self._btnPurposeType.setHidden(True)
-        self.ui.wdgStorylines.setHidden(True)
-        self._btnPlotSelector.setHidden(True)
-        if app_env.profile().get('scene-purpose', False):
-            self.ui.stackedWidget.setCurrentWidget(self.ui.pagePurpose)
-        self._purposeSelector.setEnabled(True)
 
     def _save_scene(self):
         self.scene.title = self.ui.lineTitle.text()

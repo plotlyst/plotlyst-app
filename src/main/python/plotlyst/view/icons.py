@@ -628,21 +628,21 @@ class IconRegistry:
             return IconRegistry.from_name('mdi.source-branch')
 
     @staticmethod
-    def charge_icon(charge: int = 1) -> QIcon:
+    def charge_icon(charge: int = 1, color: Optional[str] = None) -> QIcon:
         if charge == 0:
-            return IconRegistry.from_name('mdi.wave', 'grey')
+            return IconRegistry.from_name('mdi.wave', color or 'grey')
         elif charge == 1:
-            return IconRegistry.from_name('mdi.chevron-up', '#52b788')
+            return IconRegistry.from_name('mdi.chevron-up', color or '#52b788')
         elif charge == 2:
-            return IconRegistry.from_name('mdi.chevron-double-up', '#40916c')
+            return IconRegistry.from_name('mdi.chevron-double-up', color or '#40916c')
         elif charge >= 3:
-            return IconRegistry.from_name('mdi.chevron-triple-up', '#2d6a4f')
+            return IconRegistry.from_name('mdi.chevron-triple-up', color or '#2d6a4f')
         elif charge == -1:
-            return IconRegistry.from_name('mdi.chevron-down', '#dc2f02')
+            return IconRegistry.from_name('mdi.chevron-down', color or '#dc2f02')
         elif charge == -2:
-            return IconRegistry.from_name('mdi.chevron-double-down', '#d00000')
+            return IconRegistry.from_name('mdi.chevron-double-down', color or '#d00000')
         else:
-            return IconRegistry.from_name('mdi.chevron-triple-down', '#9d0208')
+            return IconRegistry.from_name('mdi.chevron-triple-down', color or '#9d0208')
 
     @staticmethod
     def plot_charge_icon(pos_charge: int, neg_charge: int) -> QIcon:
@@ -744,7 +744,6 @@ class IconRegistry:
     @staticmethod
     def from_selection_item(item: SelectionItem) -> QIcon:
         return IconRegistry.from_name(item.icon, item.icon_color)
-
 
     @staticmethod
     def from_name(name: str, color: str = BLACK_COLOR, color_on: str = '', scale: Optional[float] = None,
