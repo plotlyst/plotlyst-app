@@ -205,7 +205,7 @@ class PlotPrimarySceneFunctionWidget(_StorylineAssociatedFunctionWidget):
 class MysteryPrimarySceneFunctionWidget(PrimarySceneFunctionWidget):
     def __init__(self, novel: Novel, scene: Scene, function: SceneFunction, parent=None):
         super().__init__(novel, scene, function, parent)
-        self._title.setIcon(IconRegistry.from_name('ei.question-sign', PLOTLYST_SECONDARY_COLOR))
+        self._title.setIcon(IconRegistry.from_name('ei.question-sign'))
         self._title.setText('Mystery')
         self._textedit.setPlaceholderText("What mystery is introduced or deepened")
 
@@ -241,7 +241,7 @@ class ResonancePrimarySceneFunctionWidget(PrimarySceneFunctionWidget):
     def __init__(self, novel: Novel, scene: Scene, function: SceneFunction, parent=None):
         super().__init__(novel, scene, function, parent)
 
-        self._title.setIcon(IconRegistry.theme_icon())
+        self._title.setIcon(IconRegistry.theme_icon('black'))
         self._title.setText('Resonance')
         self._textedit.setPlaceholderText("Emotional or thematic effects that stay with the reader")
 
@@ -435,6 +435,7 @@ class ImpactFunctionsWidget(_PrimaryFunctionsWidget):
         incr_font(header, 2)
         incr_icon(header, 2)
         self.layout().addWidget(header, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(line(color='#A5C3D9'))
         self.layout().addWidget(self.container)
 
     @overrides
