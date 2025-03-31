@@ -34,7 +34,7 @@ from PyQt6.QtWidgets import QWidget, QSizePolicy, QColorDialog, QAbstractItemVie
     QMenu, QAbstractButton, \
     QStackedWidget, QAbstractScrollArea, QLineEdit, QHeaderView, QScrollArea, QFrame, QTabWidget, \
     QGraphicsDropShadowEffect, QTableView, QPushButton, QToolButton, QButtonGroup, QToolTip, QApplication, QMainWindow, \
-    QLabel, QGraphicsObject, QTextEdit
+    QLabel, QGraphicsObject, QTextEdit, QSplitter
 from fbs_runtime import platform
 from overrides import overrides
 from qthandy import hbox, vbox, margins, gc, transparent, spacer, sp, pointy, incr_font, decr_font
@@ -692,7 +692,7 @@ def dominant_color(pixmap: QPixmap) -> QColor:
     dominant_rgb = color_counter.most_common(1)[0][0]
     return QColor(dominant_rgb)
 
-  
+
 def columns(margin: int = 2, spacing: int = 3) -> QWidget:
     wdg = QWidget()
     hbox(wdg, margin, spacing)
@@ -704,7 +704,7 @@ def rows(margin: int = 2, spacing: int = 3) -> QWidget:
     vbox(wdg, margin, spacing)
     return wdg
 
-  
+
 def exclusive_buttons(parent: QObject, *buttons, optional=False) -> QButtonGroup:
     btnGroup = ExclusiveOptionalButtonGroup(parent) if optional else QButtonGroup(parent)
     btnGroup.setExclusive(True)
@@ -715,3 +715,24 @@ def exclusive_buttons(parent: QObject, *buttons, optional=False) -> QButtonGroup
 
 def default_character_color(uuid_: UUID) -> str:
     return CHARACTER_INITIAL_AVATAR_COLOR_CODES[uuid_.int % len(CHARACTER_INITIAL_AVATAR_COLOR_CODES)]
+
+
+def h_splitter(wdg1: QWidget, wdg2: QWidget, sizes: List[int]) -> QSplitter:
+    return _splitter(wdg1, wdg2, sizes)
+
+
+def v_splitter(wdg1: QWidget, wdg2: QWidget, sizes: List[int]) -> QSplitter:
+    splitter = _splitter(wdg1, wdg2, sizes)
+    splitter.setOrientation(Qt.Orientation.Vertical)
+
+    return splitter
+
+
+def _splitter(wdg1: QWidget, wdg2: QWidget, sizes: List[int]) -> QSplitter:
+    splitter = QSplitter()
+    splitter.setChildrenCollapsible(False)
+    splitter.addWidget(wdg1)
+    splitter.addWidget(wdg2)
+    splitter.setSizes(sizes)
+
+    return splitter

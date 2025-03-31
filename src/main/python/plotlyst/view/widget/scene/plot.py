@@ -21,12 +21,11 @@ from abc import abstractmethod
 from functools import partial
 from typing import Optional, Dict
 
-from PyQt6.QtCore import Qt, pyqtSignal, QSize, QEvent
-from PyQt6.QtGui import QColor, QEnterEvent, QResizeEvent
+from PyQt6.QtCore import Qt, pyqtSignal, QEvent
+from PyQt6.QtGui import QColor, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QToolButton, QGraphicsDropShadowEffect
 from overrides import overrides
-from qthandy import vbox, hbox, retain_when_hidden, sp, decr_icon, vline, \
-    margins, italic, translucent
+from qthandy import hbox, retain_when_hidden, sp, decr_icon, margins, translucent
 from qthandy.filter import VisibilityToggleEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget
 
@@ -35,7 +34,6 @@ from plotlyst.core.domain import Novel, Scene, ScenePlotReference, PlotValue, Sc
 from plotlyst.view.common import action, tool_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
-from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.display import Icon
 from plotlyst.view.widget.input import RemovalButton
 from plotlyst.view.widget.labels import PlotValueLabel
@@ -78,25 +76,15 @@ class PlotValuesDisplay(QWidget):
 class ProgressEditor(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        hbox(self, spacing=0)
-
-        self._idleIcon = IconRegistry.from_name('mdi.chevron-double-up', 'lightgrey')
+        hbox(self, spacing=3)
         self._chargeEnabled: bool = True
-        self.btnProgress = tool_btn(self._idleIcon, transparent_=True, pointy_=False)
-        self.btnProgress.setText('Progress')
-        self.btnProgress.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-        italic(self.btnProgress)
-        apply_button_palette_color(self.btnProgress, 'grey')
-        self.btnProgress.setIconSize(QSize(76, 76))
 
-        self.btnProgressAlt = tool_btn(self._idleIcon, transparent_=True, pointy_=False, parent=self.btnProgress)
-        self.btnProgressAlt.setHidden(True)
-
-        self.posCharge = tool_btn(IconRegistry.plus_circle_icon('grey'), transparent_=True)
-        decr_icon(self.posCharge, 4)
+        self.posCharge = tool_btn(IconRegistry.charge_icon(2, 'grey'), transparent_=True)
+        decr_icon(self.posCharge, 2)
         self.posCharge.clicked.connect(lambda: self._changeCharge(1))
-        self.negCharge = tool_btn(IconRegistry.minus_icon('grey'), transparent_=True)
-        decr_icon(self.negCharge, 4)
+
+        self.negCharge = tool_btn(IconRegistry.charge_icon(-2, 'grey'), transparent_=True)
+        decr_icon(self.negCharge, 2)
         self.negCharge.clicked.connect(lambda: self._changeCharge(-1))
 
         self.btnLock = Icon()
@@ -104,52 +92,23 @@ class ProgressEditor(QWidget):
         self.btnLock.installEventFilter(InstantTooltipEventFilter(self.btnLock))
         self.btnLock.setHidden(True)
 
-        self.wdgSize = QWidget()
-        vbox(self.wdgSize, 0, 0)
-        self.wdgSize.layout().addWidget(self.posCharge)
-        self.wdgSize.layout().addWidget(self.negCharge)
-        retain_when_hidden(self.wdgSize)
-        self.wdgSize.setHidden(True)
-
-        self.layout().addWidget(self.btnProgress)
-        self.layout().addWidget(self.wdgSize, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.layout().addWidget(self.negCharge, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.layout().addWidget(self.posCharge, alignment=Qt.AlignmentFlag.AlignVCenter)
         self.layout().addWidget(self.btnLock, alignment=Qt.AlignmentFlag.AlignVCenter)
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
-        if self._chargeEnabled:
-            self.wdgSize.setVisible(True)
-        else:
+        # if self._chargeEnabled:
+        #     self.wdgSize.setVisible(True)
+        if not self._chargeEnabled:
             self.btnLock.setVisible(True)
 
     @overrides
     def leaveEvent(self, event: QEvent) -> None:
-        self.wdgSize.setHidden(True)
+        # self.wdgSize.setHidden(True)
         self.btnLock.setHidden(True)
 
-    @overrides
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        self.btnProgressAlt.setGeometry(self.btnProgress.size().width() - 20, self.btnProgress.size().height() - 40, 20,
-                                        20)
-
     def refresh(self):
-        if self.charge() == 0:
-            self.btnProgress.setIcon(self._idleIcon)
-        if self.altCharge() == 0:
-            self.btnProgressAlt.setHidden(True)
-
-        if self.charge() == abs(self.altCharge()):
-            if self.charge():
-                self.btnProgress.setIcon(IconRegistry.trade_off_charge_icon(self.charge()))
-            else:
-                self.btnProgress.setIcon(self._idleIcon)
-            self.btnProgressAlt.setHidden(True)
-        else:
-            self.btnProgress.setIcon(IconRegistry.charge_icon(self.charge()))
-            if self.altCharge():
-                self.btnProgressAlt.setVisible(True)
-                self.btnProgressAlt.setIcon(IconRegistry.charge_icon(self.altCharge()))
-
         self._updateButtons()
 
     @abstractmethod
@@ -167,13 +126,16 @@ class ProgressEditor(QWidget):
         self.posCharge.setEnabled(True)
         self.negCharge.setEnabled(True)
 
+        self.posCharge.setEnabled(self._chargeEnabled)
+        self.negCharge.setEnabled(self._chargeEnabled)
+
         if self.charge() == 3:
             self.posCharge.setDisabled(True)
         elif self.charge() == -3:
             self.negCharge.setDisabled(True)
 
 
-class ScenePlotGeneralProgressEditor(ProgressEditor):
+class SceneStorylineProgressEditor(ProgressEditor):
     charged = pyqtSignal()
 
     def __init__(self, plotReference: ScenePlotReference, parent=None):
@@ -249,18 +211,17 @@ class ScenePlotLabels(QWidget):
         super().__init__(parent)
         self._scene = scene
         self._plotref = plotref
-        hbox(self)
+        hbox(self, 0, 0)
 
         self._icon = Icon()
         self._icon.setIcon(IconRegistry.from_name(self._plotref.plot.icon, self._plotref.plot.icon_color))
         self._icon.setToolTip(plotref.plot.text)
-        translucent(self._icon, 0.7)
+        translucent(self._icon, 0.5)
 
         self._btnReset = RemovalButton()
         self._btnReset.clicked.connect(self.reset.emit)
         retain_when_hidden(self._btnReset)
 
-        self.layout().addWidget(vline())
         self.layout().addWidget(self._icon)
         self.layout().addWidget(self._btnReset)
 

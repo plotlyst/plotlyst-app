@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import QWidget, QTextEdit, QPushButton, QLabel, QFrame, QSt
     QToolButton, QAbstractButton, QScrollArea, QButtonGroup
 from overrides import overrides
 from qthandy import vbox, vspacer, transparent, sp, line, hbox, pointy, vline, retain_when_hidden, margins, \
-    spacer, bold, grid, gc, clear_layout, ask_confirmation, decr_icon, italic, translucent
+    spacer, grid, gc, clear_layout, ask_confirmation, decr_icon, italic, translucent
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
 
@@ -38,6 +38,7 @@ from plotlyst.core.domain import Scene, Novel, ScenePurpose, advance_story_scene
     ScenePurposeType, reaction_story_scene_purpose, character_story_scene_purpose, setup_story_scene_purpose, \
     emotion_story_scene_purpose, exposition_story_scene_purpose, scene_purposes, Character, StoryElement, \
     StoryElementType, SceneOutcome, SceneStructureAgenda, Motivation, Plot, NovelSetting
+from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneChangedEvent, NovelEmotionTrackingToggleEvent, \
@@ -191,17 +192,16 @@ def purpose_icon(purpose_type: ScenePurposeType) -> QIcon:
 
 
 class ScenePurposeTypeButton(QPushButton):
-    reset = pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self._scene: Optional[Scene] = None
         pointy(self)
+        font = self.font()
+        font.setFamily(app_env.serif_font())
+        font.setPointSize(font.pointSize() + 1)
+        self.setFont(font)
         self._opacityFilter = OpacityEventFilter(self, 0.8, 1.0, ignoreCheckedButton=True)
         self.installEventFilter(self._opacityFilter)
-
-        self._menu = MenuWidget(self)
-        self._menu.addAction(action('Select new purpose', slot=self.reset.emit))
 
         self.refresh()
 
@@ -210,67 +210,62 @@ class ScenePurposeTypeButton(QPushButton):
         self.refresh()
 
     def refresh(self):
-        if self._scene is None or self._scene.purpose is None:
+        if self._scene is None:
             return
-        IconRegistry.action_scene_icon()
+
         if self._scene.purpose == ScenePurposeType.Other:
-            self.setText('Purpose...')
-            self.setToolTip('Scene purpose not selected')
+            self.setText('Type...')
             self.setIcon(QIcon())
         else:
             purpose = scene_purposes.get(self._scene.purpose)
             tip = purpose.display_name.replace('\n', ' ')
             self.setText(tip)
-            self.setToolTip(f'Scene purpose: {tip}')
-
-        if self._scene.purpose == ScenePurposeType.Exposition:
-            self.setIcon(IconRegistry.exposition_scene_icon())
-        elif self._scene.purpose == ScenePurposeType.Setup:
-            self.setIcon(IconRegistry.setup_scene_icon())
-        elif self._scene.purpose == ScenePurposeType.Character:
-            self.setIcon(IconRegistry.character_development_scene_icon())
-        elif self._scene.purpose == ScenePurposeType.Emotion:
-            self.setIcon(IconRegistry.mood_scene_icon())
 
         if self._scene.purpose == ScenePurposeType.Other:
             italic(self, True)
-            bold(self, False)
         else:
-            bold(self, True)
             italic(self, False)
 
         if self._scene.purpose == ScenePurposeType.Story:
-            bgColor = '#f4978e'
+            # bgColor = '#f4978e'
             borderColor = '#fb5607'
             resolution = self._scene.outcome == SceneOutcome.RESOLUTION
             trade_off = self._scene.outcome == SceneOutcome.TRADE_OFF
             motion = self._scene.outcome == SceneOutcome.MOTION
 
-            self.setIcon(IconRegistry.action_scene_icon(resolution, trade_off, motion))
             if resolution:
-                bgColor = '#14CE93'
+                # bgColor = '#14CE93'
                 borderColor = '#0b6e4f'
             elif trade_off:
-                bgColor = '#E491C7'
+                # bgColor = '#E491C7'
                 borderColor = '#832161'
             elif motion:
-                bgColor = '#E0BD9B'
+                # bgColor = '#E0BD9B'
                 borderColor = '#D7AA7D'
         elif self._scene.purpose == ScenePurposeType.Reaction:
-            bgColor = '#89c2d9'
+            # bgColor = '#89c2d9'
             borderColor = '#1a759f'
-            self.setIcon(IconRegistry.reaction_scene_icon())
         elif self._scene.purpose == ScenePurposeType.Other:
-            bgColor = 'lightgrey'
+            # bgColor = 'lightgrey'
             borderColor = 'grey'
         else:
-            bgColor = 'lightgrey'
+            # bgColor = 'lightgrey'
             borderColor = 'grey'
+
+        if self._scene.plot_pos_progress or self._scene.plot_neg_progress:
+            if self._scene.plot_pos_progress > abs(self._scene.plot_neg_progress):
+                self.setIcon(IconRegistry.charge_icon(self._scene.plot_pos_progress, borderColor))
+            else:
+                self.setIcon(IconRegistry.charge_icon(self._scene.plot_neg_progress, borderColor))
+        elif self._scene.progress:
+            self.setIcon(IconRegistry.charge_icon(self._scene.progress, borderColor))
+        else:
+            self.setIcon(QIcon())
 
         self.setStyleSheet(f'''
             QPushButton {{
-                background: {bgColor};
-                border: 2px solid {borderColor};
+                color: {borderColor}; 
+                border: 1px solid {borderColor};
                 border-radius: 8px;
                 padding: 5px 10px 5px 10px;
             }}
