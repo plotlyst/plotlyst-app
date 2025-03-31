@@ -89,7 +89,7 @@ class SceneEditor(QObject, EventListener):
         #              IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabFunctions, app_env.profile().get('scene-functions', False))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
-        # set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
+        set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
 
         if app_env.is_mac():
             incr_font(self.ui.lineTitle)
@@ -114,12 +114,7 @@ class SceneEditor(QObject, EventListener):
         self._structureSelector = StructureBeatSelectorButton(self.novel)
         self._structureSelector.selected.connect(self._beat_selected)
         self._structureSelector.removed.connect(self._beat_removed)
-        # self.wdgProgression = QWidget()
-        # vbox(self.wdgProgression, 0)
         self.ui.wdgStructureParent.layout().addWidget(self._structureSelector, alignment=Qt.AlignmentFlag.AlignRight)
-        # self.wdgProgression.layout().addWidget(self._progressEditor, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        # self.ui.wdgTop.layout().addWidget(self.wdgProgression)
 
         self._structureSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Structure))
 
@@ -193,8 +188,6 @@ class SceneEditor(QObject, EventListener):
 
         self.ui.btnClose.clicked.connect(self._on_close)
 
-        # self.ui.wdgSceneStructure.timeline.outcomeChanged.connect(self._btnPurposeType.refresh)
-
         if app_env.profile().get('scene-functions', False):
             self.ui.tabWidget.setCurrentWidget(self.ui.tabFunctions)
         self.ui.tabWidgetDrive.setCurrentWidget(self.ui.tabAgency)
@@ -246,8 +239,8 @@ class SceneEditor(QObject, EventListener):
         # self.ui.wdgSceneStructure.setScene(self.novel, self.scene)
         # self.tag_selector.setScene(self.scene)
         self._functionsEditor.setScene(self.scene)
-        self._agencyEditor.setScene(self.scene)
-        self._curiosityEditor.setScene(self.scene)
+        # self._agencyEditor.setScene(self.scene)
+        # self._curiosityEditor.setScene(self.scene)
         # self._informationEditor.setScene(self.scene)
         self._progressEditor.setScene(self.scene)
         self._structureSelector.setScene(self.scene)
