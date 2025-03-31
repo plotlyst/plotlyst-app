@@ -1941,6 +1941,7 @@ class ReaderInformationType(Enum):
 @dataclass
 class SceneReaderInformation:
     type: ReaderInformationType
+    subtype: Optional[StoryElementType] = field(default=None, metadata=config(exclude=exclude_if_empty))
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     text: str = ''
     revelation: bool = field(default=False, metadata=config(exclude=exclude_if_false))
