@@ -28,11 +28,10 @@ from PyQt6.QtWidgets import QWidget, QFrame
 from overrides import overrides
 from qthandy import bold, flow, incr_font, \
     margins, italic, retain_when_hidden, transparent, \
-    clear_layout, vspacer, decr_icon, spacer, sp, pointy, incr_icon, translucent
+    clear_layout, vspacer, decr_icon, spacer, sp, pointy, incr_icon, translucent, vbox
 from qthandy.filter import VisibilityToggleEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
-from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotValue, PlotType, Character, PlotPrinciple, \
     PlotPrincipleType, PlotProgressionItem, \
     PlotProgressionItemType, DynamicPlotPrincipleGroupType
@@ -44,7 +43,7 @@ from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, Storyl
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, ButtonPressResizeEventFilter, \
-    insert_before_the_end, label
+    insert_before_the_end, label, frame
 from plotlyst.view.dialog.novel import PlotValueEditorDialog
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.generated.plot_widget_ui import Ui_PlotWidget
@@ -482,18 +481,19 @@ class PlotWidget(QFrame, Ui_PlotWidget, EventListener):
         self._save()
 
     def _initFrameColor(self):
-        self.setStyleSheet(f'''
-            #PlotWidget {{
-                background-color: {RELAXED_WHITE_COLOR};
-                border: 2px solid {self.plot.icon_color};
-            }}
-            #scrollAreaWidgetContents {{
-                background-color: {RELAXED_WHITE_COLOR};
-            }}
-            #frame {{
-                border: 1px solid {self.plot.icon_color};
-            }}
-        ''')
+        pass
+        # self.setStyleSheet(f'''
+        #     #PlotWidget {{
+        #         background-color: {RELAXED_WHITE_COLOR};
+        #         border: 2px solid {self.plot.icon_color};
+        #     }}
+        #     #scrollAreaWidgetContents {{
+        #         background-color: {RELAXED_WHITE_COLOR};
+        #     }}
+        #     #frame {{
+        #         border: 1px solid {self.plot.icon_color};
+        #     }}
+        # ''')
 
     def _newValue(self):
         value = PlotValueEditorDialog().display()
@@ -558,6 +558,13 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         self._wdgList.plotSelected.connect(self._plotSelected)
         self._wdgList.plotRemoved.connect(self._plotRemoved)
         self.stack.setCurrentWidget(self.pageDisplay)
+
+        self.wdgEditor = frame()
+        vbox(self.wdgEditor, 5, 0)
+        self.wdgEditor.setProperty('relaxed-white-bg', True)
+        self.wdgEditor.setProperty('large-rounded', True)
+        self.wdgEditor.setMaximumWidth(1000)
+        self.pageDisplay.layout().addWidget(self.wdgEditor)
 
         self._wdgImpactMatrix = StorylinesImpactMatrix(self.novel)
         self.scrollMatrix.layout().addWidget(self._wdgImpactMatrix)
@@ -654,8 +661,8 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         widget.iconChanged.connect(partial(self._plotChanged, widget.plot))
         widget.characterChanged.connect(self._wdgList.refreshCharacters)
 
-        clear_layout(self.pageDisplay)
-        self.pageDisplay.layout().addWidget(widget)
+        clear_layout(self.wdgEditor)
+        self.wdgEditor.layout().addWidget(widget)
 
         return widget
 

@@ -176,7 +176,10 @@
        </layout>
       </widget>
       <widget class="QWidget" name="pageDisplay">
-       <layout class="QVBoxLayout" name="verticalLayout_4">
+       <property name="muted-bg" stdset="0">
+        <bool>true</bool>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
         <property name="spacing">
          <number>0</number>
         </property>
