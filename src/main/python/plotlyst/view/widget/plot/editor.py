@@ -202,6 +202,7 @@ class PlotWidget(QWidget, EventListener):
         super(PlotWidget, self).__init__(parent)
         self.novel = novel
         self.plot: Plot = plot
+        self._principles: Dict[PlotPrincipleType, PlotPrincipleEditor] = {}
 
         vbox(self, 0)
 
@@ -217,6 +218,39 @@ class PlotWidget(QWidget, EventListener):
         self.lineName.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lineName.textChanged.connect(self._nameEdited)
 
+        self.wdgPrinciples = QWidget()
+        flow(self.wdgPrinciples, spacing=6)
+        margins(self.wdgPrinciples, left=30)
+        for principle in self.plot.principles:
+            self._initPrincipleEditor(principle)
+
+        iconMenu = MenuWidget(self.btnPlotIcon)
+
+        colorPicker = ColorPicker(self)
+        colorPicker.setFixedSize(300, 150)
+        colorPicker.colorPicked.connect(self._colorChanged)
+        colorMenu = MenuWidget()
+        colorMenu.setTitle('Color')
+        colorMenu.setIcon(IconRegistry.from_name('fa5s.palette'))
+        colorMenu.addWidget(colorPicker)
+
+        iconMenu.addMenu(colorMenu)
+        iconMenu.addSeparator()
+        iconMenu.addAction(
+            action('Change icon', icon=IconRegistry.icons_icon(), slot=self._changeIcon, parent=iconMenu))
+
+        self._divider = SeparatorLineWithShadow(color=self.plot.icon_color)
+
+        self.layout().addWidget(self.btnPlotIcon, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.lineName, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._divider)
+        self.layout().addWidget(self.wdgPrinciples)
+
+        self.repo = RepositoryPersistenceManager.instance()
+
+        dispatcher = event_dispatchers.instance(self.novel)
+        dispatcher.register(self, CharacterChangedEvent, CharacterDeletedEvent)
+
         # self.btnPrincipleEditor.setIcon(IconRegistry.plus_edit_icon('grey'))
         # transparent(self.btnPrincipleEditor)
         # retain_when_hidden(self.btnPrincipleEditor)
@@ -229,7 +263,6 @@ class PlotWidget(QWidget, EventListener):
         # self._principleSelectorMenu.genresSelected.connect(self._genresSelected)
         # self.btnPrincipleEditor.installEventFilter(ButtonPressResizeEventFilter(self.btnPrincipleEditor))
         # self.btnPrincipleEditor.installEventFilter(OpacityEventFilter(self.btnPrincipleEditor, leaveOpacity=0.7))
-        self._principles: Dict[PlotPrincipleType, PlotPrincipleEditor] = {}
 
         # self._dynamicPrincipleSelectorMenu = PlotDynamicPrincipleSelectorMenu(self.btnDynamicPrincipleEditor)
         # self.btnDynamicPrincipleEditor.setIcon(IconRegistry.plus_icon('grey'))
@@ -251,12 +284,6 @@ class PlotWidget(QWidget, EventListener):
         # self.btnPrinciples.installEventFilter(ButtonPressResizeEventFilter(self.btnPrinciples))
         # self.btnPrinciples.installEventFilter(OpacityEventFilter(self.btnPrinciples, leaveOpacity=0.7))
         # self.btnPrinciples.clicked.connect(lambda: self._principleSelectorMenu.exec())
-
-        self.wdgPrinciples = QWidget()
-        flow(self.wdgPrinciples, spacing=6)
-        margins(self.wdgPrinciples, left=30)
-        for principle in self.plot.principles:
-            self._initPrincipleEditor(principle)
 
         # self.btnDynamicPrinciples.setIcon(IconRegistry.from_name('mdi6.chart-timeline-variant-shimmer', 'grey'))
         # self.btnProgression.setIcon(IconRegistry.rising_action_icon('grey'))
@@ -342,35 +369,8 @@ class PlotWidget(QWidget, EventListener):
         # self.wdgProgression.setVisible(self.plot.has_progression)
         # self.wdgDynamicPrinciples.setVisible(self.plot.has_dynamic_principles)
 
-        iconMenu = MenuWidget(self.btnPlotIcon)
-
-        colorPicker = ColorPicker(self)
-        colorPicker.setFixedSize(300, 150)
-        colorPicker.colorPicked.connect(self._colorChanged)
-        colorMenu = MenuWidget()
-        colorMenu.setTitle('Color')
-        colorMenu.setIcon(IconRegistry.from_name('fa5s.palette'))
-        colorMenu.addWidget(colorPicker)
-
-        iconMenu.addMenu(colorMenu)
-        iconMenu.addSeparator()
-        iconMenu.addAction(
-            action('Change icon', icon=IconRegistry.icons_icon(), slot=self._changeIcon, parent=iconMenu))
-
         # contextMenu = MenuWidget(self.btnSettings)
         # contextMenu.addAction(action('Remove plot', IconRegistry.trash_can_icon(), self.removalRequested.emit))
-
-        self._divider = SeparatorLineWithShadow(color=self.plot.icon_color)
-
-        self.layout().addWidget(self.btnPlotIcon, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(self.lineName, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(self._divider)
-        self.layout().addWidget(self.wdgPrinciples)
-
-        self.repo = RepositoryPersistenceManager.instance()
-
-        dispatcher = event_dispatchers.instance(self.novel)
-        dispatcher.register(self, CharacterChangedEvent, CharacterDeletedEvent)
 
     @overrides
     def event_received(self, event: Event):
@@ -577,20 +577,14 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         menu.addAction(
             action('Subplot', IconRegistry.subplot_icon(), lambda: self.newPlot(PlotType.Subplot),
                    tooltip="A secondary storyline to complement the main plot", incr_font_=1))
-
-        submenu = MenuWidget(largeIcons=True)
-        submenu.setTitle('Other')
-        submenu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
-        submenu.addAction(action('Relationship plot', IconRegistry.from_name('fa5s.people-arrows'),
+        menu.addSeparator()
+        menu.addAction(action('Relationship plot', IconRegistry.from_name('fa5s.people-arrows'),
                                  slot=lambda: self.newPlot(PlotType.Relation),
-                                 tooltip="Relationship dynamics between two characters", incr_font_=1))
-        submenu.addAction(action('Global storyline', IconRegistry.from_name('fa5s.globe'),
+                              tooltip="Relationship dynamics between two or more characters", incr_font_=1))
+        menu.addAction(action('Global storyline', IconRegistry.from_name('fa5s.globe'),
                                  slot=lambda: self.newPlot(PlotType.Global),
                                  tooltip="A broader storyline that can encompass multiple storylines without serving as the central plot itself",
                                  incr_font_=1))
-        menu.addSeparator()
-        menu.addMenu(submenu)
-        apply_white_menu(submenu)
         apply_white_menu(menu)
 
         self.repo = RepositoryPersistenceManager.instance()
