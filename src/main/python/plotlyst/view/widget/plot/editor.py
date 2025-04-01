@@ -24,13 +24,14 @@ from typing import Set, Dict
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer
 from PyQt6.QtGui import QColor, QCursor, QIcon
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup
 from overrides import overrides
 from qthandy import flow, incr_font, \
     margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotValue, PlotType, Character, PlotPrinciple, \
     PlotPrincipleType, PlotProgressionItem, \
     PlotProgressionItemType, DynamicPlotPrincipleGroupType
@@ -41,7 +42,8 @@ from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, Storyl
     StorylineRemovedEvent, StorylineCharacterAssociationChanged, StorylineChangedEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
-from plotlyst.view.common import action, fade_out_and_gc, insert_before_the_end, label, frame, tool_btn
+from plotlyst.view.common import action, fade_out_and_gc, insert_before_the_end, label, frame, tool_btn, columns, \
+    push_btn, rows, link_buttons_to_pages
 from plotlyst.view.dialog.novel import PlotValueEditorDialog
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
@@ -218,14 +220,7 @@ class PlotWidget(QWidget, EventListener):
         self.lineName.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lineName.textChanged.connect(self._nameEdited)
 
-        self.wdgPrinciples = QWidget()
-        flow(self.wdgPrinciples, spacing=6)
-        margins(self.wdgPrinciples, left=30)
-        for principle in self.plot.principles:
-            self._initPrincipleEditor(principle)
-
         iconMenu = MenuWidget(self.btnPlotIcon)
-
         colorPicker = ColorPicker(self)
         colorPicker.setFixedSize(300, 150)
         colorPicker.colorPicked.connect(self._colorChanged)
@@ -233,7 +228,6 @@ class PlotWidget(QWidget, EventListener):
         colorMenu.setTitle('Color')
         colorMenu.setIcon(IconRegistry.from_name('fa5s.palette'))
         colorMenu.addWidget(colorPicker)
-
         iconMenu.addMenu(colorMenu)
         iconMenu.addSeparator()
         iconMenu.addAction(
@@ -241,10 +235,42 @@ class PlotWidget(QWidget, EventListener):
 
         self._divider = SeparatorLineWithShadow(color=self.plot.icon_color)
 
+        self.wdgNavs = columns()
+        self.btnPrinciples = push_btn(
+            IconRegistry.from_name('mdi6.note-text-outline', 'grey', PLOTLYST_SECONDARY_COLOR), text='Principles',
+            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+        self.btnLinearStructure = push_btn(
+            IconRegistry.rising_action_icon('grey', PLOTLYST_SECONDARY_COLOR), text='Escalation',
+            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+        self.wdgNavs.layout().addWidget(self.btnPrinciples)
+        self.wdgNavs.layout().addWidget(self.btnLinearStructure)
+
+        self.btnGroup = QButtonGroup(self)
+        self.btnGroup.addButton(self.btnPrinciples)
+        self.btnGroup.addButton(self.btnLinearStructure)
+        self.btnPrinciples.setChecked(True)
+
+        self.stack = QStackedWidget(self)
+        self.pagePrinciples = QWidget()
+        flow(self.pagePrinciples, spacing=6)
+        margins(self.pagePrinciples, top=5)
+        self.pageLinearStructure = rows()
+        margins(self.pageLinearStructure, top=5)
+
+        self.stack.addWidget(self.pagePrinciples)
+        self.stack.addWidget(self.pageLinearStructure)
+
+        link_buttons_to_pages(self.stack, [(self.btnPrinciples, self.pagePrinciples),
+                                           (self.btnLinearStructure, self.pageLinearStructure)])
+
         self.layout().addWidget(self.btnPlotIcon, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.lineName, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.wdgNavs, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._divider)
-        self.layout().addWidget(self.wdgPrinciples)
+        self.layout().addWidget(self.stack)
+
+        for principle in self.plot.principles:
+            self._initPrincipleEditor(principle)
 
         self.repo = RepositoryPersistenceManager.instance()
 
@@ -410,10 +436,9 @@ class PlotWidget(QWidget, EventListener):
         self._save()
 
     def _changeIcon(self):
-        result = IconSelectorDialog.popup(color=QColor(self.plot.icon_color))
+        result = IconSelectorDialog.popup(pickColor=False, color=QColor(self.plot.icon_color))
         if result:
             self.plot.icon = result[0]
-            self._colorChanged(result[1])
 
     def _colorChanged(self, color: QColor):
         self.plot.icon_color = color.name()
@@ -433,11 +458,11 @@ class PlotWidget(QWidget, EventListener):
             if principle:
                 self.plot.principles.remove(principle)
                 wdg = self._principles.pop(principle.type)
-                fade_out_and_gc(self.wdgPrinciples, wdg)
+                fade_out_and_gc(self.pagePrinciples, wdg)
 
         # self._btnAddValue.setVisible(True)
-        self.btnSettings.setVisible(True)
-        self.btnPrincipleEditor.setVisible(True)
+        # self.btnSettings.setVisible(True)
+        # self.btnPrincipleEditor.setVisible(True)
 
         self._save()
 
@@ -474,7 +499,7 @@ class PlotWidget(QWidget, EventListener):
         editor.principleEdited.connect(self._save)
         # self.wdgPrinciples.layout().insertWidget(principle_type_index[principle.type], editor)
         index = principle_type_index.get(principle.type, principle.type.value)
-        self.wdgPrinciples.layout().insertWidget(index, editor)
+        self.pagePrinciples.layout().insertWidget(index, editor)
         self._principles[principle.type] = editor
 
         return editor
@@ -579,12 +604,12 @@ class PlotEditor(QWidget, Ui_PlotEditor):
                    tooltip="A secondary storyline to complement the main plot", incr_font_=1))
         menu.addSeparator()
         menu.addAction(action('Relationship plot', IconRegistry.from_name('fa5s.people-arrows'),
-                                 slot=lambda: self.newPlot(PlotType.Relation),
+                              slot=lambda: self.newPlot(PlotType.Relation),
                               tooltip="Relationship dynamics between two or more characters", incr_font_=1))
         menu.addAction(action('Global storyline', IconRegistry.from_name('fa5s.globe'),
-                                 slot=lambda: self.newPlot(PlotType.Global),
-                                 tooltip="A broader storyline that can encompass multiple storylines without serving as the central plot itself",
-                                 incr_font_=1))
+                              slot=lambda: self.newPlot(PlotType.Global),
+                              tooltip="A broader storyline that can encompass multiple storylines without serving as the central plot itself",
+                              incr_font_=1))
         apply_white_menu(menu)
 
         self.repo = RepositoryPersistenceManager.instance()
