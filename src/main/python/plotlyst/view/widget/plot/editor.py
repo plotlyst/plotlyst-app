@@ -23,12 +23,12 @@ from typing import Set, Dict, Tuple
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer
-from PyQt6.QtGui import QColor, QCursor, QIcon
+from PyQt6.QtGui import QColor, QCursor, QIcon, QResizeEvent
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea
 from overrides import overrides
 from qthandy import flow, incr_font, \
     margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent
-from qthandy.filter import OpacityEventFilter
+from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
@@ -48,6 +48,7 @@ from plotlyst.view.dialog.novel import PlotValueEditorDialog
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
+from plotlyst.view.widget.button import DotsMenuButton
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import SeparatorLineWithShadow
 from plotlyst.view.widget.input import AutoAdjustableLineEdit
@@ -237,6 +238,11 @@ class PlotWidget(QWidget, EventListener):
 
         self._divider = SeparatorLineWithShadow(color=self.plot.icon_color)
 
+        self.btnSettings = DotsMenuButton(self)
+        contextMenu = MenuWidget(self.btnSettings)
+        contextMenu.addAction(action('Remove plot', IconRegistry.trash_can_icon(), self.removalRequested.emit))
+        self.installEventFilter(VisibilityToggleEventFilter(target=self.btnSettings, parent=self))
+
         self.wdgNavs = columns()
         self.btnPrinciples = push_btn(
             IconRegistry.from_name('mdi6.note-text-outline', 'grey', PLOTLYST_SECONDARY_COLOR), text='Principles',
@@ -422,15 +428,16 @@ class PlotWidget(QWidget, EventListener):
         # self.wdgValues.layout().addWidget(spacer())
         # self._btnAddValue.clicked.connect(self._newValue)
 
-        # self.installEventFilter(VisibilityToggleEventFilter(target=self.btnSettings, parent=self))
         # self.installEventFilter(VisibilityToggleEventFilter(target=self._btnAddValue, parent=self))
         # self.installEventFilter(VisibilityToggleEventFilter(target=self.btnPrincipleEditor, parent=self))
         # self.installEventFilter(VisibilityToggleEventFilter(target=self.btnDynamicPrincipleEditor, parent=self))
 
         # self.wdgDynamicPrinciples.setVisible(self.plot.has_dynamic_principles)
 
-        # contextMenu = MenuWidget(self.btnSettings)
-        # contextMenu.addAction(action('Remove plot', IconRegistry.trash_can_icon(), self.removalRequested.emit))
+    @overrides
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self.btnSettings.setGeometry(self.width() - 15, 2, 20, 20)
 
     @overrides
     def event_received(self, event: Event):
@@ -761,11 +768,11 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         self._wdgList.removePlot(wdg.plot)
 
     def _plotRemoved(self, plot: Plot):
-        if self.pageDisplay.layout().count():
-            item = self.pageDisplay.layout().itemAt(0)
+        if self.wdgEditor.layout().count():
+            item = self.wdgEditor.layout().itemAt(0)
             if item.widget() and isinstance(item.widget(), PlotWidget):
                 if item.widget().plot == plot:
-                    clear_layout(self.pageDisplay)
+                    clear_layout(self.wdgEditor)
         delete_plot(self.novel, plot)
 
         self._wdgImpactMatrix.refresh()
