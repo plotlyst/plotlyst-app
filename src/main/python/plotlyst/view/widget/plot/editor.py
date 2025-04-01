@@ -27,7 +27,7 @@ from PyQt6.QtGui import QColor, QCursor, QIcon, QResizeEvent
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea
 from overrides import overrides
 from qthandy import flow, incr_font, \
-    margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent
+    margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent, incr_icon
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
@@ -49,7 +49,6 @@ from plotlyst.view.dialog.novel import PlotValueEditorDialog
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
-from plotlyst.view.widget.button import DotsMenuButton
 from plotlyst.view.widget.characters import CharacterAvatar, CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import SeparatorLineWithShadow
@@ -241,10 +240,16 @@ class PlotWidget(QWidget, EventListener):
 
         self._divider = SeparatorLineWithShadow(color=self.plot.icon_color)
 
-        self.btnSettings = DotsMenuButton(self)
-        contextMenu = MenuWidget(self.btnSettings)
-        contextMenu.addAction(action('Remove plot', IconRegistry.trash_can_icon(), self.removalRequested.emit))
-        self.installEventFilter(VisibilityToggleEventFilter(target=self.btnSettings, parent=self))
+        # self.btnSettings = DotsMenuButton(self)
+        # contextMenu = MenuWidget(self.btnSettings)
+        # contextMenu.addAction(action('Remove plot', IconRegistry.trash_can_icon(), self.removalRequested.emit))
+        self.btnEditElements = tool_btn(IconRegistry.plus_edit_icon('grey'), 'Edit elements', transparent_=True,
+                                        parent=self)
+        self.btnEditElements.setIconSize(QSize(48, 48))
+        self.btnEditElements.installEventFilter(OpacityEventFilter(self.btnEditElements, leaveOpacity=0.7))
+        incr_icon(self.btnEditElements, 2)
+        self.installEventFilter(VisibilityToggleEventFilter(target=self.btnEditElements, parent=self))
+        self.btnEditElements.clicked.connect(self._editElements)
 
         self._characterSelector = CharacterAvatar(self, 88, 120, 92, 8)
         menu = CharacterSelectorMenu(self.novel, self._characterSelector.btnAvatar)
@@ -332,6 +337,7 @@ class PlotWidget(QWidget, EventListener):
 
         self.layout().addWidget(self.btnPlotIcon, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.lineName, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.layout().addWidget(self.btnEditElements, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgNavs, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._divider)
         self.layout().addWidget(self.stack)
@@ -459,7 +465,9 @@ class PlotWidget(QWidget, EventListener):
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
-        self.btnSettings.setGeometry(self.width() - 15, 2, 20, 20)
+        self.btnEditElements.setGeometry(self.width() - self.btnEditElements.sizeHint().width(), 10,
+                                         self.btnEditElements.sizeHint().width(),
+                                         self.btnEditElements.sizeHint().height())
 
         if event.size().width() <= self.wdgNavs.width() + 25:
             self.btnPrinciples.setText('')
@@ -524,6 +532,9 @@ class PlotWidget(QWidget, EventListener):
         self._updateIcon()
         self._save()
         self.iconChanged.emit()
+
+    def _editElements(self):
+        pass
 
     def _principleToggled(self, principleType: PlotPrincipleType, toggled: bool):
         if toggled:
