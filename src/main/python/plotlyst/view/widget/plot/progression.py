@@ -273,7 +273,7 @@ class DynamicPlotMultiPrincipleElements(OutlineTimelineWidget):
                  parent=None):
         self.novel = novel
         self._principleType = principleType
-        super().__init__(parent, paintTimeline=False, layout=LayoutType.VERTICAL, framed=True,
+        super().__init__(parent, paintTimeline=False, layout=LayoutType.FLOW, framed=True,
                          frameColor=self._principleType.color())
         self.setProperty('white-bg', True)
         self.setProperty('large-rounded', True)
@@ -355,7 +355,7 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
     characterChanged = pyqtSignal(DynamicPlotPrinciple, Character)
 
     def __init__(self, novel: Novel, group: DynamicPlotPrincipleGroup, parent=None):
-        super().__init__(parent, paintTimeline=False, layout=LayoutType.FLOW)
+        super().__init__(parent, paintTimeline=False, layout=LayoutType.VERTICAL)
         self.layout().setSpacing(1)
         self.novel = novel
         self.group = group
@@ -560,14 +560,14 @@ class AlliesPrinciplesGroupWidget(BasePlotPrinciplesGroupWidget):
 class DynamicPlotPrinciplesEditor(QWidget):
     def __init__(self, novel: Novel, plot: Plot, parent=None):
         super().__init__(parent)
-        self.novel = novel
-        self.plot = plot
-        vbox(self, 5, 10)
+        # self.novel = novel
+        # self.plot = plot
+        # vbox(self, 5, 10)
 
-        for group in self.plot.dynamic_principles:
-            self._addGroup(group)
-
-        self.repo = RepositoryPersistenceManager.instance()
+        # for group in self.plot.dynamic_principles:
+        #     self._addGroup(group)
+        #
+        # self.repo = RepositoryPersistenceManager.instance()
 
     def refreshCharacters(self):
         for i in range(self.layout().count()):
