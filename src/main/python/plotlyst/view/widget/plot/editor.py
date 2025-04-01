@@ -566,8 +566,8 @@ class PlotEditor(QWidget, Ui_PlotEditor):
 
         italic(self.btnAdd)
         self.btnAdd.setIcon(IconRegistry.plus_icon('white'))
-        self.btnImpactMatrix.setIcon(IconRegistry.from_name('mdi6.camera-metering-matrix'))
-        self.btnImpactMatrix.clicked.connect(self._displayImpactMatrix)
+        # self.btnImpactMatrix.setIcon(IconRegistry.from_name('mdi6.camera-metering-matrix'))
+        # self.btnImpactMatrix.clicked.connect(self._displayImpactMatrix)
 
         menu = MenuWidget(self.btnAdd, largeIcons=True)
         menu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
@@ -645,7 +645,7 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         emit_event(self.novel, StorylineCreatedEvent(self, plot))
 
     def _plotSelected(self, plot: Plot) -> PlotWidget:
-        self.btnImpactMatrix.setChecked(False)
+        # self.btnImpactMatrix.setChecked(False)
         self.stack.setCurrentWidget(self.pageDisplay)
 
         widget = PlotWidget(self.novel, plot, self.pageDisplay)
