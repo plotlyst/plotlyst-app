@@ -40,6 +40,7 @@ from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, StorylineCreatedEvent, \
     StorylineRemovedEvent, StorylineCharacterAssociationChanged, StorylineChangedEvent
+from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, insert_before_the_end, label, frame, tool_btn, columns, \
@@ -49,6 +50,7 @@ from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.button import DotsMenuButton
+from plotlyst.view.widget.characters import CharacterAvatar, CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import SeparatorLineWithShadow
 from plotlyst.view.widget.input import AutoAdjustableLineEdit
@@ -118,8 +120,9 @@ class PlotTreeView(TreeView, EventListener):
             for character in characters:
                 if character in self._characterNodes.keys():
                     continue
-                self._characterNodes[character] = ContainerNode(character.name, avatars.avatar(character),
-                                                                readOnly=True)
+                node = ContainerNode(character.name, avatars.avatar(character), readOnly=True)
+                node.setSelectionEnabled(False)
+                self._characterNodes[character] = node
                 self._centralWidget.layout().addWidget(self._characterNodes[character])
 
         for plot in self._novel.plots:
@@ -209,7 +212,7 @@ class PlotWidget(QWidget, EventListener):
         self.plot: Plot = plot
         self._principles: Dict[PlotPrincipleType, PlotPrincipleEditor] = {}
 
-        vbox(self, 0)
+        vbox(self, 10)
 
         self.btnPlotIcon = tool_btn(QIcon(), transparent_=True)
         self.btnPlotIcon.setIconSize(QSize(48, 48))
@@ -243,29 +246,56 @@ class PlotWidget(QWidget, EventListener):
         contextMenu.addAction(action('Remove plot', IconRegistry.trash_can_icon(), self.removalRequested.emit))
         self.installEventFilter(VisibilityToggleEventFilter(target=self.btnSettings, parent=self))
 
-        self.wdgNavs = columns()
+        self._characterSelector = CharacterAvatar(self, 88, 120, 92, 8)
+        menu = CharacterSelectorMenu(self.novel, self._characterSelector.btnAvatar)
+        menu.selected.connect(self._characterSelected)
+        self._characterSelector.setToolTip('Link character to this storyline')
+        self._characterSelector.setGeometry(4, 4, 115, 115)
+
+        if self.plot.character_id:
+            character = entities_registry.character(str(self.plot.character_id))
+            if character:
+                self._characterSelector.setCharacter(character)
+
+        if self.plot.plot_type == PlotType.Global or self.plot.plot_type == PlotType.Relation:
+            self._characterSelector.setHidden(True)
+
+        self.wdgNavs = columns(0)
+        margins(self.wdgNavs, top=10)
         self.btnPrinciples = push_btn(
             IconRegistry.from_name('mdi6.note-text-outline', 'grey', PLOTLYST_SECONDARY_COLOR), text='Principles',
-            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+            properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnPrinciples.installEventFilter(
+            OpacityEventFilter(self.btnPrinciples, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.btnLinearStructure = push_btn(
             IconRegistry.rising_action_icon('grey', PLOTLYST_SECONDARY_COLOR), text='Escalation',
-            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+            properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnLinearStructure.installEventFilter(
+            OpacityEventFilter(self.btnLinearStructure, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.btnAllies = push_btn(
             IconRegistry.from_name(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES.icon(), 'grey',
-                                   PLOTLYST_SECONDARY_COLOR), text='Allies && Enemies',
-            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+                                   PLOTLYST_SECONDARY_COLOR), text='Allies',
+            properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnAllies.installEventFilter(
+            OpacityEventFilter(self.btnAllies, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.btnSuspects = push_btn(
             IconRegistry.from_name(DynamicPlotPrincipleGroupType.SUSPECTS.icon(), 'grey',
                                    PLOTLYST_SECONDARY_COLOR), text='Suspects',
-            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+            properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnSuspects.installEventFilter(
+            OpacityEventFilter(self.btnSuspects, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.btnCast = push_btn(
             IconRegistry.from_name(DynamicPlotPrincipleGroupType.CAST.icon(), 'grey',
                                    PLOTLYST_SECONDARY_COLOR), text='Cast',
-            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+            properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnCast.installEventFilter(
+            OpacityEventFilter(self.btnCast, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.btnMonster = push_btn(
             IconRegistry.from_name(DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER.icon(), 'grey',
                                    PLOTLYST_SECONDARY_COLOR), text='Monster',
-            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+            properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnMonster.installEventFilter(
+            OpacityEventFilter(self.btnMonster, leaveOpacity=0.7, ignoreCheckedButton=True))
 
         self.wdgNavs.layout().addWidget(self.btnPrinciples)
         self.wdgNavs.layout().addWidget(self.btnLinearStructure)
@@ -273,6 +303,7 @@ class PlotWidget(QWidget, EventListener):
         self.wdgNavs.layout().addWidget(self.btnSuspects)
         self.wdgNavs.layout().addWidget(self.btnCast)
         self.wdgNavs.layout().addWidget(self.btnMonster)
+        self._navWidth: int = self.wdgNavs.sizeHint().width()
 
         self.btnGroup = QButtonGroup(self)
         self.btnGroup.addButton(self.btnPrinciples)
@@ -392,7 +423,7 @@ class PlotWidget(QWidget, EventListener):
         #     self.btnRelationArrow.setVisible(True)
         #     self.btnRelationArrow.setIcon(IconRegistry.from_name('ph.arrows-counter-clockwise-fill'))
         #
-        #     self._characterSelector = CharacterAvatar(self, 60, 100, 64, 8)
+        # self._characterSelector = CharacterAvatar(self, 60, 100, 64, 8)
         #     self._characterRelationSelector = CharacterAvatar(self, 60, 100, 64, 8)
         #     self._characterSelector.setToolTip('Associate a character to this relationship plot')
         #     self._characterRelationSelector.setToolTip('Associate a character to this relationship plot')
@@ -414,15 +445,6 @@ class PlotWidget(QWidget, EventListener):
         #     character = self.plot.relation_character(novel)
         #     if character is not None:
         #         self._characterRelationSelector.setCharacter(character)
-        # else:
-        #     self._characterSelector = CharacterAvatar(self, 88, 120, 92, 8)
-        #     menu = CharacterSelectorMenu(self.novel, self._characterSelector.btnAvatar)
-        #     menu.selected.connect(self._characterSelected)
-        #     self._characterSelector.setToolTip('Link character to this storyline')
-        #     self._characterSelector.setGeometry(20, 20, 115, 115)
-        #     character = self.plot.character(novel)
-        #     if character is not None:
-        #         self._characterSelector.setCharacter(character)
 
         # self.wdgValues.layout().addWidget(self._btnAddValue)
         # self.wdgValues.layout().addWidget(spacer())
@@ -439,6 +461,21 @@ class PlotWidget(QWidget, EventListener):
         super().resizeEvent(event)
         self.btnSettings.setGeometry(self.width() - 15, 2, 20, 20)
 
+        if event.size().width() <= self.wdgNavs.width() + 25:
+            self.btnPrinciples.setText('')
+            self.btnLinearStructure.setText('')
+            self.btnSuspects.setText('')
+            self.btnAllies.setText('')
+            self.btnCast.setText('')
+            self.btnMonster.setText('')
+        elif event.size().width() > self._navWidth + 25 and self.btnPrinciples.text() == '':
+            self.btnPrinciples.setText('Principles')
+            self.btnLinearStructure.setText('Escalation')
+            self.btnSuspects.setText('Suspects')
+            self.btnAllies.setText('Allies')
+            self.btnCast.setText('Cast')
+            self.btnMonster.setText('Monster')
+
     @overrides
     def event_received(self, event: Event):
         if self.plot.plot_type == PlotType.Global:
@@ -446,13 +483,13 @@ class PlotWidget(QWidget, EventListener):
         elif isinstance(event, CharacterDeletedEvent):
             if self._characterSelector.character() and self._characterSelector.character().id == event.character.id:
                 self._characterSelector.reset()
-            if self._characterRelationSelector and self._characterRelationSelector.character() and self._characterRelationSelector.character().id == event.character.id:
-                self._characterRelationSelector.reset()
+            # if self._characterRelationSelector and self._characterRelationSelector.character() and self._characterRelationSelector.character().id == event.character.id:
+            #     self._characterRelationSelector.reset()
         elif isinstance(event, CharacterChangedEvent):
             if self._characterSelector.character() and self._characterSelector.character().id == event.character.id:
                 self._characterSelector.updateAvatar()
-            if self._characterRelationSelector and self._characterRelationSelector.character() and self._characterRelationSelector.character().id == event.character.id:
-                self._characterRelationSelector.updateAvatar()
+            # if self._characterRelationSelector and self._characterRelationSelector.character() and self._characterRelationSelector.character().id == event.character.id:
+            #     self._characterRelationSelector.updateAvatar()
 
         self._dynamicPrinciplesEditor.refreshCharacters()
 
@@ -660,7 +697,7 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         self.stack.setCurrentWidget(self.pageDisplay)
 
         self.wdgEditor = frame()
-        vbox(self.wdgEditor, 10, 0)
+        vbox(self.wdgEditor, 0, 0)
         self.wdgEditor.setProperty('relaxed-white-bg', True)
         self.wdgEditor.setProperty('large-rounded', True)
         self.wdgEditor.setMaximumWidth(1000)
