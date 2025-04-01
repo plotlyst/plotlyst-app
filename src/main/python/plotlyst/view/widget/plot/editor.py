@@ -360,9 +360,11 @@ class PlotWidget(QWidget, EventListener):
         # contextMenu = MenuWidget(self.btnSettings)
         # contextMenu.addAction(action('Remove plot', IconRegistry.trash_can_icon(), self.removalRequested.emit))
 
+        self._divider = SeparatorLineWithShadow(color=self.plot.icon_color)
+
         self.layout().addWidget(self.btnPlotIcon, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.lineName, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(SeparatorLineWithShadow())
+        self.layout().addWidget(self._divider)
         self.layout().addWidget(self.wdgPrinciples)
 
         self.repo = RepositoryPersistenceManager.instance()
@@ -415,6 +417,7 @@ class PlotWidget(QWidget, EventListener):
 
     def _colorChanged(self, color: QColor):
         self.plot.icon_color = color.name()
+        self._divider.setColor(self.plot.icon_color)
         self._updateIcon()
         self._save()
         self.iconChanged.emit()
