@@ -35,13 +35,12 @@ from plotlyst.core.domain import Novel, PlotType, PlotProgressionItem, \
 from plotlyst.core.template import antagonist_role
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import frame, fade_out_and_gc, action, shadow
+from plotlyst.view.common import frame, action, shadow
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.style.theme import BG_MUTED_COLOR
 from plotlyst.view.widget.characters import CharacterSelectorButton
-from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import IconText
 from plotlyst.view.widget.input import RemovalButton
 from plotlyst.view.widget.outline import OutlineItemWidget, OutlineTimelineWidget
@@ -596,24 +595,24 @@ class DynamicPlotPrinciplesEditor(QWidget):
 
         return wdg
 
-    def _addGroup(self, group: DynamicPlotPrincipleGroup) -> DynamicPlotPrinciplesGroupWidget:
-        if group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            wdg = AlliesPrinciplesGroupWidget(self.novel, group)
-        else:
-            wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
-        wdg.remove.connect(partial(self._removeGroup, wdg))
-        self.layout().addWidget(wdg)
+    # def _addGroup(self, group: DynamicPlotPrincipleGroup) -> DynamicPlotPrinciplesGroupWidget:
+    #     if group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
+    #         wdg = AlliesPrinciplesGroupWidget(self.novel, group)
+    #     else:
+    #         wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
+    #     wdg.remove.connect(partial(self._removeGroup, wdg))
+    #     self.layout().addWidget(wdg)
+    #
+    #     return wdg
 
-        return wdg
+    # def _removeGroup(self, wdg: DynamicPlotPrinciplesGroupWidget):
+    #     title = f'Are you sure you want to delete the storyline elements "{wdg.group.type.display_name()}"?'
+    #     if wdg.group.principles and not confirmed("This action cannot be undone.", title):
+    #         return
+    #
+    #     self.plot.dynamic_principles.remove(wdg.group)
+    #     fade_out_and_gc(self, wdg)
+    #     self._save()
 
-    def _removeGroup(self, wdg: DynamicPlotPrinciplesGroupWidget):
-        title = f'Are you sure you want to delete the storyline elements "{wdg.group.type.display_name()}"?'
-        if wdg.group.principles and not confirmed("This action cannot be undone.", title):
-            return
-
-        self.plot.dynamic_principles.remove(wdg.group)
-        fade_out_and_gc(self, wdg)
-        self._save()
-
-    def _save(self):
-        self.repo.update_novel(self.novel)
+    # def _save(self):
+    #     self.repo.update_novel(self.novel)

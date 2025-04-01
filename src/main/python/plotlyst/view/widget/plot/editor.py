@@ -19,12 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from functools import partial
-from typing import Set, Dict
+from typing import Set, Dict, Tuple
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer
 from PyQt6.QtGui import QColor, QCursor, QIcon
-from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup
+from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea
 from overrides import overrides
 from qthandy import flow, incr_font, \
     margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent
@@ -34,7 +34,7 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotValue, PlotType, Character, PlotPrinciple, \
     PlotPrincipleType, PlotProgressionItem, \
-    PlotProgressionItemType, DynamicPlotPrincipleGroupType
+    PlotProgressionItemType, DynamicPlotPrincipleGroupType, DynamicPlotPrincipleGroup, LayoutType
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -43,7 +43,7 @@ from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, Storyl
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, insert_before_the_end, label, frame, tool_btn, columns, \
-    push_btn, rows, link_buttons_to_pages
+    push_btn, link_buttons_to_pages, scroll_area
 from plotlyst.view.dialog.novel import PlotValueEditorDialog
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
@@ -55,6 +55,8 @@ from plotlyst.view.widget.labels import PlotValueLabel
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, GenrePrincipleSelectorDialog, principle_type_index
+from plotlyst.view.widget.plot.progression import PlotEventsTimeline, DynamicPlotPrinciplesGroupWidget, \
+    AlliesPrinciplesGroupWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
 from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
 
@@ -242,26 +244,54 @@ class PlotWidget(QWidget, EventListener):
         self.btnLinearStructure = push_btn(
             IconRegistry.rising_action_icon('grey', PLOTLYST_SECONDARY_COLOR), text='Escalation',
             properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+        self.btnAllies = push_btn(
+            IconRegistry.from_name(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES.icon(), 'grey',
+                                   PLOTLYST_SECONDARY_COLOR), text='Allies && Enemies',
+            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+        self.btnSuspects = push_btn(
+            IconRegistry.from_name(DynamicPlotPrincipleGroupType.SUSPECTS.icon(), 'grey',
+                                   PLOTLYST_SECONDARY_COLOR), text='Suspects',
+            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+        self.btnCast = push_btn(
+            IconRegistry.from_name(DynamicPlotPrincipleGroupType.CAST.icon(), 'grey',
+                                   PLOTLYST_SECONDARY_COLOR), text='Cast',
+            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+        self.btnMonster = push_btn(
+            IconRegistry.from_name(DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER.icon(), 'grey',
+                                   PLOTLYST_SECONDARY_COLOR), text='Monster',
+            properties=['secondary-selector', 'transparent-rounded-bg-on-hover'], checkable=True)
+
         self.wdgNavs.layout().addWidget(self.btnPrinciples)
         self.wdgNavs.layout().addWidget(self.btnLinearStructure)
+        self.wdgNavs.layout().addWidget(self.btnAllies)
+        self.wdgNavs.layout().addWidget(self.btnSuspects)
+        self.wdgNavs.layout().addWidget(self.btnCast)
+        self.wdgNavs.layout().addWidget(self.btnMonster)
 
         self.btnGroup = QButtonGroup(self)
         self.btnGroup.addButton(self.btnPrinciples)
         self.btnGroup.addButton(self.btnLinearStructure)
+        self.btnGroup.addButton(self.btnAllies)
+        self.btnGroup.addButton(self.btnSuspects)
+        self.btnGroup.addButton(self.btnCast)
+        self.btnGroup.addButton(self.btnMonster)
         self.btnPrinciples.setChecked(True)
 
         self.stack = QStackedWidget(self)
-        self.pagePrinciples = QWidget()
-        flow(self.pagePrinciples, spacing=6)
-        margins(self.pagePrinciples, top=5)
-        self.pageLinearStructure = rows()
-        margins(self.pageLinearStructure, top=5)
-
-        self.stack.addWidget(self.pagePrinciples)
-        self.stack.addWidget(self.pageLinearStructure)
+        self.pagePrinciples, self.wdgPrinciples = self.__page(LayoutType.FLOW)
+        self.pageLinearStructure, self.wdgLinearStructure = self.__page()
+        self.pageAllies, self.wdgAllies = self.__page()
+        self.pageSuspects, self.wdgSuspects = self.__page()
+        self.pageCast, self.wdgCast = self.__page()
+        self.pageMonster, self.wdgMonster = self.__page()
 
         link_buttons_to_pages(self.stack, [(self.btnPrinciples, self.pagePrinciples),
-                                           (self.btnLinearStructure, self.pageLinearStructure)])
+                                           (self.btnLinearStructure, self.pageLinearStructure),
+                                           (self.btnAllies, self.pageAllies),
+                                           (self.btnSuspects, self.pageSuspects),
+                                           (self.btnCast, self.pageCast),
+                                           (self.btnMonster, self.pageMonster),
+                                           ])
 
         self.layout().addWidget(self.btnPlotIcon, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.lineName, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -271,6 +301,16 @@ class PlotWidget(QWidget, EventListener):
 
         for principle in self.plot.principles:
             self._initPrincipleEditor(principle)
+
+        self._timeline = PlotEventsTimeline(self.novel, self.plot.plot_type)
+        self.wdgLinearStructure.layout().addWidget(self._timeline)
+        self._timeline.setStructure(self.plot.progression)
+        self._timeline.timelineChanged.connect(self._timelineChanged)
+
+        for group in self.plot.dynamic_principles:
+            self._addGroup(group)
+
+        self.btnLinearStructure.setVisible(self.plot.has_progression)
 
         self.repo = RepositoryPersistenceManager.instance()
 
@@ -387,12 +427,6 @@ class PlotWidget(QWidget, EventListener):
         # self.installEventFilter(VisibilityToggleEventFilter(target=self.btnPrincipleEditor, parent=self))
         # self.installEventFilter(VisibilityToggleEventFilter(target=self.btnDynamicPrincipleEditor, parent=self))
 
-        # self._timeline = PlotEventsTimeline(self.novel, self.plot.plot_type)
-        # self.wdgEventsParent.layout().addWidget(self._timeline)
-        # self._timeline.setStructure(self.plot.progression)
-        # self._timeline.timelineChanged.connect(self._timelineChanged)
-
-        # self.wdgProgression.setVisible(self.plot.has_progression)
         # self.wdgDynamicPrinciples.setVisible(self.plot.has_dynamic_principles)
 
         # contextMenu = MenuWidget(self.btnSettings)
@@ -458,7 +492,7 @@ class PlotWidget(QWidget, EventListener):
             if principle:
                 self.plot.principles.remove(principle)
                 wdg = self._principles.pop(principle.type)
-                fade_out_and_gc(self.pagePrinciples, wdg)
+                fade_out_and_gc(self.wdgPrinciples, wdg)
 
         # self._btnAddValue.setVisible(True)
         # self.btnSettings.setVisible(True)
@@ -499,10 +533,38 @@ class PlotWidget(QWidget, EventListener):
         editor.principleEdited.connect(self._save)
         # self.wdgPrinciples.layout().insertWidget(principle_type_index[principle.type], editor)
         index = principle_type_index.get(principle.type, principle.type.value)
-        self.pagePrinciples.layout().insertWidget(index, editor)
+        self.wdgPrinciples.layout().insertWidget(index, editor)
         self._principles[principle.type] = editor
 
         return editor
+
+    def _addGroup(self, group: DynamicPlotPrincipleGroup) -> DynamicPlotPrinciplesGroupWidget:
+        if group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
+            wdg = AlliesPrinciplesGroupWidget(self.novel, group)
+        else:
+            wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
+
+        if group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
+            self.wdgAllies.layout().addWidget(wdg)
+        elif group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
+            self.wdgSuspects.layout().addWidget(wdg)
+        elif group.type == DynamicPlotPrincipleGroupType.CAST:
+            self.wdgCast.layout().addWidget(wdg)
+        elif group.type == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
+            self.wdgMonster.layout().addWidget(wdg)
+
+        wdg.remove.connect(partial(self._removeGroup, wdg))
+
+        return wdg
+
+    def _removeGroup(self, wdg: DynamicPlotPrinciplesGroupWidget):
+        title = f'Are you sure you want to delete the storyline elements "{wdg.group.type.display_name()}"?'
+        if wdg.group.principles and not confirmed("This action cannot be undone.", title):
+            return
+
+        self.plot.dynamic_principles.remove(wdg.group)
+        fade_out_and_gc(self, wdg)
+        self._save()
 
     def _save(self):
         self.repo.update_novel(self.novel)
@@ -554,6 +616,22 @@ class PlotWidget(QWidget, EventListener):
         menu.addSeparator()
         menu.addAction(action('Remove', IconRegistry.trash_can_icon(), label.removalRequested.emit))
         menu.exec(QCursor.pos())
+
+    def __page(self, layoutType: LayoutType = LayoutType.VERTICAL) -> Tuple[QScrollArea, QWidget]:
+        scroll_ = scroll_area(h_on=False, frameless=True)
+        wdg = QWidget()
+        if layoutType == LayoutType.VERTICAL:
+            vbox(wdg)
+        elif layoutType == LayoutType.FLOW:
+            flow(wdg, spacing=6)
+        scroll_.setWidget(wdg)
+        wdg.setProperty('relaxed-white-bg', True)
+
+        margins(wdg, left=20, right=20, top=5)
+
+        self.stack.addWidget(scroll_)
+
+        return scroll_, wdg
 
     def __destroyValue(self, label: PlotValueLabel):
         self.plot.values.remove(label.value)
