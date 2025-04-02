@@ -1748,13 +1748,13 @@ advance_story_scene_purpose = ScenePurpose(ScenePurposeType.Story, 'Drive',
                                            include=[ScenePurposeType.Character, ScenePurposeType.Emotion,
                                                     ScenePurposeType.Setup],
                                            pacing='fast-medium')
-reaction_story_scene_purpose = ScenePurpose(ScenePurposeType.Reaction, 'Reaction',
+reaction_story_scene_purpose = ScenePurpose(ScenePurposeType.Reaction, 'Aftermath',
                                             keywords=['reaction', 'reflection', 'dilemma', 'decision', 'introspection',
                                                       'analysis',
                                                       'new goal'],
                                             include=[ScenePurposeType.Character, ScenePurposeType.Emotion],
                                             pacing='medium-slow')
-character_story_scene_purpose = ScenePurpose(ScenePurposeType.Character, 'Character\ninsight',
+character_story_scene_purpose = ScenePurpose(ScenePurposeType.Character, 'Character insight',
                                              keywords=['characterization', 'introspection', 'backstory',
                                                        'internal conflict', 'relations', 'character change'],
                                              include=[ScenePurposeType.Emotion])
