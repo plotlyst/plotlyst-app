@@ -1976,6 +1976,11 @@ class SceneFunctions:
 
 
 @dataclass
+class SceneMigration:
+    migrated_functions: bool = True
+
+
+@dataclass
 class Scene:
     title: str
     id: uuid.UUID = field(default_factory=uuid.uuid4)
@@ -2005,6 +2010,7 @@ class Scene:
     plot_pos_progress: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     plot_neg_progress: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     functions: SceneFunctions = field(default_factory=SceneFunctions)
+    migration: SceneMigration = field(default_factory=SceneMigration)
 
     def beat(self, novel: 'Novel') -> Optional[StoryBeat]:
         structure = novel.active_story_structure
