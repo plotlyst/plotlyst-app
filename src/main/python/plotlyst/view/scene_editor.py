@@ -52,7 +52,7 @@ from plotlyst.view.widget.scene.editor import ScenePurposeTypeButton, SceneProgr
 from plotlyst.view.widget.scene.functions import SceneFunctionsWidget
 from plotlyst.view.widget.scene.plot import ScenePlotLabels, \
     ScenePlotSelectorMenu
-from plotlyst.view.widget.scene.reader_drive import ReaderCuriosityEditor, ReaderInformationEditor
+from plotlyst.view.widget.scene.reader_drive import ReaderInformationEditor
 from plotlyst.view.widget.structure.selector import StructureBeatSelectorButton
 from plotlyst.view.widget.tree import TreeSettings
 
@@ -99,6 +99,7 @@ class SceneEditor(QObject, EventListener):
         translucent(self.ui.btnDramaticFunctions, 0.7)
         translucent(self.ui.btnReaderInfo, 0.7)
         translucent(self.ui.btnReaderQuestions, 0.7)
+        self.ui.btnReaderQuestions.setHidden(True)
 
         if app_env.is_mac():
             incr_font(self.ui.lineTitle)
@@ -190,8 +191,8 @@ class SceneEditor(QObject, EventListener):
         self._informationEditor = ReaderInformationEditor(self.novel)
         self.ui.pageInfo.layout().addWidget(self._informationEditor)
 
-        self._curiosityEditor = ReaderCuriosityEditor(self.novel)
-        self.ui.pageQuestions.layout().addWidget(self._curiosityEditor)
+        # self._curiosityEditor = ReaderCuriosityEditor(self.novel)
+        # self.ui.pageQuestions.layout().addWidget(self._curiosityEditor)
 
         link_buttons_to_pages(self.ui.stackedWidgetFunctions,
                               [
@@ -254,7 +255,7 @@ class SceneEditor(QObject, EventListener):
         # self.tag_selector.setScene(self.scene)
         self._functionsEditor.setScene(self.scene)
         # self._agencyEditor.setScene(self.scene)
-        self._curiosityEditor.setScene(self.scene)
+        # self._curiosityEditor.setScene(self.scene)
         self._informationEditor.setScene(self.scene)
         self._progressEditor.setScene(self.scene)
         self._structureSelector.setScene(self.scene)
