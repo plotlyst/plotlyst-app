@@ -30,7 +30,7 @@ from qthandy import vbox, margins, hbox, pointy, gc, sp, clear_layout, incr_font
 from qthandy.filter import ObjectReferenceMimeData
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR, LIGHTGREY_ACTIVE_COLOR, LIGHTGREY_IDLE_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR, LIGHTGREY_ACTIVE_COLOR
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, shadow, insert_before_the_end, rows, \
@@ -390,7 +390,7 @@ class _PrimaryFunctionsWidget(QFrame):
         clear_layout(self.container)
         wdg = rows()
         wdg.setFixedHeight(140)
-        self.btnPlus = push_btn(IconRegistry.plus_icon(LIGHTGREY_IDLE_COLOR))
+        self.btnPlus = push_btn(IconRegistry.plus_icon(LIGHTGREY_ACTIVE_COLOR))
         self.btnPlus.setIconSize(QSize(36, 36))
         self.btnPlus.setStyleSheet(f'color: {LIGHTGREY_ACTIVE_COLOR}; border: 0px;')
         self.btnPlus.clicked.connect(self._plusClicked)
@@ -475,6 +475,8 @@ class SceneFunctionsWidget(QFrame):
     storylineLinked = pyqtSignal(ScenePlotReference)
     storylineRemoved = pyqtSignal(ScenePlotReference)
     storylineCharged = pyqtSignal()
+    functionAdded = pyqtSignal()
+    functionRemoved = pyqtSignal()
 
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -507,6 +509,7 @@ class SceneFunctionsWidget(QFrame):
 
         wdg = self.__initPrimaryWidget(function, storyline)
         qtanim.fade_in(wdg, teardown=wdg.activate)
+        self.functionAdded.emit()
 
     def storylineRemovedEvent(self, storyline: Plot):
         for i in range(self.wdgDrive.layout().count()):
@@ -527,6 +530,7 @@ class SceneFunctionsWidget(QFrame):
                 self.storylineRemoved.emit(ref)
 
         fade_out_and_gc(self.wdgDrive, wdg)
+        self.functionRemoved.emit()
 
     def __initPrimaryWidget(self, function: SceneFunction, storyline: Optional[Plot] = None):
         if function.type == StoryElementType.Character:

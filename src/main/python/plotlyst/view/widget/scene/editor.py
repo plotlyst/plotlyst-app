@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import QWidget, QTextEdit, QPushButton, QLabel, QFrame, QSt
     QToolButton, QAbstractButton, QScrollArea, QButtonGroup
 from overrides import overrides
 from qthandy import vbox, vspacer, transparent, sp, line, hbox, pointy, vline, retain_when_hidden, margins, \
-    spacer, grid, gc, clear_layout, ask_confirmation, decr_icon, italic, translucent
+    spacer, grid, gc, clear_layout, ask_confirmation, decr_icon, translucent
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
 
@@ -221,35 +221,23 @@ class ScenePurposeTypeButton(QPushButton):
             tip = purpose.display_name.replace('\n', ' ')
             self.setText(tip)
 
-        if self._scene.purpose == ScenePurposeType.Other:
-            italic(self, True)
-        else:
-            italic(self, False)
-
         if self._scene.purpose == ScenePurposeType.Story:
-            # bgColor = '#f4978e'
             borderColor = '#fb5607'
             resolution = self._scene.outcome == SceneOutcome.RESOLUTION
             trade_off = self._scene.outcome == SceneOutcome.TRADE_OFF
             motion = self._scene.outcome == SceneOutcome.MOTION
 
             if resolution:
-                # bgColor = '#14CE93'
                 borderColor = '#0b6e4f'
             elif trade_off:
-                # bgColor = '#E491C7'
                 borderColor = '#832161'
             elif motion:
-                # bgColor = '#E0BD9B'
                 borderColor = '#D7AA7D'
         elif self._scene.purpose == ScenePurposeType.Reaction:
-            # bgColor = '#89c2d9'
             borderColor = '#1a759f'
-        elif self._scene.purpose == ScenePurposeType.Other:
-            # bgColor = 'lightgrey'
-            borderColor = 'grey'
+        elif self._scene.purpose == ScenePurposeType.Emotion:
+            borderColor = '#9d4edd'
         else:
-            # bgColor = 'lightgrey'
             borderColor = 'grey'
 
         if self._scene.plot_pos_progress or self._scene.plot_neg_progress:
@@ -259,8 +247,6 @@ class ScenePurposeTypeButton(QPushButton):
                 self.setIcon(IconRegistry.charge_icon(self._scene.plot_neg_progress, borderColor))
         elif self._scene.progress:
             self.setIcon(IconRegistry.charge_icon(self._scene.progress, borderColor))
-        else:
-            self.setIcon(QIcon())
 
         self.setStyleSheet(f'''
             QPushButton {{

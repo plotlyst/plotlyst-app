@@ -23,24 +23,26 @@ from typing import Optional, Dict
 
 import qtanim
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QResizeEvent, QAction, QIcon
-from PyQt6.QtWidgets import QWidget, QButtonGroup, QStackedWidget, QTextEdit
+from PyQt6.QtGui import QColor, QResizeEvent, QAction
+from PyQt6.QtWidgets import QWidget, QButtonGroup, QStackedWidget, QTextEdit, QFrame
 from overrides import overrides
 from qthandy import vbox, hbox, spacer, sp, flow, vline, clear_layout, bold, incr_font, italic, translucent, line, \
-    vspacer, incr_icon, margins, retain_when_hidden, decr_icon, decr_font
+    vspacer, incr_icon, margins, pointy
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Novel, Scene, ReaderQuestion, SceneReaderQuestion, ReaderQuestionType, \
-    ReaderInformationType, SceneReaderInformation
+    ReaderInformationType, SceneReaderInformation, Character, StoryElementType
 from plotlyst.env import app_env
+from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import push_btn, link_buttons_to_pages, shadow, scroll_area, \
     insert_before_the_end, wrap, fade_out_and_gc, action, label, scrolled, tool_btn
-from plotlyst.view.icons import IconRegistry
+from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.button import DotsMenuButton
+from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import LazyWidget, Icon, IconText
 from plotlyst.view.widget.input import RemovalButton
@@ -485,16 +487,18 @@ class ReaderCuriosityEditor(LazyWidget):
         return wdg
 
 
-class ReaderInformationWidget(QWidget):
+class ReaderInformationWidget(QFrame):
     removed = pyqtSignal()
 
     def __init__(self, info: SceneReaderInformation, parent=None):
         super().__init__(parent)
         self.info = info
-        vbox(self, 10)
+        vbox(self)
+        self.setProperty('white-bg', True)
+        self.setProperty('rounded', True)
 
         self._label = push_btn(
-            IconRegistry.general_info_icon('black'), 'Information',
+            IconRegistry.general_info_icon('black'),
             transparent_=True, icon_resize=False, pointy_=False)
         self._label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         translucent(self._label, 0.6)
@@ -505,34 +509,36 @@ class ReaderInformationWidget(QWidget):
         self.installEventFilter(VisibilityToggleEventFilter(self.btnRemove, self))
 
         self.textedit = QTextEdit(self)
-        self.textedit.setProperty('white-bg', True)
-        self.textedit.setProperty('rounded', True)
+        self.textedit.setProperty('transparent', True)
         self.textedit.setTabChangesFocus(True)
         if app_env.is_mac():
             incr_font(self.textedit)
-        self.textedit.setMinimumSize(170, 100)
-        self.textedit.setMaximumSize(190, 120)
-        self.textedit.verticalScrollBar().setVisible(False)
-        shadow(self.textedit, offset=4 if self.info.revelation else 2, color=QColor(self.info.type.color()))
-        self.textedit.setPlaceholderText('What new information is conveyed to the reader?')
+        self.textedit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        if self.info.subtype == StoryElementType.Setup:
+            self._label.setIcon(IconRegistry.from_name('fa5s.seedling'))
+            self._label.setText('Setup')
+            self.textedit.setPlaceholderText('What story element is set up for a later payoff?')
+        else:
+            self._label.setText('Information')
+            self.textedit.setPlaceholderText('What new information is conveyed to the reader?')
+
         self.textedit.setText(self.info.text)
         self.textedit.textChanged.connect(self._infoChanged)
-
-        self.btnRevelation = push_btn(IconRegistry.from_name('mdi.puzzle-star'), 'Mark as revelation',
-                                      transparent_=True)
-        self.btnRevelation.installEventFilter(OpacityEventFilter(self.btnRevelation))
-        retain_when_hidden(self.btnRevelation)
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnRevelation, self))
-        self.btnRevelation.clicked.connect(self._toggleRelevation)
+        # self.btnRevelation = push_btn(IconRegistry.from_name('mdi.puzzle-star'), 'Mark as revelation',
+        #                               transparent_=True)
+        # self.btnRevelation.installEventFilter(OpacityEventFilter(self.btnRevelation))
+        # retain_when_hidden(self.btnRevelation)
+        # self.installEventFilter(VisibilityToggleEventFilter(self.btnRevelation, self))
+        # self.btnRevelation.clicked.connect(self._toggleRelevation)
 
         self.layout().addWidget(self._label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.textedit)
-        self.layout().addWidget(self.btnRevelation, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        if self.info.revelation:
-            self._refreshRevelation()
+        self.setMaximumHeight(110)
 
-        sp(self).v_max()
+    def activate(self):
+        shadow(self)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -541,81 +547,100 @@ class ReaderInformationWidget(QWidget):
     def _infoChanged(self):
         self.info.text = self.textedit.toPlainText()
 
-    def _toggleRelevation(self):
-        def finished():
-            shadow(self.textedit, offset=4 if self.info.revelation else 2, color=QColor(self.info.type.color()))
+    # def _toggleRelevation(self):
+    #     def finished():
+    #         shadow(self.textedit, offset=4 if self.info.revelation else 2, color=QColor(self.info.type.color()))
+    #
+    #     self.info.revelation = not self.info.revelation
+    #     if self.info.revelation:
+    #         qtanim.glow(self.textedit, 500, radius=15, color=QColor(self.info.type.color()), teardown=finished)
+    #     else:
+    #         qtanim.glow(self.textedit, duration=100, color=QColor('lightgrey'), teardown=finished)
 
-        self.info.revelation = not self.info.revelation
-        if self.info.revelation:
-            qtanim.glow(self.textedit, 500, radius=15, color=QColor(self.info.type.color()), teardown=finished)
-        else:
-            qtanim.glow(self.textedit, duration=100, color=QColor('lightgrey'), teardown=finished)
+    # self._refreshRevelation()
 
-        self._refreshRevelation()
+    # def _refreshRevelation(self):
+    #     bold(self._label, self.info.revelation)
+    #     italic(self.btnRevelation, self.info.revelation)
+    #     if self.info.revelation:
+    #         icon = IconRegistry.from_name('mdi.puzzle-star')
+    #         title = 'Revelation'
+    #         incr_icon(self._label, 4)
+    #         incr_font(self._label, 2)
+    #         self.btnRevelation.setText('Demote revelation')
+    #         self.btnRevelation.setIcon(QIcon())
+    #
+    #         self.textedit.setMinimumSize(195, 125)
+    #         self.textedit.setMaximumSize(215, 135)
+    #     else:
+    #         icon = IconRegistry.general_info_icon('black')
+    #         title = 'Information'
+    #         decr_icon(self._label, 4)
+    #         decr_font(self._label, 2)
+    #         self.btnRevelation.setText('Mark as revelation')
+    #         self.btnRevelation.setIcon(IconRegistry.from_name('mdi.puzzle-star'))
+    #
+    #         self.textedit.setMinimumSize(170, 100)
+    #         self.textedit.setMaximumSize(190, 120)
+    #
+    #     self._label.setIcon(icon)
+    #     self._label.setText(title)
 
-    def _refreshRevelation(self):
-        bold(self._label, self.info.revelation)
-        italic(self.btnRevelation, self.info.revelation)
-        if self.info.revelation:
-            icon = IconRegistry.from_name('mdi.puzzle-star')
-            title = 'Revelation'
-            incr_icon(self._label, 4)
-            incr_font(self._label, 2)
-            self.btnRevelation.setText('Demote revelation')
-            self.btnRevelation.setIcon(QIcon())
 
-            self.textedit.setMinimumSize(195, 125)
-            self.textedit.setMaximumSize(215, 135)
-        else:
-            icon = IconRegistry.general_info_icon('black')
-            title = 'Information'
-            decr_icon(self._label, 4)
-            decr_font(self._label, 2)
-            self.btnRevelation.setText('Mark as revelation')
-            self.btnRevelation.setIcon(IconRegistry.from_name('mdi.puzzle-star'))
+class CharacterInsightWidget(ReaderInformationWidget):
+    def __init__(self, novel: Novel, info: SceneReaderInformation, parent=None):
+        super().__init__(info, parent)
+        self._novel = novel
 
-            self.textedit.setMinimumSize(170, 100)
-            self.textedit.setMaximumSize(190, 120)
+        self._label.setIcon(IconRegistry.from_name('ph.user-circle-plus-light'))
+        self._label.setText('Character insight')
+        pointy(self._label)
+        self.textedit.setPlaceholderText("What do we learn about a character")
 
-        self._label.setIcon(icon)
-        self._label.setText(title)
+        self._menu = CharacterSelectorMenu(self._novel, self._label)
+        self._menu.selected.connect(self._characterSelected)
+
+        self._updateCharacter()
+
+    def setCharacter(self, character: Character):
+        self._characterSelected(character)
+
+    def _characterSelected(self, character: Character):
+        self.info.character_id = character.id
+        self._updateCharacter()
+
+    def _updateCharacter(self):
+        if self.info.character_id:
+            character = entities_registry.character(str(self.info.character_id))
+            if character:
+                self._label.setIcon(avatars.avatar(character))
 
 
 class ReaderInformationColumn(QWidget):
     added = pyqtSignal(SceneReaderInformation)
     removed = pyqtSignal(SceneReaderInformation)
 
-    def __init__(self, infoType: ReaderInformationType, parent=None):
+    def __init__(self, novel: Novel, infoType: ReaderInformationType, parent=None):
         super().__init__(parent)
         vbox(self, spacing=5)
-        self.infoType = infoType
+        self._novel = novel
+        self._scene: Optional[Scene] = None
+        self._infoType = infoType
 
         self.title = IconText()
-        if self.infoType == ReaderInformationType.Story:
-            self.title.setText('Plot')
-            self.title.setIcon(
-                IconRegistry.storylines_icon(color=self.infoType.color(), color_on=self.infoType.color()))
-        elif self.infoType == ReaderInformationType.Character:
-            self.title.setText('Character')
-            self.title.setIcon(IconRegistry.character_icon(color=self.infoType.color(), color_on=self.infoType.color()))
-        elif self.infoType == ReaderInformationType.World:
-            self.title.setText('World')
-            self.title.setIcon(
-                IconRegistry.world_building_icon(color=self.infoType.color(), color_on=self.infoType.color()))
-        self.title.setStyleSheet(f'border:0px; color: {self.infoType.color()};')
         incr_font(self.title, 2)
         incr_icon(self.title, 4)
+        translucent(self.title, 0.9)
 
-        self.btnAdd = tool_btn(IconRegistry.plus_icon(self.infoType.color()), transparent_=True)
+        self.btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
         self.btnAdd.installEventFilter(OpacityEventFilter(self.btnAdd))
-        self.btnAdd.clicked.connect(self._addNew)
 
         self.wdgEditor = QWidget()
         vbox(self.wdgEditor)
 
         self.layout().addWidget(self.title)
         self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(line(color=self.infoType.color()))
+        self.layout().addWidget(line(color=self._infoType.color()))
         self.layout().addWidget(self.wdgEditor)
         self.layout().addWidget(vspacer())
 
@@ -625,51 +650,114 @@ class ReaderInformationColumn(QWidget):
 
     def clear(self):
         clear_layout(self.wdgEditor)
+        self.wdgEditor.layout().addWidget(vspacer())
+
+    def setScene(self, scene: Scene):
+        self._scene = scene
 
     def addInfo(self, info: SceneReaderInformation) -> ReaderInformationWidget:
-        wdg = ReaderInformationWidget(info)
+        if info.type == ReaderInformationType.Character:
+            wdg = CharacterInsightWidget(self._novel, info)
+        else:
+            wdg = ReaderInformationWidget(info)
         wdg.removed.connect(partial(self._remove, wdg))
-        self.wdgEditor.layout().addWidget(wdg, alignment=Qt.AlignmentFlag.AlignCenter)
+        insert_before_the_end(self.wdgEditor, wdg)
         return wdg
 
-    def _addNew(self):
-        info = SceneReaderInformation(self.infoType)
+    def _addNew(self, subtype: Optional[StoryElementType] = None) -> ReaderInformationWidget:
+        info = SceneReaderInformation(self._infoType, subtype)
         wdg = self.addInfo(info)
-        qtanim.fade_in(wdg, teardown=lambda: wdg.setGraphicsEffect(None))
+        qtanim.fade_in(wdg, teardown=wdg.activate)
         self.added.emit(info)
+
+        return wdg
 
     def _remove(self, wdg: ReaderInformationWidget):
         fade_out_and_gc(self.wdgEditor, wdg)
         self.removed.emit(wdg.info)
 
 
+class StoryInformationColumn(ReaderInformationColumn):
+    def __init__(self, novel: Novel, infoType: ReaderInformationType, parent=None):
+        super().__init__(novel, infoType, parent)
+        self.title.setText('Plot')
+        self.title.setIcon(
+            IconRegistry.storylines_icon(color=self._infoType.color(), color_on=self._infoType.color()))
+
+        self._menu = MenuWidget(self.btnAdd, largeIcons=True)
+        self._menu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
+
+        self._menu.addAction(action('Information', IconRegistry.general_info_icon('black'),
+                                    slot=partial(self._addNew, StoryElementType.Information),
+                                    tooltip="New information is conveyed",
+                                    incr_font_=2))
+        self._menu.addAction(action('Setup', IconRegistry.from_name('fa5s.seedling', 'black'),
+                                    slot=partial(self._addNew, StoryElementType.Setup),
+                                    tooltip="A seemingly insignificant information or happening with a later payoff",
+                                    incr_font_=2))
+
+    @overrides
+    def _addNew(self, subtype: StoryElementType):
+        super()._addNew(subtype)
+
+
+class CharacterInsightColumn(ReaderInformationColumn):
+    def __init__(self, novel: Novel, infoType: ReaderInformationType, parent=None):
+        super().__init__(novel, infoType, parent)
+        self.title.setText('Character')
+        self.title.setIcon(
+            IconRegistry.character_icon(color=self._infoType.color(), color_on=self._infoType.color()))
+        self.btnAdd.clicked.connect(self._addNew)
+
+    @overrides
+    def _addNew(self):
+        wdg = super()._addNew()
+        if self.wdgEditor.layout().count() == 2 and self._scene.pov:
+            wdg.setCharacter(self._scene.pov)
+
+
+class WorldInformationColumn(ReaderInformationColumn):
+    def __init__(self, novel: Novel, infoType: ReaderInformationType, parent=None):
+        super().__init__(novel, infoType, parent)
+        self.title.setText('World')
+        self.title.setIcon(
+            IconRegistry.world_building_icon(color=self._infoType.color(), color_on=self._infoType.color()))
+        self.btnAdd.clicked.connect(self._addNew)
+
+
 class ReaderInformationEditor(LazyWidget):
+    added = pyqtSignal()
+    removed = pyqtSignal()
+
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self._novel = novel
         self._scene: Optional[Scene] = None
 
         vbox(self, 10, 10)
+        self.setProperty('muted-bg', True)
         margins(self, top=15)
         self.layout().addWidget(label(
-            "Track what essential information is conveyed to the reader, and in which category: plot, character, or world\nMark the most important ones as revelations.",
-            description=True, wordWrap=True))
+            "Track what essential information is conveyed to the reader.", description=True),
+            alignment=Qt.AlignmentFlag.AlignRight)
         self._scrollarea, self._wdgCenter = scrolled(self, frameless=True)
-        self._wdgCenter.setProperty('relaxed-white-bg', True)
+        self._wdgCenter.setProperty('muted-bg', True)
         hbox(self._wdgCenter)
-        self.wdgStory = ReaderInformationColumn(ReaderInformationType.Story)
+
+        self.wdgStory = StoryInformationColumn(self._novel, ReaderInformationType.Story)
         self.wdgStory.added.connect(self._infoAdded)
         self.wdgStory.removed.connect(self._infoRemoved)
-        self.wdgCharacters = ReaderInformationColumn(ReaderInformationType.Character)
+
+        self.wdgCharacters = CharacterInsightColumn(self._novel, ReaderInformationType.Character)
         self.wdgCharacters.added.connect(self._infoAdded)
         self.wdgCharacters.removed.connect(self._infoRemoved)
-        self.wdgWorld = ReaderInformationColumn(ReaderInformationType.World)
+
+        self.wdgWorld = WorldInformationColumn(self._novel, ReaderInformationType.World)
         self.wdgWorld.added.connect(self._infoAdded)
         self.wdgWorld.removed.connect(self._infoRemoved)
+
         self._wdgCenter.layout().addWidget(self.wdgStory)
-        self._wdgCenter.layout().addWidget(vline())
         self._wdgCenter.layout().addWidget(self.wdgCharacters)
-        self._wdgCenter.layout().addWidget(vline())
         self._wdgCenter.layout().addWidget(self.wdgWorld)
         spacer_ = spacer()
         sp(spacer_).h_preferred()
@@ -690,20 +778,29 @@ class ReaderInformationEditor(LazyWidget):
         self.wdgCharacters.clear()
         self.wdgWorld.clear()
 
+        self.wdgStory.setScene(self._scene)
+        self.wdgCharacters.setScene(self._scene)
+        self.wdgWorld.setScene(self._scene)
+
         for info in self._scene.info:
             if info.type == ReaderInformationType.Story:
-                self.wdgStory.addInfo(info)
+                wdg = self.wdgStory.addInfo(info)
             elif info.type == ReaderInformationType.Character:
-                self.wdgCharacters.addInfo(info)
+                wdg = self.wdgCharacters.addInfo(info)
             elif info.type == ReaderInformationType.World:
-                self.wdgWorld.addInfo(info)
+                wdg = self.wdgWorld.addInfo(info)
+            else:
+                continue
+            wdg.activate()
 
         super().refresh()
 
     def _infoAdded(self, info: SceneReaderInformation):
         if self._scene:
             self._scene.info.append(info)
+            self.added.emit()
 
     def _infoRemoved(self, info: SceneReaderInformation):
         if self._scene:
             self._scene.info.remove(info)
+            self.removed.emit()
