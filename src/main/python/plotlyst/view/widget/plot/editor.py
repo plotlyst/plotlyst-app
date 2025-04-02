@@ -205,13 +205,16 @@ class PrincipleSelectorButton(SelectorToggleButton):
     displayHint = pyqtSignal(str)
     hideHint = pyqtSignal()
 
-    def __init__(self, principle: PlotPrincipleType, parent=None):
+    def __init__(self, principle: PlotPrincipleType, selector: PrincipleSelectorObject, parent=None):
         super().__init__(minWidth=70, parent=parent)
         self.principle = principle
+        self.selector = selector
 
         self.setText(principle.display_name())
         self.setIcon(principle_icon(principle, BLACK_COLOR))
         self._hint = f'{self.text()}: {principle_hint(principle)}'
+
+        self.clicked.connect(self._clicked)
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
@@ -221,11 +224,14 @@ class PrincipleSelectorButton(SelectorToggleButton):
     def leaveEvent(self, event: QEvent) -> None:
         self.hideHint.emit()
 
+    def _clicked(self, checked: bool):
+        self.selector.principleToggled.emit(self.principle, checked)
 
 class PlotElementSelectorPopup(PopupDialog):
-    def __init__(self, plot: Plot, parent=None):
+    def __init__(self, plot: Plot, selector: PrincipleSelectorObject, parent=None):
         super().__init__(parent)
         self._plot = plot
+        self._selector = selector
 
         self.scroll = scroll_area(h_on=False, frameless=True)
         self.center = QFrame()
@@ -309,7 +315,7 @@ class PlotElementSelectorPopup(PopupDialog):
     def _addPrinciples(self, parent: QWidget, principles: List[PlotPrincipleType], active: Set[PlotPrincipleType],
                        hintLbl: QLabel):
         for principle in principles:
-            btn = PrincipleSelectorButton(principle)
+            btn = PrincipleSelectorButton(principle, self._selector)
             if principle in active:
                 btn.setChecked(True)
             btn.displayHint.connect(hintLbl.setText)
@@ -646,7 +652,9 @@ class PlotWidget(QWidget, EventListener):
         self.iconChanged.emit()
 
     def _editElements(self):
-        PlotElementSelectorPopup.popup(self.plot)
+        object = PrincipleSelectorObject()
+        object.principleToggled.connect(self._principleToggled)
+        PlotElementSelectorPopup.popup(self.plot, object)
 
     def _principleToggled(self, principleType: PlotPrincipleType, toggled: bool):
         if toggled:
