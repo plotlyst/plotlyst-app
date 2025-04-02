@@ -22,16 +22,16 @@ from functools import partial
 from typing import Set, Dict, Tuple
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer
-from PyQt6.QtGui import QColor, QCursor, QIcon, QResizeEvent
-from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent
+from PyQt6.QtGui import QColor, QCursor, QIcon, QResizeEvent, QEnterEvent
+from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame
 from overrides import overrides
 from qthandy import flow, incr_font, \
-    margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent, incr_icon
+    margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent, incr_icon, bold
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
-from qtmenu import MenuWidget, ActionTooltipDisplayMode
+from qtmenu import MenuWidget, ActionTooltipDisplayMode, group
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotValue, PlotType, Character, PlotPrinciple, \
     PlotPrincipleType, PlotProgressionItem, \
     PlotProgressionItemType, DynamicPlotPrincipleGroupType, DynamicPlotPrincipleGroup, LayoutType
@@ -44,19 +44,21 @@ from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, insert_before_the_end, label, frame, tool_btn, columns, \
-    push_btn, link_buttons_to_pages, scroll_area
+    push_btn, link_buttons_to_pages, scroll_area, wrap
 from plotlyst.view.dialog.novel import PlotValueEditorDialog
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
+from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
+from plotlyst.view.widget.button import SelectorToggleButton
 from plotlyst.view.widget.characters import CharacterAvatar, CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
-from plotlyst.view.widget.display import SeparatorLineWithShadow
+from plotlyst.view.widget.display import SeparatorLineWithShadow, PopupDialog, IconText
 from plotlyst.view.widget.input import AutoAdjustableLineEdit
 from plotlyst.view.widget.labels import PlotValueLabel
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
-    PrincipleSelectorObject, GenrePrincipleSelectorDialog, principle_type_index
+    PrincipleSelectorObject, GenrePrincipleSelectorDialog, principle_type_index, principle_icon, principle_hint
 from plotlyst.view.widget.plot.progression import PlotEventsTimeline, DynamicPlotPrinciplesGroupWidget, \
     AlliesPrinciplesGroupWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
@@ -199,6 +201,116 @@ class PlotTreeView(TreeView, EventListener):
         return self._plots[plot]
 
 
+class PrincipleSelectorButton(SelectorToggleButton):
+    displayHint = pyqtSignal(str)
+    hideHint = pyqtSignal()
+
+    def __init__(self, principle: PlotPrincipleType, parent=None):
+        super().__init__(minWidth=50, parent=parent)
+        self.principle = principle
+
+        self.setText(principle.display_name())
+        self.setIcon(principle_icon(principle, BLACK_COLOR))
+        self._hint = f'{self.text()}: {principle_hint(principle)}'
+
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.displayHint.emit(self._hint)
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        self.hideHint.emit()
+
+
+class PlotElementSelectorPopup(PopupDialog):
+    def __init__(self, plot: Plot, parent=None):
+        super().__init__(parent)
+        self._plot = plot
+
+        self.scroll = scroll_area(h_on=False, frameless=True)
+        self.center = QFrame()
+        vbox(self.center)
+        margins(self.center, bottom=15)
+        self.scroll.setWidget(self.center)
+        self.center.setProperty('white-bg', True)
+
+        self.btnCore = push_btn(IconRegistry.from_name('mdi.cube', 'grey', PLOTLYST_SECONDARY_COLOR), 'Core elements',
+                                properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnGenre = push_btn(IconRegistry.genre_icon(color='grey', color_on=PLOTLYST_SECONDARY_COLOR),
+                                 'Genre specific',
+                                 properties=['secondary-selector', 'transparent'], checkable=True)
+        incr_font(self.btnCore)
+        incr_font(self.btnGenre)
+        self.btnGroup = QButtonGroup(self)
+        self.btnGroup.addButton(self.btnCore)
+        self.btnGroup.addButton(self.btnGenre)
+        self.btnCore.setChecked(True)
+
+        self._addHeader('Plot principles', 'mdi6.note-text-outline')
+        self._hintPlot = label(' ', description=True, wordWrap=True)
+        self.center.layout().addWidget(wrap(self._hintPlot, margin_left=20))
+        self.wdgPlotPrinciples = self._addFlowContainer()
+
+        self._addHeader('Character arc principles', 'mdi.mirror')
+        self._hintCharacter = label(' ', description=True, wordWrap=True)
+        self.center.layout().addWidget(wrap(self._hintCharacter, margin_left=20))
+        self.wdgCharacterPrinciples = self._addFlowContainer()
+
+        for principle in [PlotPrincipleType.QUESTION, PlotPrincipleType.GOAL, PlotPrincipleType.ANTAGONIST,
+                          PlotPrincipleType.CONFLICT, PlotPrincipleType.STAKES]:
+            btn = PrincipleSelectorButton(principle)
+            btn.displayHint.connect(self._hintPlot.setText)
+            btn.hideHint.connect(lambda: self._hintPlot.setText(' '))
+            self.wdgPlotPrinciples.layout().addWidget(btn)
+
+        for principle in [PlotPrincipleType.POSITIVE_CHANGE, PlotPrincipleType.NEGATIVE_CHANGE,
+                          PlotPrincipleType.DESIRE, PlotPrincipleType.NEED, PlotPrincipleType.EXTERNAL_CONFLICT,
+                          PlotPrincipleType.INTERNAL_CONFLICT, PlotPrincipleType.FLAW]:
+            btn = PrincipleSelectorButton(principle)
+            btn.displayHint.connect(self._hintCharacter.setText)
+            btn.hideHint.connect(lambda: self._hintCharacter.setText(' '))
+            self.wdgCharacterPrinciples.layout().addWidget(btn)
+
+        self.btnClose = push_btn(text='Close', properties=['confirm', 'cancel'])
+        self.btnClose.clicked.connect(self.accept)
+
+        self.center.layout().addWidget(vspacer())
+
+        self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        self.frame.layout().addWidget(group(self.btnCore, self.btnGenre), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.scroll)
+        self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.setMinimumSize(self._adjustedSize(0.6, 0.6, 250, 250))
+
+    @overrides
+    def sizeHint(self) -> QSize:
+        return self._adjustedSize(0.6, 0.6, 250, 250)
+
+    def display(self):
+        self.exec()
+
+    def _addHeader(self, title: str, icon: str = ''):
+        lbl = IconText()
+        lbl.setText(title)
+        bold(lbl)
+        incr_font(lbl, 1)
+        incr_icon(lbl, 4)
+        if icon:
+            lbl.setIcon(IconRegistry.from_name(icon))
+
+        self.center.layout().addWidget(lbl, alignment=Qt.AlignmentFlag.AlignLeft)
+
+    def _addFlowContainer(self) -> QWidget:
+        wdg = QWidget()
+        flow(wdg)
+        margins(wdg, left=20, top=0)
+        sp(wdg).v_max()
+        self.center.layout().addWidget(wdg)
+
+        return wdg
+
+
 class PlotWidget(QWidget, EventListener):
     titleChanged = pyqtSignal()
     iconChanged = pyqtSignal()
@@ -337,7 +449,6 @@ class PlotWidget(QWidget, EventListener):
 
         self.layout().addWidget(self.btnPlotIcon, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.lineName, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.layout().addWidget(self.btnEditElements, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgNavs, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._divider)
         self.layout().addWidget(self.stack)
@@ -359,11 +470,6 @@ class PlotWidget(QWidget, EventListener):
 
         dispatcher = event_dispatchers.instance(self.novel)
         dispatcher.register(self, CharacterChangedEvent, CharacterDeletedEvent)
-
-        # self.btnPrincipleEditor.setIcon(IconRegistry.plus_edit_icon('grey'))
-        # transparent(self.btnPrincipleEditor)
-        # retain_when_hidden(self.btnPrincipleEditor)
-        # decr_icon(self.btnPrincipleEditor)
 
         # self._principleSelectorMenu = PlotPrincipleSelectorMenu(self.plot, self.btnPrincipleEditor)
         # self._principleSelectorMenu.principleToggled.connect(self._principleToggled)
@@ -534,7 +640,7 @@ class PlotWidget(QWidget, EventListener):
         self.iconChanged.emit()
 
     def _editElements(self):
-        pass
+        PlotElementSelectorPopup.popup(self.plot)
 
     def _principleToggled(self, principleType: PlotPrincipleType, toggled: bool):
         if toggled:
