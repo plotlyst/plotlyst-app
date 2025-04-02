@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from functools import partial
-from typing import Set, Dict, Tuple, List
+from typing import Set, Dict, Tuple, List, Optional
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent
@@ -27,9 +27,9 @@ from PyQt6.QtGui import QColor, QCursor, QIcon, QResizeEvent, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame, QLabel
 from overrides import overrides
 from qthandy import flow, incr_font, \
-    margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent, incr_icon, bold
+    margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent, incr_icon, bold, hbox
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
-from qtmenu import MenuWidget, ActionTooltipDisplayMode, group
+from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotValue, PlotType, Character, PlotPrinciple, \
@@ -44,16 +44,16 @@ from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, insert_before_the_end, label, frame, tool_btn, columns, \
-    push_btn, link_buttons_to_pages, scroll_area, wrap
+    push_btn, link_buttons_to_pages, scroll_area
 from plotlyst.view.dialog.novel import PlotValueEditorDialog
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
-from plotlyst.view.widget.button import SelectorToggleButton
+from plotlyst.view.widget.button import SelectorToggleButton, CollapseButton
 from plotlyst.view.widget.characters import CharacterAvatar, CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
-from plotlyst.view.widget.display import SeparatorLineWithShadow, PopupDialog, IconText
+from plotlyst.view.widget.display import SeparatorLineWithShadow, PopupDialog, IconText, icon_text
 from plotlyst.view.widget.input import AutoAdjustableLineEdit
 from plotlyst.view.widget.labels import PlotValueLabel
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
@@ -227,6 +227,7 @@ class PrincipleSelectorButton(SelectorToggleButton):
     def _clicked(self, checked: bool):
         self.selector.principleToggled.emit(self.principle, checked)
 
+
 class PlotElementSelectorPopup(PopupDialog):
     def __init__(self, plot: Plot, selector: PrincipleSelectorObject, parent=None):
         super().__init__(parent)
@@ -240,27 +241,21 @@ class PlotElementSelectorPopup(PopupDialog):
         self.scroll.setWidget(self.center)
         self.center.setProperty('white-bg', True)
 
-        self.btnCore = push_btn(IconRegistry.from_name('mdi.cube', 'grey', PLOTLYST_SECONDARY_COLOR), 'Core elements',
-                                properties=['secondary-selector', 'transparent'], checkable=True)
-        self.btnGenre = push_btn(IconRegistry.genre_icon(color='grey', color_on=PLOTLYST_SECONDARY_COLOR),
-                                 'Genre specific',
-                                 properties=['secondary-selector', 'transparent'], checkable=True)
-        incr_font(self.btnCore)
-        incr_font(self.btnGenre)
-        self.btnGroup = QButtonGroup(self)
-        self.btnGroup.addButton(self.btnCore)
-        self.btnGroup.addButton(self.btnGenre)
-        self.btnCore.setChecked(True)
-
         self._addHeader('Plot principles', 'mdi6.note-text-outline')
         self._hintPlot = label(' ', description=True, wordWrap=True)
-        self.center.layout().addWidget(wrap(self._hintPlot, margin_left=20))
+        self.center.layout().addWidget(self._hintPlot)
         self.wdgPlotPrinciples = self._addFlowContainer()
 
         self._addHeader('Character arc principles', 'mdi.mirror')
         self._hintCharacter = label(' ', description=True, wordWrap=True)
-        self.center.layout().addWidget(wrap(self._hintCharacter, margin_left=20))
+        self.center.layout().addWidget(self._hintCharacter)
         self.wdgCharacterPrinciples = self._addFlowContainer()
+
+        self._addHeader('Genre specific principles', 'mdi.drama-masks', toggleable=True)
+        self._hintGenre = label(' ', description=True, wordWrap=True)
+        self.center.layout().addWidget(self._hintGenre)
+        self.wdgGenrePrinciples = self._addFlowContainer()
+        self.wdgGenrePrinciples.layout().setSpacing(8)
 
         selected_principles = set(x.type for x in self._plot.principles)
         self._addPrinciples(self.wdgPlotPrinciples,
@@ -272,6 +267,25 @@ class PlotElementSelectorPopup(PopupDialog):
                              PlotPrincipleType.DESIRE, PlotPrincipleType.NEED, PlotPrincipleType.EXTERNAL_CONFLICT,
                              PlotPrincipleType.INTERNAL_CONFLICT, PlotPrincipleType.FLAW], selected_principles,
                             self._hintCharacter)
+        self._addGenrePrinciples(self.wdgGenrePrinciples,
+                                 [PlotPrincipleType.SKILL_SET, PlotPrincipleType.TICKING_CLOCK], selected_principles,
+                                 self._hintGenre, 'Action', 'fa5s.running')
+        self._addGenrePrinciples(self.wdgGenrePrinciples,
+                                 [PlotPrincipleType.SCHEME], selected_principles,
+                                 self._hintGenre, 'Caper', 'mdi.robber')
+        self._addGenrePrinciples(self.wdgGenrePrinciples,
+                                 [PlotPrincipleType.MONSTER, PlotPrincipleType.CONFINED_SPACE], selected_principles,
+                                 self._hintGenre, 'Horror', 'ri.knife-blood-fill')
+        self._addGenrePrinciples(self.wdgGenrePrinciples,
+                                 [PlotPrincipleType.CRIME, PlotPrincipleType.CRIME_CLOCK, PlotPrincipleType.SLEUTH,
+                                  PlotPrincipleType.AUTHORITY,
+                                  PlotPrincipleType.MACGUFFIN], selected_principles,
+                                 self._hintGenre, 'Crime', 'fa5s.mask')
+        self._addGenrePrinciples(self.wdgGenrePrinciples,
+                                 [PlotPrincipleType.SELF_DISCOVERY, PlotPrincipleType.LOSS_OF_INNOCENCE,
+                                  PlotPrincipleType.MATURITY, PlotPrincipleType.FIRST_LOVE, PlotPrincipleType.MENTOR],
+                                 selected_principles,
+                                 self._hintGenre, 'Coming of age', 'ri.seedling-line')
 
         self.btnClose = push_btn(text='Close', properties=['confirm', 'cancel'])
         self.btnClose.clicked.connect(self.accept)
@@ -279,29 +293,32 @@ class PlotElementSelectorPopup(PopupDialog):
         self.center.layout().addWidget(vspacer())
 
         self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
-        self.frame.layout().addWidget(group(self.btnCore, self.btnGenre), alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.scroll)
         self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.setMinimumSize(self._adjustedSize(0.6, 0.6, 250, 250))
+        self.setMinimumSize(self._adjustedSize(0.8, 0.8, 450, 350))
 
     @overrides
     def sizeHint(self) -> QSize:
-        return self._adjustedSize(0.6, 0.6, 250, 250)
+        return self._adjustedSize(0.8, 0.8, 450, 350)
 
     def display(self):
         self.exec()
 
-    def _addHeader(self, title: str, icon: str = ''):
+    def _addHeader(self, title: str, icon: str = '', toggleable: bool = False) -> Optional[CollapseButton]:
         lbl = IconText()
         lbl.setText(title)
         bold(lbl)
-        incr_font(lbl, 1)
-        incr_icon(lbl, 4)
+        incr_icon(lbl, 2)
         if icon:
             lbl.setIcon(IconRegistry.from_name(icon))
 
-        self.center.layout().addWidget(lbl, alignment=Qt.AlignmentFlag.AlignLeft)
+        if toggleable:
+            btn = CollapseButton()
+            self.center.layout().addWidget(group(btn, lbl, margin=0, spacing=0), alignment=Qt.AlignmentFlag.AlignLeft)
+            return btn
+        else:
+            self.center.layout().addWidget(lbl, alignment=Qt.AlignmentFlag.AlignLeft)
 
     def _addFlowContainer(self) -> QWidget:
         wdg = QWidget()
@@ -311,6 +328,17 @@ class PlotElementSelectorPopup(PopupDialog):
         self.center.layout().addWidget(wdg)
 
         return wdg
+
+    def _addGenrePrinciples(self, parent: QWidget, principles: List[PlotPrincipleType], active: Set[PlotPrincipleType],
+                            hintLbl: QLabel, genre: str, genre_icon: str):
+        wdg = frame()
+        wdg.setProperty('muted-bg', True)
+        wdg.setProperty('rounded', True)
+        hbox(wdg, 3, spacing=2)
+        wdg.layout().addWidget(icon_text(genre_icon, f'{genre}:', opacity=0.5), alignment=Qt.AlignmentFlag.AlignVCenter)
+        self._addPrinciples(wdg, principles, active, hintLbl)
+
+        parent.layout().addWidget(wdg)
 
     def _addPrinciples(self, parent: QWidget, principles: List[PlotPrincipleType], active: Set[PlotPrincipleType],
                        hintLbl: QLabel):
