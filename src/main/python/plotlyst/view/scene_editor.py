@@ -32,8 +32,7 @@ from qtmenu import MenuWidget
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Scene, Document, StoryBeat, \
-    Character, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome, ScenePurposeType, \
-    ReaderInformationType
+    Character, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome, ScenePurposeType
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -376,29 +375,7 @@ class SceneEditor(QObject, EventListener):
         else:
             self.scene.outcome = SceneOutcome.DISASTER
 
-        self.scene.purpose = ScenePurposeType.Other
-        for i, function in enumerate(self.scene.functions.primary):
-            if i == 0 and function.type == StoryElementType.Resonance:
-                self.scene.purpose = ScenePurposeType.Emotion
-            if function.type == StoryElementType.Plot:
-                self.scene.purpose = ScenePurposeType.Story
-                break
-            elif function.type in [StoryElementType.Reaction, StoryElementType.Reflection,
-                                   StoryElementType.Repercussion]:
-                self.scene.purpose = ScenePurposeType.Reaction
-
-        if self.scene.purpose == ScenePurposeType.Other:
-            for info in self.scene.info:
-                if info.subtype == StoryElementType.Setup:
-                    self.scene.purpose = ScenePurposeType.Setup
-                    break
-                if info.type == ReaderInformationType.Character:
-                    self.scene.purpose = ScenePurposeType.Character
-                elif self.scene.purpose == ScenePurposeType.Other:
-                    self.scene.purpose = ScenePurposeType.Exposition
-        if self.scene.purpose == ScenePurposeType.Other:
-            self.scene.purpose = ScenePurposeType.Story
-
+        self.scene.update_purpose()
         self._btnPurposeType.refresh()
 
     def _add_plot_ref(self, plotRef: ScenePlotReference) -> ScenePlotLabels:

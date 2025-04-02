@@ -2094,6 +2094,30 @@ class Scene:
                 else:
                     self.plot_neg_progress = min(self.plot_neg_progress, ref.data.charge)
 
+    def update_purpose(self):
+        self.purpose = ScenePurposeType.Other
+        for i, function in enumerate(self.functions.primary):
+            if i == 0 and function.type == StoryElementType.Resonance:
+                self.purpose = ScenePurposeType.Emotion
+            if function.type == StoryElementType.Plot:
+                self.purpose = ScenePurposeType.Story
+                break
+            elif function.type in [StoryElementType.Reaction, StoryElementType.Reflection,
+                                   StoryElementType.Repercussion]:
+                self.purpose = ScenePurposeType.Reaction
+
+        if self.purpose == ScenePurposeType.Other:
+            for info in self.info:
+                if info.subtype == StoryElementType.Setup:
+                    self.purpose = ScenePurposeType.Setup
+                    break
+                if info.type == ReaderInformationType.Character:
+                    self.purpose = ScenePurposeType.Character
+                elif self.purpose == ScenePurposeType.Other:
+                    self.purpose = ScenePurposeType.Exposition
+        if self.purpose == ScenePurposeType.Other:
+            self.purpose = ScenePurposeType.Story
+
     def __is_outcome(self, expected) -> bool:
         if self.outcome and self.outcome == expected:
             return True
