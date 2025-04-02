@@ -475,6 +475,8 @@ class SceneFunctionsWidget(QFrame):
     storylineLinked = pyqtSignal(ScenePlotReference)
     storylineRemoved = pyqtSignal(ScenePlotReference)
     storylineCharged = pyqtSignal()
+    functionAdded = pyqtSignal()
+    functionRemoved = pyqtSignal()
 
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -507,6 +509,7 @@ class SceneFunctionsWidget(QFrame):
 
         wdg = self.__initPrimaryWidget(function, storyline)
         qtanim.fade_in(wdg, teardown=wdg.activate)
+        self.functionAdded.emit()
 
     def storylineRemovedEvent(self, storyline: Plot):
         for i in range(self.wdgDrive.layout().count()):
@@ -527,6 +530,7 @@ class SceneFunctionsWidget(QFrame):
                 self.storylineRemoved.emit(ref)
 
         fade_out_and_gc(self.wdgDrive, wdg)
+        self.functionRemoved.emit()
 
     def __initPrimaryWidget(self, function: SceneFunction, storyline: Optional[Plot] = None):
         if function.type == StoryElementType.Character:

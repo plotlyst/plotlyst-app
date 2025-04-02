@@ -726,6 +726,9 @@ class WorldInformationColumn(ReaderInformationColumn):
 
 
 class ReaderInformationEditor(LazyWidget):
+    added = pyqtSignal()
+    removed = pyqtSignal()
+
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self._novel = novel
@@ -795,7 +798,9 @@ class ReaderInformationEditor(LazyWidget):
     def _infoAdded(self, info: SceneReaderInformation):
         if self._scene:
             self._scene.info.append(info)
+            self.added.emit()
 
     def _infoRemoved(self, info: SceneReaderInformation):
         if self._scene:
             self._scene.info.remove(info)
+            self.removed.emit()

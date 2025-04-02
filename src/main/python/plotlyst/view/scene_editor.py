@@ -32,7 +32,8 @@ from qtmenu import MenuWidget
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Scene, Document, StoryBeat, \
-    Character, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome, ScenePurposeType
+    Character, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome, ScenePurposeType, \
+    ReaderInformationType
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -157,7 +158,7 @@ class SceneEditor(QObject, EventListener):
         self._btnPurposeType.setVisible(app_env.profile().get('scene-purpose', False))
 
         self._progressEditor = SceneProgressEditor()
-        self._progressEditor.progressCharged.connect(self._update_outcome)
+        self._progressEditor.progressCharged.connect(self._update_scene_type)
         retain_when_hidden(self._progressEditor)
         self.ui.wdgSceneType.layout().insertWidget(2, self._progressEditor)
         self._progressEditor.setVisible(app_env.profile().get('scene-progression', False))
@@ -180,6 +181,8 @@ class SceneEditor(QObject, EventListener):
         self._functionsEditor.storylineLinked.connect(self._storyline_linked_from_function)
         self._functionsEditor.storylineRemoved.connect(self._storyline_removed_from_function)
         self._functionsEditor.storylineCharged.connect(self._update_storyline_progress)
+        self._functionsEditor.functionAdded.connect(self._update_scene_type)
+        self._functionsEditor.functionRemoved.connect(self._update_scene_type)
 
         self.ui.scrollAreaWidgetDramaticFunctions.layout().addWidget(self._functionsEditor)
 
@@ -189,6 +192,8 @@ class SceneEditor(QObject, EventListener):
         self.ui.scrollAgency.layout().addWidget(self._agencyEditor)
 
         self._informationEditor = ReaderInformationEditor(self.novel)
+        self._informationEditor.added.connect(self._update_scene_type)
+        self._informationEditor.removed.connect(self._update_scene_type)
         self.ui.pageInfo.layout().addWidget(self._informationEditor)
 
         # self._curiosityEditor = ReaderCuriosityEditor(self.novel)
@@ -358,9 +363,9 @@ class SceneEditor(QObject, EventListener):
 
     def _update_storyline_progress(self):
         self._progressEditor.refresh()
-        self._update_outcome()
+        self._update_scene_type()
 
-    def _update_outcome(self):
+    def _update_scene_type(self):
         charge = self._progressEditor.charge()
         alt_charge = self._progressEditor.altCharge()
         if charge > 0:
@@ -370,6 +375,29 @@ class SceneEditor(QObject, EventListener):
                 self.scene.outcome = SceneOutcome.RESOLUTION
         else:
             self.scene.outcome = SceneOutcome.DISASTER
+
+        self.scene.purpose = ScenePurposeType.Other
+        for i, function in enumerate(self.scene.functions.primary):
+            if i == 0 and function.type == StoryElementType.Resonance:
+                self.scene.purpose = ScenePurposeType.Emotion
+            if function.type == StoryElementType.Plot:
+                self.scene.purpose = ScenePurposeType.Story
+                break
+            elif function.type in [StoryElementType.Reaction, StoryElementType.Reflection,
+                                   StoryElementType.Repercussion]:
+                self.scene.purpose = ScenePurposeType.Reaction
+
+        if self.scene.purpose == ScenePurposeType.Other:
+            for info in self.scene.info:
+                if info.subtype == StoryElementType.Setup:
+                    self.scene.purpose = ScenePurposeType.Setup
+                    break
+                if info.type == ReaderInformationType.Character:
+                    self.scene.purpose = ScenePurposeType.Character
+                elif self.scene.purpose == ScenePurposeType.Other:
+                    self.scene.purpose = ScenePurposeType.Exposition
+        if self.scene.purpose == ScenePurposeType.Other:
+            self.scene.purpose = ScenePurposeType.Story
 
         self._btnPurposeType.refresh()
 
