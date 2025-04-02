@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from functools import partial
-from typing import Set, Dict, Tuple, List, Optional
+from typing import Set, Dict, Tuple, List
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent
@@ -27,7 +27,7 @@ from PyQt6.QtGui import QColor, QCursor, QIcon, QResizeEvent, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame, QLabel
 from overrides import overrides
 from qthandy import flow, incr_font, \
-    margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent, incr_icon, bold, hbox
+    margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent, incr_icon, bold, hbox, line, spacer
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
@@ -44,17 +44,17 @@ from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, insert_before_the_end, label, frame, tool_btn, columns, \
-    push_btn, link_buttons_to_pages, scroll_area
+    push_btn, link_buttons_to_pages, scroll_area, rows, exclusive_buttons
 from plotlyst.view.dialog.novel import PlotValueEditorDialog
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
-from plotlyst.view.widget.button import SelectorToggleButton, CollapseButton
+from plotlyst.view.widget.button import SelectorToggleButton
 from plotlyst.view.widget.characters import CharacterAvatar, CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import SeparatorLineWithShadow, PopupDialog, IconText, icon_text
-from plotlyst.view.widget.input import AutoAdjustableLineEdit
+from plotlyst.view.widget.input import AutoAdjustableLineEdit, Toggle
 from plotlyst.view.widget.labels import PlotValueLabel
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
@@ -234,8 +234,31 @@ class PlotElementSelectorPopup(PopupDialog):
         self._plot = plot
         self._selector = selector
 
+        self.stack = QStackedWidget()
+        self.pagePrinciples = rows()
+        self.pageEditors = rows()
+        self.stack.addWidget(self.pagePrinciples)
+        self.stack.addWidget(self.pageEditors)
+
+        self.btnPrinciples = push_btn(IconRegistry.from_name('mdi.cube', 'grey', PLOTLYST_SECONDARY_COLOR),
+                                      'Core principles',
+                                      properties=['secondary-selector', 'transparent'], checkable=True)
+        incr_font(self.btnPrinciples, 2)
+        incr_icon(self.btnPrinciples, 4)
+        self.btnEditors = push_btn(IconRegistry.from_name('fa5s.cubes', 'grey', PLOTLYST_SECONDARY_COLOR),
+                                   'Complex elements',
+                                   properties=['secondary-selector', 'transparent'], checkable=True)
+        incr_font(self.btnEditors, 2)
+        incr_icon(self.btnEditors, 4)
+        exclusive_buttons(self, self.btnPrinciples, self.btnEditors)
+
+        link_buttons_to_pages(self.stack,
+                              [(self.btnPrinciples, self.pagePrinciples), (self.btnEditors, self.pageEditors)])
+        self.btnPrinciples.setChecked(True)
+
         self.scroll = scroll_area(h_on=False, frameless=True)
         self.center = QFrame()
+        self.pagePrinciples.layout().addWidget(self.scroll)
         vbox(self.center)
         margins(self.center, bottom=15)
         self.scroll.setWidget(self.center)
@@ -251,7 +274,7 @@ class PlotElementSelectorPopup(PopupDialog):
         self.center.layout().addWidget(self._hintCharacter)
         self.wdgCharacterPrinciples = self._addFlowContainer()
 
-        self._addHeader('Genre specific principles', 'mdi.drama-masks', toggleable=True)
+        self._addHeader('Genre specific principles', 'mdi.drama-masks')
         self._hintGenre = label(' ', description=True, wordWrap=True)
         self.center.layout().addWidget(self._hintGenre)
         self.wdgGenrePrinciples = self._addFlowContainer()
@@ -287,13 +310,30 @@ class PlotElementSelectorPopup(PopupDialog):
                                  selected_principles,
                                  self._hintGenre, 'Coming of age', 'ri.seedling-line')
 
+        self.scrollComplex = scroll_area(h_on=False, frameless=True)
+        self.centerComplex = QFrame()
+        self.pageEditors.layout().addWidget(self.scrollComplex)
+        vbox(self.centerComplex, spacing=0)
+        margins(self.centerComplex, bottom=15)
+        self.scrollComplex.setWidget(self.centerComplex)
+        self.centerComplex.setProperty('white-bg', True)
+
+        self._addComplexSelector(DynamicPlotPrincipleGroupType.ESCALATION)
+        self._addComplexSelector(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES)
+        self._addComplexSelector(DynamicPlotPrincipleGroupType.SUSPECTS)
+        self._addComplexSelector(DynamicPlotPrincipleGroupType.CAST)
+        self._addComplexSelector(DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER)
+        self.centerComplex.layout().addWidget(vspacer())
+
         self.btnClose = push_btn(text='Close', properties=['confirm', 'cancel'])
         self.btnClose.clicked.connect(self.accept)
 
         self.center.layout().addWidget(vspacer())
 
         self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
-        self.frame.layout().addWidget(self.scroll)
+        self.frame.layout().addWidget(group(self.btnPrinciples, self.btnEditors),
+                                      alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.stack)
         self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.setMinimumSize(self._adjustedSize(0.8, 0.8, 450, 350))
@@ -305,7 +345,7 @@ class PlotElementSelectorPopup(PopupDialog):
     def display(self):
         self.exec()
 
-    def _addHeader(self, title: str, icon: str = '', toggleable: bool = False) -> Optional[CollapseButton]:
+    def _addHeader(self, title: str, icon: str = ''):
         lbl = IconText()
         lbl.setText(title)
         bold(lbl)
@@ -313,12 +353,8 @@ class PlotElementSelectorPopup(PopupDialog):
         if icon:
             lbl.setIcon(IconRegistry.from_name(icon))
 
-        if toggleable:
-            btn = CollapseButton()
-            self.center.layout().addWidget(group(btn, lbl, margin=0, spacing=0), alignment=Qt.AlignmentFlag.AlignLeft)
-            return btn
-        else:
-            self.center.layout().addWidget(lbl, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.center.layout().addWidget(lbl, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.center.layout().addWidget(line())
 
     def _addFlowContainer(self) -> QWidget:
         wdg = QWidget()
@@ -349,6 +385,13 @@ class PlotElementSelectorPopup(PopupDialog):
             btn.displayHint.connect(hintLbl.setText)
             btn.hideHint.connect(lambda: hintLbl.setText(' '))
             parent.layout().addWidget(btn)
+
+    def _addComplexSelector(self, complexType: DynamicPlotPrincipleGroupType):
+        toggle = Toggle()
+        lbl = icon_text(complexType.icon(), complexType.display_name())
+        self.centerComplex.layout().addWidget(group(lbl, spacer(), toggle))
+        self.centerComplex.layout().addWidget(label(complexType.description(), description=True, wordWrap=True))
+        self.centerComplex.layout().addWidget(line())
 
 
 class PlotWidget(QWidget, EventListener):
