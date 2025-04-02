@@ -369,7 +369,7 @@ class PlotWidget(QWidget, EventListener):
         # contextMenu.addAction(action('Remove plot', IconRegistry.trash_can_icon(), self.removalRequested.emit))
         self.btnEditElements = tool_btn(IconRegistry.plus_edit_icon('grey'), 'Edit elements', transparent_=True,
                                         parent=self)
-        self.btnEditElements.setIconSize(QSize(48, 48))
+        self.btnEditElements.setIconSize(QSize(32, 32))
         self.btnEditElements.installEventFilter(OpacityEventFilter(self.btnEditElements, leaveOpacity=0.7))
         incr_icon(self.btnEditElements, 2)
         self.installEventFilter(VisibilityToggleEventFilter(target=self.btnEditElements, parent=self))
@@ -583,7 +583,7 @@ class PlotWidget(QWidget, EventListener):
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
-        self.btnEditElements.setGeometry(self.width() - self.btnEditElements.sizeHint().width(), 10,
+        self.btnEditElements.setGeometry(self.width() - self.btnEditElements.sizeHint().width() - 10, 10,
                                          self.btnEditElements.sizeHint().width(),
                                          self.btnEditElements.sizeHint().height())
 
