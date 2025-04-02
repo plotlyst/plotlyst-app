@@ -19,12 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from functools import partial
-from typing import Set, Dict, Tuple
+from typing import Set, Dict, Tuple, List
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent
 from PyQt6.QtGui import QColor, QCursor, QIcon, QResizeEvent, QEnterEvent
-from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame
+from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame, QLabel
 from overrides import overrides
 from qthandy import flow, incr_font, \
     margins, italic, clear_layout, vspacer, sp, pointy, vbox, transparent, incr_icon, bold
@@ -206,7 +206,7 @@ class PrincipleSelectorButton(SelectorToggleButton):
     hideHint = pyqtSignal()
 
     def __init__(self, principle: PlotPrincipleType, parent=None):
-        super().__init__(minWidth=50, parent=parent)
+        super().__init__(minWidth=70, parent=parent)
         self.principle = principle
 
         self.setText(principle.display_name())
@@ -256,20 +256,16 @@ class PlotElementSelectorPopup(PopupDialog):
         self.center.layout().addWidget(wrap(self._hintCharacter, margin_left=20))
         self.wdgCharacterPrinciples = self._addFlowContainer()
 
-        for principle in [PlotPrincipleType.QUESTION, PlotPrincipleType.GOAL, PlotPrincipleType.ANTAGONIST,
-                          PlotPrincipleType.CONFLICT, PlotPrincipleType.STAKES]:
-            btn = PrincipleSelectorButton(principle)
-            btn.displayHint.connect(self._hintPlot.setText)
-            btn.hideHint.connect(lambda: self._hintPlot.setText(' '))
-            self.wdgPlotPrinciples.layout().addWidget(btn)
+        selected_principles = set(x.type for x in self._plot.principles)
+        self._addPrinciples(self.wdgPlotPrinciples,
+                            [PlotPrincipleType.QUESTION, PlotPrincipleType.GOAL, PlotPrincipleType.ANTAGONIST,
+                             PlotPrincipleType.CONFLICT, PlotPrincipleType.STAKES], selected_principles, self._hintPlot)
 
-        for principle in [PlotPrincipleType.POSITIVE_CHANGE, PlotPrincipleType.NEGATIVE_CHANGE,
-                          PlotPrincipleType.DESIRE, PlotPrincipleType.NEED, PlotPrincipleType.EXTERNAL_CONFLICT,
-                          PlotPrincipleType.INTERNAL_CONFLICT, PlotPrincipleType.FLAW]:
-            btn = PrincipleSelectorButton(principle)
-            btn.displayHint.connect(self._hintCharacter.setText)
-            btn.hideHint.connect(lambda: self._hintCharacter.setText(' '))
-            self.wdgCharacterPrinciples.layout().addWidget(btn)
+        self._addPrinciples(self.wdgCharacterPrinciples,
+                            [PlotPrincipleType.POSITIVE_CHANGE, PlotPrincipleType.NEGATIVE_CHANGE,
+                             PlotPrincipleType.DESIRE, PlotPrincipleType.NEED, PlotPrincipleType.EXTERNAL_CONFLICT,
+                             PlotPrincipleType.INTERNAL_CONFLICT, PlotPrincipleType.FLAW], selected_principles,
+                            self._hintCharacter)
 
         self.btnClose = push_btn(text='Close', properties=['confirm', 'cancel'])
         self.btnClose.clicked.connect(self.accept)
@@ -309,6 +305,16 @@ class PlotElementSelectorPopup(PopupDialog):
         self.center.layout().addWidget(wdg)
 
         return wdg
+
+    def _addPrinciples(self, parent: QWidget, principles: List[PlotPrincipleType], active: Set[PlotPrincipleType],
+                       hintLbl: QLabel):
+        for principle in principles:
+            btn = PrincipleSelectorButton(principle)
+            if principle in active:
+                btn.setChecked(True)
+            btn.displayHint.connect(hintLbl.setText)
+            btn.hideHint.connect(lambda: hintLbl.setText(' '))
+            parent.layout().addWidget(btn)
 
 
 class PlotWidget(QWidget, EventListener):
