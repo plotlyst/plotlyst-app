@@ -34,7 +34,7 @@ from qthandy.filter import VisibilityToggleEventFilter
 from plotlyst.common import RELAXED_WHITE_COLOR, NEUTRAL_EMOTION_COLOR, \
     EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import BackstoryEvent
-from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end
+from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end, shadow
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.input import RemovalButton, AutoAdjustableTextEdit
@@ -102,6 +102,8 @@ class BackstoryCard(QWidget):
         self.setMinimumWidth(200)
         sp(self).v_max()
 
+        shadow(self, color=Qt.GlobalColor.gray)
+
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.btnType.setGeometry(self.width() // 2 - self.TYPE_SIZE // 2, 2, self.TYPE_SIZE, self.TYPE_SIZE)
@@ -155,14 +157,14 @@ class BackstoryCard(QWidget):
         self.deleteRequested.emit(self)
 
 
-class TimelineEntityLine(QWidget):
+class TimelineEntityRow(QWidget):
     def __init__(self, card: BackstoryCard, alignment: int = Qt.AlignmentFlag.AlignRight, parent=None,
                  compact: bool = True):
         super().__init__(parent)
         self.alignment = alignment
         self.card = card
 
-        self._layout = hbox(self, 0, 3)
+        self._layout = hbox(self, 5, 0)
         self._spacer = spacer()
         self._spacer.setFixedWidth(self.width() // 2 + 3)
         if self.alignment == Qt.AlignmentFlag.AlignRight:
@@ -182,7 +184,7 @@ class TimelineEntityLine(QWidget):
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self._spacer.setFixedWidth(self.width() // 2 + 3)
+        self._spacer.setFixedWidth(self.width() // 2 + 10)
 
     def toggleAlignment(self):
         if self.alignment == Qt.AlignmentFlag.AlignLeft:
@@ -201,7 +203,7 @@ class TimelineLinearWidget(QWidget):
     changed = pyqtSignal()
 
     def __init__(self, theme: Optional[TimelineTheme] = None, parent=None, compact: bool = True):
-        self._events: List[TimelineEntityLine] = []
+        self._events: List[TimelineEntityRow] = []
         super().__init__(parent)
         if theme is None:
             theme = TimelineTheme()
@@ -233,8 +235,8 @@ class TimelineLinearWidget(QWidget):
             else:
                 alignment = Qt.AlignmentFlag.AlignLeft
             prev_alignment = alignment
-            event = TimelineEntityLine(self.cardClass()(backstory, self._theme), alignment, parent=self,
-                                       compact=self._compact)
+            event = TimelineEntityRow(self.cardClass()(backstory, self._theme), alignment, parent=self,
+                                      compact=self._compact)
             event.card.deleteRequested.connect(self._remove)
 
             self._events.append(event)
