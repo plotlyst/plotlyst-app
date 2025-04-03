@@ -22,10 +22,10 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Any, Dict
 
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QObject, QEvent
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
-    QLineEdit, QToolButton
+    QLineEdit
 from overrides import overrides
 from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, bold, \
     margins, gc
@@ -50,7 +50,6 @@ class BackstoryCard(QWidget):
     TYPE_SIZE: int = 36
     edited = pyqtSignal()
     deleteRequested = pyqtSignal(object)
-    relationChanged = pyqtSignal()
 
     def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
         super().__init__(parent)
@@ -156,7 +155,7 @@ class BackstoryCard(QWidget):
         self.deleteRequested.emit(self)
 
 
-class BackstoryCardPlaceholder(QWidget):
+class TimelineEntityLine(QWidget):
     def __init__(self, card: BackstoryCard, alignment: int = Qt.AlignmentFlag.AlignRight, parent=None,
                  compact: bool = True):
         super().__init__(parent)
@@ -164,10 +163,10 @@ class BackstoryCardPlaceholder(QWidget):
         self.card = card
 
         self._layout = hbox(self, 0, 3)
-        self.spacer = spacer()
-        self.spacer.setFixedWidth(self.width() // 2 + 3)
+        self._spacer = spacer()
+        self._spacer.setFixedWidth(self.width() // 2 + 3)
         if self.alignment == Qt.AlignmentFlag.AlignRight:
-            self.layout().addWidget(self.spacer)
+            self.layout().addWidget(self._spacer)
             if compact:
                 self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignLeft)
             else:
@@ -177,63 +176,32 @@ class BackstoryCardPlaceholder(QWidget):
                 self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignRight)
             else:
                 self._layout.addWidget(self.card)
-            self.layout().addWidget(self.spacer)
+            self.layout().addWidget(self._spacer)
         else:
             self.layout().addWidget(self.card)
+
+    @overrides
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self._spacer.setFixedWidth(self.width() // 2 + 3)
 
     def toggleAlignment(self):
         if self.alignment == Qt.AlignmentFlag.AlignLeft:
             self.alignment = Qt.AlignmentFlag.AlignRight
             self._layout.takeAt(0)
-            self._layout.addWidget(self.spacer)
+            self._layout.addWidget(self._spacer)
             self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignRight)
         else:
             self.alignment = Qt.AlignmentFlag.AlignLeft
             self._layout.takeAt(1)
-            self._layout.insertWidget(0, self.spacer)
+            self._layout.insertWidget(0, self._spacer)
             self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignLeft)
-
-
-class _ControlButtons(QWidget):
-
-    def __init__(self, theme: TimelineTheme, parent=None):
-        super().__init__(parent)
-        vbox(self)
-
-        self.btnPlaceholderCircle = QToolButton(self)
-        self.btnPlus = tool_btn(IconRegistry.plus_icon(RELAXED_WHITE_COLOR), tooltip='Add new event')
-
-        self.layout().addWidget(self.btnPlaceholderCircle)
-        self.layout().addWidget(self.btnPlus)
-
-        self.btnPlus.setHidden(True)
-
-        for btn in [self.btnPlaceholderCircle, self.btnPlus]:
-            btn.setStyleSheet(f'''
-                QToolButton {{ background-color: {theme.timeline_color}; border: 1px;
-                        border-radius: 13px; padding: 2px;}}
-                QToolButton:pressed {{background-color: grey;}}
-            ''')
-
-        self.installEventFilter(self)
-
-    @overrides
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.Enter:
-            self.btnPlaceholderCircle.setHidden(True)
-            self.btnPlus.setVisible(True)
-        elif event.type() == QEvent.Type.Leave:
-            self.btnPlaceholderCircle.setVisible(True)
-            self.btnPlus.setHidden(True)
-
-        return super().eventFilter(watched, event)
 
 
 class TimelineLinearWidget(QWidget):
     changed = pyqtSignal()
 
     def __init__(self, theme: Optional[TimelineTheme] = None, parent=None, compact: bool = True):
-        self._spacers: List[QWidget] = []
+        self._events: List[TimelineEntityLine] = []
         super().__init__(parent)
         if theme is None:
             theme = TimelineTheme()
@@ -241,13 +209,7 @@ class TimelineLinearWidget(QWidget):
         self._compact = compact
         self._layout = vbox(self, spacing=0)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self._lineTopMargin: int = 0
         self._endSpacerMinHeight: int = 45
-
-    @overrides
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        for sp in self._spacers:
-            sp.setFixedWidth(self.width() // 2 + 3)
 
     @abstractmethod
     def events(self) -> List[BackstoryEvent]:
@@ -257,7 +219,7 @@ class TimelineLinearWidget(QWidget):
         return BackstoryCard
 
     def refresh(self):
-        self._spacers.clear()
+        self._events.clear()
         clear_layout(self.layout())
 
         prev_alignment = None
@@ -271,21 +233,17 @@ class TimelineLinearWidget(QWidget):
             else:
                 alignment = Qt.AlignmentFlag.AlignLeft
             prev_alignment = alignment
-            event = BackstoryCardPlaceholder(self.cardClass()(backstory, self._theme), alignment, parent=self,
-                                             compact=self._compact)
+            event = TimelineEntityLine(self.cardClass()(backstory, self._theme), alignment, parent=self,
+                                       compact=self._compact)
             event.card.deleteRequested.connect(self._remove)
 
-            self._spacers.append(event.spacer)
-            event.spacer.setFixedWidth(self.width() // 2 + 3)
+            self._events.append(event)
+            event._spacer.setFixedWidth(self.width() // 2 + 3)
 
-            self._addControlButtons(i)
             self._layout.addWidget(event)
 
-            event.card.edited.connect(self.changed.emit)
-            event.card.relationChanged.connect(self.changed.emit)
-            event.card.relationChanged.connect(self.refresh)
+            event.card.edited.connect(self.changed)
 
-        self._addControlButtons(-1)
         spacer_ = vspacer()
         spacer_.setMinimumHeight(self._endSpacerMinHeight)
         self.layout().addWidget(spacer_)
@@ -295,7 +253,7 @@ class TimelineLinearWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(QColor(self._theme.timeline_color)))
-        painter.drawRect(int(self.width() / 2) - 3, self._lineTopMargin, 6, self.height() - self._lineTopMargin)
+        painter.drawRect(int(self.width() / 2) - 3, 0, 6, self.height())
 
         painter.end()
 
@@ -313,11 +271,6 @@ class TimelineLinearWidget(QWidget):
 
         self.refresh()
         self.changed.emit()
-
-    def _addControlButtons(self, pos: int):
-        control = _ControlButtons(self._theme, self)
-        control.btnPlus.clicked.connect(partial(self.add, pos))
-        self._layout.addWidget(control, alignment=Qt.AlignmentFlag.AlignHCenter)
 
 
 class TimelineGridPlaceholder(QWidget):
