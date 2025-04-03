@@ -22,16 +22,17 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Any, Dict
 
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QObject
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
-    QLineEdit
+    QLineEdit, QFrame
 from overrides import overrides
-from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc
+from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc, retain_when_hidden, \
+    translucent
 from qthandy.filter import VisibilityToggleEventFilter
 
 from plotlyst.common import RELAXED_WHITE_COLOR, NEUTRAL_EMOTION_COLOR, \
-    EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR
+    EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR, ALT_BACKGROUND_COLOR
 from plotlyst.core.domain import BackstoryEvent
 from plotlyst.env import app_env
 from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end, shadow
@@ -159,12 +160,29 @@ class BackstoryCard(QWidget):
         self.deleteRequested.emit(self)
 
 
-class PlaceholderWidget(QWidget):
+class PlaceholderWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.btnPlus = tool_btn(IconRegistry.plus_icon('lightgrey'), transparent_=True)
+        self.btnPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
         self.btnPlus.setIconSize(QSize(24, 24))
-        vbox(self, 0, 0).addWidget(self.btnPlus, alignment=Qt.AlignmentFlag.AlignCenter)
+        sp(self.btnPlus).h_exp()
+        vbox(self, 0, 0).addWidget(self.btnPlus)
+        translucent(self)
+        retain_when_hidden(self.btnPlus)
+
+    def activate(self):
+        self.btnPlus.setVisible(True)
+
+    def deactivate(self):
+        self.btnPlus.setHidden(True)
+
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.setStyleSheet(f'background: {ALT_BACKGROUND_COLOR};')
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        self.setStyleSheet('')
 
 
 class TimelineEntityRow(QWidget):
@@ -198,6 +216,21 @@ class TimelineEntityRow(QWidget):
 
         self.layout().addWidget(self.wdgPlaceholders)
         self.layout().addWidget(self.wdgCardParent)
+
+        self.wdgPlaceholders.installEventFilter(self)
+
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Enter:
+            self.placeholderLeft.activate()
+            self.placeholderCenter.activate()
+            self.placeholderRight.activate()
+        elif event.type() == QEvent.Type.Leave:
+            self.placeholderLeft.deactivate()
+            self.placeholderCenter.deactivate()
+            self.placeholderRight.deactivate()
+
+        return super().eventFilter(watched, event)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
