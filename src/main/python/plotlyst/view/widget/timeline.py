@@ -27,13 +27,13 @@ from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEve
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
     QLineEdit
 from overrides import overrides
-from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, bold, \
-    margins, gc
+from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc
 from qthandy.filter import VisibilityToggleEventFilter
 
 from plotlyst.common import RELAXED_WHITE_COLOR, NEUTRAL_EMOTION_COLOR, \
     EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import BackstoryEvent
+from plotlyst.env import app_env
 from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end, shadow
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
@@ -75,8 +75,10 @@ class BackstoryCard(QWidget):
         self.lineKeyPhrase.setPlaceholderText('Keyphrase')
         self.lineKeyPhrase.setProperty('transparent', True)
         self.lineKeyPhrase.textEdited.connect(self._keyphraseEdited)
-        incr_font(self.lineKeyPhrase, 2)
-        bold(self.lineKeyPhrase)
+        font = self.lineKeyPhrase.font()
+        font.setPointSize(font.pointSize() + 2)
+        font.setFamily(app_env.serif_font())
+        self.lineKeyPhrase.setFont(font)
 
         self.textSummary = AutoAdjustableTextEdit(height=40)
         self.textSummary.setPlaceholderText("Summarize this event")
