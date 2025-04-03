@@ -22,24 +22,26 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Any, Dict
 
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QObject
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QObject, QTimer
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
     QLineEdit, QFrame
 from overrides import overrides
 from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc, retain_when_hidden, \
-    translucent
+    translucent, decr_icon
 from qthandy.filter import VisibilityToggleEventFilter
+from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR, NEUTRAL_EMOTION_COLOR, \
     EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR, ALT_BACKGROUND_COLOR
 from plotlyst.core.domain import BackstoryEvent, Position
 from plotlyst.env import app_env
 from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end, shadow, \
-    fade_out_and_gc
+    fade_out_and_gc, action
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
-from plotlyst.view.widget.input import RemovalButton, AutoAdjustableTextEdit
+from plotlyst.view.widget.display import DotsDragIcon
+from plotlyst.view.widget.input import AutoAdjustableTextEdit
 
 
 @dataclass
@@ -59,7 +61,7 @@ class BackstoryCard(QWidget):
         self._theme = theme
 
         vbox(self, 0)
-        margins(self, left=5, right=5, top=self.TYPE_SIZE // 2)
+        margins(self, left=5, right=5, top=self.TYPE_SIZE // 2, bottom=3)
 
         self.cardFrame = frame()
         self.cardFrame.setObjectName('cardFrame')
@@ -69,9 +71,11 @@ class BackstoryCard(QWidget):
         self.btnType = tool_btn(QIcon(), parent=self)
         self.btnType.setIconSize(QSize(24, 24))
 
-        self.btnRemove = RemovalButton()
-        self.btnRemove.setVisible(False)
-        self.btnRemove.clicked.connect(self._remove)
+        self.btnDrag = DotsDragIcon()
+        self.btnDrag.setVisible(False)
+        decr_icon(self.btnDrag, 2)
+        self.btnDrag.clicked.connect(self._showContextMenu)
+        # self.btnDrag.clicked.connect(self._remove)
 
         self.lineKeyPhrase = QLineEdit()
         self.lineKeyPhrase.setPlaceholderText('Keyphrase')
@@ -94,12 +98,13 @@ class BackstoryCard(QWidget):
         hbox(wdgTop, 0, 0)
         margins(wdgTop, top=5)
         wdgTop.layout().addWidget(self.lineKeyPhrase)
-        wdgTop.layout().addWidget(self.btnRemove, alignment=Qt.AlignmentFlag.AlignTop)
+        wdgTop.layout().addWidget(self.btnDrag, alignment=Qt.AlignmentFlag.AlignTop)
         self.cardFrame.layout().addWidget(wdgTop)
         self.cardFrame.layout().addWidget(self.textSummary)
         self.layout().addWidget(self.cardFrame)
 
-        self.cardFrame.installEventFilter(VisibilityToggleEventFilter(self.btnRemove, self.cardFrame))
+        self.cardFrame.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self.cardFrame))
+        self.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self))
 
         self.btnType.raise_()
 
@@ -154,6 +159,11 @@ class BackstoryCard(QWidget):
         self.btnType.setIcon(IconRegistry.from_name(self.backstory.type_icon, EMOTION_COLORS[self.backstory.emotion]))
         self.edited.emit()
 
+    def _showContextMenu(self):
+        menu = MenuWidget()
+        menu.addAction(action('Remove', IconRegistry.trash_can_icon(), slot=self._remove))
+        menu.exec()
+
     def _remove(self):
         if self.backstory.synopsis and not confirmed('This action cannot be undone.',
                                                      f'Are you sure you want to remove the event "{self.backstory.keyphrase if self.backstory.keyphrase else "Untitled"}"?'):
@@ -174,6 +184,10 @@ class PlaceholderWidget(QFrame):
         self.setMaximumWidth(200)
         self.deactivate()
 
+        self._hover_timer = QTimer(self)
+        self._hover_timer.setSingleShot(True)
+        self._hover_timer.timeout.connect(self._applyHoverStyle)
+
     def activate(self):
         self.btnPlus.setVisible(True)
 
@@ -182,11 +196,15 @@ class PlaceholderWidget(QFrame):
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
-        self.setStyleSheet(f'background: {ALT_BACKGROUND_COLOR};')
+        self._hover_timer.start(100)
 
     @overrides
     def leaveEvent(self, event: QEvent) -> None:
+        self._hover_timer.stop()
         self.setStyleSheet('')
+
+    def _applyHoverStyle(self):
+        self.setStyleSheet(f'background: {ALT_BACKGROUND_COLOR};')
 
 
 class TimelineEntityRow(QWidget):
