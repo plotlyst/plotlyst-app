@@ -225,12 +225,25 @@ class BackstoryEventType(Enum):
     Gift = 'gift'
 
 
+class Position(Enum):
+    LEFT = 0
+    RIGHT = 1
+    CENTER = 2
+
+    def toggle(self) -> 'Position':
+        if self == Position.RIGHT:
+            return Position.LEFT
+        if self == Position.LEFT:
+            return Position.RIGHT
+
+
 @dataclass
 class BackstoryEvent(Event):
     type: BackstoryEventType = BackstoryEventType.Event
     type_icon: str = 'ri.calendar-event-fill'
     type_color: str = 'darkBlue'
     follow_up: bool = False
+    position: Optional[Position] = None
 
 
 @dataclass

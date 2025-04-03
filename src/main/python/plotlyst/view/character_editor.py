@@ -177,6 +177,7 @@ class CharacterEditor(QObject, EventListener):
         self.ui.tabTopics.layout().addWidget(self.wdgTopicsEditor)
 
         self.profile = CharacterProfileEditor(self.novel)
+        self.profile.refreshed.connect(self._profileRefreshed)
         self.ui.wdgProfile.layout().addWidget(self.profile)
 
         apply_bg_image(self.ui.scrollAreaBackstoryContents, resource_registry.cover1)
@@ -249,7 +250,7 @@ class CharacterEditor(QObject, EventListener):
         self.ui.wdgAvatar.setCharacter(self.character)
         self.ui.wdgAvatar.setUploadPopupMenu()
         self.wdgTopicsEditor.setCharacter(self.character)
-        self.ui.wdgBackstory.setCharacter(self.character)
+        self.ui.wdgBackstory.clear()
         self.profile.setCharacter(self.character)
         if self.character.document and self.character.document.loaded:
             self.ui.textEdit.setText(self.character.document.content, self.character.name, title_read_only=True)
@@ -268,6 +269,9 @@ class CharacterEditor(QObject, EventListener):
     def close_event(self):
         if self.character is not None:
             self._save()
+
+    def _profileRefreshed(self):
+        QTimer.singleShot(100, lambda: self.ui.wdgBackstory.setCharacter(self.character))
 
     def _name_edited(self, text: str):
         self.character.name = text

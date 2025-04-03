@@ -1821,6 +1821,8 @@ class SectionSettings(QWidget):
 
 
 class CharacterProfileEditor(QWidget):
+    refreshed = pyqtSignal()
+
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self._novel = novel
@@ -1892,6 +1894,8 @@ class CharacterProfileEditor(QWidget):
         self.layout().addWidget(vspacer())
 
         self.btnCustomize.raise_()
+
+        self.refreshed.emit()
 
     def applyMinorRoleSettings(self):
         for personality in [NovelSetting.Character_enneagram, NovelSetting.Character_mbti,
