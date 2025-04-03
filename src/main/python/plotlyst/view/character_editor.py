@@ -177,7 +177,6 @@ class CharacterEditor(QObject, EventListener):
         self.ui.tabTopics.layout().addWidget(self.wdgTopicsEditor)
 
         self.profile = CharacterProfileEditor(self.novel)
-        self.profile.refreshed.connect(self._profileRefreshed)
         self.ui.wdgProfile.layout().addWidget(self.profile)
 
         apply_bg_image(self.ui.scrollAreaBackstoryContents, resource_registry.cover1)
@@ -269,10 +268,6 @@ class CharacterEditor(QObject, EventListener):
     def close_event(self):
         if self.character is not None:
             self._save()
-
-    def _profileRefreshed(self):
-        pass
-        # QTimer.singleShot(10, lambda: self.ui.wdgBackstory.setCharacter(self.character))
 
     def _name_edited(self, text: str):
         self.character.name = text
