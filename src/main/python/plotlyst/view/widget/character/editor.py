@@ -59,7 +59,7 @@ from plotlyst.view.widget.display import Icon, MajorRoleIcon, SecondaryRoleIcon,
     IconText, RoleIcon, TruitySourceWidget, PopupDialog, ChartView
 from plotlyst.view.widget.input import Toggle, DecoratedSpinBox
 from plotlyst.view.widget.labels import TraitLabel
-from plotlyst.view.widget.timeline import TimelineWidget, BackstoryCard, TimelineTheme
+from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme
 from plotlyst.view.widget.utility import IconSelectorDialog
 
 
@@ -914,7 +914,7 @@ class CharacterBackstoryCard(BackstoryCard):
         self.edited.emit()
 
 
-class CharacterTimelineWidget(TimelineWidget):
+class CharacterTimelineWidget(TimelineLinearWidget):
 
     def __init__(self, parent=None):
         super(CharacterTimelineWidget, self).__init__(parent=parent)

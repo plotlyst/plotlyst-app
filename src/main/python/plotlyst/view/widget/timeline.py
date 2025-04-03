@@ -229,7 +229,7 @@ class _ControlButtons(QWidget):
         return super().eventFilter(watched, event)
 
 
-class TimelineWidget(QWidget):
+class TimelineLinearWidget(QWidget):
     changed = pyqtSignal()
 
     def __init__(self, theme: Optional[TimelineTheme] = None, parent=None, compact: bool = True):
