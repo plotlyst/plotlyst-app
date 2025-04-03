@@ -163,23 +163,23 @@ class TimelineEntityRow(QWidget):
     def __init__(self, card: BackstoryCard, alignment: int = Qt.AlignmentFlag.AlignRight, parent=None,
                  compact: bool = True):
         super().__init__(parent)
-        self.alignment = alignment
+        self._alignment = alignment
         self.card = card
+        hbox(self, 5, 0)
 
-        self._layout = hbox(self, 5, 0)
         self._spacer = spacer()
         self._spacer.setFixedWidth(self.width() // 2 + 3)
-        if self.alignment == Qt.AlignmentFlag.AlignRight:
+        if self._alignment == Qt.AlignmentFlag.AlignRight:
             self.layout().addWidget(self._spacer)
             if compact:
-                self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignLeft)
+                self.layout().addWidget(self.card, alignment=Qt.AlignmentFlag.AlignLeft)
             else:
-                self._layout.addWidget(self.card)
-        elif self.alignment == Qt.AlignmentFlag.AlignLeft:
+                self.layout().addWidget(self.card)
+        elif self._alignment == Qt.AlignmentFlag.AlignLeft:
             if compact:
-                self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignRight)
+                self.layout().addWidget(self.card, alignment=Qt.AlignmentFlag.AlignRight)
             else:
-                self._layout.addWidget(self.card)
+                self.layout().addWidget(self.card)
             self.layout().addWidget(self._spacer)
         else:
             self.layout().addWidget(self.card)
@@ -189,16 +189,16 @@ class TimelineEntityRow(QWidget):
         self._spacer.setFixedWidth(self.width() // 2 + 10)
 
     def toggleAlignment(self):
-        if self.alignment == Qt.AlignmentFlag.AlignLeft:
-            self.alignment = Qt.AlignmentFlag.AlignRight
-            self._layout.takeAt(0)
-            self._layout.addWidget(self._spacer)
-            self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignRight)
+        if self._alignment == Qt.AlignmentFlag.AlignLeft:
+            self._alignment = Qt.AlignmentFlag.AlignRight
+            self.layout().takeAt(0)
+            self.layout().addWidget(self._spacer)
+            self.layout().setAlignment(self.card, Qt.AlignmentFlag.AlignRight)
         else:
-            self.alignment = Qt.AlignmentFlag.AlignLeft
-            self._layout.takeAt(1)
-            self._layout.insertWidget(0, self._spacer)
-            self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignLeft)
+            self._alignment = Qt.AlignmentFlag.AlignLeft
+            self.layout().takeAt(1)
+            self.layout().insertWidget(0, self._spacer)
+            self.layout().setAlignment(self.card, Qt.AlignmentFlag.AlignLeft)
 
 
 class TimelineLinearWidget(QWidget):
@@ -211,7 +211,7 @@ class TimelineLinearWidget(QWidget):
             theme = TimelineTheme()
         self._theme = theme
         self._compact = compact
-        self._layout = vbox(self, spacing=0)
+        vbox(self, spacing=0)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._endSpacerMinHeight: int = 45
 
@@ -244,7 +244,7 @@ class TimelineLinearWidget(QWidget):
             self._events.append(event)
             event._spacer.setFixedWidth(self.width() // 2 + 3)
 
-            self._layout.addWidget(event)
+            self.layout().addWidget(event)
 
             event.card.edited.connect(self.changed)
 
