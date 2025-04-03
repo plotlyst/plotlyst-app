@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from abc import abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 from typing import List, Optional, Any, Dict
 
@@ -35,7 +36,8 @@ from plotlyst.common import RELAXED_WHITE_COLOR, NEUTRAL_EMOTION_COLOR, \
     EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR, ALT_BACKGROUND_COLOR
 from plotlyst.core.domain import BackstoryEvent
 from plotlyst.env import app_env
-from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end, shadow
+from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end, shadow, \
+    fade_out_and_gc
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.input import RemovalButton, AutoAdjustableTextEdit
@@ -169,6 +171,9 @@ class PlaceholderWidget(QFrame):
         vbox(self, 0, 0).addWidget(self.btnPlus)
         translucent(self)
         retain_when_hidden(self.btnPlus)
+        self.setMinimumWidth(150)
+        self.setMaximumWidth(200)
+        self.deactivate()
 
     def activate(self):
         self.btnPlus.setVisible(True)
@@ -185,7 +190,15 @@ class PlaceholderWidget(QFrame):
         self.setStyleSheet('')
 
 
+class Position(Enum):
+    LEFT = 0
+    RIGHT = 1
+    CENTER = 2
+
+
 class TimelineEntityRow(QWidget):
+    insert = pyqtSignal(Position)
+
     def __init__(self, card: BackstoryCard, alignment: int = Qt.AlignmentFlag.AlignRight, parent=None):
         super().__init__(parent)
         self._alignment = alignment
@@ -198,9 +211,15 @@ class TimelineEntityRow(QWidget):
         self.placeholderLeft = PlaceholderWidget()
         self.placeholderCenter = PlaceholderWidget()
         self.placeholderRight = PlaceholderWidget()
+        self.wdgPlaceholders.layout().addWidget(spacer())
         self.wdgPlaceholders.layout().addWidget(self.placeholderLeft)
         self.wdgPlaceholders.layout().addWidget(self.placeholderCenter)
         self.wdgPlaceholders.layout().addWidget(self.placeholderRight)
+        self.wdgPlaceholders.layout().addWidget(spacer())
+
+        self.placeholderLeft.btnPlus.clicked.connect(lambda: self.insert.emit(Position.LEFT))
+        self.placeholderCenter.btnPlus.clicked.connect(lambda: self.insert.emit(Position.CENTER))
+        self.placeholderRight.btnPlus.clicked.connect(lambda: self.insert.emit(Position.RIGHT))
 
         self.wdgCardParent = columns(0, 0)
 
@@ -235,9 +254,6 @@ class TimelineEntityRow(QWidget):
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
         self._spacer.setFixedWidth(self.width() // 2 + self._margin * 2)
-        self.placeholderLeft.setFixedWidth(self.width() // 3 - self._margin)
-        self.placeholderCenter.setFixedWidth(self.width() // 3 - self._margin)
-        self.placeholderRight.setFixedWidth(self.width() // 3 - self._margin)
 
     def toggleAlignment(self):
         if self._alignment == Qt.AlignmentFlag.AlignLeft:
@@ -256,7 +272,6 @@ class TimelineLinearWidget(QWidget):
     changed = pyqtSignal()
 
     def __init__(self, theme: Optional[TimelineTheme] = None, parent=None):
-        self._events: List[TimelineEntityRow] = []
         super().__init__(parent)
         if theme is None:
             theme = TimelineTheme()
@@ -273,8 +288,7 @@ class TimelineLinearWidget(QWidget):
         return BackstoryCard
 
     def refresh(self):
-        self._events.clear()
-        clear_layout(self.layout())
+        clear_layout(self)
 
         prev_alignment = None
         for i, backstory in enumerate(self.events()):
@@ -287,15 +301,8 @@ class TimelineLinearWidget(QWidget):
             else:
                 alignment = Qt.AlignmentFlag.AlignLeft
             prev_alignment = alignment
-            event = TimelineEntityRow(self.cardClass()(backstory, self._theme), alignment, parent=self)
-            event.card.deleteRequested.connect(self._remove)
-
-            self._events.append(event)
-            event._spacer.setFixedWidth(self.width() // 2 + 3)
-
-            self.layout().addWidget(event)
-
-            event.card.edited.connect(self.changed)
+            row = self.__initEntityRow(backstory, alignment)
+            self.layout().addWidget(row)
 
         spacer_ = vspacer()
         spacer_.setMinimumHeight(self._endSpacerMinHeight)
@@ -319,11 +326,32 @@ class TimelineLinearWidget(QWidget):
         self.refresh()
         self.changed.emit()
 
-    def _remove(self, card: BackstoryCard):
-        self.events().remove(card.backstory)
+    def _insert(self, event: TimelineEntityRow, position: Position):
+        i = self.layout().indexOf(event)
+        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR)
+        self.events().insert(i, backstory)
 
-        self.refresh()
+        alignment = Qt.AlignmentFlag.AlignRight if position == Position.RIGHT else Qt.AlignmentFlag.AlignLeft
+        row = self.__initEntityRow(backstory, alignment)
+        self.layout().insertWidget(i, row)
+        fade_in(row)
+        # qtanim.fade_in(row, 200, teardown=row.activate)
+
         self.changed.emit()
+
+    def _remove(self, row: TimelineEntityRow, card: BackstoryCard):
+        self.events().remove(card.backstory)
+        fade_out_and_gc(self, row)
+
+        self.changed.emit()
+
+    def __initEntityRow(self, event: BackstoryEvent, alignment) -> TimelineEntityRow:
+        row = TimelineEntityRow(self.cardClass()(event, self._theme), alignment, parent=self)
+        row.insert.connect(partial(self._insert, row))
+        row.card.deleteRequested.connect(partial(self._remove, row))
+        row.card.edited.connect(self.changed)
+
+        return row
 
 
 class TimelineGridPlaceholder(QWidget):
