@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Any, Dict
 
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QObject, QTimer
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QTimer
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
     QLineEdit, QFrame
@@ -207,6 +207,32 @@ class PlaceholderWidget(QFrame):
         self.setStyleSheet(f'background: {ALT_BACKGROUND_COLOR};')
 
 
+class PlaceholdersRow(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        hbox(self, 0, 0)
+        self.placeholderLeft = PlaceholderWidget()
+        self.placeholderCenter = PlaceholderWidget()
+        self.placeholderRight = PlaceholderWidget()
+        self.layout().addWidget(spacer())
+        self.layout().addWidget(self.placeholderLeft)
+        self.layout().addWidget(self.placeholderCenter)
+        self.layout().addWidget(self.placeholderRight)
+        self.layout().addWidget(spacer())
+
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.placeholderLeft.activate()
+        self.placeholderCenter.activate()
+        self.placeholderRight.activate()
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        self.placeholderLeft.deactivate()
+        self.placeholderCenter.deactivate()
+        self.placeholderRight.deactivate()
+
+
 class TimelineEntityRow(QWidget):
     insert = pyqtSignal(Position)
 
@@ -217,19 +243,11 @@ class TimelineEntityRow(QWidget):
         self._margin: int = 2
 
         vbox(self, self._margin, 0)
-        self.wdgPlaceholders = columns(0, 0)
-        self.placeholderLeft = PlaceholderWidget()
-        self.placeholderCenter = PlaceholderWidget()
-        self.placeholderRight = PlaceholderWidget()
-        self.wdgPlaceholders.layout().addWidget(spacer())
-        self.wdgPlaceholders.layout().addWidget(self.placeholderLeft)
-        self.wdgPlaceholders.layout().addWidget(self.placeholderCenter)
-        self.wdgPlaceholders.layout().addWidget(self.placeholderRight)
-        self.wdgPlaceholders.layout().addWidget(spacer())
+        self.wdgPlaceholders = PlaceholdersRow()
 
-        self.placeholderLeft.btnPlus.clicked.connect(lambda: self.insert.emit(Position.LEFT))
-        self.placeholderCenter.btnPlus.clicked.connect(lambda: self.insert.emit(Position.CENTER))
-        self.placeholderRight.btnPlus.clicked.connect(lambda: self.insert.emit(Position.RIGHT))
+        self.wdgPlaceholders.placeholderLeft.btnPlus.clicked.connect(lambda: self.insert.emit(Position.LEFT))
+        self.wdgPlaceholders.placeholderCenter.btnPlus.clicked.connect(lambda: self.insert.emit(Position.CENTER))
+        self.wdgPlaceholders.placeholderRight.btnPlus.clicked.connect(lambda: self.insert.emit(Position.RIGHT))
 
         self.wdgCardParent = columns(0, 0)
 
@@ -248,21 +266,6 @@ class TimelineEntityRow(QWidget):
 
         self.layout().addWidget(self.wdgPlaceholders)
         self.layout().addWidget(self.wdgCardParent)
-
-        self.wdgPlaceholders.installEventFilter(self)
-
-    @overrides
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.Enter:
-            self.placeholderLeft.activate()
-            self.placeholderCenter.activate()
-            self.placeholderRight.activate()
-        elif event.type() == QEvent.Type.Leave:
-            self.placeholderLeft.deactivate()
-            self.placeholderCenter.deactivate()
-            self.placeholderRight.deactivate()
-
-        return super().eventFilter(watched, event)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -301,6 +304,12 @@ class TimelineLinearWidget(QWidget):
             row = self.__initEntityRow(backstory)
             self.layout().addWidget(row)
 
+        wdgPlaceholders = PlaceholdersRow()
+        wdgPlaceholders.placeholderLeft.btnPlus.clicked.connect(lambda: self.add(Position.LEFT))
+        wdgPlaceholders.placeholderRight.btnPlus.clicked.connect(lambda: self.add(Position.RIGHT))
+        wdgPlaceholders.placeholderCenter.btnPlus.clicked.connect(lambda: self.add(Position.CENTER))
+        self.layout().addWidget(wdgPlaceholders)
+
         spacer_ = vspacer()
         spacer_.setMinimumHeight(self._endSpacerMinHeight)
         self.layout().addWidget(spacer_)
@@ -314,13 +323,14 @@ class TimelineLinearWidget(QWidget):
 
         painter.end()
 
-    def add(self, pos: int = -1):
-        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR)
-        if pos >= 0:
-            self.events().insert(pos, backstory)
-        else:
-            self.events().append(backstory)
-        self.refresh()
+    def add(self, position: Optional[Position] = None):
+        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        self.events().append(backstory)
+
+        row = self.__initEntityRow(backstory)
+        insert_before_the_end(self, row, 2)
+        fade_in(row)
+
         self.changed.emit()
 
     def _insert(self, event: TimelineEntityRow, position: Position):
