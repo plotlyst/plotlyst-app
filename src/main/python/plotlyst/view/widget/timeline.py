@@ -159,34 +159,52 @@ class BackstoryCard(QWidget):
         self.deleteRequested.emit(self)
 
 
+class PlaceholderWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.btnPlus = tool_btn(IconRegistry.plus_icon('lightgrey'), transparent_=True)
+        self.btnPlus.setIconSize(QSize(24, 24))
+        vbox(self, 0, 0).addWidget(self.btnPlus, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
 class TimelineEntityRow(QWidget):
-    def __init__(self, card: BackstoryCard, alignment: int = Qt.AlignmentFlag.AlignRight, parent=None,
-                 compact: bool = True):
+    def __init__(self, card: BackstoryCard, alignment: int = Qt.AlignmentFlag.AlignRight, parent=None):
         super().__init__(parent)
         self._alignment = alignment
         self.card = card
-        hbox(self, 5, 0)
+
+        self._margin: int = 5
+
+        vbox(self, self._margin, 0)
+        self.wdgPlaceholders = columns(0, 0)
+        self.placeholderLeft = PlaceholderWidget()
+        self.placeholderCenter = PlaceholderWidget()
+        self.placeholderRight = PlaceholderWidget()
+        self.wdgPlaceholders.layout().addWidget(self.placeholderLeft)
+        self.wdgPlaceholders.layout().addWidget(self.placeholderCenter)
+        self.wdgPlaceholders.layout().addWidget(self.placeholderRight)
+
+        self.wdgCardParent = columns(0, 0)
 
         self._spacer = spacer()
-        self._spacer.setFixedWidth(self.width() // 2 + 3)
         if self._alignment == Qt.AlignmentFlag.AlignRight:
-            self.layout().addWidget(self._spacer)
-            if compact:
-                self.layout().addWidget(self.card, alignment=Qt.AlignmentFlag.AlignLeft)
-            else:
-                self.layout().addWidget(self.card)
+            self.wdgCardParent.layout().addWidget(self._spacer)
+            self.wdgCardParent.layout().addWidget(self.card, alignment=Qt.AlignmentFlag.AlignLeft)
         elif self._alignment == Qt.AlignmentFlag.AlignLeft:
-            if compact:
-                self.layout().addWidget(self.card, alignment=Qt.AlignmentFlag.AlignRight)
-            else:
-                self.layout().addWidget(self.card)
-            self.layout().addWidget(self._spacer)
+            self.wdgCardParent.layout().addWidget(self.card, alignment=Qt.AlignmentFlag.AlignRight)
+            self.wdgCardParent.layout().addWidget(self._spacer)
         else:
-            self.layout().addWidget(self.card)
+            self.wdgCardParent.layout().addWidget(self.card)
+
+        self.layout().addWidget(self.wdgPlaceholders)
+        self.layout().addWidget(self.wdgCardParent)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self._spacer.setFixedWidth(self.width() // 2 + 10)
+        self._spacer.setFixedWidth(self.width() // 2 + self._margin * 2)
+        self.placeholderLeft.setFixedWidth(self.width() // 3 - self._margin)
+        self.placeholderCenter.setFixedWidth(self.width() // 3 - self._margin)
+        self.placeholderRight.setFixedWidth(self.width() // 3 - self._margin)
 
     def toggleAlignment(self):
         if self._alignment == Qt.AlignmentFlag.AlignLeft:
@@ -204,13 +222,12 @@ class TimelineEntityRow(QWidget):
 class TimelineLinearWidget(QWidget):
     changed = pyqtSignal()
 
-    def __init__(self, theme: Optional[TimelineTheme] = None, parent=None, compact: bool = True):
+    def __init__(self, theme: Optional[TimelineTheme] = None, parent=None):
         self._events: List[TimelineEntityRow] = []
         super().__init__(parent)
         if theme is None:
             theme = TimelineTheme()
         self._theme = theme
-        self._compact = compact
         vbox(self, spacing=0)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._endSpacerMinHeight: int = 45
@@ -237,8 +254,7 @@ class TimelineLinearWidget(QWidget):
             else:
                 alignment = Qt.AlignmentFlag.AlignLeft
             prev_alignment = alignment
-            event = TimelineEntityRow(self.cardClass()(backstory, self._theme), alignment, parent=self,
-                                      compact=self._compact)
+            event = TimelineEntityRow(self.cardClass()(backstory, self._theme), alignment, parent=self)
             event.card.deleteRequested.connect(self._remove)
 
             self._events.append(event)

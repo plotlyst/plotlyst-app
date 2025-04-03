@@ -695,8 +695,7 @@ class EntityTimelineCard(BackstoryCard):
 class EntityTimelineWidget(TimelineLinearWidget):
     def __init__(self, element: WorldBuildingEntityElement, palette: WorldBuildingPalette, parent=None):
         super().__init__(TimelineTheme(timeline_color=palette.primary_color, card_bg_color=palette.tertiary_color),
-                         parent,
-                         compact=False)
+                         parent)
         self.element = element
         self.refresh()
 
