@@ -896,16 +896,21 @@ class BackstoryEditorMenu(MenuWidget):
 class CharacterBackstoryCard(BackstoryCard):
     def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
         super(CharacterBackstoryCard, self).__init__(backstory, theme, parent)
-        self.menu = BackstoryEditorMenu(self.btnType)
-        self.menu.emotionChanged.connect(self._emotionChanged)
-        self.menu.iconSelected.connect(self._iconChanged)
+        self.btnType.clicked.connect(self._showMenu)
 
         self.refresh()
 
     @overrides
     def refresh(self):
         super().refresh()
+
+    def _showMenu(self):
+        self.menu = BackstoryEditorMenu()
         self.menu.setEmotion(self.backstory.emotion)
+        self.menu.emotionChanged.connect(self._emotionChanged)
+        self.menu.iconSelected.connect(self._iconChanged)
+
+        self.menu.exec()
 
     def _emotionChanged(self, value: int):
         self.backstory.emotion = value

@@ -250,7 +250,7 @@ class CharacterEditor(QObject, EventListener):
         self.ui.wdgAvatar.setCharacter(self.character)
         self.ui.wdgAvatar.setUploadPopupMenu()
         self.wdgTopicsEditor.setCharacter(self.character)
-        self.ui.wdgBackstory.clear()
+        self.ui.wdgBackstory.setCharacter(self.character)
         self.profile.setCharacter(self.character)
         if self.character.document and self.character.document.loaded:
             self.ui.textEdit.setText(self.character.document.content, self.character.name, title_read_only=True)
@@ -271,7 +271,8 @@ class CharacterEditor(QObject, EventListener):
             self._save()
 
     def _profileRefreshed(self):
-        QTimer.singleShot(100, lambda: self.ui.wdgBackstory.setCharacter(self.character))
+        pass
+        # QTimer.singleShot(10, lambda: self.ui.wdgBackstory.setCharacter(self.character))
 
     def _name_edited(self, text: str):
         self.character.name = text

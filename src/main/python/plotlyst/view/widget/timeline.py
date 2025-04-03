@@ -58,8 +58,8 @@ class BackstoryCard(QWidget):
         self.backstory = backstory
         self._theme = theme
 
-        vbox(self)
-        margins(self, top=self.TYPE_SIZE // 2)
+        vbox(self, 0)
+        margins(self, left=5, right=5, top=self.TYPE_SIZE // 2)
 
         self.cardFrame = frame()
         self.cardFrame.setObjectName('cardFrame')
@@ -165,7 +165,7 @@ class PlaceholderWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.btnPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
-        self.btnPlus.setIconSize(QSize(24, 24))
+        self.btnPlus.setIconSize(QSize(22, 22))
         sp(self.btnPlus).h_exp()
         vbox(self, 0, 0).addWidget(self.btnPlus)
         translucent(self)
@@ -196,7 +196,7 @@ class TimelineEntityRow(QWidget):
         super().__init__(parent)
         self.card = card
 
-        self._margin: int = 5
+        self._margin: int = 2
 
         vbox(self, self._margin, 0)
         self.wdgPlaceholders = columns(0, 0)
@@ -270,9 +270,6 @@ class TimelineLinearWidget(QWidget):
 
     def cardClass(self):
         return BackstoryCard
-
-    def clear(self):
-        clear_layout(self)
 
     def refresh(self):
         clear_layout(self)
