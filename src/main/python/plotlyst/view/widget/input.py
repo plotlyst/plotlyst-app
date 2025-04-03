@@ -1044,6 +1044,7 @@ class RemovalButton(QToolButton):
         self.installEventFilter(self)
         self.installEventFilter(ButtonPressResizeEventFilter(self))
         self.setIconSize(QSize(12, 12))
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         transparent(self)
 
     @overrides

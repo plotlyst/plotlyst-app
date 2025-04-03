@@ -29,11 +29,10 @@ import qtanim
 from PyQt6.QtCharts import QPieSeries, QPieSlice
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QRectF
 from PyQt6.QtGui import QIcon, QColor, QMouseEvent, QKeySequence
-from PyQt6.QtWidgets import QWidget, QSlider, QTextBrowser, QButtonGroup, QToolButton, QLabel, QSizePolicy, \
-    QLineEdit, QDialog
+from PyQt6.QtWidgets import QWidget, QSlider, QTextBrowser, QButtonGroup, QToolButton, QLineEdit, QDialog
 from overrides import overrides
 from qthandy import vbox, pointy, hbox, sp, vspacer, underline, decr_font, flow, clear_layout, translucent, line, grid, \
-    spacer, transparent, incr_font, margins, incr_icon, decr_icon
+    spacer, incr_font, margins, incr_icon, decr_icon
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
@@ -49,7 +48,7 @@ from plotlyst.core.template import SelectionItem, enneagram_field, TemplateField
 from plotlyst.env import app_env
 from plotlyst.view.common import push_btn, action, tool_btn, label, wrap, restyle, \
     scroll_area, emoji_font
-from plotlyst.view.icons import IconRegistry, set_avatar
+from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.button import SecondaryActionPushButton, SelectionItemPushButton
@@ -59,7 +58,7 @@ from plotlyst.view.widget.display import Icon, MajorRoleIcon, SecondaryRoleIcon,
     IconText, RoleIcon, TruitySourceWidget, PopupDialog, ChartView
 from plotlyst.view.widget.input import Toggle, DecoratedSpinBox
 from plotlyst.view.widget.labels import TraitLabel
-from plotlyst.view.widget.timeline import TimelineWidget, BackstoryCard, TimelineTheme
+from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme
 from plotlyst.view.widget.utility import IconSelectorDialog
 
 
@@ -897,16 +896,16 @@ class BackstoryEditorMenu(MenuWidget):
 class CharacterBackstoryCard(BackstoryCard):
     def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
         super(CharacterBackstoryCard, self).__init__(backstory, theme, parent)
-        self.menu = BackstoryEditorMenu(self.btnType)
+        self.btnType.clicked.connect(self._showMenu)
+        self.refresh()
+
+    def _showMenu(self):
+        self.menu = BackstoryEditorMenu()
+        self.menu.setEmotion(self.backstory.emotion)
         self.menu.emotionChanged.connect(self._emotionChanged)
         self.menu.iconSelected.connect(self._iconChanged)
 
-        self.refresh()
-
-    @overrides
-    def refresh(self):
-        super().refresh()
-        self.menu.setEmotion(self.backstory.emotion)
+        self.menu.exec()
 
     def _emotionChanged(self, value: int):
         self.backstory.emotion = value
@@ -914,12 +913,11 @@ class CharacterBackstoryCard(BackstoryCard):
         self.edited.emit()
 
 
-class CharacterTimelineWidget(TimelineWidget):
+class CharacterTimelineWidget(TimelineLinearWidget):
 
     def __init__(self, parent=None):
         super(CharacterTimelineWidget, self).__init__(parent=parent)
         self.character: Optional[Character] = None
-        self._lineTopMargin = 64
         self._endSpacerMinHeight = 200
 
     def setCharacter(self, character: Character):
@@ -933,26 +931,6 @@ class CharacterTimelineWidget(TimelineWidget):
     @overrides
     def cardClass(self):
         return CharacterBackstoryCard
-
-    def refreshCharacter(self):
-        item = self._layout.itemAt(0)
-        if item:
-            wdg = item.widget()
-            if isinstance(wdg, QLabel):
-                set_avatar(wdg, self.character, 64)
-
-    @overrides
-    def refresh(self):
-        if self.character is None:
-            return
-        super().refresh()
-
-        lblCharacter = QLabel(self)
-        lblCharacter.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
-        transparent(lblCharacter)
-        set_avatar(lblCharacter, self.character, 64)
-
-        self._layout.insertWidget(0, lblCharacter, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
 
 
 class CharacterRoleSelector(QWidget):
