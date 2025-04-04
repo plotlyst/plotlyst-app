@@ -24,8 +24,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QPointF
 from PyQt6.QtGui import QIcon, QEnterEvent, QPaintEvent, QPainter, QBrush, QColor
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, incr_icon, bold, spacer, retain_when_hidden, margins, transparent, hbox, sp
-from qthandy.filter import VisibilityToggleEventFilter
+from qthandy import vbox, margins, transparent, hbox, sp
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import RELAXED_WHITE_COLOR
@@ -39,10 +38,7 @@ from plotlyst.view.common import frame, action, shadow
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.button import apply_button_palette_color
-from plotlyst.view.style.theme import BG_MUTED_COLOR
 from plotlyst.view.widget.characters import CharacterSelectorButton
-from plotlyst.view.widget.display import IconText
-from plotlyst.view.widget.input import RemovalButton
 from plotlyst.view.widget.outline import OutlineItemWidget, OutlineTimelineWidget
 from plotlyst.view.widget.plot.allies import AlliesGraphicsView, AlliesSupportingSlider, AlliesEmotionalSlider
 
@@ -355,7 +351,7 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
     characterChanged = pyqtSignal(DynamicPlotPrinciple, Character)
 
     def __init__(self, novel: Novel, group: DynamicPlotPrincipleGroup, parent=None):
-        super().__init__(parent, paintTimeline=False, layout=LayoutType.VERTICAL)
+        super().__init__(parent, paintTimeline=False, layout=LayoutType.FLOW)
         self.layout().setSpacing(1)
         self.novel = novel
         self.group = group
@@ -462,38 +458,11 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
 
 
 class BasePlotPrinciplesGroupWidget(QWidget):
-    remove = pyqtSignal()
 
     def __init__(self, principleGroup: DynamicPlotPrincipleGroup, parent=None):
         super().__init__(parent)
         self.group = principleGroup
-        self.frame = frame()
-        self.frame.setObjectName('frame')
-        hbox(self.frame, 0, 0)
-        self.setStyleSheet(f'''
-                                   #frame {{
-                                        border: 1px solid lightgrey;
-                                        border-radius: 8px;
-                                        background: {BG_MUTED_COLOR};
-                                   }}
-                                   ''')
-
         vbox(self)
-
-        self._title = IconText()
-        self._title.setText(self.group.type.display_name())
-        self._title.setIcon(IconRegistry.from_name(self.group.type.icon(), self.group.type.color()))
-        incr_icon(self._title, 4)
-        bold(self._title)
-        apply_button_palette_color(self._title, self.group.type.color())
-
-        self.btnRemove = RemovalButton()
-        retain_when_hidden(self.btnRemove)
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnRemove, self))
-        self.btnRemove.clicked.connect(self.remove)
-
-        self.layout().addWidget(group(self._title, spacer(), self.btnRemove))
-        self.layout().addWidget(self.frame)
 
 
 class DynamicPlotPrinciplesGroupWidget(BasePlotPrinciplesGroupWidget):
@@ -508,11 +477,12 @@ class DynamicPlotPrinciplesGroupWidget(BasePlotPrinciplesGroupWidget):
         self._wdgPrinciples.refreshCharacters()
 
 
-class AlliesPrinciplesGroupWidget(BasePlotPrinciplesGroupWidget):
+class AlliesPrinciplesGroupWidget(QWidget):
 
     def __init__(self, novel: Novel, principleGroup: DynamicPlotPrincipleGroup, parent=None):
-        super().__init__(principleGroup, parent)
+        super().__init__(parent)
         self.novel = novel
+        self.group = principleGroup
 
         self._wdgPrinciples = DynamicPlotPrinciplesWidget(novel, self.group)
         self._wdgPrinciples.setStructure(self.group.principles)
@@ -535,9 +505,9 @@ class AlliesPrinciplesGroupWidget(BasePlotPrinciplesGroupWidget):
         self._leftEditor.layout().addWidget(self._toolbar)
         self._leftEditor.layout().addWidget(self.view)
 
-        margins(self.frame, 15, 5, 20, 20)
-        self.frame.layout().addWidget(self._leftEditor, alignment=Qt.AlignmentFlag.AlignTop)
-        self.frame.layout().addWidget(self._wdgPrinciples)
+        hbox(self)
+        self.layout().addWidget(self._leftEditor, alignment=Qt.AlignmentFlag.AlignTop)
+        self.layout().addWidget(self._wdgPrinciples)
 
         self._wdgPrinciples.principleAdded.connect(self.view.addNewAlly)
         self._wdgPrinciples.principleRemoved.connect(self.view.removeAlly)
