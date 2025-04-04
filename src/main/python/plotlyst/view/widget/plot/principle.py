@@ -276,6 +276,7 @@ internal_principles = {PlotPrincipleType.POSITIVE_CHANGE, PlotPrincipleType.NEGA
 
 class PrincipleSelectorObject(QObject):
     principleToggled = pyqtSignal(PlotPrincipleType, bool)
+    editorToggled = pyqtSignal(DynamicPlotPrincipleGroupType, bool)
 
 
 class GenrePrincipleSelectorDialog(PopupDialog):
