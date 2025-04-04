@@ -769,6 +769,7 @@ class ScenesOutlineView(AbstractNovelView):
                 self.ui.treeChapters.removeChapter(chapters[0])
 
     def _on_grid_scene_cards_swapped(self, scenes: List[Scene], droppedCard: SceneCard):
+        self.ui.cards.clearSelection()
         self._on_scene_cards_swapped(scenes, droppedCard)
         self.ui.cards.reorderCards(self.novel.scenes)
 
