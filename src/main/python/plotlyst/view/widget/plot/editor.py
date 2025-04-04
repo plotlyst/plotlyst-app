@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from functools import partial
-from typing import Set, Dict, Tuple, List
+from typing import Set, Dict, Tuple, List, Optional
 
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent
 from PyQt6.QtGui import QColor, QIcon, QResizeEvent, QEnterEvent
@@ -410,6 +410,8 @@ class PlotWidget(QWidget, EventListener):
 
         vbox(self, 10)
 
+        self._alliesEditor: Optional[AlliesPrinciplesGroupWidget] = None
+
         self.btnPlotIcon = tool_btn(QIcon(), transparent_=True)
         self.btnPlotIcon.setIconSize(QSize(48, 48))
         self.btnPlotIcon.installEventFilter(OpacityEventFilter(self.btnPlotIcon, enterOpacity=0.7, leaveOpacity=1.0))
@@ -587,7 +589,8 @@ class PlotWidget(QWidget, EventListener):
             # if self._characterRelationSelector and self._characterRelationSelector.character() and self._characterRelationSelector.character().id == event.character.id:
             #     self._characterRelationSelector.updateAvatar()
 
-        self._dynamicPrinciplesEditor.refreshCharacters()
+        if self._alliesEditor:
+            self._alliesEditor.refreshCharacters()
 
     def _updateIcon(self):
         if self.plot.icon:
@@ -710,9 +713,9 @@ class PlotWidget(QWidget, EventListener):
             if self.plot.allies is None:
                 self.plot.allies = DynamicPlotPrincipleGroup(groupType)
                 self._save()
-            wdg = AlliesPrinciplesGroupWidget(self.novel, self.plot.allies)
-            wdg.changed.connect(self._save)
-            self.wdgAllies.layout().addWidget(wdg)
+            self._alliesEditor = AlliesPrinciplesGroupWidget(self.novel, self.plot.allies)
+            self._alliesEditor.changed.connect(self._save)
+            self.wdgAllies.layout().addWidget(self._alliesEditor)
         #     else:
         #         wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
         #
@@ -720,6 +723,7 @@ class PlotWidget(QWidget, EventListener):
     def _clearGroup(self, groupType: DynamicPlotPrincipleGroupType):
         if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
             clear_layout(self.wdgAllies)
+            self._alliesEditor = None
 
     #     elif group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
     #         self.wdgSuspects.layout().addWidget(wdg)

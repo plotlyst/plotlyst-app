@@ -379,6 +379,13 @@ class AlliesPrinciplesGroupWidget(QWidget):
         self._supporterSlider.setPrinciples(self.group.principles)
         self._emotionSlider.setPrinciples(self.group.principles)
 
+    def refreshCharacters(self):
+        for i in range(self._wdgPrinciples.layout().count()):
+            item = self._wdgPrinciples.layout().itemAt(i)
+            if item.widget() and isinstance(item.widget(), AllyPlotPrincipleWidget):
+                wdg: AllyPlotPrincipleWidget = item.widget()
+                wdg.refreshCharacters()
+
     def _addAlly(self):
         principle = DynamicPlotPrinciple(type=DynamicPlotPrincipleType.NEUTRAL)
         self.group.principles.append(principle)
