@@ -298,6 +298,8 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
             for scene in self._novel.scenes:
                 self._addPlaceholder(line, scene)
         self.initRefs()
+        self._applyFilterOnLines()
+
         self.cardsView.clearSelection()
         self.cardsView.reorderCards(self._novel.scenes)
 
