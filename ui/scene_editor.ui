@@ -576,7 +576,7 @@
                 <number>0</number>
                </property>
                <property name="topMargin">
-                <number>0</number>
+                <number>5</number>
                </property>
                <property name="rightMargin">
                 <number>0</number>
@@ -584,27 +584,114 @@
                <property name="bottomMargin">
                 <number>0</number>
                </property>
-               <item>
-                <widget class="QTabWidget" name="tabWidgetFunctions">
-                 <property name="currentIndex">
-                  <number>0</number>
-                 </property>
-                 <property name="tabBarAutoHide">
-                  <bool>true</bool>
-                 </property>
-                 <property name="centered" stdset="0">
-                  <bool>true</bool>
-                 </property>
-                 <property name="transparent" stdset="0">
-                  <bool>true</bool>
-                 </property>
-                 <widget class="QWidget" name="tabDramaticFunctions">
-                  <property name="relaxed-white-bg" stdset="0">
-                   <bool>true</bool>
+               <item alignment="Qt::AlignHCenter">
+                <widget class="QWidget" name="widget" native="true">
+                 <layout class="QHBoxLayout" name="horizontalLayout_7">
+                  <property name="spacing">
+                   <number>3</number>
                   </property>
-                  <attribute name="title">
-                   <string>Dramatic functions</string>
-                  </attribute>
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="QPushButton" name="btnDramaticFunctions">
+                    <property name="cursor">
+                     <cursorShape>PointingHandCursor</cursorShape>
+                    </property>
+                    <property name="toolTip">
+                     <string>Compare summary</string>
+                    </property>
+                    <property name="text">
+                     <string>Dramatic functions</string>
+                    </property>
+                    <property name="checkable">
+                     <bool>true</bool>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                    <property name="transparent-rounded-bg-on-hover" stdset="0">
+                     <bool>true</bool>
+                    </property>
+                    <property name="secondary-selector" stdset="0">
+                     <bool>true</bool>
+                    </property>
+                    <attribute name="buttonGroup">
+                     <string notr="true">buttonGroupFunctions</string>
+                    </attribute>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btnReaderInfo">
+                    <property name="cursor">
+                     <cursorShape>PointingHandCursor</cursorShape>
+                    </property>
+                    <property name="toolTip">
+                     <string>Compare summary</string>
+                    </property>
+                    <property name="text">
+                     <string>Reader's information</string>
+                    </property>
+                    <property name="checkable">
+                     <bool>true</bool>
+                    </property>
+                    <property name="checked">
+                     <bool>false</bool>
+                    </property>
+                    <property name="transparent-rounded-bg-on-hover" stdset="0">
+                     <bool>true</bool>
+                    </property>
+                    <property name="secondary-selector" stdset="0">
+                     <bool>true</bool>
+                    </property>
+                    <attribute name="buttonGroup">
+                     <string notr="true">buttonGroupFunctions</string>
+                    </attribute>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btnReaderQuestions">
+                    <property name="cursor">
+                     <cursorShape>PointingHandCursor</cursorShape>
+                    </property>
+                    <property name="toolTip">
+                     <string>Compare summary</string>
+                    </property>
+                    <property name="text">
+                     <string>Reader's questions</string>
+                    </property>
+                    <property name="checkable">
+                     <bool>true</bool>
+                    </property>
+                    <property name="checked">
+                     <bool>false</bool>
+                    </property>
+                    <property name="transparent-rounded-bg-on-hover" stdset="0">
+                     <bool>true</bool>
+                    </property>
+                    <property name="secondary-selector" stdset="0">
+                     <bool>true</bool>
+                    </property>
+                    <attribute name="buttonGroup">
+                     <string notr="true">buttonGroupFunctions</string>
+                    </attribute>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QStackedWidget" name="stackedWidgetFunctions">
+                 <widget class="QWidget" name="pageDramaticFunctions">
                   <layout class="QVBoxLayout" name="verticalLayout_5">
                    <property name="spacing">
                     <number>0</number>
@@ -634,8 +721,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>434</width>
-                        <height>357</height>
+                        <width>438</width>
+                        <height>334</height>
                        </rect>
                       </property>
                       <property name="muted-bg" stdset="0">
@@ -664,6 +751,44 @@
                      </widget>
                     </widget>
                    </item>
+                  </layout>
+                 </widget>
+                 <widget class="QWidget" name="pageInfo">
+                  <layout class="QVBoxLayout" name="verticalLayout_10">
+                   <property name="spacing">
+                    <number>0</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
+                  </layout>
+                 </widget>
+                 <widget class="QWidget" name="pageQuestions">
+                  <layout class="QVBoxLayout" name="verticalLayout_11">
+                   <property name="spacing">
+                    <number>0</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
                   </layout>
                  </widget>
                 </widget>
@@ -752,8 +877,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>100</width>
-                        <height>30</height>
+                        <width>434</width>
+                        <height>333</height>
                        </rect>
                       </property>
                       <property name="relaxed-white" stdset="0">
@@ -766,68 +891,6 @@
                      </widget>
                     </widget>
                    </item>
-                  </layout>
-                 </widget>
-                 <widget class="QWidget" name="tabCuriosity">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="relaxed-white-bg" stdset="0">
-                   <bool>true</bool>
-                  </property>
-                  <attribute name="title">
-                   <string>Reader's curiosity</string>
-                  </attribute>
-                  <layout class="QVBoxLayout" name="verticalLayout_14">
-                   <property name="spacing">
-                    <number>0</number>
-                   </property>
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                  </layout>
-                 </widget>
-                 <widget class="QWidget" name="tabInformation">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="relaxed-white-bg" stdset="0">
-                   <bool>true</bool>
-                  </property>
-                  <attribute name="title">
-                   <string>Reader's information</string>
-                  </attribute>
-                  <layout class="QVBoxLayout" name="verticalLayout_15">
-                   <property name="spacing">
-                    <number>0</number>
-                   </property>
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
                   </layout>
                  </widget>
                 </widget>
@@ -937,4 +1000,7 @@
  </customwidgets>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroupFunctions"/>
+ </buttongroups>
 </ui>

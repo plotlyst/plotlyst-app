@@ -225,12 +225,25 @@ class BackstoryEventType(Enum):
     Gift = 'gift'
 
 
+class Position(Enum):
+    LEFT = 0
+    RIGHT = 1
+    CENTER = 2
+
+    def toggle(self) -> 'Position':
+        if self == Position.RIGHT:
+            return Position.LEFT
+        if self == Position.LEFT:
+            return Position.RIGHT
+
+
 @dataclass
 class BackstoryEvent(Event):
     type: BackstoryEventType = BackstoryEventType.Event
     type_icon: str = 'ri.calendar-event-fill'
     type_color: str = 'darkBlue'
     follow_up: bool = False
+    position: Optional[Position] = None
 
 
 @dataclass
@@ -1748,13 +1761,13 @@ advance_story_scene_purpose = ScenePurpose(ScenePurposeType.Story, 'Drive',
                                            include=[ScenePurposeType.Character, ScenePurposeType.Emotion,
                                                     ScenePurposeType.Setup],
                                            pacing='fast-medium')
-reaction_story_scene_purpose = ScenePurpose(ScenePurposeType.Reaction, 'Reaction',
+reaction_story_scene_purpose = ScenePurpose(ScenePurposeType.Reaction, 'Aftermath',
                                             keywords=['reaction', 'reflection', 'dilemma', 'decision', 'introspection',
                                                       'analysis',
                                                       'new goal'],
                                             include=[ScenePurposeType.Character, ScenePurposeType.Emotion],
                                             pacing='medium-slow')
-character_story_scene_purpose = ScenePurpose(ScenePurposeType.Character, 'Character\ninsight',
+character_story_scene_purpose = ScenePurpose(ScenePurposeType.Character, 'Character insight',
                                              keywords=['characterization', 'introspection', 'backstory',
                                                        'internal conflict', 'relations', 'character change'],
                                              include=[ScenePurposeType.Emotion])
@@ -1931,20 +1944,21 @@ class ReaderInformationType(Enum):
 
     def color(self) -> str:
         if self == ReaderInformationType.Story:
-            return '#4B0763'
+            return '#C9A2D7'
         elif self == ReaderInformationType.Character:
-            return '#219ebc'
-            # return '#0077b6'
+            return '#73A9B6'
         elif self == ReaderInformationType.World:
-            return '#40916c'
+            return '#70A88F'
 
 
 @dataclass
 class SceneReaderInformation:
     type: ReaderInformationType
+    subtype: Optional[StoryElementType] = field(default=None, metadata=config(exclude=exclude_if_empty))
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     text: str = ''
     revelation: bool = field(default=False, metadata=config(exclude=exclude_if_false))
+    character_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
     def sid(self) -> str:
         return str(self.id)
@@ -1972,6 +1986,11 @@ class SceneFunction:
 class SceneFunctions:
     primary: List[SceneFunction] = field(default_factory=list)
     secondary: List[SceneFunction] = field(default_factory=list)
+
+
+@dataclass
+class SceneMigration:
+    migrated_functions: bool = True
 
 
 @dataclass
@@ -2004,6 +2023,7 @@ class Scene:
     plot_pos_progress: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     plot_neg_progress: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     functions: SceneFunctions = field(default_factory=SceneFunctions)
+    migration: SceneMigration = field(default_factory=SceneMigration)
 
     def beat(self, novel: 'Novel') -> Optional[StoryBeat]:
         structure = novel.active_story_structure
@@ -2092,6 +2112,30 @@ class Scene:
                     self.plot_pos_progress = max(self.plot_pos_progress, ref.data.charge)
                 else:
                     self.plot_neg_progress = min(self.plot_neg_progress, ref.data.charge)
+
+    def update_purpose(self):
+        self.purpose = ScenePurposeType.Other
+        for i, function in enumerate(self.functions.primary):
+            if i == 0 and function.type == StoryElementType.Resonance:
+                self.purpose = ScenePurposeType.Emotion
+            if function.type == StoryElementType.Plot:
+                self.purpose = ScenePurposeType.Story
+                break
+            elif function.type in [StoryElementType.Reaction, StoryElementType.Reflection,
+                                   StoryElementType.Repercussion]:
+                self.purpose = ScenePurposeType.Reaction
+
+        if self.purpose == ScenePurposeType.Other:
+            for info in self.info:
+                if info.subtype == StoryElementType.Setup:
+                    self.purpose = ScenePurposeType.Setup
+                    break
+                if info.type == ReaderInformationType.Character:
+                    self.purpose = ScenePurposeType.Character
+                elif self.purpose == ScenePurposeType.Other:
+                    self.purpose = ScenePurposeType.Exposition
+        if self.purpose == ScenePurposeType.Other:
+            self.purpose = ScenePurposeType.Story
 
     def __is_outcome(self, expected) -> bool:
         if self.outcome and self.outcome == expected:

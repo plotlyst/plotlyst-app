@@ -17,7 +17,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from plotlyst.core.domain import Novel, Document, DocumentType
+from plotlyst.core.domain import Novel, Document, DocumentType, StoryElementType, SceneReaderInformation, \
+    ReaderInformationType, Scene
 from plotlyst.service.persistence import RepositoryPersistenceManager
 
 
@@ -34,3 +35,39 @@ def migrate_novel(novel: Novel):
         novel.documents.append(novel.synopsis)
         novel.synopsis = None
         RepositoryPersistenceManager.instance().update_novel(novel)
+
+    for scene in novel.scenes:
+        if scene.migration.migrated_functions:
+            continue
+        migrate_scene_functions(scene)
+
+
+def migrate_scene_functions(scene: Scene):
+    for function in scene.functions.primary:
+        if function.type == StoryElementType.Character:
+            info = SceneReaderInformation(ReaderInformationType.Character, text=function.text,
+                                          character_id=function.character_id)
+            scene.info.append(info)
+
+    for function in scene.functions.secondary:
+        if function.type == StoryElementType.Character:
+            info = SceneReaderInformation(ReaderInformationType.Character, text=function.text,
+                                          character_id=function.character_id)
+            scene.info.append(info)
+        if function.type == StoryElementType.Information:
+            info = SceneReaderInformation(ReaderInformationType.Story, text=function.text)
+            scene.info.append(info)
+        if function.type == StoryElementType.Setup:
+            info = SceneReaderInformation(ReaderInformationType.Story, subtype=StoryElementType.Setup,
+                                          text=function.text)
+            scene.info.append(info)
+        if function.type == StoryElementType.Resonance:
+            scene.functions.primary.append(function)
+        if function.type == StoryElementType.Mystery:
+            scene.functions.primary.append(function)
+
+    scene.functions.secondary.clear()
+    scene.functions.primary[:] = [x for x in scene.functions.primary if x.type != StoryElementType.Character]
+
+    scene.migration.migrated_functions = True
+    RepositoryPersistenceManager.instance().update_scene(scene)
