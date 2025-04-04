@@ -33,7 +33,7 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotType, Character, PlotPrinciple, \
     PlotPrincipleType, PlotProgressionItem, \
-    PlotProgressionItemType, DynamicPlotPrincipleGroupType, LayoutType
+    PlotProgressionItemType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, StorylineCreatedEvent, \
@@ -55,6 +55,7 @@ from plotlyst.view.widget.input import AutoAdjustableLineEdit, Toggle
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, principle_type_index, principle_icon, principle_hint
+from plotlyst.view.widget.plot.progression import AlliesPrinciplesGroupWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
 from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
 
@@ -553,109 +554,13 @@ class PlotWidget(QWidget, EventListener):
         # for group in self.plot.dynamic_principles:
         #     self._addGroup(group)
 
-        self.btnTimeline.setVisible(self.plot.has_progression)
-
         self.repo = RepositoryPersistenceManager.instance()
 
         dispatcher = event_dispatchers.instance(self.novel)
         dispatcher.register(self, CharacterChangedEvent, CharacterDeletedEvent)
 
-        # self._principleSelectorMenu = PlotPrincipleSelectorMenu(self.plot, self.btnPrincipleEditor)
-        # self._principleSelectorMenu.principleToggled.connect(self._principleToggled)
-        # self._principleSelectorMenu.progressionToggled.connect(self._progressionToggled)
-        # self._principleSelectorMenu.dynamicPrinciplesToggled.connect(self._dynamicPrinciplesToggled)
-        # self._principleSelectorMenu.genresSelected.connect(self._genresSelected)
-        # self.btnPrincipleEditor.installEventFilter(ButtonPressResizeEventFilter(self.btnPrincipleEditor))
-        # self.btnPrincipleEditor.installEventFilter(OpacityEventFilter(self.btnPrincipleEditor, leaveOpacity=0.7))
-
-        # self._dynamicPrincipleSelectorMenu = PlotDynamicPrincipleSelectorMenu(self.btnDynamicPrincipleEditor)
-        # self.btnDynamicPrincipleEditor.setIcon(IconRegistry.plus_icon('grey'))
-        # transparent(self.btnDynamicPrincipleEditor)
-        # retain_when_hidden(self.btnDynamicPrincipleEditor)
-        # decr_icon(self.btnDynamicPrincipleEditor)
-        # self.btnDynamicPrincipleEditor.installEventFilter(ButtonPressResizeEventFilter(self.btnDynamicPrincipleEditor))
-        # self.btnDynamicPrincipleEditor.installEventFilter(
-        #     OpacityEventFilter(self.btnDynamicPrincipleEditor, leaveOpacity=0.7))
-
-        # self._dynamicPrinciplesEditor = DynamicPlotPrinciplesEditor(self.novel, self.plot)
-        # margins(self._dynamicPrinciplesEditor, left=40, right=40)
-        # self.wdgDynamicPrinciples.layout().addWidget(self._dynamicPrinciplesEditor)
-        # self._dynamicPrincipleSelectorMenu.triggered.connect(self._addDynamicGroup)
-
-        # self.btnPrinciples.setIcon(IconRegistry.from_name('mdi6.note-text-outline', 'grey'))
-        # incr_icon(self.btnPrinciples, 2)
-        # incr_font(self.btnPrinciples, 2)
-        # self.btnPrinciples.installEventFilter(ButtonPressResizeEventFilter(self.btnPrinciples))
-        # self.btnPrinciples.installEventFilter(OpacityEventFilter(self.btnPrinciples, leaveOpacity=0.7))
-        # self.btnPrinciples.clicked.connect(lambda: self._principleSelectorMenu.exec())
-
-        # self.btnDynamicPrinciples.setIcon(IconRegistry.from_name('mdi6.chart-timeline-variant-shimmer', 'grey'))
-        # self.btnProgression.setIcon(IconRegistry.rising_action_icon('grey'))
-        # if self.plot.plot_type == PlotType.Internal:
-        #     self.btnProgression.setText('Transformation')
-        # elif self.plot.plot_type == PlotType.Relation:
-        #     self.btnProgression.setText('Evolution')
-
-        # for btn in [self.btnProgression, self.btnDynamicPrinciples]:
-        #     translucent(btn, 0.7)
-        #     incr_icon(btn)
-        #     incr_font(btn)
-        # self.btnDynamicPrinciples.clicked.connect(lambda: self._dynamicPrincipleSelectorMenu.exec())
-
-        # self.btnValues.setText('' if self.plot.values else 'Values')
-        # self.btnValues.setIcon(IconRegistry.from_name('fa5s.chevron-circle-down', 'grey'))
-        # self.btnValues.installEventFilter(OpacityEventFilter(self.btnValues, 0.9, 0.7))
-        # self.btnValues.clicked.connect(self._newValue)
-        # hbox(self.wdgValues)
-        # self._btnAddValue = SecondaryActionPushButton(self)
-        # self._btnAddValue.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
-        # decr_font(self._btnAddValue)
-        # self._btnAddValue.setIconSize(QSize(14, 14))
-        # retain_when_hidden(self._btnAddValue)
-        # self._btnAddValue.setIcon(IconRegistry.plus_icon('grey'))
-        # for value in self.plot.values:
-        #     self._addValue(value)
-
-        # self.btnRelationArrow.setHidden(True)
-        # self._characterRelationSelector: Optional[CharacterAvatar] = None
-        # if self.plot.plot_type == PlotType.Global:
-        #     pass
-        # elif self.plot.plot_type == PlotType.Relation:
-        #     self.btnRelationArrow.setVisible(True)
-        #     self.btnRelationArrow.setIcon(IconRegistry.from_name('ph.arrows-counter-clockwise-fill'))
-        #
-        # self._characterSelector = CharacterAvatar(self, 60, 100, 64, 8)
-        #     self._characterRelationSelector = CharacterAvatar(self, 60, 100, 64, 8)
-        #     self._characterSelector.setToolTip('Associate a character to this relationship plot')
-        #     self._characterRelationSelector.setToolTip('Associate a character to this relationship plot')
-        #     sourceMenu = CharacterSelectorMenu(self.novel, self._characterSelector.btnAvatar)
-        #     sourceMenu.selected.connect(self._characterSelected)
-        #     targetMenu = CharacterSelectorMenu(self.novel, self._characterRelationSelector.btnAvatar)
-        #     targetMenu.selected.connect(self._relationCharacterSelected)
-        #     self._characterSelector.setFixedSize(90, 90)
-        #     self._characterRelationSelector.setFixedSize(90, 90)
-        #     self.wdgHeader.layout().insertWidget(0, self._characterSelector,
-        #                                          alignment=Qt.AlignmentFlag.AlignCenter)
-        #     self.wdgHeader.layout().insertWidget(0, spacer())
-        #     self.wdgHeader.layout().addWidget(self._characterRelationSelector, alignment=Qt.AlignmentFlag.AlignCenter)
-        #     self.wdgHeader.layout().addWidget(spacer())
-        #
-        #     character = self.plot.character(novel)
-        #     if character is not None:
-        #         self._characterSelector.setCharacter(character)
-        #     character = self.plot.relation_character(novel)
-        #     if character is not None:
-        #         self._characterRelationSelector.setCharacter(character)
-
-        # self.wdgValues.layout().addWidget(self._btnAddValue)
-        # self.wdgValues.layout().addWidget(spacer())
-        # self._btnAddValue.clicked.connect(self._newValue)
-
-        # self.installEventFilter(VisibilityToggleEventFilter(target=self._btnAddValue, parent=self))
-        # self.installEventFilter(VisibilityToggleEventFilter(target=self.btnPrincipleEditor, parent=self))
-        # self.installEventFilter(VisibilityToggleEventFilter(target=self.btnDynamicPrincipleEditor, parent=self))
-
-        # self.wdgDynamicPrinciples.setVisible(self.plot.has_dynamic_principles)
+        if self.plot.has_allies:
+            self._addGroup(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -753,6 +658,11 @@ class PlotWidget(QWidget, EventListener):
             self.btnMonster.setVisible(toggled)
             self.plot.has_villain = toggled
 
+        if toggled:
+            self._addGroup(editorType)
+        else:
+            self._clearGroup(editorType)
+
         self._navWidth = self.wdgNavs.sizeHint().width()
         self.__updateNavLayout()
 
@@ -794,14 +704,21 @@ class PlotWidget(QWidget, EventListener):
 
         return editor
 
-    # def _addGroup(self, group: DynamicPlotPrincipleGroup) -> DynamicPlotPrinciplesGroupWidget:
-    #     if group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-    #         wdg = AlliesPrinciplesGroupWidget(self.novel, group)
-    #     else:
-    #         wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
-    #
-    #     if group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-    #         self.wdgAllies.layout().addWidget(wdg)
+    def _addGroup(self, groupType: DynamicPlotPrincipleGroupType):
+        if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
+            if self.plot.allies is None:
+                self.plot.allies = DynamicPlotPrincipleGroup(groupType)
+                self._save()
+            wdg = AlliesPrinciplesGroupWidget(self.novel, self.plot.allies)
+            self.wdgAllies.layout().addWidget(wdg)
+        #     else:
+        #         wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
+        #
+
+    def _clearGroup(self, groupType: DynamicPlotPrincipleGroupType):
+        if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
+            clear_layout(self.wdgAllies)
+
     #     elif group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
     #         self.wdgSuspects.layout().addWidget(wdg)
     #     elif group.type == DynamicPlotPrincipleGroupType.CAST:

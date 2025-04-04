@@ -1400,6 +1400,7 @@ class Plot(SelectionItem, CharacterBased):
     has_progression: bool = True
     has_escalation: bool = False
     has_allies: bool = False
+    allies: Optional[DynamicPlotPrincipleGroup] = None
     has_suspects: bool = False
     has_cast: bool = False
     has_villain: bool = False
