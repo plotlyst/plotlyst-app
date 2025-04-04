@@ -17,26 +17,30 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from functools import partial
 from typing import Optional, Dict, List
 
 import qtanim
-from PyQt6.QtCore import QPointF, Qt, QRectF, pyqtSignal
+from PyQt6.QtCore import QPointF, Qt, QRectF, pyqtSignal, QSize
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsItem, QGraphicsOpacityEffect, QSlider, QWidget
 from overrides import overrides
-from qthandy import decr_font, vbox, translucent
+from qthandy import decr_font, vbox, translucent, flow, sp, hbox
+from qthandy.filter import OpacityEventFilter
 
-from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import GraphicsItemType, Diagram, DiagramData, Novel, Node, DynamicPlotPrincipleGroup, \
     DynamicPlotPrinciple, Character, DynamicPlotPrincipleType
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
+from plotlyst.view.common import shadow, frame, tool_btn, fade_out_and_gc, insert_before_the_end
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.display import IconText
 from plotlyst.view.widget.graphics import NetworkGraphicsView, NetworkScene, NodeItem, CharacterItem, \
     PlaceholderSocketItem, ConnectorItem
 from plotlyst.view.widget.graphics.items import IconItem
+from plotlyst.view.widget.plot.progression import DynamicPlotPrincipleWidget
 
 
 class AlliesSupportingSlider(QWidget):
@@ -270,7 +274,7 @@ class AlliesGraphicsView(NetworkGraphicsView):
         self._novel = novel
         self._group = principleGroup
         super().__init__(parent)
-        self.setBackgroundBrush(QColor(RELAXED_WHITE_COLOR))
+        self.setBackgroundBrush(QColor(BG_PRIMARY_COLOR))
         self.setRubberBandEnabled(False)
         self.setScalingEnabled(False)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
@@ -303,3 +307,119 @@ class AlliesGraphicsView(NetworkGraphicsView):
     @overrides
     def _characterSelectorMenu(self) -> CharacterSelectorMenu:
         return CharacterSelectorMenu(self._novel, parent=self)
+
+
+class AllyPlotPrincipleWidget(DynamicPlotPrincipleWidget):
+    def __init__(self, novel: Novel, principle: DynamicPlotPrinciple, parent=None,
+                 nameAlignment=Qt.AlignmentFlag.AlignCenter):
+        super().__init__(novel, principle, parent, nameAlignment)
+        if self.principle.node is None:
+            self._btnName.setText('Ally/Enemy')
+
+    def updateAlly(self):
+        self._btnName.setIcon(IconRegistry.from_name(self.principle.type.icon(), self._color()))
+        self._initStyle(name=self.principle.type.display_name(), desc=self.principle.type.placeholder())
+        qcolor = QColor(self._color())
+        qcolor.setAlpha(125)
+        shadow(self._text, color=qcolor)
+
+    @overrides
+    def _color(self) -> str:
+        if self.principle.node is None:
+            return 'grey'
+        return super()._color()
+
+
+class AlliesPrinciplesGroupWidget(QWidget):
+    changed = pyqtSignal()
+
+    def __init__(self, novel: Novel, principleGroup: DynamicPlotPrincipleGroup, parent=None):
+        super().__init__(parent)
+        self.novel = novel
+        self.group = principleGroup
+
+        self._wdgPrinciples = QWidget()
+        flow(self._wdgPrinciples)
+
+        self._supporterSlider = AlliesSupportingSlider()
+        self._emotionSlider = AlliesEmotionalSlider()
+
+        self._leftEditor = QWidget()
+        sp(self._leftEditor).h_max()
+        vbox(self._leftEditor, spacing=0)
+        self._toolbar = frame()
+        self._toolbar.setProperty('relaxed-white-bg', True)
+        self._toolbar.setProperty('rounded-on-top', True)
+        hbox(self._toolbar)
+        self._toolbar.layout().addWidget(self._supporterSlider)
+        self._toolbar.layout().addWidget(self._emotionSlider)
+
+        self.view = AlliesGraphicsView(self.novel, self.group)
+
+        self._leftEditor.layout().addWidget(self._toolbar)
+        self._leftEditor.layout().addWidget(self.view)
+
+        hbox(self)
+        self.layout().addWidget(self._leftEditor, alignment=Qt.AlignmentFlag.AlignTop)
+        self.layout().addWidget(self._wdgPrinciples)
+
+        self.btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
+        self.btnAdd.installEventFilter(OpacityEventFilter(self.btnAdd))
+        self.btnAdd.setIconSize(QSize(48, 48))
+        self.btnAdd.setFixedHeight(200)
+        self.btnAdd.clicked.connect(self._addAlly)
+        self._wdgPrinciples.layout().addWidget(self.btnAdd)
+
+        for principle in self.group.principles:
+            self._initBubbleWidget(principle)
+
+        self.view.alliesScene().posChanged.connect(self._posChanged)
+        self.view.alliesScene().allyChanged.connect(self._allyChanged)
+
+        self._supporterSlider.setPrinciples(self.group.principles)
+        self._emotionSlider.setPrinciples(self.group.principles)
+
+    def refreshCharacters(self):
+        for i in range(self._wdgPrinciples.layout().count()):
+            item = self._wdgPrinciples.layout().itemAt(i)
+            if item.widget() and isinstance(item.widget(), AllyPlotPrincipleWidget):
+                wdg: AllyPlotPrincipleWidget = item.widget()
+                wdg.refreshCharacters()
+
+    def _addAlly(self):
+        principle = DynamicPlotPrinciple(type=DynamicPlotPrincipleType.NEUTRAL)
+        self.group.principles.append(principle)
+        self.view.addNewAlly(principle)
+        self._initBubbleWidget(principle)
+
+        self.changed.emit()
+
+    def _removeAlly(self, bubble: AllyPlotPrincipleWidget):
+        self.view.removeAlly(bubble.principle)
+        self.group.principles.remove(bubble.principle)
+        fade_out_and_gc(self._wdgPrinciples, bubble)
+
+        self.changed.emit()
+
+    def _posChanged(self, _: DynamicPlotPrinciple):
+        self._supporterSlider.setPrinciples(self.group.principles)
+        self._emotionSlider.setPrinciples(self.group.principles)
+
+        self.changed.emit()
+
+    def _allyChanged(self, principle: DynamicPlotPrinciple):
+        for i in range(self._wdgPrinciples.layout().count()):
+            item = self._wdgPrinciples.layout().itemAt(i)
+            if item.widget() and isinstance(item.widget(), AllyPlotPrincipleWidget):
+                wdg: AllyPlotPrincipleWidget = item.widget()
+                if wdg.principle == principle:
+                    wdg.updateAlly()
+                    break
+
+        self.changed.emit()
+
+    def _initBubbleWidget(self, principle: DynamicPlotPrinciple):
+        bubble = AllyPlotPrincipleWidget(self.novel, principle)
+        bubble.removed.connect(partial(self._removeAlly, bubble))
+        bubble.characterChanged.connect(partial(self.view.updateAlly, principle))
+        insert_before_the_end(self._wdgPrinciples, bubble)

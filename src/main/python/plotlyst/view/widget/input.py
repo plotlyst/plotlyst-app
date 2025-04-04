@@ -1499,7 +1499,7 @@ class TextEditBubbleWidget(QFrame):
     removed = pyqtSignal()
 
     def __init__(self, parent=None, titleEditable: bool = False, titleMaxWidth: Optional[int] = None,
-                 iconEditable: bool = False):
+                 iconEditable: bool = False, whiteBg: bool = False):
         super().__init__(parent)
         self._removalEnabled: bool = False
 
@@ -1514,8 +1514,13 @@ class TextEditBubbleWidget(QFrame):
             self._title.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self._textedit = QTextEdit(self)
-        self._textedit.setProperty('white-bg', True)
-        self._textedit.setProperty('rounded', True)
+        if whiteBg:
+            self.setProperty('white-bg', True)
+            self.setProperty('rounded', True)
+            self._textedit.setProperty('transparent', True)
+        else:
+            self._textedit.setProperty('white-bg', True)
+            self._textedit.setProperty('rounded', True)
         self._textedit.setTabChangesFocus(True)
         if app_env.is_mac():
             incr_font(self._textedit)
@@ -1547,6 +1552,9 @@ class TextEditBubbleWidget(QFrame):
     @overrides
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self._btnRemove.setGeometry(self.width() - 20, 5, 20, 20)
+
+    def setRemovalEnabled(self, enabled: bool):
+        self._removalEnabled = enabled
 
     def _textChanged(self):
         pass

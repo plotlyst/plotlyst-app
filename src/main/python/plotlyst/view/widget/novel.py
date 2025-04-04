@@ -779,8 +779,7 @@ class NovelDescriptorsEditorPopup(PopupDialog):
         self.exec()
 
     def _addHeader(self, title: str, icon: str = '', desc: str = '', ref: str = '', refLink: str = '',
-                   checkable: bool = False, wdg: Optional[QWidget] = None) -> Optional[
-        SmallToggleButton]:
+                   checkable: bool = False, wdg: Optional[QWidget] = None) -> Optional[SmallToggleButton]:
         lbl = IconText()
         lbl.setText(title)
         bold(lbl)

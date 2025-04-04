@@ -600,12 +600,17 @@ class DividerWidget(QWidget):
 
 
 class SeparatorLineWithShadow(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, color: str = PLACEHOLDER_TEXT_COLOR):
         super().__init__(parent)
         self.setMinimumSize(100, 12)
         self._margin = 10
-        self._colorRadiant = QColor(PLACEHOLDER_TEXT_COLOR)
+        self._colorRadiant = QColor(color)
         self._colorRadiant.setAlpha(125)
+
+    def setColor(self, color: str):
+        self._colorRadiant = QColor(color)
+        self._colorRadiant.setAlpha(125)
+        self.update()
 
     @overrides
     def paintEvent(self, event):
@@ -623,7 +628,7 @@ class SeparatorLineWithShadow(QWidget):
         shadow_rect = QRectF(self._margin, line_y, self.width() - self._margin * 2, 8)
         painter.drawEllipse(shadow_rect)
 
-        pen = QPen(QColor(PLACEHOLDER_TEXT_COLOR), 2)
+        pen = QPen(self._colorRadiant, 2)
         painter.setPen(pen)
         painter.drawLine(self._margin, line_y, self.width() - self._margin, line_y)
 

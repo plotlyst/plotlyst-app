@@ -1177,6 +1177,7 @@ class DynamicPlotPrincipleGroupType(Enum):
     ELEMENTS_OF_WONDER = 3
     EVOLUTION_OF_THE_MONSTER = 4
     CAST = 5
+    TIMELINE = 6
 
     def display_name(self) -> str:
         return self.name.lower().capitalize().replace('_', ' ')
@@ -1194,6 +1195,8 @@ class DynamicPlotPrincipleGroupType(Enum):
             return 'ri.ghost-2-fill'
         elif self == DynamicPlotPrincipleGroupType.CAST:
             return 'mdi.robber'
+        elif self == DynamicPlotPrincipleGroupType.TIMELINE:
+            return 'mdi.timeline-text-outline'
 
     def color(self) -> str:
         if self == DynamicPlotPrincipleGroupType.ESCALATION:
@@ -1213,7 +1216,7 @@ class DynamicPlotPrincipleGroupType(Enum):
 
     def description(self) -> str:
         if self == DynamicPlotPrincipleGroupType.ESCALATION:
-            return 'Narrative turns, unexpected twists, and dangerous moments that enhance intrigue and excitement in the storyline'
+            return 'Narrative turns, unexpected twists, and dangerous moments that add intrigue and excitement to the storyline'
         elif self == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
             return "Characters forming alliances and adversaries around the focal character"
         elif self == DynamicPlotPrincipleGroupType.SUSPECTS:
@@ -1224,6 +1227,8 @@ class DynamicPlotPrincipleGroupType(Enum):
             return "The continuous evolution or revelation of the monster's power, unfolding dynamically throughout the narrative"
         elif self == DynamicPlotPrincipleGroupType.CAST:
             return "The ensemble of characters involved in a caper, each with unique skills and contributions"
+        elif self == DynamicPlotPrincipleGroupType.TIMELINE:
+            return "Most significant events related to this storyline"
 
 
 @dataclass
@@ -1393,6 +1398,12 @@ class Plot(SelectionItem, CharacterBased):
     principles: List[PlotPrinciple] = field(default_factory=list)
     dynamic_principles: List[DynamicPlotPrincipleGroup] = field(default_factory=list)
     has_progression: bool = True
+    has_escalation: bool = False
+    has_allies: bool = False
+    allies: Optional[DynamicPlotPrincipleGroup] = None
+    has_suspects: bool = False
+    has_cast: bool = False
+    has_villain: bool = False
     has_dynamic_principles: bool = True
     has_thematic_relevance: bool = False
     events: List[PlotEvent] = field(default_factory=list)
