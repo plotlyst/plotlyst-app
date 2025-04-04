@@ -52,10 +52,10 @@ from plotlyst.view.widget.characters import CharacterAvatar, CharacterSelectorMe
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import SeparatorLineWithShadow, PopupDialog, IconText, icon_text
 from plotlyst.view.widget.input import AutoAdjustableLineEdit, Toggle
+from plotlyst.view.widget.plot.allies import AlliesPrinciplesGroupWidget
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, principle_type_index, principle_icon, principle_hint
-from plotlyst.view.widget.plot.progression import AlliesPrinciplesGroupWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
 from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
 
