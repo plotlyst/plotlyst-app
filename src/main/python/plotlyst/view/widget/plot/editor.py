@@ -525,6 +525,7 @@ class PlotWidget(QWidget, EventListener):
         self.pagePrinciples, self.wdgPrinciples = self.__page(LayoutType.FLOW)
         self.pageLinearStructure, self.wdgLinearStructure = self.__page()
         self.pageAllies, self.wdgAllies = self.__page()
+        margins(self.wdgAllies, left=5, right=5)
         self.pageSuspects, self.wdgSuspects = self.__page()
         self.pageCast, self.wdgCast = self.__page()
         self.pageMonster, self.wdgMonster = self.__page()
@@ -791,7 +792,7 @@ class PlotWidget(QWidget, EventListener):
     #     menu.exec(QCursor.pos())
 
     def __page(self, layoutType: LayoutType = LayoutType.VERTICAL) -> Tuple[QScrollArea, QWidget]:
-        scroll_ = scroll_area(h_on=False, frameless=True)
+        scroll_ = scroll_area(frameless=True)
         wdg = QWidget()
         if layoutType == LayoutType.VERTICAL:
             vbox(wdg)

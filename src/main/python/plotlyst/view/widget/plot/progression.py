@@ -24,7 +24,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QPointF
 from PyQt6.QtGui import QIcon, QEnterEvent, QPaintEvent, QPainter, QBrush, QColor
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, margins, transparent, hbox, sp
+from qthandy import vbox, margins, transparent, hbox, sp, flow
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import RELAXED_WHITE_COLOR
@@ -186,9 +186,11 @@ class DynamicPlotPrincipleWidget(OutlineItemWidget):
                                                 DynamicPlotPrincipleType.SUSPECT,
                                                 DynamicPlotPrincipleType.CREW_MEMBER]
         if self._hasCharacter:
-            self._charSelector = CharacterSelectorButton(self.novel, iconSize=64)
+            margins(self, top=8)
+            self._charSelector = CharacterSelectorButton(self.novel, parent=self, iconSize=28)
             self._charSelector.characterSelected.connect(self._characterSelected)
-            self.layout().insertWidget(0, self._charSelector, alignment=Qt.AlignmentFlag.AlignCenter)
+            self._charSelector.setGeometry(5, 0, self._charSelector.sizeHint().width(),
+                                           self._charSelector.sizeHint().height())
 
             if self.principle.character_id:
                 character = entities_registry.character(self.principle.character_id)
@@ -484,8 +486,8 @@ class AlliesPrinciplesGroupWidget(QWidget):
         self.novel = novel
         self.group = principleGroup
 
-        self._wdgPrinciples = DynamicPlotPrinciplesWidget(novel, self.group)
-        self._wdgPrinciples.setStructure(self.group.principles)
+        self._wdgPrinciples = QWidget()
+        flow(self._wdgPrinciples)
 
         self._supporterSlider = AlliesSupportingSlider()
         self._emotionSlider = AlliesEmotionalSlider()
@@ -509,9 +511,13 @@ class AlliesPrinciplesGroupWidget(QWidget):
         self.layout().addWidget(self._leftEditor, alignment=Qt.AlignmentFlag.AlignTop)
         self.layout().addWidget(self._wdgPrinciples)
 
-        self._wdgPrinciples.principleAdded.connect(self.view.addNewAlly)
-        self._wdgPrinciples.principleRemoved.connect(self.view.removeAlly)
-        self._wdgPrinciples.characterChanged.connect(self.view.updateAlly)
+        # self._wdgPrinciples.principleAdded.connect(self.view.addNewAlly)
+        # self._wdgPrinciples.principleRemoved.connect(self.view.removeAlly)
+        # self._wdgPrinciples.characterChanged.connect(self.view.updateAlly)
+
+        for principle in self.group.principles:
+            bubble = AllyPlotPrincipleWidget(self.novel, principle)
+            self._wdgPrinciples.layout().addWidget(bubble)
 
         self.view.alliesScene().posChanged.connect(self._posChanged)
         self.view.alliesScene().allyChanged.connect(self._allyChanged)
