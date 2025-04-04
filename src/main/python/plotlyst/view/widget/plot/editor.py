@@ -688,16 +688,6 @@ class PlotWidget(QWidget, EventListener):
     #                         teardown=lambda: self.wdgDynamicPrinciples.setGraphicsEffect(None))
     #     self._save()
 
-    # def _genresSelected(self):
-    #     object = PrincipleSelectorObject()
-    #     object.principleToggled.connect(self._principleToggled)
-    #     GenrePrincipleSelectorDialog.popup(self.plot, object)
-    #
-    # def _addDynamicGroup(self, groupType: DynamicPlotPrincipleGroupType):
-    #     wdg = self._dynamicPrinciplesEditor.addNewGroup(groupType)
-    #     wdg.show()
-    #     self.scrollArea.ensureWidgetVisible(wdg, 50, 150)
-
     def _initPrincipleEditor(self, principle: PlotPrinciple):
         editor = PlotPrincipleEditor(principle, self.plot.plot_type)
         editor.principleEdited.connect(self._save)
