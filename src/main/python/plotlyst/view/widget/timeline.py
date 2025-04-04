@@ -22,22 +22,27 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Any, Dict
 
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QObject, QEvent
-from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QTimer
+from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent, \
+    QDragEnterEvent, QDragLeaveEvent, QDropEvent
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
-    QLineEdit, QToolButton
+    QLineEdit, QFrame
 from overrides import overrides
-from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, bold, \
-    margins, gc
-from qthandy.filter import VisibilityToggleEventFilter
+from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc, retain_when_hidden, \
+    translucent, decr_icon
+from qthandy.filter import VisibilityToggleEventFilter, DragEventFilter, DropEventFilter
+from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR, NEUTRAL_EMOTION_COLOR, \
-    EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import BackstoryEvent
-from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end
+    EMOTION_COLORS, PLOTLYST_SECONDARY_COLOR, ALT_BACKGROUND_COLOR
+from plotlyst.core.domain import BackstoryEvent, Position
+from plotlyst.env import app_env
+from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end, shadow, \
+    fade_out_and_gc, action, remove_and_gc
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
-from plotlyst.view.widget.input import RemovalButton, AutoAdjustableTextEdit
+from plotlyst.view.widget.display import DotsDragIcon
+from plotlyst.view.widget.input import AutoAdjustableTextEdit
 
 
 @dataclass
@@ -50,15 +55,14 @@ class BackstoryCard(QWidget):
     TYPE_SIZE: int = 36
     edited = pyqtSignal()
     deleteRequested = pyqtSignal(object)
-    relationChanged = pyqtSignal()
 
     def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
         super().__init__(parent)
         self.backstory = backstory
         self._theme = theme
 
-        vbox(self)
-        margins(self, top=self.TYPE_SIZE // 2)
+        vbox(self, 0)
+        margins(self, left=5, right=5, top=self.TYPE_SIZE // 2, bottom=3)
 
         self.cardFrame = frame()
         self.cardFrame.setObjectName('cardFrame')
@@ -68,16 +72,20 @@ class BackstoryCard(QWidget):
         self.btnType = tool_btn(QIcon(), parent=self)
         self.btnType.setIconSize(QSize(24, 24))
 
-        self.btnRemove = RemovalButton()
-        self.btnRemove.setVisible(False)
-        self.btnRemove.clicked.connect(self._remove)
+        self.btnDrag = DotsDragIcon()
+        self.btnDrag.setVisible(False)
+        decr_icon(self.btnDrag, 2)
+        self.btnDrag.clicked.connect(self._showContextMenu)
+        # self.btnDrag.clicked.connect(self._remove)
 
         self.lineKeyPhrase = QLineEdit()
         self.lineKeyPhrase.setPlaceholderText('Keyphrase')
         self.lineKeyPhrase.setProperty('transparent', True)
         self.lineKeyPhrase.textEdited.connect(self._keyphraseEdited)
-        incr_font(self.lineKeyPhrase, 2)
-        bold(self.lineKeyPhrase)
+        font = self.lineKeyPhrase.font()
+        font.setPointSize(font.pointSize() + 2)
+        font.setFamily(app_env.serif_font())
+        self.lineKeyPhrase.setFont(font)
 
         self.textSummary = AutoAdjustableTextEdit(height=40)
         self.textSummary.setPlaceholderText("Summarize this event")
@@ -91,17 +99,20 @@ class BackstoryCard(QWidget):
         hbox(wdgTop, 0, 0)
         margins(wdgTop, top=5)
         wdgTop.layout().addWidget(self.lineKeyPhrase)
-        wdgTop.layout().addWidget(self.btnRemove, alignment=Qt.AlignmentFlag.AlignTop)
+        wdgTop.layout().addWidget(self.btnDrag, alignment=Qt.AlignmentFlag.AlignTop)
         self.cardFrame.layout().addWidget(wdgTop)
         self.cardFrame.layout().addWidget(self.textSummary)
         self.layout().addWidget(self.cardFrame)
 
-        self.cardFrame.installEventFilter(VisibilityToggleEventFilter(self.btnRemove, self.cardFrame))
+        self.cardFrame.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self.cardFrame))
+        self.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self))
 
         self.btnType.raise_()
 
         self.setMinimumWidth(200)
         sp(self).v_max()
+
+        shadow(self, color=Qt.GlobalColor.gray)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -149,6 +160,11 @@ class BackstoryCard(QWidget):
         self.btnType.setIcon(IconRegistry.from_name(self.backstory.type_icon, EMOTION_COLORS[self.backstory.emotion]))
         self.edited.emit()
 
+    def _showContextMenu(self):
+        menu = MenuWidget()
+        menu.addAction(action('Remove', IconRegistry.trash_can_icon(), slot=self._remove))
+        menu.exec()
+
     def _remove(self):
         if self.backstory.synopsis and not confirmed('This action cannot be undone.',
                                                      f'Are you sure you want to remove the event "{self.backstory.keyphrase if self.backstory.keyphrase else "Untitled"}"?'):
@@ -156,136 +172,192 @@ class BackstoryCard(QWidget):
         self.deleteRequested.emit(self)
 
 
-class BackstoryCardPlaceholder(QWidget):
-    def __init__(self, card: BackstoryCard, alignment: int = Qt.AlignmentFlag.AlignRight, parent=None,
-                 compact: bool = True):
+class PlaceholderWidget(QFrame):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.alignment = alignment
-        self.card = card
+        self.setAcceptDrops(True)
 
-        self._layout = hbox(self, 0, 3)
-        self.spacer = spacer()
-        self.spacer.setFixedWidth(self.width() // 2 + 3)
-        if self.alignment == Qt.AlignmentFlag.AlignRight:
-            self.layout().addWidget(self.spacer)
-            if compact:
-                self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignLeft)
-            else:
-                self._layout.addWidget(self.card)
-        elif self.alignment == Qt.AlignmentFlag.AlignLeft:
-            if compact:
-                self._layout.addWidget(self.card, alignment=Qt.AlignmentFlag.AlignRight)
-            else:
-                self._layout.addWidget(self.card)
-            self.layout().addWidget(self.spacer)
-        else:
-            self.layout().addWidget(self.card)
+        self.btnPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
+        self.btnPlus.setIconSize(QSize(22, 22))
+        sp(self.btnPlus).h_exp()
+        vbox(self, 0, 0).addWidget(self.btnPlus)
+        translucent(self)
+        retain_when_hidden(self.btnPlus)
+        self.setMinimumWidth(150)
+        self.setMaximumWidth(200)
+        self.deactivate()
 
-    def toggleAlignment(self):
-        if self.alignment == Qt.AlignmentFlag.AlignLeft:
-            self.alignment = Qt.AlignmentFlag.AlignRight
-            self._layout.takeAt(0)
-            self._layout.addWidget(self.spacer)
-            self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignRight)
-        else:
-            self.alignment = Qt.AlignmentFlag.AlignLeft
-            self._layout.takeAt(1)
-            self._layout.insertWidget(0, self.spacer)
-            self._layout.setAlignment(self.card, Qt.AlignmentFlag.AlignLeft)
+        self._hover_timer = QTimer(self)
+        self._hover_timer.setSingleShot(True)
+        self._hover_timer.timeout.connect(self._applyHoverStyle)
 
+    def activate(self):
+        self.btnPlus.setVisible(True)
 
-class _ControlButtons(QWidget):
-
-    def __init__(self, theme: TimelineTheme, parent=None):
-        super().__init__(parent)
-        vbox(self)
-
-        self.btnPlaceholderCircle = QToolButton(self)
-        self.btnPlus = tool_btn(IconRegistry.plus_icon(RELAXED_WHITE_COLOR), tooltip='Add new event')
-
-        self.layout().addWidget(self.btnPlaceholderCircle)
-        self.layout().addWidget(self.btnPlus)
-
+    def deactivate(self):
         self.btnPlus.setHidden(True)
 
-        for btn in [self.btnPlaceholderCircle, self.btnPlus]:
-            btn.setStyleSheet(f'''
-                QToolButton {{ background-color: {theme.timeline_color}; border: 1px;
-                        border-radius: 13px; padding: 2px;}}
-                QToolButton:pressed {{background-color: grey;}}
-            ''')
-
-        self.installEventFilter(self)
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self._hover_timer.start(100)
 
     @overrides
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.Enter:
-            self.btnPlaceholderCircle.setHidden(True)
-            self.btnPlus.setVisible(True)
-        elif event.type() == QEvent.Type.Leave:
-            self.btnPlaceholderCircle.setVisible(True)
-            self.btnPlus.setHidden(True)
+    def leaveEvent(self, event: QEvent) -> None:
+        self._hover_timer.stop()
+        self.setStyleSheet('')
 
-        return super().eventFilter(watched, event)
+    @overrides
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        self.setStyleSheet(f'background: {PLOTLYST_SECONDARY_COLOR};')
+        event.accept()
+
+    @overrides
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
+        self.setStyleSheet('')
+
+    @overrides
+    def dropEvent(self, event: QDropEvent) -> None:
+        self.setStyleSheet('')
+
+    def _applyHoverStyle(self):
+        self.setStyleSheet(f'background: {ALT_BACKGROUND_COLOR};')
 
 
-class TimelineWidget(QWidget):
-    changed = pyqtSignal()
+class PlaceholdersRow(QWidget):
+    dropped = pyqtSignal(Position)
 
-    def __init__(self, theme: Optional[TimelineTheme] = None, parent=None, compact: bool = True):
-        self._spacers: List[QWidget] = []
+    def __init__(self, mimeType: str, parent=None):
         super().__init__(parent)
-        if theme is None:
-            theme = TimelineTheme()
-        self._theme = theme
-        self._compact = compact
-        self._layout = vbox(self, spacing=0)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self._lineTopMargin: int = 0
-        self._endSpacerMinHeight: int = 45
+        self._mimeType = mimeType
+        hbox(self, 0, 0)
+        self.placeholderLeft = PlaceholderWidget()
+        self.placeholderCenter = PlaceholderWidget()
+        self.placeholderRight = PlaceholderWidget()
+        self.layout().addWidget(spacer())
+        self.layout().addWidget(self.placeholderLeft)
+        self.layout().addWidget(self.placeholderCenter)
+        self.layout().addWidget(self.placeholderRight)
+        self.layout().addWidget(spacer())
+
+        self.placeholderLeft.installEventFilter(
+            DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.LEFT)))
+        self.placeholderRight.installEventFilter(
+            DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.RIGHT)))
+        self.placeholderCenter.installEventFilter(
+            DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.CENTER)))
+
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.placeholderLeft.activate()
+        self.placeholderCenter.activate()
+        self.placeholderRight.activate()
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        self.placeholderLeft.deactivate()
+        self.placeholderCenter.deactivate()
+        self.placeholderRight.deactivate()
+
+
+class TimelineEntityRow(QWidget):
+    insert = pyqtSignal(Position)
+    dropped = pyqtSignal(Position)
+
+    def __init__(self, card: BackstoryCard, parent: 'TimelineLinearWidget'):
+        super().__init__(parent)
+        self.card = card
+
+        self._margin: int = 2
+
+        vbox(self, self._margin, 0)
+        self.wdgPlaceholders = PlaceholdersRow(parent.mimeType())
+        self.wdgPlaceholders.placeholderLeft.btnPlus.clicked.connect(lambda: self.insert.emit(Position.LEFT))
+        self.wdgPlaceholders.placeholderCenter.btnPlus.clicked.connect(lambda: self.insert.emit(Position.CENTER))
+        self.wdgPlaceholders.placeholderRight.btnPlus.clicked.connect(lambda: self.insert.emit(Position.RIGHT))
+
+        self.wdgPlaceholders.dropped.connect(self.dropped)
+
+        self.wdgCardParent = columns(0, 0)
+
+        self._spacer = None
+
+        if self.card.backstory.position == Position.RIGHT:
+            self._spacer = spacer()
+            self.wdgCardParent.layout().addWidget(self._spacer)
+            self.wdgCardParent.layout().addWidget(self.card, alignment=Qt.AlignmentFlag.AlignLeft)
+        elif self.card.backstory.position == Position.LEFT:
+            self.wdgCardParent.layout().addWidget(self.card, alignment=Qt.AlignmentFlag.AlignRight)
+            self._spacer = spacer()
+            self.wdgCardParent.layout().addWidget(self._spacer)
+        else:
+            self.wdgCardParent.layout().addWidget(self.card, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.layout().addWidget(self.wdgPlaceholders)
+        self.layout().addWidget(self.wdgCardParent)
+
+        self.card.btnDrag.installEventFilter(
+            DragEventFilter(self.card, mimeType=parent.mimeType(), dataFunc=lambda x: card.backstory,
+                            grabbed=self.card, startedSlot=partial(parent.dragStartedEvent, self),
+                            finishedSlot=partial(parent.dragFinishedEvent, self)))
+
+        self.setAcceptDrops(True)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
-        for sp in self._spacers:
-            sp.setFixedWidth(self.width() // 2 + 3)
+        if self._spacer is not None:
+            self._spacer.setFixedWidth(self.width() // 2 + self._margin * 2)
+
+    @overrides
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if event.mimeData().formats()[0].startswith(self.parent().mimeType()):
+            event.accept()
+        else:
+            event.ignore()
+
+
+class TimelineLinearWidget(QWidget):
+    changed = pyqtSignal()
+
+    def __init__(self, theme: Optional[TimelineTheme] = None, parent=None):
+        super().__init__(parent)
+        self._dragged: Optional[TimelineEntityRow] = None
+
+        if theme is None:
+            theme = TimelineTheme()
+        self._theme = theme
+        vbox(self, spacing=0)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._endSpacerMinHeight: int = 45
 
     @abstractmethod
     def events(self) -> List[BackstoryEvent]:
         pass
 
+    def mimeType(self) -> str:
+        return 'application/timeline-event'
+
     def cardClass(self):
         return BackstoryCard
 
     def refresh(self):
-        self._spacers.clear()
-        clear_layout(self.layout())
+        clear_layout(self)
 
-        prev_alignment = None
+        auto_pos = Position.RIGHT
         for i, backstory in enumerate(self.events()):
-            if prev_alignment is None:
-                alignment = Qt.AlignmentFlag.AlignRight
-            elif backstory.follow_up and prev_alignment:
-                alignment = prev_alignment
-            elif prev_alignment == Qt.AlignmentFlag.AlignLeft:
-                alignment = Qt.AlignmentFlag.AlignRight
-            else:
-                alignment = Qt.AlignmentFlag.AlignLeft
-            prev_alignment = alignment
-            event = BackstoryCardPlaceholder(self.cardClass()(backstory, self._theme), alignment, parent=self,
-                                             compact=self._compact)
-            event.card.deleteRequested.connect(self._remove)
+            if backstory.position is None:
+                backstory.position = auto_pos
+                auto_pos = auto_pos.toggle()
 
-            self._spacers.append(event.spacer)
-            event.spacer.setFixedWidth(self.width() // 2 + 3)
+            row = self.__initEntityRow(backstory)
+            self.layout().addWidget(row)
 
-            self._addControlButtons(i)
-            self._layout.addWidget(event)
+        wdgPlaceholders = PlaceholdersRow(self.mimeType())
+        wdgPlaceholders.placeholderLeft.btnPlus.clicked.connect(lambda: self.add(Position.LEFT))
+        wdgPlaceholders.placeholderRight.btnPlus.clicked.connect(lambda: self.add(Position.RIGHT))
+        wdgPlaceholders.placeholderCenter.btnPlus.clicked.connect(lambda: self.add(Position.CENTER))
+        wdgPlaceholders.dropped.connect(partial(self._dropped, wdgPlaceholders))
+        self.layout().addWidget(wdgPlaceholders)
 
-            event.card.edited.connect(self.changed.emit)
-            event.card.relationChanged.connect(self.changed.emit)
-            event.card.relationChanged.connect(self.refresh)
-
-        self._addControlButtons(-1)
         spacer_ = vspacer()
         spacer_.setMinimumHeight(self._endSpacerMinHeight)
         self.layout().addWidget(spacer_)
@@ -295,29 +367,74 @@ class TimelineWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(QColor(self._theme.timeline_color)))
-        painter.drawRect(int(self.width() / 2) - 3, self._lineTopMargin, 6, self.height() - self._lineTopMargin)
+        painter.drawRect(int(self.width() / 2) - 3, 0, 6, self.height())
 
         painter.end()
 
-    def add(self, pos: int = -1):
-        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR)
-        if pos >= 0:
-            self.events().insert(pos, backstory)
-        else:
-            self.events().append(backstory)
-        self.refresh()
+    def add(self, position: Optional[Position] = None):
+        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        self.events().append(backstory)
+
+        row = self.__initEntityRow(backstory)
+        insert_before_the_end(self, row, 2)
+        fade_in(row)
+
         self.changed.emit()
 
-    def _remove(self, card: BackstoryCard):
+    def dragStartedEvent(self, row: TimelineEntityRow):
+        self._dragged = row
+        self._dragged.setHidden(True)
+
+    def dragFinishedEvent(self, row: TimelineEntityRow):
+        if self._dragged is not None:
+            row.setVisible(True)
+
+    def _insert(self, event: TimelineEntityRow, position: Position):
+        i = self.layout().indexOf(event)
+        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        self.events().insert(i, backstory)
+
+        row = self.__initEntityRow(backstory)
+        self.layout().insertWidget(i, row)
+        fade_in(row)
+
+        self.changed.emit()
+
+    def _dropped(self, row: TimelineEntityRow, position: Position):
+        event = self._dragged.card.backstory
+        event.position = position
+
+        newRow = self.__initEntityRow(event)
+        i = self.layout().indexOf(row)
+        self.layout().insertWidget(i, newRow)
+
+        new_events: List[BackstoryEvent] = []
+        for i in range(self.layout().count()):
+            item = self.layout().itemAt(i)
+            if item.widget() and item.widget() is not self._dragged and isinstance(item.widget(), TimelineEntityRow):
+                new_events.append(item.widget().card.backstory)
+
+        self.events()[:] = new_events
+
+        remove_and_gc(self, self._dragged)
+        self._dragged = None
+
+        self.changed.emit()
+
+    def _remove(self, row: TimelineEntityRow, card: BackstoryCard):
         self.events().remove(card.backstory)
+        fade_out_and_gc(self, row)
 
-        self.refresh()
         self.changed.emit()
 
-    def _addControlButtons(self, pos: int):
-        control = _ControlButtons(self._theme, self)
-        control.btnPlus.clicked.connect(partial(self.add, pos))
-        self._layout.addWidget(control, alignment=Qt.AlignmentFlag.AlignHCenter)
+    def __initEntityRow(self, event: BackstoryEvent) -> TimelineEntityRow:
+        row = TimelineEntityRow(self.cardClass()(event, self._theme), parent=self)
+        row.insert.connect(partial(self._insert, row))
+        row.dropped.connect(partial(self._dropped, row))
+        row.card.deleteRequested.connect(partial(self._remove, row))
+        row.card.edited.connect(self.changed)
+
+        return row
 
 
 class TimelineGridPlaceholder(QWidget):

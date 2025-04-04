@@ -50,7 +50,7 @@ from plotlyst.view.style.text import apply_text_color
 from plotlyst.view.widget.button import DotsMenuButton
 from plotlyst.view.widget.display import Icon, PopupDialog, DotsDragIcon
 from plotlyst.view.widget.input import AutoAdjustableTextEdit, AutoAdjustableLineEdit, MarkdownPopupTextEditorToolbar
-from plotlyst.view.widget.timeline import TimelineWidget, BackstoryCard, TimelineTheme
+from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme
 from plotlyst.view.widget.topic import TopicSelectionDialog
 from plotlyst.view.widget.utility import IconSelectorDialog, ColorSelectorButton
 from plotlyst.view.widget.world._topics import ecological_topics, cultural_topics, historical_topics, \
@@ -692,11 +692,10 @@ class EntityTimelineCard(BackstoryCard):
         self.setMaximumWidth(450)
 
 
-class EntityTimelineWidget(TimelineWidget):
+class EntityTimelineWidget(TimelineLinearWidget):
     def __init__(self, element: WorldBuildingEntityElement, palette: WorldBuildingPalette, parent=None):
         super().__init__(TimelineTheme(timeline_color=palette.primary_color, card_bg_color=palette.tertiary_color),
-                         parent,
-                         compact=False)
+                         parent)
         self.element = element
         self.refresh()
 

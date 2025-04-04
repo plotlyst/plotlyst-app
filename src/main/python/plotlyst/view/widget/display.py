@@ -442,7 +442,7 @@ class PopupDialog(QDialog):
         return size
 
 
-class LazyWidget(QWidget):
+class LazyWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._initialized = False

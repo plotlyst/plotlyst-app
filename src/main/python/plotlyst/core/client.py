@@ -48,7 +48,7 @@ from plotlyst.core.domain import Novel, Character, Scene, Chapter, SceneStage, \
     DocumentProgress, ReaderQuestion, SceneReaderQuestion, ImageRef, SceneReaderInformation, \
     CharacterProfileSectionReference, CharacterMultiAttribute, default_character_profile, CharacterPersonality, \
     StrengthWeaknessAttribute, PremiseBuilder, SceneFunctions, Location, default_locations, TopicElement, StoryType, \
-    DailyProductivity, NovelInfo
+    DailyProductivity, NovelInfo, SceneMigration
 from plotlyst.core.template import Role, exclude_if_empty, exclude_if_black, exclude_if_false
 from plotlyst.env import app_env
 
@@ -167,6 +167,11 @@ class ScenePlotReferenceInfo:
     data: ScenePlotReferenceData = ScenePlotReferenceData()
 
 
+@dataclass
+class SceneMigrationInfo:
+    migrated_functions: bool = False
+
+
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclass
 class SceneInfo:
@@ -197,6 +202,7 @@ class SceneInfo:
     plot_pos_progress: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     plot_neg_progress: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     functions: SceneFunctions = field(default_factory=SceneFunctions)
+    migration: SceneMigrationInfo = field(default_factory=SceneMigrationInfo)
 
 
 @dataclass
@@ -611,7 +617,8 @@ class JsonClient:
                               purpose=info.purpose, outcome=info.outcome, story_elements=info.story_elements,
                               structure=info.structure, questions=info.questions, info=info.info,
                               progress=info.progress, plot_pos_progress=info.plot_pos_progress,
-                              plot_neg_progress=info.plot_neg_progress, functions=info.functions)
+                              plot_neg_progress=info.plot_neg_progress, functions=info.functions,
+                              migration=SceneMigration(info.migration.migrated_functions))
                 scenes.append(scene)
 
         tag_types = novel_info.tag_types
@@ -751,7 +758,7 @@ class JsonClient:
                          story_elements=scene.story_elements,
                          structure=scene.structure, questions=scene.questions, info=scene.info, progress=scene.progress,
                          plot_pos_progress=scene.plot_pos_progress, plot_neg_progress=scene.plot_neg_progress,
-                         functions=scene.functions)
+                         functions=scene.functions, migration=SceneMigrationInfo(scene.migration.migrated_functions))
         self.__persist_info(self.scenes_dir(novel), info)
 
     def _persist_diagram(self, novel: Novel, diagram: Diagram):
