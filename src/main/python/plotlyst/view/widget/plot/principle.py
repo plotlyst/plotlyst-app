@@ -42,74 +42,74 @@ from plotlyst.view.widget.display import Icon, PopupDialog
 from plotlyst.view.widget.input import Toggle, TextEditBubbleWidget
 
 
-def principle_icon(type: PlotPrincipleType) -> QIcon:
+def principle_icon(type: PlotPrincipleType, color_on=None) -> QIcon:
     if type == PlotPrincipleType.GOAL:
-        return IconRegistry.goal_icon('grey')
+        return IconRegistry.goal_icon('grey', color_on or 'darkBlue')
     elif type == PlotPrincipleType.ANTAGONIST:
-        return IconRegistry.from_name(antagonist_role.icon, 'grey', antagonist_role.icon_color)
+        return IconRegistry.from_name(antagonist_role.icon, 'grey', color_on or antagonist_role.icon_color)
     elif type == PlotPrincipleType.CONFLICT:
-        return IconRegistry.conflict_icon('grey')
+        return IconRegistry.conflict_icon('grey', color_on or '#f3a712')
     elif type == PlotPrincipleType.STAKES:
-        return IconRegistry.from_name('mdi.sack', 'grey', '#e9c46a')
+        return IconRegistry.from_name('mdi.sack', 'grey', color_on or '#e9c46a')
     elif type == PlotPrincipleType.QUESTION:
-        return IconRegistry.from_name('ei.question-sign', 'grey', 'darkBlue')
+        return IconRegistry.from_name('ei.question-sign', 'grey', color_on or 'darkBlue')
     elif type == PlotPrincipleType.THEME:
-        return IconRegistry.theme_icon('grey')
+        return IconRegistry.theme_icon('grey', color_on or '#9d4edd')
 
     elif type == PlotPrincipleType.POSITIVE_CHANGE:
-        return IconRegistry.from_name('mdi.emoticon-happy', 'grey', '#588157')
+        return IconRegistry.from_name('mdi.emoticon-happy', 'grey', color_on or '#588157')
     elif type == PlotPrincipleType.NEGATIVE_CHANGE:
-        return IconRegistry.from_name('mdi6.emoticon-devil', 'grey', '#c1121f')
+        return IconRegistry.from_name('mdi6.emoticon-devil', 'grey', color_on or '#c1121f')
     elif type == PlotPrincipleType.DESIRE:
-        return IconRegistry.from_name('ei.star-alt', 'grey', '#e9c46a')
+        return IconRegistry.from_name('ei.star-alt', 'grey', color_on or '#e9c46a')
     elif type == PlotPrincipleType.NEED:
-        return IconRegistry.from_name('mdi.key', 'grey', '#cbc0d3')
+        return IconRegistry.from_name('mdi.key', 'grey', color_on or '#cbc0d3')
     elif type == PlotPrincipleType.EXTERNAL_CONFLICT:
-        return IconRegistry.conflict_icon('grey')
+        return IconRegistry.conflict_icon('grey', color_on or '#f3a712')
     elif type == PlotPrincipleType.INTERNAL_CONFLICT:
-        return IconRegistry.conflict_self_icon('grey')
+        return IconRegistry.conflict_self_icon('grey', color_on or CONFLICT_SELF_COLOR)
     elif type == PlotPrincipleType.FLAW:
-        return IconRegistry.from_name('mdi.virus', 'grey', '#b5179e')
+        return IconRegistry.from_name('mdi.virus', 'grey', color_on or '#b5179e')
 
     elif type == PlotPrincipleType.LINEAR_PROGRESSION:
-        return IconRegistry.from_name('mdi.middleware', 'grey', 'black')
+        return IconRegistry.from_name('mdi.middleware', 'grey', color_on or 'black')
     elif type == PlotPrincipleType.DYNAMIC_ELEMENTS:
-        return IconRegistry.from_name('mdi6.chart-timeline-variant-shimmer', 'grey', 'black')
+        return IconRegistry.from_name('mdi6.chart-timeline-variant-shimmer', 'grey', color_on or 'black')
 
     elif type == PlotPrincipleType.SKILL_SET:
-        return IconRegistry.from_name('fa5s.tools', 'grey', 'black')
+        return IconRegistry.from_name('fa5s.tools', 'grey', color_on or 'black')
     elif type == PlotPrincipleType.TICKING_CLOCK:
         return IconRegistry.ticking_clock_icon('grey')
     elif type == PlotPrincipleType.WAR:
-        return IconRegistry.from_name('mdi.skull', 'grey', 'black')
+        return IconRegistry.from_name('mdi.skull', 'grey', color_on or 'black')
     elif type == PlotPrincipleType.WAR_MENTAL_EFFECT:
-        return IconRegistry.from_name('mdi6.head-flash-outline', 'grey', 'black')
+        return IconRegistry.from_name('mdi6.head-flash-outline', 'grey', color_on or 'black')
     elif type == PlotPrincipleType.MONSTER:
-        return IconRegistry.from_name('ri.ghost-2-fill', 'grey', antagonist_role.icon_color)
+        return IconRegistry.from_name('ri.ghost-2-fill', 'grey', color_on or antagonist_role.icon_color)
     elif type == PlotPrincipleType.CONFINED_SPACE:
-        return IconRegistry.from_name('fa5s.house-user', 'grey', '#ffb703')
+        return IconRegistry.from_name('fa5s.house-user', 'grey', color_on or '#ffb703')
     elif type == PlotPrincipleType.CRIME:
-        return IconRegistry.from_name('ri.knife-blood-fill', 'grey', 'black')
+        return IconRegistry.from_name('ri.knife-blood-fill', 'grey', color_on or 'black')
     elif type == PlotPrincipleType.SLEUTH:
-        return IconRegistry.from_name('mdi.incognito', 'grey', 'black')
+        return IconRegistry.from_name('mdi.incognito', 'grey', color_on or 'black')
     elif type == PlotPrincipleType.AUTHORITY:
-        return IconRegistry.from_name('mdi.incognito', 'grey', antagonist_role.icon_color)
+        return IconRegistry.from_name('mdi.incognito', 'grey', color_on or antagonist_role.icon_color)
     elif type == PlotPrincipleType.MACGUFFIN:
-        return IconRegistry.from_name('fa5s.parachute-box', 'grey', '#0077b6')
+        return IconRegistry.from_name('fa5s.parachute-box', 'grey', color_on or '#0077b6')
     elif type == PlotPrincipleType.CRIME_CLOCK:
         return IconRegistry.ticking_clock_icon('grey')
     elif type == PlotPrincipleType.SCHEME:
-        return IconRegistry.from_name('mdi.floor-plan', 'grey', 'black')
+        return IconRegistry.from_name('mdi.floor-plan', 'grey', color_on or 'black')
     elif type == PlotPrincipleType.SELF_DISCOVERY:
-        return IconRegistry.from_name('mdi.fingerprint', 'grey', '#cdb4db')
+        return IconRegistry.from_name('mdi.fingerprint', 'grey', color_on or '#cdb4db')
     elif type == PlotPrincipleType.LOSS_OF_INNOCENCE:
-        return IconRegistry.from_name('fa5s.dove', 'grey', '#a2d2ff')
+        return IconRegistry.from_name('fa5s.dove', 'grey', color_on or '#a2d2ff')
     elif type == PlotPrincipleType.MATURITY:
-        return IconRegistry.from_name('ri.seedling-fill', 'grey', '#2a9d8f')
+        return IconRegistry.from_name('ri.seedling-fill', 'grey', color_on or '#2a9d8f')
     elif type == PlotPrincipleType.FIRST_LOVE:
-        return IconRegistry.from_name('fa5s.heart', 'grey', '#e76f51')
+        return IconRegistry.from_name('fa5s.heart', 'grey', color_on or '#e76f51')
     elif type == PlotPrincipleType.MENTOR:
-        return IconRegistry.from_name('mdi.compass-rose', 'grey', '#80ced7')
+        return IconRegistry.from_name('mdi.compass-rose', 'grey', color_on or '#80ced7')
 
     else:
         return QIcon()
@@ -276,6 +276,7 @@ internal_principles = {PlotPrincipleType.POSITIVE_CHANGE, PlotPrincipleType.NEGA
 
 class PrincipleSelectorObject(QObject):
     principleToggled = pyqtSignal(PlotPrincipleType, bool)
+    editorToggled = pyqtSignal(DynamicPlotPrincipleGroupType, bool)
 
 
 class GenrePrincipleSelectorDialog(PopupDialog):

@@ -60,7 +60,7 @@ class NovelView(AbstractNovelView):
         self.ui.wdgStructure.setNovel(self.novel)
 
         self.plot_editor = PlotEditor(self.novel)
-        self.ui.wdgPlotContainer.layout().addWidget(self.plot_editor)
+        self.ui.tabPlot.layout().addWidget(self.plot_editor)
 
         self.ui.wdgTagsContainer.setNovel(self.novel)
 
