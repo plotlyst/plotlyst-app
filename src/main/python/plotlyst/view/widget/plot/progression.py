@@ -368,20 +368,10 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
             if isinstance(wdg, DynamicPlotPrincipleWidget):
                 wdg.refreshCharacters()
 
-    def updatePrinciple(self, principle: DynamicPlotPrinciple):
-        for wdg in self._beatWidgets:
-            if isinstance(wdg, AllyPlotPrincipleWidget):
-                if wdg.principle == principle:
-                    wdg.updateAlly()
-                    return
-
     @overrides
     def _newBeatWidget(self, item: DynamicPlotPrinciple) -> OutlineItemWidget:
         if self.group.type in [DynamicPlotPrincipleGroupType.SUSPECTS, DynamicPlotPrincipleGroupType.CAST]:
             wdg = DynamicPlotMultiPrincipleWidget(self.novel, item, self.group.type)
-        elif self.group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            wdg = AllyPlotPrincipleWidget(self.novel, item)
-            wdg.characterChanged.connect(partial(self.characterChanged.emit, item))
         else:
             wdg = DynamicPlotPrincipleWidget(self.novel, item)
         wdg.removed.connect(self._beatRemoved)
