@@ -711,6 +711,7 @@ class PlotWidget(QWidget, EventListener):
                 self.plot.allies = DynamicPlotPrincipleGroup(groupType)
                 self._save()
             wdg = AlliesPrinciplesGroupWidget(self.novel, self.plot.allies)
+            wdg.changed.connect(self._save)
             self.wdgAllies.layout().addWidget(wdg)
         #     else:
         #         wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
