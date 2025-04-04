@@ -36,7 +36,7 @@ from plotlyst.core.domain import Scene, Novel, Plot, \
 from plotlyst.event.core import emit_event, EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneChangedEvent, StorylineCreatedEvent, SceneAddedEvent, SceneDeletedEvent, \
-    SceneOrderChangedEvent, StorylineRemovedEvent, StorylineChangedEvent, SceneEditRequested, SceneSelectedEvent
+    StorylineRemovedEvent, StorylineChangedEvent, SceneEditRequested, SceneSelectedEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import tool_btn, fade_out_and_gc, insert_before_the_end, \
     label, push_btn, shadow, fade_in
@@ -244,7 +244,7 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         self.refresh()
 
         dispatcher = event_dispatchers.instance(self._novel)
-        dispatcher.register(self, SceneChangedEvent, SceneAddedEvent, SceneDeletedEvent, SceneOrderChangedEvent,
+        dispatcher.register(self, SceneChangedEvent, SceneAddedEvent, SceneDeletedEvent,
                             SceneSelectedEvent, StorylineChangedEvent, StorylineCreatedEvent,
                             StorylineRemovedEvent)
 
@@ -272,15 +272,15 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
             index = self.cardsView.layout().indexOf(card)
             self._removeSceneReferences(index)
             self.cardsView.remove(event.scene)
-        elif isinstance(event, SceneOrderChangedEvent):
-            for line in self._plots.values():
-                clear_layout(line)
-                spacer_wdg = spacer() if self._scenesInColumns else vspacer()
-                line.layout().addWidget(spacer_wdg)
-                for scene in self._novel.scenes:
-                    self._addPlaceholder(line, scene)
-            self.initRefs()
-            self.cardsView.reorderCards(self._novel.scenes)
+        # elif isinstance(event, SceneOrderChangedEvent):
+        #     for line in self._plots.values():
+        #         clear_layout(line)
+        #         spacer_wdg = spacer() if self._scenesInColumns else vspacer()
+        #         line.layout().addWidget(spacer_wdg)
+        #         for scene in self._novel.scenes:
+        #             self._addPlaceholder(line, scene)
+        #     self.initRefs()
+        #     self.cardsView.reorderCards(self._novel.scenes)
         elif isinstance(event, SceneSelectedEvent):
             self.cardsView.selectCard(event.scene)
         elif isinstance(event, StorylineChangedEvent):
@@ -289,6 +289,17 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
             self._handleStorylineCreated(event.storyline)
         elif isinstance(event, StorylineRemovedEvent):
             self._handleStorylineRemoved(event.storyline)
+
+    def sceneOrderChangedEvent(self):
+        for line in self._plots.values():
+            clear_layout(line)
+            spacer_wdg = spacer() if self._scenesInColumns else vspacer()
+            line.layout().addWidget(spacer_wdg)
+            for scene in self._novel.scenes:
+                self._addPlaceholder(line, scene)
+        self.initRefs()
+        self.cardsView.clearSelection()
+        self.cardsView.reorderCards(self._novel.scenes)
 
     def setOrientation(self, orientation: Qt.Orientation):
         clear_layout(self.wdgRows, auto_delete=self._scenesInColumns)  # delete plots

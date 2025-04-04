@@ -162,7 +162,7 @@ class ScenesOutlineView(AbstractNovelView):
         self.ui.tblScenes.horizontalHeader().setProperty('main-header', True)
         self.ui.tblScenes.verticalHeader().setFixedWidth(40)
         self.ui.tblScenes.verticalHeader().setVisible(True)
-        self.tblModel.orderChanged.connect(self._on_scene_moved_in_table)
+        # self.tblModel.orderChanged.connect(self._on_scene_moved_in_table)
         self.tblModel.sceneChanged.connect(self._on_scene_changed_in_table)
         self.ui.tblScenes.setColumnWidth(ScenesTableModel.ColTitle, 250)
         self.ui.tblScenes.setColumnWidth(ScenesTableModel.ColCharacters, 170)
@@ -353,6 +353,7 @@ class ScenesOutlineView(AbstractNovelView):
             return
         elif isinstance(event, SceneOrderChangedEvent):
             self.ui.cards.reorderCards(self.novel.scenes)
+            self._storyGrid.sceneOrderChangedEvent()
             self._handle_scene_order_changed()
             return
         elif isinstance(event, SceneStoryBeatChangedEvent):
@@ -790,12 +791,14 @@ class ScenesOutlineView(AbstractNovelView):
         self.novel.scenes[:] = scenes
         self._handle_scene_order_changed()
         self.selected_card = None
-        emit_event(self.novel, SceneOrderChangedEvent(self))
 
-    def _on_scene_moved_in_table(self):
-        self.ui.cards.reorderCards(self.novel.scenes)
-        self._handle_scene_order_changed()
         emit_event(self.novel, SceneOrderChangedEvent(self))
+        self._storyGrid.sceneOrderChangedEvent()
+
+    # def _on_scene_moved_in_table(self):
+    #     self.ui.cards.reorderCards(self.novel.scenes)
+    #     self._handle_scene_order_changed()
+    #     emit_event(self.novel, SceneOrderChangedEvent(self))
 
     def _on_scene_changed_in_table(self, scene: Scene):
         emit_event(self.novel, SceneChangedEvent(self, scene))

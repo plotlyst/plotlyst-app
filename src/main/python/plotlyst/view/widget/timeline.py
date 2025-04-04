@@ -22,9 +22,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Any, Dict
 
-
 import qtanim
-
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QTimer
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent, \
     QDragEnterEvent, QDragLeaveEvent, QDropEvent
@@ -42,7 +40,6 @@ from plotlyst.core.domain import BackstoryEvent, Position
 from plotlyst.env import app_env
 from plotlyst.view.common import tool_btn, frame, columns, rows, scroll_area, fade_in, insert_before_the_end, shadow, \
     fade_out_and_gc, action, remove_and_gc
-
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import DotsDragIcon
