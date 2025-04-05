@@ -895,7 +895,7 @@ class BackstoryEditorMenu(MenuWidget):
 
 class CharacterBackstoryCard(BackstoryCard):
     def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
-        super(CharacterBackstoryCard, self).__init__(backstory, theme, parent)
+        super(CharacterBackstoryCard, self).__init__(backstory, theme, parent, iconPicker=False)
         self.btnType.clicked.connect(self._showMenu)
         self.refresh()
 

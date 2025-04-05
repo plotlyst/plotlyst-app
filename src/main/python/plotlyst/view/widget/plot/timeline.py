@@ -54,7 +54,7 @@ class StorylineTimelineWidget(TimelineLinearWidget):
 
 class StorylineVillainCard(BackstoryCard):
     def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
-        super().__init__(backstory, theme, parent=parent)
+        super().__init__(backstory, theme, parent=parent, iconPicker=False)
         self.refresh()
 
         self.btnType.setIcon(IconRegistry.from_name('ri.ghost-2-fill', antagonist_role.icon_color))

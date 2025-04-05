@@ -43,6 +43,7 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import DotsDragIcon
 from plotlyst.view.widget.input import AutoAdjustableTextEdit
+from plotlyst.view.widget.utility import IconSelectorDialog
 
 
 @dataclass
@@ -57,7 +58,7 @@ class BackstoryCard(QWidget):
     edited = pyqtSignal()
     deleteRequested = pyqtSignal(object)
 
-    def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
+    def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None, iconPicker: bool = True):
         super().__init__(parent)
         self.backstory = backstory
         self._theme = theme
@@ -72,6 +73,8 @@ class BackstoryCard(QWidget):
 
         self.btnType = tool_btn(QIcon(), parent=self)
         self.btnType.setIconSize(QSize(24, 24))
+        if iconPicker:
+            self.btnType.clicked.connect(self._selectIcon)
 
         self.btnDrag = DotsDragIcon()
         self.btnDrag.setVisible(False)
@@ -155,6 +158,11 @@ class BackstoryCard(QWidget):
     def _keyphraseEdited(self):
         self.backstory.keyphrase = self.lineKeyPhrase.text()
         self.edited.emit()
+
+    def _selectIcon(self):
+        result = IconSelectorDialog.popup(pickColor=False)
+        if result:
+            self._iconChanged(result[0])
 
     def _iconChanged(self, icon: str):
         self.backstory.type_icon = icon
