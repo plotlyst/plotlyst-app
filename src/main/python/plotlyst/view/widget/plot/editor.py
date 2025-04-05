@@ -33,7 +33,8 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotType, Character, PlotPrinciple, \
     PlotPrincipleType, PlotProgressionItem, \
-    PlotProgressionItemType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup
+    PlotProgressionItemType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup, BackstoryEvent, \
+    Position
 from plotlyst.core.template import antagonist_role
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -739,12 +740,16 @@ class PlotWidget(QWidget, EventListener):
             self._alliesEditor.changed.connect(self._save)
             self.wdgAllies.layout().addWidget(self._alliesEditor)
         if groupType == DynamicPlotPrincipleGroupType.TIMELINE:
+            if not self.plot.timeline:
+                self.plot.timeline.append(BackstoryEvent('', ''))
             self._timelineEditor = StorylineTimelineWidget(self.plot)
             self._timelineEditor.refresh()
             self._timelineEditor.changed.connect(self._save)
             self._timelineEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageTimeline))
             self.wdgTimeline.layout().addWidget(self._timelineEditor)
         if groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
+            if not self.plot.villain:
+                self.plot.villain.append(BackstoryEvent('', '', position=Position.CENTER))
             self._villainEditor = StorylineVillainEvolutionWidget(self.plot)
             self._villainEditor.refresh()
             self._villainEditor.changed.connect(self._save)
