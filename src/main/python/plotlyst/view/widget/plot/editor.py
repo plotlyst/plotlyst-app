@@ -747,6 +747,7 @@ class PlotWidget(QWidget, EventListener):
         if groupType == DynamicPlotPrincipleGroupType.TIMELINE:
             if not self.plot.timeline:
                 self.plot.timeline.append(BackstoryEvent('', ''))
+                self._save()
             self._timelineEditor = StorylineTimelineWidget(self.plot)
             self._timelineEditor.refresh()
             self._timelineEditor.changed.connect(self._save)
@@ -755,6 +756,7 @@ class PlotWidget(QWidget, EventListener):
         if groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
             if not self.plot.villain:
                 self.plot.villain.append(BackstoryEvent('', '', position=Position.CENTER))
+                self._save()
             self._villainEditor = StorylineVillainEvolutionWidget(self.plot)
             self._villainEditor.refresh()
             self._villainEditor.changed.connect(self._save)
