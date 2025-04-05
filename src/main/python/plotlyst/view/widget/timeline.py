@@ -48,6 +48,7 @@ from plotlyst.view.widget.input import AutoAdjustableTextEdit
 @dataclass
 class TimelineTheme:
     timeline_color: str = PLOTLYST_SECONDARY_COLOR
+    timeline_opacity: float = 1.0
     card_bg_color: str = '#ffe8d6'
 
 
@@ -383,8 +384,10 @@ class TimelineLinearWidget(QWidget):
     @overrides
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
+        painter.setPen(Qt.PenStyle.NoPen)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(QColor(self._theme.timeline_color)))
+        painter.setOpacity(self._theme.timeline_opacity)
         painter.drawRect(int(self.width() / 2) - 3, 0, 6, self.height())
 
         painter.end()

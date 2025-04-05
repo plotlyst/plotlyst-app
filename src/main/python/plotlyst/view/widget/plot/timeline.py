@@ -37,7 +37,7 @@ class StorylineTimelineCard(BackstoryCard):
 
 class StorylineTimelineWidget(TimelineLinearWidget):
     def __init__(self, plot: Plot, parent=None):
-        theme = TimelineTheme(plot.icon_color, '#F6EAE1')
+        theme = TimelineTheme(plot.icon_color, timeline_opacity=0.6, card_bg_color='#F6EAE1')
         super().__init__(theme, parent)
         self._plot = plot
 
@@ -58,8 +58,8 @@ class StorylineVillainCard(BackstoryCard):
         self.btnType.setIcon(IconRegistry.from_name('ri.ghost-2-fill', antagonist_role.icon_color))
         self.lineKeyPhrase.setReadOnly(True)
         self.lineKeyPhrase.setText('Evolution')
-        self.lineKeyPhrase.setPlaceholderText("How the villain's power evolved or revealed continuously")
-        self.setMinimumWidth(250)
+        self.textSummary.setPlaceholderText("How the monster's power evolves")
+        self.setMinimumWidth(400)
 
     @overrides
     def _frameColor(self):
@@ -68,7 +68,7 @@ class StorylineVillainCard(BackstoryCard):
 
 class StorylineVillainEvolutionWidget(TimelineLinearWidget):
     def __init__(self, plot: Plot, parent=None):
-        theme = TimelineTheme(antagonist_role.icon_color, '#F6EAE1')
+        theme = TimelineTheme(antagonist_role.icon_color, card_bg_color='#F6EAE1')
         super().__init__(theme, parent, centerOnly=True)
         self._plot = plot
 
