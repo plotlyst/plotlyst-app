@@ -593,17 +593,14 @@ class PlotWidget(QWidget, EventListener):
             radius = max(self.wdgMonster.width(), self.wdgMonster.height()) / 2
             gradient = QRadialGradient(center, radius)
 
-            gradient.setColorAt(0.0, QColor(antagonist_role.icon_color))
-            gradient.setColorAt(0.6, QColor(antagonist_role.icon_color))
-            gradient.setColorAt(1.0, QColor("#E56953"))
+            gradient.setColorAt(0.0, QColor('#872210'))
+            gradient.setColorAt(0.5, QColor(antagonist_role.icon_color))
+            gradient.setColorAt(1.0, QColor("#FAB2A5"))
 
             painter.fillRect(self.wdgMonster.rect(), gradient)
 
-            IconRegistry.from_name('ri.ghost-2-fill').paint(
-                painter,
-                self.wdgMonster.rect(),
-                alignment=Qt.AlignmentFlag.AlignCenter
-            )
+            IconRegistry.from_name('ri.ghost-2-fill').paint(painter, self.wdgMonster.rect(),
+                                                            alignment=Qt.AlignmentFlag.AlignCenter)
 
         return super().eventFilter(watched, event)
 
