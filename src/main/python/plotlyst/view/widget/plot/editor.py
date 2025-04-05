@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from functools import partial
 from typing import Set, Dict, Tuple, List, Optional
 
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent, QObject
-from PyQt6.QtGui import QColor, QIcon, QResizeEvent, QEnterEvent, QPaintEvent, QPainter, QRadialGradient
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent, QObject, QRectF
+from PyQt6.QtGui import QColor, QIcon, QResizeEvent, QEnterEvent, QPaintEvent, QPainter, QRadialGradient, QPainterPath
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame, QLabel
 from overrides import overrides
 from qthandy import flow, incr_font, \
@@ -588,19 +588,27 @@ class PlotWidget(QWidget, EventListener):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if watched is self.wdgMonster and isinstance(event, QPaintEvent):
             painter = QPainter(self.wdgMonster)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-            center = self.wdgMonster.rect().center().toPointF()
-            radius = max(self.wdgMonster.width(), self.wdgMonster.height()) / 2
+            rect: QRectF = self.wdgMonster.rect().toRectF()
+            corner_radius = 12
+
+            path = QPainterPath()
+            path.addRoundedRect(rect, corner_radius, corner_radius)
+
+            center = rect.center()
+            radius = max(rect.width(), rect.height()) / 2
             gradient = QRadialGradient(center, radius)
 
             gradient.setColorAt(0.0, QColor('#872210'))
             gradient.setColorAt(0.5, QColor(antagonist_role.icon_color))
             gradient.setColorAt(1.0, QColor("#FAB2A5"))
 
-            painter.fillRect(self.wdgMonster.rect(), gradient)
+            painter.fillPath(path, gradient)
 
-            IconRegistry.from_name('ri.ghost-2-fill').paint(painter, self.wdgMonster.rect(),
-                                                            alignment=Qt.AlignmentFlag.AlignCenter)
+            IconRegistry.from_name('ri.ghost-2-fill').paint(
+                painter, self.wdgMonster.rect(), alignment=Qt.AlignmentFlag.AlignCenter
+            )
 
         return super().eventFilter(watched, event)
 
