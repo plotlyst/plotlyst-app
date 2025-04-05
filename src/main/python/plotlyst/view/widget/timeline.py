@@ -30,7 +30,7 @@ from PyQt6.QtWidgets import QWidget, QSizePolicy, \
 from overrides import overrides
 from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc, retain_when_hidden, \
     translucent, decr_icon
-from qthandy.filter import VisibilityToggleEventFilter, DragEventFilter, DropEventFilter
+from qthandy.filter import VisibilityToggleEventFilter, DragEventFilter, DropEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR, NEUTRAL_EMOTION_COLOR, \
@@ -335,6 +335,7 @@ class TimelineEntityRow(QWidget):
 
 class TimelineLinearWidget(QWidget):
     changed = pyqtSignal()
+    addedToTheEnd = pyqtSignal()
 
     def __init__(self, theme: Optional[TimelineTheme] = None, parent=None, centerOnly: bool = False):
         super().__init__(parent)
@@ -357,6 +358,16 @@ class TimelineLinearWidget(QWidget):
 
     def cardClass(self):
         return BackstoryCard
+
+    def setAddButtonEnabled(self, color: str = 'grey'):
+        btnAdd = tool_btn(IconRegistry.plus_icon(color), transparent_=True, parent=self)
+        btnAdd.installEventFilter(OpacityEventFilter(btnAdd))
+        btnAdd.setIconSize(QSize(32, 32))
+        btnAdd.clicked.connect(self.add)
+
+        btnAdd.setGeometry(0, 0, btnAdd.sizeHint().width(), btnAdd.sizeHint().height())
+        margins(self, top=btnAdd.sizeHint().height())
+        btnAdd.raise_()
 
     def refresh(self):
         clear_layout(self)
@@ -401,6 +412,7 @@ class TimelineLinearWidget(QWidget):
         fade_in(row)
 
         self.changed.emit()
+        QTimer.singleShot(45, lambda: self.addedToTheEnd.emit())
 
     def dragStartedEvent(self, row: TimelineEntityRow):
         self._dragged = row

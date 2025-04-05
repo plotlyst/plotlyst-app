@@ -41,6 +41,8 @@ class StorylineTimelineWidget(TimelineLinearWidget):
         super().__init__(theme, parent)
         self._plot = plot
 
+        self.setAddButtonEnabled()
+
     @overrides
     def events(self) -> List[BackstoryEvent]:
         return self._plot.timeline
@@ -71,6 +73,7 @@ class StorylineVillainEvolutionWidget(TimelineLinearWidget):
         theme = TimelineTheme(antagonist_role.icon_color, card_bg_color='#F6EAE1')
         super().__init__(theme, parent, centerOnly=True)
         self._plot = plot
+        self.setAddButtonEnabled('black')
 
     @overrides
     def events(self) -> List[BackstoryEvent]:

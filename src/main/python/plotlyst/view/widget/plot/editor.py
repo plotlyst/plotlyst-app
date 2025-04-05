@@ -43,7 +43,7 @@ from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, label, frame, tool_btn, columns, \
-    push_btn, link_buttons_to_pages, scroll_area, rows, exclusive_buttons
+    push_btn, link_buttons_to_pages, scroll_area, rows, exclusive_buttons, scroll_to_bottom
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
@@ -742,11 +742,13 @@ class PlotWidget(QWidget, EventListener):
             self._timelineEditor = StorylineTimelineWidget(self.plot)
             self._timelineEditor.refresh()
             self._timelineEditor.changed.connect(self._save)
+            self._timelineEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageTimeline))
             self.wdgTimeline.layout().addWidget(self._timelineEditor)
         if groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
             self._villainEditor = StorylineVillainEvolutionWidget(self.plot)
             self._villainEditor.refresh()
             self._villainEditor.changed.connect(self._save)
+            self._villainEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageMonster))
             self.wdgMonster.layout().addWidget(self._villainEditor)
 
     def _clearGroup(self, groupType: DynamicPlotPrincipleGroupType):

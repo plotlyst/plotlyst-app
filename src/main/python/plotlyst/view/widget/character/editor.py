@@ -37,7 +37,7 @@ from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR, CHARACTER_MAJOR_COLOR, \
-    CHARACTER_SECONDARY_COLOR, RELAXED_WHITE_COLOR
+    CHARACTER_SECONDARY_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import BackstoryEvent, Character, StrengthWeaknessAttribute
 from plotlyst.core.help import enneagram_help, mbti_help, character_roles_description, \
     character_role_examples, work_style_help, love_style_help
@@ -919,6 +919,7 @@ class CharacterTimelineWidget(TimelineLinearWidget):
         super(CharacterTimelineWidget, self).__init__(parent=parent)
         self.character: Optional[Character] = None
         self._endSpacerMinHeight = 200
+        self.setAddButtonEnabled(PLOTLYST_SECONDARY_COLOR)
 
     def setCharacter(self, character: Character):
         self.character = character
