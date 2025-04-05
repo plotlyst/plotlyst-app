@@ -18,18 +18,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from functools import partial
-from typing import List
 
 from PyQt6.QtCore import Qt, pyqtSignal, QPointF
-from PyQt6.QtGui import QIcon, QEnterEvent, QPaintEvent, QPainter, QBrush, QColor
+from PyQt6.QtGui import QPaintEvent, QPainter, QBrush, QColor
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, margins, transparent
+from qthandy import margins, transparent
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import RELAXED_WHITE_COLOR
-from plotlyst.core.domain import Novel, PlotType, PlotProgressionItem, \
-    PlotProgressionItemType, DynamicPlotPrincipleGroupType, DynamicPlotPrinciple, DynamicPlotPrincipleType, Plot, \
+from plotlyst.core.domain import Novel, DynamicPlotPrincipleGroupType, DynamicPlotPrinciple, DynamicPlotPrincipleType, \
     DynamicPlotPrincipleGroup, LayoutType, Character
 from plotlyst.core.template import antagonist_role
 from plotlyst.service.cache import entities_registry
@@ -40,132 +38,6 @@ from plotlyst.view.layout import group
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.outline import OutlineItemWidget, OutlineTimelineWidget
-
-storyline_progression_steps_descriptions = {
-    PlotType.Main: {
-        PlotProgressionItemType.BEGINNING: 'The initial state of the plot',
-        PlotProgressionItemType.MIDDLE: "The middle state of the plot's progression",
-        PlotProgressionItemType.ENDING: 'The resolution of the plot',
-        PlotProgressionItemType.EVENT: "A progress or setback in the plot"
-    },
-    PlotType.Internal: {
-        PlotProgressionItemType.BEGINNING: "The starting point of the character's change",
-        PlotProgressionItemType.MIDDLE: 'The middle stage of the character transformation',
-        PlotProgressionItemType.ENDING: 'How the character changed by the end of the story',
-        PlotProgressionItemType.EVENT: "A step towards or away from the character's change"
-    },
-    PlotType.Subplot: {
-        PlotProgressionItemType.BEGINNING: 'The initial state of the subplot',
-        PlotProgressionItemType.MIDDLE: "The middle state of the subplot's progression",
-        PlotProgressionItemType.ENDING: 'The resolution of the subplot',
-        PlotProgressionItemType.EVENT: 'A progress or setback in the subplot'
-    },
-    PlotType.Relation: {
-        PlotProgressionItemType.BEGINNING: 'The initial state of the relationship',
-        PlotProgressionItemType.MIDDLE: "The middle state of the relationship's evolution",
-        PlotProgressionItemType.ENDING: 'The final state of the relationship',
-        PlotProgressionItemType.EVENT: 'A change in the relationship where it gets either worse or better'
-    },
-    PlotType.Global: {
-        PlotProgressionItemType.BEGINNING: 'The initial state of the global storyline',
-        PlotProgressionItemType.MIDDLE: "The middle state of the global storyline's progression",
-        PlotProgressionItemType.ENDING: 'The resolution of the global storyline',
-        PlotProgressionItemType.EVENT: "A progress or setback in the global storyline"
-    },
-}
-
-
-class PlotProgressionEventWidget(OutlineItemWidget):
-    def __init__(self, novel: Novel, type: PlotType, item: PlotProgressionItem, parent=None):
-        self._type = type
-        self.beat = item
-        self.novel = novel
-        super().__init__(item, parent)
-        self._btnIcon.removeEventFilter(self._dragEventFilter)
-        self._btnIcon.setCursor(Qt.CursorShape.ArrowCursor)
-        self.setAcceptDrops(False)
-
-        self._initStyle()
-
-    @overrides
-    def mimeType(self) -> str:
-        return ''
-
-    @overrides
-    def enterEvent(self, event: QEnterEvent) -> None:
-        if self.beat.type == PlotProgressionItemType.EVENT:
-            self._btnRemove.setVisible(True)
-
-    @overrides
-    def _descriptions(self) -> dict:
-        return storyline_progression_steps_descriptions[self._type]
-
-    @overrides
-    def _icon(self) -> QIcon:
-        color = self._color()
-        if self.beat.type == PlotProgressionItemType.BEGINNING:
-            return IconRegistry.cause_icon(color)
-        elif self.beat.type == PlotProgressionItemType.MIDDLE:
-            return IconRegistry.from_name('mdi.middleware-outline', color)
-        elif self.beat.type == PlotProgressionItemType.ENDING:
-            return IconRegistry.from_name('mdi.ray-end', color)
-        else:
-            return IconRegistry.from_name('msc.debug-stackframe-dot', color)
-
-    @overrides
-    def _color(self) -> str:
-        return 'grey'
-
-    @overrides
-    def _initStyle(self):
-        name = None
-        if self.beat.type == PlotProgressionItemType.ENDING:
-            name = 'End'
-        elif self.beat.type == PlotProgressionItemType.EVENT:
-            name = ''
-        super()._initStyle(name=name)
-
-
-class PlotEventsTimeline(OutlineTimelineWidget):
-    def __init__(self, novel: Novel, type: PlotType, parent=None):
-        super().__init__(parent)
-        self._type = type
-        self.setNovel(novel)
-
-    @overrides
-    def setStructure(self, items: List[PlotProgressionItem]):
-        super().setStructure(items)
-        self._hideFirstAndLastItems()
-
-    @overrides
-    def _newBeatWidget(self, item: PlotProgressionItem) -> PlotProgressionEventWidget:
-        widget = PlotProgressionEventWidget(self._novel, self._type, item, parent=self)
-        widget.removed.connect(self._beatRemoved)
-
-        return widget
-
-    @overrides
-    def _insertWidget(self, item: PlotProgressionItem, widget: PlotProgressionEventWidget):
-        super()._insertWidget(item, widget)
-        self._hideFirstAndLastItems()
-
-    @overrides
-    def _placeholderClicked(self, placeholder: QWidget):
-        self._currentPlaceholder = placeholder
-        self._insertBeat(PlotProgressionItemType.EVENT)
-
-    def _insertBeat(self, beatType: PlotProgressionItemType):
-        item = PlotProgressionItem(type=beatType)
-        widget = self._newBeatWidget(item)
-        self._insertWidget(item, widget)
-
-    def _hideFirstAndLastItems(self):
-        for i in range(self.layout().count()):
-            item = self.layout().itemAt(i)
-            if i == 0 or i == self.layout().count() - 1:
-                item.widget().setVisible(False)
-            else:
-                item.widget().setVisible(True)
 
 
 class DynamicPlotPrincipleWidget(OutlineItemWidget):
@@ -425,84 +297,3 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
         super()._beatRemoved(wdg, teardownFunction)
 
         self.principleRemoved.emit(principle)
-
-
-class BasePlotPrinciplesGroupWidget(QWidget):
-
-    def __init__(self, principleGroup: DynamicPlotPrincipleGroup, parent=None):
-        super().__init__(parent)
-        self.group = principleGroup
-        vbox(self)
-
-
-class DynamicPlotPrinciplesGroupWidget(BasePlotPrinciplesGroupWidget):
-
-    def __init__(self, novel: Novel, principleGroup: DynamicPlotPrincipleGroup, parent=None):
-        super().__init__(principleGroup, parent)
-        self._wdgPrinciples = DynamicPlotPrinciplesWidget(novel, self.group)
-        self._wdgPrinciples.setStructure(self.group.principles)
-        self.frame.layout().addWidget(self._wdgPrinciples)
-
-    def refreshCharacters(self):
-        self._wdgPrinciples.refreshCharacters()
-
-
-class DynamicPlotPrinciplesEditor(QWidget):
-    def __init__(self, novel: Novel, plot: Plot, parent=None):
-        super().__init__(parent)
-        # self.novel = novel
-        # self.plot = plot
-        # vbox(self, 5, 10)
-
-        # for group in self.plot.dynamic_principles:
-        #     self._addGroup(group)
-        #
-        # self.repo = RepositoryPersistenceManager.instance()
-
-    def refreshCharacters(self):
-        for i in range(self.layout().count()):
-            item = self.layout().itemAt(i)
-            if item.widget() and isinstance(item.widget(), DynamicPlotPrinciplesGroupWidget):
-                item.widget().refreshCharacters()
-
-    def addNewGroup(self, groupType: DynamicPlotPrincipleGroupType) -> DynamicPlotPrinciplesGroupWidget:
-        group = DynamicPlotPrincipleGroup(groupType)
-        if groupType == DynamicPlotPrincipleGroupType.ELEMENTS_OF_WONDER:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.WONDER))
-        elif groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.MONSTER))
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.MONSTER))
-        elif groupType == DynamicPlotPrincipleGroupType.ESCALATION:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.TURN))
-        elif groupType == DynamicPlotPrincipleGroupType.SUSPECTS:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.SUSPECT))
-        elif groupType == DynamicPlotPrincipleGroupType.CAST:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.CREW_MEMBER))
-
-        self.plot.dynamic_principles.append(group)
-        wdg = self._addGroup(group)
-        self._save()
-
-        return wdg
-
-    # def _addGroup(self, group: DynamicPlotPrincipleGroup) -> DynamicPlotPrinciplesGroupWidget:
-    #     if group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-    #         wdg = AlliesPrinciplesGroupWidget(self.novel, group)
-    #     else:
-    #         wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
-    #     wdg.remove.connect(partial(self._removeGroup, wdg))
-    #     self.layout().addWidget(wdg)
-    #
-    #     return wdg
-
-    # def _removeGroup(self, wdg: DynamicPlotPrinciplesGroupWidget):
-    #     title = f'Are you sure you want to delete the storyline elements "{wdg.group.type.display_name()}"?'
-    #     if wdg.group.principles and not confirmed("This action cannot be undone.", title):
-    #         return
-    #
-    #     self.plot.dynamic_principles.remove(wdg.group)
-    #     fade_out_and_gc(self, wdg)
-    #     self._save()
-
-    # def _save(self):
-    #     self.repo.update_novel(self.novel)
