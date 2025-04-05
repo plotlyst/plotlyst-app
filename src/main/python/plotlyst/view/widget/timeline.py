@@ -124,7 +124,7 @@ class BackstoryCard(QWidget):
         self.textSummary.setPlainText(self.backstory.synopsis)
 
     def _refreshStyle(self):
-        frame_color = EMOTION_COLORS.get(self.backstory.emotion, NEUTRAL_EMOTION_COLOR)
+        frame_color = self._frameColor()
         self.cardFrame.setStyleSheet(f'''
                             #cardFrame {{
                                 border-top: 8px solid {frame_color};
@@ -170,6 +170,9 @@ class BackstoryCard(QWidget):
                                                      f'Are you sure you want to remove the event "{self.backstory.keyphrase if self.backstory.keyphrase else "Untitled"}"?'):
             return
         self.deleteRequested.emit(self)
+
+    def _frameColor(self) -> str:
+        return EMOTION_COLORS.get(self.backstory.emotion, NEUTRAL_EMOTION_COLOR)
 
 
 class PlaceholderWidget(QFrame):

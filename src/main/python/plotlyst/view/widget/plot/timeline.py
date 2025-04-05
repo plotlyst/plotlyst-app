@@ -22,6 +22,8 @@ from typing import List
 from overrides import overrides
 
 from plotlyst.core.domain import BackstoryEvent, Plot
+from plotlyst.core.template import antagonist_role
+from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme
 
 
@@ -46,3 +48,34 @@ class StorylineTimelineWidget(TimelineLinearWidget):
     @overrides
     def cardClass(self):
         return StorylineTimelineCard
+
+
+class StorylineVillainCard(BackstoryCard):
+    def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
+        super().__init__(backstory, theme, parent=parent)
+        self.refresh()
+
+        self.btnType.setIcon(IconRegistry.from_name('ri.ghost-2-fill', antagonist_role.icon_color))
+        self.lineKeyPhrase.setReadOnly(True)
+        self.lineKeyPhrase.setText('Evolution')
+        self.lineKeyPhrase.setPlaceholderText("How the villain's power evolved or revealed continuously")
+        self.setMinimumWidth(250)
+
+    @overrides
+    def _frameColor(self):
+        return antagonist_role.icon_color
+
+
+class StorylineVillainEvolutionWidget(TimelineLinearWidget):
+    def __init__(self, plot: Plot, parent=None):
+        theme = TimelineTheme(antagonist_role.icon_color, '#F6EAE1')
+        super().__init__(theme, parent)
+        self._plot = plot
+
+    @overrides
+    def events(self) -> List[BackstoryEvent]:
+        return self._plot.villain
+
+    @overrides
+    def cardClass(self):
+        return StorylineVillainCard

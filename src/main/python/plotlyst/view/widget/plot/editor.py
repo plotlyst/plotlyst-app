@@ -56,7 +56,7 @@ from plotlyst.view.widget.plot.allies import AlliesPrinciplesGroupWidget
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, principle_type_index, principle_icon, principle_hint
-from plotlyst.view.widget.plot.timeline import StorylineTimelineWidget
+from plotlyst.view.widget.plot.timeline import StorylineTimelineWidget, StorylineVillainEvolutionWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
 from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
 
@@ -413,6 +413,7 @@ class PlotWidget(QWidget, EventListener):
 
         self._alliesEditor: Optional[AlliesPrinciplesGroupWidget] = None
         self._timelineEditor: Optional[StorylineTimelineWidget] = None
+        self._villainEditor: Optional[StorylineVillainEvolutionWidget] = None
 
         self.btnPlotIcon = tool_btn(QIcon(), transparent_=True)
         self.btnPlotIcon.setIconSize(QSize(48, 48))
@@ -568,6 +569,8 @@ class PlotWidget(QWidget, EventListener):
             self._addGroup(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES)
         if self.plot.has_progression:
             self._addGroup(DynamicPlotPrincipleGroupType.TIMELINE)
+        if self.plot.has_villain:
+            self._addGroup(DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -715,6 +718,11 @@ class PlotWidget(QWidget, EventListener):
             self._timelineEditor.refresh()
             self._timelineEditor.changed.connect(self._save)
             self.wdgTimeline.layout().addWidget(self._timelineEditor)
+        if groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
+            self._villainEditor = StorylineVillainEvolutionWidget(self.plot)
+            self._villainEditor.refresh()
+            self._villainEditor.changed.connect(self._save)
+            self.wdgMonster.layout().addWidget(self._villainEditor)
 
     def _clearGroup(self, groupType: DynamicPlotPrincipleGroupType):
         if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
@@ -723,6 +731,9 @@ class PlotWidget(QWidget, EventListener):
         elif groupType == DynamicPlotPrincipleGroupType.TIMELINE:
             clear_layout(self.wdgTimeline)
             self._timelineEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
+            clear_layout(self.wdgMonster)
+            self._villainEditor = None
 
     #     elif group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
     #         self.wdgSuspects.layout().addWidget(wdg)

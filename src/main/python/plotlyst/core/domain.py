@@ -1404,6 +1404,7 @@ class Plot(SelectionItem, CharacterBased):
     has_suspects: bool = False
     has_cast: bool = False
     has_villain: bool = False
+    villain: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     has_dynamic_principles: bool = True
     has_thematic_relevance: bool = False
     events: List[PlotEvent] = field(default_factory=list)
