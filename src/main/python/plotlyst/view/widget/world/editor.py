@@ -684,8 +684,8 @@ class HighlightedTextElementEditor(WorldBuildingEntityElementWidget):
 
 
 class EntityTimelineCard(BackstoryCard):
-    def __init__(self, backstory: BackstoryEvent, parent=None):
-        super().__init__(backstory, parent)
+    def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
+        super().__init__(backstory, theme, parent=parent)
         self.refresh()
 
         self.setMinimumWidth(250)

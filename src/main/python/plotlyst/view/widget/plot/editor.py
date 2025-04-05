@@ -56,6 +56,7 @@ from plotlyst.view.widget.plot.allies import AlliesPrinciplesGroupWidget
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, principle_type_index, principle_icon, principle_hint
+from plotlyst.view.widget.plot.timeline import StorylineTimelineWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
 from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
 
@@ -411,6 +412,7 @@ class PlotWidget(QWidget, EventListener):
         vbox(self, 10)
 
         self._alliesEditor: Optional[AlliesPrinciplesGroupWidget] = None
+        self._timelineEditor: Optional[StorylineTimelineWidget] = None
 
         self.btnPlotIcon = tool_btn(QIcon(), transparent_=True)
         self.btnPlotIcon.setIconSize(QSize(48, 48))
@@ -525,7 +527,7 @@ class PlotWidget(QWidget, EventListener):
 
         self.stack = QStackedWidget(self)
         self.pagePrinciples, self.wdgPrinciples = self.__page(LayoutType.FLOW)
-        self.pageLinearStructure, self.wdgLinearStructure = self.__page()
+        self.pageTimeline, self.wdgTimeline = self.__page()
         self.pageAllies, self.wdgAllies = self.__page()
         margins(self.wdgAllies, left=5, right=5)
         self.pageSuspects, self.wdgSuspects = self.__page()
@@ -533,7 +535,7 @@ class PlotWidget(QWidget, EventListener):
         self.pageMonster, self.wdgMonster = self.__page()
 
         link_buttons_to_pages(self.stack, [(self.btnPrinciples, self.pagePrinciples),
-                                           (self.btnTimeline, self.pageLinearStructure),
+                                           (self.btnTimeline, self.pageTimeline),
                                            (self.btnAllies, self.pageAllies),
                                            (self.btnSuspects, self.pageSuspects),
                                            (self.btnCast, self.pageCast),
@@ -564,6 +566,8 @@ class PlotWidget(QWidget, EventListener):
 
         if self.plot.has_allies:
             self._addGroup(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES)
+        if self.plot.has_progression:
+            self._addGroup(DynamicPlotPrincipleGroupType.TIMELINE)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -706,14 +710,19 @@ class PlotWidget(QWidget, EventListener):
             self._alliesEditor = AlliesPrinciplesGroupWidget(self.novel, self.plot.allies)
             self._alliesEditor.changed.connect(self._save)
             self.wdgAllies.layout().addWidget(self._alliesEditor)
-        #     else:
-        #         wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
-        #
+        if groupType == DynamicPlotPrincipleGroupType.TIMELINE:
+            self._timelineEditor = StorylineTimelineWidget(self.plot)
+            self._timelineEditor.refresh()
+            self._timelineEditor.changed.connect(self._save)
+            self.wdgTimeline.layout().addWidget(self._timelineEditor)
 
     def _clearGroup(self, groupType: DynamicPlotPrincipleGroupType):
         if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
             clear_layout(self.wdgAllies)
             self._alliesEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.TIMELINE:
+            clear_layout(self.wdgTimeline)
+            self._timelineEditor = None
 
     #     elif group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
     #         self.wdgSuspects.layout().addWidget(wdg)

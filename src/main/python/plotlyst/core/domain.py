@@ -242,7 +242,6 @@ class BackstoryEvent(Event):
     type: BackstoryEventType = BackstoryEventType.Event
     type_icon: str = 'ri.calendar-event-fill'
     type_color: str = 'darkBlue'
-    follow_up: bool = False
     position: Optional[Position] = None
 
 
@@ -1398,6 +1397,7 @@ class Plot(SelectionItem, CharacterBased):
     principles: List[PlotPrinciple] = field(default_factory=list)
     dynamic_principles: List[DynamicPlotPrincipleGroup] = field(default_factory=list)
     has_progression: bool = True
+    timeline: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     has_escalation: bool = False
     has_allies: bool = False
     allies: Optional[DynamicPlotPrincipleGroup] = None
