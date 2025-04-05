@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from functools import partial
 from typing import Set, Dict, Tuple, List, Optional
 
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent
-from PyQt6.QtGui import QColor, QIcon, QResizeEvent, QEnterEvent
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent, QObject
+from PyQt6.QtGui import QColor, QIcon, QResizeEvent, QEnterEvent, QPaintEvent, QPainter, QRadialGradient
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame, QLabel
 from overrides import overrides
 from qthandy import flow, incr_font, \
@@ -34,6 +34,7 @@ from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotType, Character, PlotPrinciple, \
     PlotPrincipleType, PlotProgressionItem, \
     PlotProgressionItemType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup
+from plotlyst.core.template import antagonist_role
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, StorylineCreatedEvent, \
@@ -534,6 +535,7 @@ class PlotWidget(QWidget, EventListener):
         self.pageSuspects, self.wdgSuspects = self.__page()
         self.pageCast, self.wdgCast = self.__page()
         self.pageMonster, self.wdgMonster = self.__page()
+        self.wdgMonster.installEventFilter(self)
 
         link_buttons_to_pages(self.stack, [(self.btnPrinciples, self.pagePrinciples),
                                            (self.btnTimeline, self.pageTimeline),
@@ -580,6 +582,29 @@ class PlotWidget(QWidget, EventListener):
                                          self.btnEditElements.sizeHint().height())
 
         self.__updateNavLayout()
+
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched is self.wdgMonster and isinstance(event, QPaintEvent):
+            painter = QPainter(self.wdgMonster)
+
+            center = self.wdgMonster.rect().center().toPointF()
+            radius = max(self.wdgMonster.width(), self.wdgMonster.height()) / 2
+            gradient = QRadialGradient(center, radius)
+
+            gradient.setColorAt(0.0, QColor(antagonist_role.icon_color))
+            gradient.setColorAt(0.6, QColor(antagonist_role.icon_color))
+            gradient.setColorAt(1.0, QColor("#E56953"))
+
+            painter.fillRect(self.wdgMonster.rect(), gradient)
+
+            IconRegistry.from_name('ri.ghost-2-fill').paint(
+                painter,
+                self.wdgMonster.rect(),
+                alignment=Qt.AlignmentFlag.AlignCenter
+            )
+
+        return super().eventFilter(watched, event)
 
     @overrides
     def event_received(self, event: Event):
