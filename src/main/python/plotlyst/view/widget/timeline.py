@@ -229,10 +229,12 @@ class PlaceholderWidget(QFrame):
 class PlaceholdersRow(QWidget):
     dropped = pyqtSignal(Position)
 
-    def __init__(self, mimeType: str, parent=None):
+    def __init__(self, mimeType: str, parent=None, centerOnly: bool = False):
         super().__init__(parent)
         self._mimeType = mimeType
+        self._centerOnly = centerOnly
         hbox(self, 0, 0)
+
         self.placeholderLeft = PlaceholderWidget()
         self.placeholderCenter = PlaceholderWidget()
         self.placeholderRight = PlaceholderWidget()
@@ -241,6 +243,12 @@ class PlaceholdersRow(QWidget):
         self.layout().addWidget(self.placeholderCenter)
         self.layout().addWidget(self.placeholderRight)
         self.layout().addWidget(spacer())
+
+        if self._centerOnly:
+            self.placeholderCenter.setMinimumWidth(self.placeholderCenter.minimumWidth() * 3)
+            self.placeholderCenter.setMaximumWidth(self.placeholderCenter.maximumWidth() * 3)
+            self.placeholderLeft.setFixedWidth(1)
+            self.placeholderRight.setFixedWidth(1)
 
         self.placeholderLeft.installEventFilter(
             DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.LEFT)))
@@ -251,29 +259,35 @@ class PlaceholdersRow(QWidget):
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
-        self.placeholderLeft.activate()
-        self.placeholderCenter.activate()
-        self.placeholderRight.activate()
+        if not self._centerOnly:
+            self.placeholderLeft.activate()
+            self.placeholderCenter.activate()
+            self.placeholderRight.activate()
+        else:
+            self.placeholderCenter.activate()
 
     @overrides
     def leaveEvent(self, event: QEvent) -> None:
-        self.placeholderLeft.deactivate()
-        self.placeholderCenter.deactivate()
-        self.placeholderRight.deactivate()
+        if not self._centerOnly:
+            self.placeholderLeft.deactivate()
+            self.placeholderCenter.deactivate()
+            self.placeholderRight.deactivate()
+        else:
+            self.placeholderCenter.deactivate()
 
 
 class TimelineEntityRow(QWidget):
     insert = pyqtSignal(Position)
     dropped = pyqtSignal(Position)
 
-    def __init__(self, card: BackstoryCard, parent: 'TimelineLinearWidget'):
+    def __init__(self, card: BackstoryCard, parent: 'TimelineLinearWidget', centerOnly: bool = False):
         super().__init__(parent)
         self.card = card
 
         self._margin: int = 2
 
         vbox(self, self._margin, 0)
-        self.wdgPlaceholders = PlaceholdersRow(parent.mimeType())
+        self.wdgPlaceholders = PlaceholdersRow(parent.mimeType(), centerOnly=centerOnly)
         self.wdgPlaceholders.placeholderLeft.btnPlus.clicked.connect(lambda: self.insert.emit(Position.LEFT))
         self.wdgPlaceholders.placeholderCenter.btnPlus.clicked.connect(lambda: self.insert.emit(Position.CENTER))
         self.wdgPlaceholders.placeholderRight.btnPlus.clicked.connect(lambda: self.insert.emit(Position.RIGHT))
@@ -321,8 +335,9 @@ class TimelineEntityRow(QWidget):
 class TimelineLinearWidget(QWidget):
     changed = pyqtSignal()
 
-    def __init__(self, theme: Optional[TimelineTheme] = None, parent=None):
+    def __init__(self, theme: Optional[TimelineTheme] = None, parent=None, centerOnly: bool = False):
         super().__init__(parent)
+        self._centerOnly = centerOnly
         self._dragged: Optional[TimelineEntityRow] = None
 
         if theme is None:
@@ -354,7 +369,7 @@ class TimelineLinearWidget(QWidget):
             row = self.__initEntityRow(backstory)
             self.layout().addWidget(row)
 
-        wdgPlaceholders = PlaceholdersRow(self.mimeType())
+        wdgPlaceholders = PlaceholdersRow(self.mimeType(), centerOnly=self._centerOnly)
         wdgPlaceholders.placeholderLeft.btnPlus.clicked.connect(lambda: self.add(Position.LEFT))
         wdgPlaceholders.placeholderRight.btnPlus.clicked.connect(lambda: self.add(Position.RIGHT))
         wdgPlaceholders.placeholderCenter.btnPlus.clicked.connect(lambda: self.add(Position.CENTER))
@@ -431,7 +446,7 @@ class TimelineLinearWidget(QWidget):
         self.changed.emit()
 
     def __initEntityRow(self, event: BackstoryEvent) -> TimelineEntityRow:
-        row = TimelineEntityRow(self.cardClass()(event, self._theme), parent=self)
+        row = TimelineEntityRow(self.cardClass()(event, self._theme), parent=self, centerOnly=self._centerOnly)
         row.insert.connect(partial(self._insert, row))
         row.dropped.connect(partial(self._dropped, row))
         row.card.deleteRequested.connect(partial(self._remove, row))

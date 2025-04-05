@@ -69,7 +69,7 @@ class StorylineVillainCard(BackstoryCard):
 class StorylineVillainEvolutionWidget(TimelineLinearWidget):
     def __init__(self, plot: Plot, parent=None):
         theme = TimelineTheme(antagonist_role.icon_color, '#F6EAE1')
-        super().__init__(theme, parent)
+        super().__init__(theme, parent, centerOnly=True)
         self._plot = plot
 
     @overrides
