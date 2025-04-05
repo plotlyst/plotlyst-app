@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import List
 
-from PyQt6.QtCore import Qt
 from overrides import overrides
 
 from plotlyst.core.domain import BackstoryEvent, Plot
@@ -59,7 +58,6 @@ class StorylineVillainCard(BackstoryCard):
         self.btnType.setIcon(IconRegistry.from_name('ri.ghost-2-fill', antagonist_role.icon_color))
         self.lineKeyPhrase.setReadOnly(True)
         self.lineKeyPhrase.setText('Evolution')
-        self.lineKeyPhrase.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.textSummary.setPlaceholderText("How the monster's power evolves")
         self.setMinimumWidth(400)
 
