@@ -23,12 +23,11 @@ from PyQt6.QtCore import Qt, pyqtSignal, QPointF
 from PyQt6.QtGui import QPaintEvent, QPainter, QBrush, QColor
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, margins, transparent
+from qthandy import margins, transparent
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, DynamicPlotPrincipleGroupType, DynamicPlotPrinciple, DynamicPlotPrincipleType, \
-    Plot, \
     DynamicPlotPrincipleGroup, LayoutType, Character
 from plotlyst.core.template import antagonist_role
 from plotlyst.service.cache import entities_registry
@@ -298,84 +297,3 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
         super()._beatRemoved(wdg, teardownFunction)
 
         self.principleRemoved.emit(principle)
-
-
-class BasePlotPrinciplesGroupWidget(QWidget):
-
-    def __init__(self, principleGroup: DynamicPlotPrincipleGroup, parent=None):
-        super().__init__(parent)
-        self.group = principleGroup
-        vbox(self)
-
-
-class DynamicPlotPrinciplesGroupWidget(BasePlotPrinciplesGroupWidget):
-
-    def __init__(self, novel: Novel, principleGroup: DynamicPlotPrincipleGroup, parent=None):
-        super().__init__(principleGroup, parent)
-        self._wdgPrinciples = DynamicPlotPrinciplesWidget(novel, self.group)
-        self._wdgPrinciples.setStructure(self.group.principles)
-        self.frame.layout().addWidget(self._wdgPrinciples)
-
-    def refreshCharacters(self):
-        self._wdgPrinciples.refreshCharacters()
-
-
-class DynamicPlotPrinciplesEditor(QWidget):
-    def __init__(self, novel: Novel, plot: Plot, parent=None):
-        super().__init__(parent)
-        # self.novel = novel
-        # self.plot = plot
-        # vbox(self, 5, 10)
-
-        # for group in self.plot.dynamic_principles:
-        #     self._addGroup(group)
-        #
-        # self.repo = RepositoryPersistenceManager.instance()
-
-    def refreshCharacters(self):
-        for i in range(self.layout().count()):
-            item = self.layout().itemAt(i)
-            if item.widget() and isinstance(item.widget(), DynamicPlotPrinciplesGroupWidget):
-                item.widget().refreshCharacters()
-
-    def addNewGroup(self, groupType: DynamicPlotPrincipleGroupType) -> DynamicPlotPrinciplesGroupWidget:
-        group = DynamicPlotPrincipleGroup(groupType)
-        if groupType == DynamicPlotPrincipleGroupType.ELEMENTS_OF_WONDER:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.WONDER))
-        elif groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.MONSTER))
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.MONSTER))
-        elif groupType == DynamicPlotPrincipleGroupType.ESCALATION:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.TURN))
-        elif groupType == DynamicPlotPrincipleGroupType.SUSPECTS:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.SUSPECT))
-        elif groupType == DynamicPlotPrincipleGroupType.CAST:
-            group.principles.append(DynamicPlotPrinciple(type=DynamicPlotPrincipleType.CREW_MEMBER))
-
-        self.plot.dynamic_principles.append(group)
-        wdg = self._addGroup(group)
-        self._save()
-
-        return wdg
-
-    # def _addGroup(self, group: DynamicPlotPrincipleGroup) -> DynamicPlotPrinciplesGroupWidget:
-    #     if group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-    #         wdg = AlliesPrinciplesGroupWidget(self.novel, group)
-    #     else:
-    #         wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
-    #     wdg.remove.connect(partial(self._removeGroup, wdg))
-    #     self.layout().addWidget(wdg)
-    #
-    #     return wdg
-
-    # def _removeGroup(self, wdg: DynamicPlotPrinciplesGroupWidget):
-    #     title = f'Are you sure you want to delete the storyline elements "{wdg.group.type.display_name()}"?'
-    #     if wdg.group.principles and not confirmed("This action cannot be undone.", title):
-    #         return
-    #
-    #     self.plot.dynamic_principles.remove(wdg.group)
-    #     fade_out_and_gc(self, wdg)
-    #     self._save()
-
-    # def _save(self):
-    #     self.repo.update_novel(self.novel)
