@@ -418,6 +418,8 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         wdg = self.addRef(self._novel.scenes.index(scene), scene, ref)
         fade_in(wdg)
 
+        self._updateSceneType(scene)
+
         self.save(scene)
         emit_event(self._novel, SceneChangedEvent(self, scene))
 
@@ -427,6 +429,8 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
             placeholder = self._initPlaceholder(line, scene)
             line.layout().insertWidget(i, placeholder)
 
+            self._updateSceneType(scene)
+
             self.save(scene)
             emit_event(self._novel, SceneChangedEvent(self, scene))
 
@@ -435,6 +439,9 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         i = widget.parent().layout().indexOf(widget)
 
         fade_out_and_gc(line, widget, teardown=addPlaceholder)
+
+    def _updateSceneType(self, scene: Scene):
+        scene.update_purpose()
 
     def _addSceneReferences(self, scene: Scene):
         index = self._novel.scenes.index(scene)

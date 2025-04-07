@@ -249,11 +249,7 @@ class SceneCard(Ui_SceneCard, Card):
         self.refreshCharacters()
         self.refreshBeat()
 
-        icon = IconRegistry.scene_type_icon(self.scene)
-        if icon:
-            self.lblType.setPixmap(icon.pixmap(QSize(24, 24)))
-        else:
-            self.lblType.clear()
+        self.refreshType()
 
         if self.scene.plot_pos_progress or self.scene.plot_neg_progress:
             self.btnPlotProgress.setIcon(
@@ -285,6 +281,13 @@ class SceneCard(Ui_SceneCard, Card):
             self.btnBeat.setVisible(True)
         else:
             self.btnBeat.setHidden(True)
+
+    def refreshType(self):
+        icon = IconRegistry.scene_type_icon(self.scene)
+        if icon:
+            self.lblType.setPixmap(icon.pixmap(QSize(24, 24)))
+        else:
+            self.lblType.clear()
 
     @overrides
     def quickRefresh(self):
