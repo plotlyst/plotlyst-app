@@ -701,28 +701,40 @@ class PlotWidget(QWidget, EventListener):
 
     def _editorToggled(self, editorType: DynamicPlotPrincipleGroupType, toggled: bool):
         if editorType == DynamicPlotPrincipleGroupType.TIMELINE:
-            self.btnTimeline.setVisible(toggled)
             self.plot.has_progression = toggled
+            btn = self.btnTimeline
+            page = self.pageTimeline
         elif editorType == DynamicPlotPrincipleGroupType.ESCALATION:
-            self.btnEscalation.setVisible(toggled)
             self.plot.has_escalation = toggled
+            btn = self.btnEscalation
+            page = self.pageEscalation
         elif editorType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            self.btnAllies.setVisible(toggled)
             self.plot.has_allies = toggled
+            btn = self.btnAllies
+            page = self.pageAllies
         elif editorType == DynamicPlotPrincipleGroupType.SUSPECTS:
-            self.btnSuspects.setVisible(toggled)
             self.plot.has_suspects = toggled
+            btn = self.btnSuspects
+            page = self.pageSuspects
         elif editorType == DynamicPlotPrincipleGroupType.CAST:
-            self.btnCast.setVisible(toggled)
             self.plot.has_cast = toggled
+            btn = self.btnCast
+            page = self.pageCast
         elif editorType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            self.btnMonster.setVisible(toggled)
             self.plot.has_villain = toggled
+            btn = self.btnMonster
+            page = self.pageMonster
+        else:
+            return
 
+        btn.setVisible(toggled)
         if toggled:
             self._addGroup(editorType)
+            btn.setChecked(True)
         else:
             self._clearGroup(editorType)
+            if self.stack.currentWidget() is page:
+                self.btnPrinciples.setChecked(True)
 
         self._navWidth = self.wdgNavs.sizeHint().width()
         self.__updateNavLayout()

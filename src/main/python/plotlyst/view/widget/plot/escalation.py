@@ -38,7 +38,6 @@ from plotlyst.view.widget.plot.progression import DynamicPlotPrincipleWidget
 class EscalationPlotPrincipleWidget(DynamicPlotPrincipleWidget):
     def __init__(self, novel: Novel, principle: DynamicPlotPrinciple, parent=None):
         super().__init__(novel, principle, parent)
-
         self._btnName.setHidden(True)
 
     @overrides
