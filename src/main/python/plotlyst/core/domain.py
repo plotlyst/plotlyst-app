@@ -1396,7 +1396,7 @@ class Plot(SelectionItem, CharacterBased):
     question: str = ''
     principles: List[PlotPrinciple] = field(default_factory=list)
     dynamic_principles: List[DynamicPlotPrincipleGroup] = field(default_factory=list)
-    has_progression: bool = True
+    has_progression: bool = False
     timeline: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     has_escalation: bool = False
     escalation: Optional[DynamicPlotPrincipleGroup] = None

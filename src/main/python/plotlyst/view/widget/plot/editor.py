@@ -30,7 +30,7 @@ from qthandy import flow, incr_font, \
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotType, Character, PlotPrinciple, \
     PlotPrincipleType, PlotProgressionItem, \
     PlotProgressionItemType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup, BackstoryEvent, \
@@ -459,6 +459,12 @@ class PlotWidget(QWidget, EventListener):
         self.installEventFilter(VisibilityToggleEventFilter(target=self.btnEditElements, parent=self))
         self.btnEditElements.clicked.connect(self._editElements)
 
+        self.btnInit = push_btn(IconRegistry.plus_edit_icon(RELAXED_WHITE_COLOR), 'Initialize elements',
+                                properties=['confirm', 'positive'])
+        incr_icon(self.btnInit, 2)
+        incr_font(self.btnInit)
+        self.btnInit.clicked.connect(self._editElements)
+
         self._characterSelector = CharacterAvatar(self, 88, 120, 92, 8)
         menu = CharacterSelectorMenu(self.novel, self._characterSelector.btnAvatar)
         menu.selected.connect(self._characterSelected)
@@ -564,6 +570,7 @@ class PlotWidget(QWidget, EventListener):
         self.layout().addWidget(self.lineName, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgNavs, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._divider)
+        self.layout().addWidget(self.btnInit, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.stack)
 
         for principle in self.plot.principles:
@@ -685,6 +692,7 @@ class PlotWidget(QWidget, EventListener):
         PlotElementSelectorPopup.popup(self.plot, object)
 
     def _principleToggled(self, principleType: PlotPrincipleType, toggled: bool):
+        self.btnInit.setHidden(True)
         if toggled:
             principle = PlotPrinciple(principleType)
             self._initPrincipleEditor(principle)
@@ -700,6 +708,7 @@ class PlotWidget(QWidget, EventListener):
         self._save()
 
     def _editorToggled(self, editorType: DynamicPlotPrincipleGroupType, toggled: bool):
+        self.btnInit.setHidden(True)
         if editorType == DynamicPlotPrincipleGroupType.TIMELINE:
             self.plot.has_progression = toggled
             btn = self.btnTimeline
@@ -740,6 +749,7 @@ class PlotWidget(QWidget, EventListener):
         self.__updateNavLayout()
 
     def _initPrincipleEditor(self, principle: PlotPrinciple):
+        self.btnInit.setHidden(True)
         editor = PlotPrincipleEditor(principle, self.plot.plot_type)
         editor.principleEdited.connect(self._save)
         # self.wdgPrinciples.layout().insertWidget(principle_type_index[principle.type], editor)
@@ -750,6 +760,7 @@ class PlotWidget(QWidget, EventListener):
         return editor
 
     def _addGroup(self, groupType: DynamicPlotPrincipleGroupType):
+        self.btnInit.setHidden(True)
         if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
             if self.plot.allies is None:
                 self.plot.allies = DynamicPlotPrincipleGroup(groupType)
