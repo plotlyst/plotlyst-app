@@ -777,6 +777,9 @@ class PlotWidget(QWidget, EventListener):
         elif groupType == DynamicPlotPrincipleGroupType.SUSPECTS:
             clear_layout(self.wdgSuspects)
             self._suspectsEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.CAST:
+            clear_layout(self.wdgCast)
+            self._castEditor = None
 
     def _save(self):
         self.repo.update_novel(self.novel)
