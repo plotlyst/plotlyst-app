@@ -368,7 +368,8 @@ class ScenesOutlineView(AbstractNovelView):
         elif isinstance(event, NovelPanelCustomizationEvent):
             if isinstance(event, NovelStorylinesToggleEvent):
                 self.ui.btnStorymap.setVisible(event.toggled)
-                if self.ui.btnStorymap.isChecked():
+                self.ui.btnTimelineView.setVisible(event.toggled)
+                if self.ui.btnStorymap.isChecked() or self.ui.btnTimelineView.isChecked():
                     self.ui.btnCardsView.setChecked(True)
             elif isinstance(event, NovelStructureToggleEvent):
                 self.ui.btnStoryStructure.setVisible(event.toggled)
