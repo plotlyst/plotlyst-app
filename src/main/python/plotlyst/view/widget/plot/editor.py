@@ -32,8 +32,7 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotType, Character, PlotPrinciple, \
-    PlotPrincipleType, PlotProgressionItem, \
-    PlotProgressionItemType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup, BackstoryEvent, \
+    PlotPrincipleType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup, BackstoryEvent, \
     Position
 from plotlyst.core.template import antagonist_role
 from plotlyst.event.core import EventListener, Event, emit_event
@@ -962,10 +961,7 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         else:
             name = 'Main plot'
             icon = 'fa5s.theater-masks'
-        plot = Plot(name, plot_type=plot_type, icon=icon,
-                    progression=[PlotProgressionItem(type=PlotProgressionItemType.BEGINNING),
-                                 PlotProgressionItem(type=PlotProgressionItemType.MIDDLE),
-                                 PlotProgressionItem(type=PlotProgressionItemType.ENDING)])
+        plot = Plot(name, plot_type=plot_type, icon=icon)
         self.novel.plots.append(plot)
 
         plot_colors = list(STORY_LINE_COLOR_CODES[plot_type.value])
