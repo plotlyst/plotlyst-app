@@ -27,7 +27,7 @@ from PyQt6.QtCore import Qt, QModelIndex, \
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QWidget, QHeaderView
 from overrides import overrides
-from qthandy import incr_font, translucent, clear_layout, busy, bold, sp, transparent, incr_icon, retain_when_hidden, \
+from qthandy import incr_font, translucent, busy, bold, sp, transparent, incr_icon, retain_when_hidden, \
     margins
 from qthandy.filter import InstantTooltipEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
@@ -162,7 +162,7 @@ class ScenesOutlineView(AbstractNovelView):
         self.ui.tblScenes.horizontalHeader().setProperty('main-header', True)
         self.ui.tblScenes.verticalHeader().setFixedWidth(40)
         self.ui.tblScenes.verticalHeader().setVisible(True)
-        self.tblModel.orderChanged.connect(self._on_scene_moved_in_table)
+        # self.tblModel.orderChanged.connect(self._on_scene_moved_in_table)
         self.tblModel.sceneChanged.connect(self._on_scene_changed_in_table)
         self.ui.tblScenes.setColumnWidth(ScenesTableModel.ColTitle, 250)
         self.ui.tblScenes.setColumnWidth(ScenesTableModel.ColCharacters, 170)
@@ -255,13 +255,15 @@ class ScenesOutlineView(AbstractNovelView):
 
         self._storyGrid = ScenesGridWidget(self.novel)
         self._storyGrid.sceneCardSelected.connect(self._story_grid_card_selected)
+        self._storyGrid.sceneOrderChanged.connect(self._on_grid_scene_cards_swapped)
+        self._storyGrid.cardsView.cardCustomContextMenuRequested.connect(self._show_card_menu)
         self._storyGridToolbar = ScenesGridToolbar()
         self._storyGridToolbar.orientationChanged.connect(self._storyGrid.setOrientation)
         self.ui.pageStoryGrid.layout().addWidget(self._storyGridToolbar,
                                                  alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
         self.ui.pageStoryGrid.layout().addWidget(self._storyGrid)
-        margins(self.ui.pageStoryGrid, left=35)
-        margins(self._storyGridToolbar, top=15, bottom=10)
+        margins(self.ui.pageStoryGrid, left=15)
+        margins(self._storyGridToolbar, top=10, bottom=10)
 
         self.ui.btnPreferences.setIcon(IconRegistry.preferences_icon())
         self.prefs_widget = ScenesPreferencesWidget(self.novel)
@@ -352,6 +354,7 @@ class ScenesOutlineView(AbstractNovelView):
             return
         elif isinstance(event, SceneOrderChangedEvent):
             self.ui.cards.reorderCards(self.novel.scenes)
+            self._storyGrid.sceneOrderChangedEvent()
             self._handle_scene_order_changed()
             return
         elif isinstance(event, SceneStoryBeatChangedEvent):
@@ -366,7 +369,8 @@ class ScenesOutlineView(AbstractNovelView):
         elif isinstance(event, NovelPanelCustomizationEvent):
             if isinstance(event, NovelStorylinesToggleEvent):
                 self.ui.btnStorymap.setVisible(event.toggled)
-                if self.ui.btnStorymap.isChecked():
+                self.ui.btnTimelineView.setVisible(event.toggled)
+                if self.ui.btnStorymap.isChecked() or self.ui.btnTimelineView.isChecked():
                     self.ui.btnCardsView.setChecked(True)
             elif isinstance(event, NovelStructureToggleEvent):
                 self.ui.btnStoryStructure.setVisible(event.toggled)
@@ -409,6 +413,7 @@ class ScenesOutlineView(AbstractNovelView):
             card.quickRefresh()
 
         self.refresh()
+        self._storyGrid.sync(event)
         self._filter_cards()
 
     def _switch_view(self):
@@ -767,6 +772,11 @@ class ScenesOutlineView(AbstractNovelView):
             if chapters:
                 self.ui.treeChapters.removeChapter(chapters[0])
 
+    def _on_grid_scene_cards_swapped(self, scenes: List[Scene], droppedCard: SceneCard):
+        self.ui.cards.clearSelection()
+        self._on_scene_cards_swapped(scenes, droppedCard)
+        self.ui.cards.reorderCards(self.novel.scenes)
+
     def _on_scene_cards_swapped(self, scenes: List[Scene], droppedCard: SceneCard):
         droppedScene = droppedCard.scene
         i = scenes.index(droppedScene)
@@ -784,12 +794,14 @@ class ScenesOutlineView(AbstractNovelView):
         self.novel.scenes[:] = scenes
         self._handle_scene_order_changed()
         self.selected_card = None
-        emit_event(self.novel, SceneOrderChangedEvent(self))
 
-    def _on_scene_moved_in_table(self):
-        self.ui.cards.reorderCards(self.novel.scenes)
-        self._handle_scene_order_changed()
         emit_event(self.novel, SceneOrderChangedEvent(self))
+        self._storyGrid.sceneOrderChangedEvent()
+
+    # def _on_scene_moved_in_table(self):
+    #     self.ui.cards.reorderCards(self.novel.scenes)
+    #     self._handle_scene_order_changed()
+    #     emit_event(self.novel, SceneOrderChangedEvent(self))
 
     def _on_scene_changed_in_table(self, scene: Scene):
         emit_event(self.novel, SceneChangedEvent(self, scene))
@@ -947,6 +959,7 @@ class ScenesOutlineView(AbstractNovelView):
 
         card = self.ui.cards.card(scene)
         card.refreshBeat()
+        self._storyGrid.refreshBeatFor(scene)
         self.repo.update_scene(scene)
         emit_event(self.novel, SceneStoryBeatChangedEvent(self, scene, beat, toggled=toggled))
 

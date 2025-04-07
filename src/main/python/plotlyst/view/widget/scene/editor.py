@@ -247,6 +247,8 @@ class ScenePurposeTypeButton(QPushButton):
                 self.setIcon(IconRegistry.charge_icon(self._scene.plot_neg_progress, borderColor))
         elif self._scene.progress:
             self.setIcon(IconRegistry.charge_icon(self._scene.progress, borderColor))
+        else:
+            self.setIcon(QIcon())
 
         self.setStyleSheet(f'''
             QPushButton {{

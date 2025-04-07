@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Any, Dict
 
+import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QTimer
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent, \
     QDragEnterEvent, QDragLeaveEvent, QDropEvent
@@ -492,7 +493,7 @@ class TimelineGridPlaceholder(QWidget):
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
         self.btn.setIcon(IconRegistry.plus_circle_icon(self.parent().ref.icon_color, RELAXED_WHITE_COLOR))
-        fade_in(self.btn)
+        qtanim.fade_in(self.btn, duration=150, teardown=lambda: translucent(self.btn, 0.5))
 
     @overrides
     def leaveEvent(self, a0: QEvent) -> None:
@@ -529,7 +530,7 @@ class TimelineGridLine(QWidget):
             painter.drawRect(self.rect().width() // 2 - 4, 5, 8, self.rect().height())
 
 
-class TimelineGridWidget(QWidget):
+class TimelineGridWidget(QFrame):
     def __init__(self, parent=None, vertical: bool = False):
         super().__init__(parent)
         self._vertical = vertical
@@ -537,8 +538,9 @@ class TimelineGridWidget(QWidget):
         self._columnWidth: int = 150
         self._rowHeight: int = 50
         self._headerHeight: int = 40
-        self._verticalHeaderWidth: int = 190
+        self._verticalHeaderWidth: int = 200
         self._spacing: int = 10
+        self._margins: int = 15
 
         self._rows: Dict[Any, QWidget] = {}
         self._columns: Dict[Any, TimelineGridLine] = {}
@@ -563,6 +565,10 @@ class TimelineGridWidget(QWidget):
             self.wdgEditor = rows(0, self._spacing)
         else:
             self.wdgEditor = columns(0, self._spacing)
+
+        margins(self.wdgEditor, left=self._margins, top=self._margins)
+        margins(self.wdgColumns, left=self._margins)
+        margins(self.wdgRows, top=self._headerHeight)
 
         sp(self.wdgEditor).v_exp().h_exp()
         self.scrollEditor = scroll_area(frameless=True)

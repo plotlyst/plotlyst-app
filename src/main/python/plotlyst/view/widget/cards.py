@@ -224,7 +224,8 @@ class SceneCard(Ui_SceneCard, Card):
         self._stageVisible = self.novel.prefs.toggled(NovelSetting.SCENE_CARD_STAGE)
         self.btnPov.setVisible(self.novel.prefs.toggled(NovelSetting.SCENE_CARD_POV))
         self.lblType.setVisible(
-            self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PURPOSE, default=False) and app_env.profile().get('scene-purpose', False))
+            self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PURPOSE, default=False) and app_env.profile().get(
+                'scene-purpose', False))
         self.btnPlotProgress.setVisible(
             self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PLOT_PROGRESS) and app_env.profile().get(
                 'scene-progression', False))
@@ -248,11 +249,7 @@ class SceneCard(Ui_SceneCard, Card):
         self.refreshCharacters()
         self.refreshBeat()
 
-        icon = IconRegistry.scene_type_icon(self.scene)
-        if icon:
-            self.lblType.setPixmap(icon.pixmap(QSize(24, 24)))
-        else:
-            self.lblType.clear()
+        self.refreshType()
 
         if self.scene.plot_pos_progress or self.scene.plot_neg_progress:
             self.btnPlotProgress.setIcon(
@@ -284,6 +281,13 @@ class SceneCard(Ui_SceneCard, Card):
             self.btnBeat.setVisible(True)
         else:
             self.btnBeat.setHidden(True)
+
+    def refreshType(self):
+        icon = IconRegistry.scene_type_icon(self.scene)
+        if icon:
+            self.lblType.setPixmap(icon.pixmap(QSize(24, 24)))
+        else:
+            self.lblType.clear()
 
     @overrides
     def quickRefresh(self):
@@ -525,6 +529,7 @@ class CardsView(QFrame):
         self._cards: Dict[Any, Card] = {}
         self._margin = margin
         self._spacing = spacing
+        self._layoutType = layoutType
         if layoutType == LayoutType.FLOW:
             self._layout = flow(self, self._margin, self._spacing)
             margins(self, left=15, top=15)
@@ -637,6 +642,7 @@ class CardsView(QFrame):
         clear_layout(self._layout, auto_delete=False)
         QWidget().setLayout(self.layout())
 
+        self._layoutType = layoutType
         if layoutType == LayoutType.FLOW:
             self._layout = flow(self, self._margin, self._spacing)
         elif layoutType == LayoutType.VERTICAL:
@@ -669,7 +675,8 @@ class CardsView(QFrame):
         card.cursorEntered.connect(lambda: self.cardEntered.emit(card))
         card.cursorLeft.connect(lambda: self.cardLeft.emit(card))
         card.customContextMenuRequested.connect(partial(self.cardCustomContextMenuRequested.emit, card))
-        card.installEventFilter(DropEventFilter(card, [card.mimeType()], motionDetection=Qt.Orientation.Horizontal,
+        detectionOrientation = Qt.Orientation.Vertical if self._layoutType == LayoutType.VERTICAL else Qt.Orientation.Horizontal
+        card.installEventFilter(DropEventFilter(card, [card.mimeType()], motionDetection=detectionOrientation,
                                                 motionSlot=partial(self._dragMoved, card),
                                                 droppedSlot=self._dropped))
         self._cards[card.data()] = card
@@ -705,7 +712,7 @@ class CardsView(QFrame):
 
     def _dragMoved(self, card: Card, edge: Qt.Edge, _: QPoint):
         i = self._layout.indexOf(card)
-        if edge == Qt.Edge.LeftEdge:
+        if edge == Qt.Edge.LeftEdge or edge == Qt.Edge.TopEdge:
             self._layout.insertWidget(i, self._dragPlaceholder)
         else:
             self._layout.insertWidget(i + 1, self._dragPlaceholder)
