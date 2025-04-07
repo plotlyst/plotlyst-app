@@ -36,7 +36,7 @@ from plotlyst.core.domain import Scene, Novel, Plot, \
 from plotlyst.event.core import emit_event, EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneChangedEvent, StorylineCreatedEvent, SceneAddedEvent, SceneDeletedEvent, \
-    StorylineRemovedEvent, StorylineChangedEvent, SceneEditRequested, SceneSelectedEvent
+    StorylineRemovedEvent, StorylineChangedEvent, SceneEditRequested, SceneSelectedEvent, NovelSyncEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import tool_btn, fade_out_and_gc, insert_before_the_end, \
     label, push_btn, shadow, fade_in
@@ -133,6 +133,7 @@ class SceneGridCard(SceneCard):
         self.textTitle.setFontPointSize(self.textTitle.font().pointSize() - 1)
 
         self.setFixedWidth(170)
+        self.setDragEnabled(not self.novel.is_readonly())
 
     @overrides
     def copy(self) -> 'Card':
@@ -350,6 +351,19 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
 
         self.initRefs()
         self._applyFilterOnLines()
+
+    def sync(self, event: NovelSyncEvent):
+        self.cardsView.clearSelection()
+
+        for scene in event.new_scenes:
+            sceneCard = SceneGridCard(scene, self._novel)
+            self.cardsView.addCard(sceneCard, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.cardsView.reorderCards(self._novel.scenes)
+        for card in self.cardsView.cards():
+            card.quickRefresh()
+
+        self.setOrientation(Qt.Orientation.Vertical if self._scenesInColumns else Qt.Orientation.Horizontal)
 
     def refreshBeatFor(self, scene: Scene):
         card = self.cardsView.card(scene)

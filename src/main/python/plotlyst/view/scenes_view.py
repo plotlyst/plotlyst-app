@@ -412,6 +412,7 @@ class ScenesOutlineView(AbstractNovelView):
             card.quickRefresh()
 
         self.refresh()
+        self._storyGrid.sync(event)
         self._filter_cards()
 
     def _switch_view(self):
