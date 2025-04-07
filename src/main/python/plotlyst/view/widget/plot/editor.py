@@ -628,6 +628,10 @@ class PlotWidget(QWidget, EventListener):
 
         if self._alliesEditor:
             self._alliesEditor.refreshCharacters()
+        if self._suspectsEditor:
+            self._suspectsEditor.refreshCharacters()
+        if self._castEditor:
+            self._castEditor.refreshCharacters()
 
     def _updateIcon(self):
         if self.plot.icon:
