@@ -116,14 +116,13 @@ class DynamicPlotMultiPrincipleElements(OutlineTimelineWidget):
                  parent=None):
         self.novel = novel
         self._principleType = principleType
+        self._groupType = groupType
         super().__init__(parent, paintTimeline=False, layout=LayoutType.VERTICAL, framed=True, frameColor='grey')
         self.setProperty('white-bg', True)
         self.setProperty('large-rounded', True)
         margins(self, 0, 0, 0, 0)
         self.layout().setSpacing(0)
 
-        self._menu = DynamicPlotPrincipleSelectorMenu(groupType)
-        self._menu.selected.connect(self._insertPrinciple)
 
     @overrides
     def _newBeatWidget(self, item: DynamicPlotPrinciple) -> OutlineItemWidget:
@@ -143,7 +142,10 @@ class DynamicPlotMultiPrincipleElements(OutlineTimelineWidget):
     @overrides
     def _placeholderClicked(self, placeholder: QWidget):
         self._currentPlaceholder = placeholder
-        self._menu.exec(self.mapToGlobal(self._currentPlaceholder.pos()))
+        _menu = DynamicPlotPrincipleSelectorMenu(self._groupType)
+        _menu.selected.connect(self._insertPrinciple)
+
+        _menu.exec(self.mapToGlobal(self._currentPlaceholder.pos()))
 
     def _insertPrinciple(self, principleType: DynamicPlotPrincipleType):
         item = DynamicPlotPrinciple(type=principleType)

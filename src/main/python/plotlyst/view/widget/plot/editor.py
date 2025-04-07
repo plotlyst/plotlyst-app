@@ -744,15 +744,21 @@ class PlotWidget(QWidget, EventListener):
             self._villainEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageMonster))
             self.wdgMonster.layout().addWidget(self._villainEditor)
         if groupType == DynamicPlotPrincipleGroupType.SUSPECTS:
-            group = DynamicPlotPrincipleGroup(groupType)
-            self._suspectsEditor = DynamicPlotPrinciplesWidget(self.novel, group)
+            if self.plot.suspects is None:
+                self.plot.suspects = DynamicPlotPrincipleGroup(groupType)
+                self._save()
+            self._suspectsEditor = DynamicPlotPrinciplesWidget(self.novel, self.plot.suspects)
+            self._suspectsEditor.timelineChanged.connect(self._save)
             self.wdgSuspects.layout().addWidget(self._suspectsEditor)
-            self._suspectsEditor.setStructure(group.principles)
+            self._suspectsEditor.setStructure(self.plot.suspects.principles)
         if groupType == DynamicPlotPrincipleGroupType.CAST:
-            group = DynamicPlotPrincipleGroup(groupType)
-            self._castEditor = DynamicPlotPrinciplesWidget(self.novel, group)
+            if self.plot.cast is None:
+                self.plot.cast = DynamicPlotPrincipleGroup(groupType)
+                self._save()
+            self._castEditor = DynamicPlotPrinciplesWidget(self.novel, self.plot.cast)
+            self._castEditor.timelineChanged.connect(self._save)
             self.wdgCast.layout().addWidget(self._castEditor)
-            self._castEditor.setStructure(group.principles)
+            self._castEditor.setStructure(self.plot.cast.principles)
 
     def _clearGroup(self, groupType: DynamicPlotPrincipleGroupType):
         if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
