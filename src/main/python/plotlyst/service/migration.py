@@ -78,7 +78,7 @@ def migrate_plot_timeline(novel: Novel, plot: Plot):
         return
 
     for event in plot.progression:
-        bk_event = BackstoryEvent('', event.text)
+        bk_event = BackstoryEvent('', event.text, position=Position.CENTER)
         plot.timeline.append(bk_event)
 
     plot.has_progression = True
