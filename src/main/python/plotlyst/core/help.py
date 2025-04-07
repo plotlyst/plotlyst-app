@@ -380,5 +380,5 @@ li.checked::marker { content: "\2612"; }
 </style></head><body style=" font-family:'Fira Sans Semi-Light'; font-size:12pt; font-weight:400; font-style:normal;">
 <h1 style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;"><span style=" font-size:xx-large; font-weight:700;">Welcome to Plotlyst</span></h1>
 <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;">This is the Documents panel where you can add additional notes.</p>
-<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;">In <a href="https://plotlyst.com/pricing"><span style=" text-decoration: underline; color:#0000ff;">Plotlyst Plus</span></a>, you can also use create Mindmaps here.</p></body></html>
+<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; line-height:150%;">If you've purchased <a href="https://plotlyst.com/pricing"><span style=" text-decoration: underline; color:#4B0763;">Plotlyst</span></a>, you can also create Mindmaps here.</p></body></html>
 '''
