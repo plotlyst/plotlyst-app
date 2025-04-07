@@ -20,12 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from functools import partial
 
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
 from qthandy import margins, transparent
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
-from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, DynamicPlotPrincipleGroupType, DynamicPlotPrinciple, DynamicPlotPrincipleType, \
     DynamicPlotPrincipleGroup, LayoutType, Character
 from plotlyst.service.cache import entities_registry
@@ -33,7 +33,6 @@ from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import action
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
-from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.outline import OutlineItemWidget, OutlineTimelineWidget
 
@@ -65,13 +64,6 @@ class DynamicPlotPrincipleWidget(OutlineItemWidget):
                 character = entities_registry.character(self.principle.character_id)
                 if character:
                     self._charSelector.setCharacter(character)
-
-        if principle.type == DynamicPlotPrincipleType.MONSTER:
-            self._btnName.setFixedHeight(45)
-            apply_button_palette_color(self._btnName, RELAXED_WHITE_COLOR)
-            self._btnName.setGraphicsEffect(None)
-            self._btnName.setText('Evolution')
-            self._btnName.setIcon(IconRegistry.from_name(self.principle.type.icon(), RELAXED_WHITE_COLOR))
 
     @overrides
     def mimeType(self) -> str:
@@ -106,6 +98,11 @@ class DynamicPlotMultiPrincipleWidget(DynamicPlotPrincipleWidget):
         self._text.setHidden(True)
         self.layout().addWidget(self.elements)
 
+        self.setMinimumHeight(150)
+        self.setMinimumWidth(210)
+
+        self._btnName.setIcon(QIcon())
+
 
 class DynamicPlotPrincipleElementWidget(DynamicPlotPrincipleWidget):
     def __init__(self, novel: Novel, principle: DynamicPlotPrinciple, parent=None):
@@ -119,8 +116,7 @@ class DynamicPlotMultiPrincipleElements(OutlineTimelineWidget):
                  parent=None):
         self.novel = novel
         self._principleType = principleType
-        super().__init__(parent, paintTimeline=False, layout=LayoutType.VERTICAL, framed=True,
-                         frameColor=self._principleType.color())
+        super().__init__(parent, paintTimeline=False, layout=LayoutType.VERTICAL, framed=True, frameColor='grey')
         self.setProperty('white-bg', True)
         self.setProperty('large-rounded', True)
         margins(self, 0, 0, 0, 0)
