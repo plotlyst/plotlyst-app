@@ -55,6 +55,7 @@ from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import SeparatorLineWithShadow, PopupDialog, IconText, icon_text
 from plotlyst.view.widget.input import AutoAdjustableLineEdit, Toggle
 from plotlyst.view.widget.plot.allies import AlliesPrinciplesGroupWidget
+from plotlyst.view.widget.plot.escalation import StorylineEscalationEditorWidget
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, principle_type_index, principle_icon, principle_hint
@@ -778,6 +779,13 @@ class PlotWidget(QWidget, EventListener):
             self._castEditor.timelineChanged.connect(self._save)
             self.wdgCast.layout().addWidget(self._castEditor)
             self._castEditor.setStructure(self.plot.cast.principles)
+        if groupType == DynamicPlotPrincipleGroupType.ESCALATION:
+            if self.plot.escalation is None:
+                self.plot.escalation = DynamicPlotPrincipleGroup(groupType)
+                self._save()
+            self._escalationEditor = StorylineEscalationEditorWidget(self.plot)
+            self._escalationEditor.changed.connect(self._save)
+            self.wdgEscalation.layout().addWidget(self._escalationEditor)
 
     def _clearGroup(self, groupType: DynamicPlotPrincipleGroupType):
         if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
@@ -786,6 +794,9 @@ class PlotWidget(QWidget, EventListener):
         elif groupType == DynamicPlotPrincipleGroupType.TIMELINE:
             clear_layout(self.wdgTimeline)
             self._timelineEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.ESCALATION:
+            clear_layout(self.wdgEscalation)
+            self._escalationEditor = None
         elif groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
             clear_layout(self.wdgMonster)
             self._villainEditor = None

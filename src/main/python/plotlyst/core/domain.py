@@ -1399,6 +1399,7 @@ class Plot(SelectionItem, CharacterBased):
     has_progression: bool = True
     timeline: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     has_escalation: bool = False
+    escalation: Optional[DynamicPlotPrincipleGroup] = None
     has_allies: bool = False
     allies: Optional[DynamicPlotPrincipleGroup] = None
     has_suspects: bool = False
