@@ -26,7 +26,7 @@ from PyQt6.QtGui import QColor, QIcon, QResizeEvent, QEnterEvent, QPaintEvent, Q
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame, QLabel
 from overrides import overrides
 from qthandy import flow, incr_font, \
-    margins, italic, clear_layout, vspacer, sp, vbox, transparent, incr_icon, bold, hbox, line, spacer
+    margins, italic, clear_layout, vspacer, sp, vbox, transparent, incr_icon, bold, hbox, line, spacer, busy
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
@@ -88,9 +88,19 @@ class PlotNode(ContainerNode):
         self._lblTitle.setText(self._plot.text)
 
 
+class ImpactNode(ContainerNode):
+    def __init__(self, parent=None):
+        super().__init__('Impact matrix', IconRegistry.from_name('mdi6.camera-metering-matrix'), parent)
+        self.setPlusButtonEnabled(False)
+        self.setMenuEnabled(False)
+        incr_font(self._lblTitle)
+        margins(self._wdgTitle, top=5, bottom=5)
+
+
 class PlotTreeView(TreeView, EventListener):
     plotSelected = pyqtSignal(Plot)
     plotRemoved = pyqtSignal(Plot)
+    impactGridSelected = pyqtSignal()
 
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -98,6 +108,8 @@ class PlotTreeView(TreeView, EventListener):
         self._plots: Dict[Plot, PlotNode] = {}
         self._characterNodes: Dict[Character, ContainerNode] = {}
         self._selectedPlots: Set[Plot] = set()
+
+        self._impactNode: Optional[ImpactNode] = None
 
         self.refresh()
 
@@ -134,6 +146,11 @@ class PlotTreeView(TreeView, EventListener):
             else:
                 self._centralWidget.layout().addWidget(wdg)
 
+        self._centralWidget.layout().addWidget(line())
+        self._impactNode = ImpactNode()
+        self._impactNode.selectionChanged.connect(self._impactGridSelectionChanged)
+        self._centralWidget.layout().addWidget(self._impactNode)
+
         self._centralWidget.layout().addWidget(vspacer())
 
     def refreshPlot(self, plot: Plot):
@@ -144,7 +161,7 @@ class PlotTreeView(TreeView, EventListener):
 
     def addPlot(self, plot: Plot):
         wdg = self.__initPlotWidget(plot)
-        self._centralWidget.layout().insertWidget(self._centralWidget.layout().count() - 1, wdg)
+        self._centralWidget.layout().insertWidget(self._centralWidget.layout().count() - 3, wdg)
 
     def selectPlot(self, plot: Plot):
         self._plots[plot].select()
@@ -162,10 +179,16 @@ class PlotTreeView(TreeView, EventListener):
     def _plotSelectionChanged(self, wdg: PlotNode, selected: bool):
         if selected:
             self.clearSelection()
+            self._impactNode.deselect()
             self._selectedPlots.add(wdg.plot())
             QTimer.singleShot(10, lambda: self.plotSelected.emit(wdg.plot()))
         elif wdg.plot() in self._selectedPlots:
             self._selectedPlots.remove(wdg.plot())
+
+    def _impactGridSelectionChanged(self, selected: bool):
+        if selected:
+            self.clearSelection()
+            QTimer.singleShot(10, lambda: self.impactGridSelected.emit())
 
     def _removePlot(self, wdg: PlotNode):
         plot = wdg.plot()
@@ -876,6 +899,7 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         self.wdgPlotListParent.layout().addWidget(self._wdgList)
         self._wdgList.plotSelected.connect(self._plotSelected)
         self._wdgList.plotRemoved.connect(self._plotRemoved)
+        self._wdgList.impactGridSelected.connect(self._displayImpactMatrix)
         self.stack.setCurrentWidget(self.pageDisplay)
 
         self.wdgEditor = frame()
@@ -892,8 +916,6 @@ class PlotEditor(QWidget, Ui_PlotEditor):
 
         italic(self.btnAdd)
         self.btnAdd.setIcon(IconRegistry.plus_icon('white'))
-        # self.btnImpactMatrix.setIcon(IconRegistry.from_name('mdi6.camera-metering-matrix'))
-        # self.btnImpactMatrix.clicked.connect(self._displayImpactMatrix)
 
         menu = MenuWidget(self.btnAdd, largeIcons=True)
         menu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
@@ -965,7 +987,6 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         emit_event(self.novel, StorylineCreatedEvent(self, plot))
 
     def _plotSelected(self, plot: Plot) -> PlotWidget:
-        # self.btnImpactMatrix.setChecked(False)
         self.stack.setCurrentWidget(self.pageDisplay)
 
         widget = PlotWidget(self.novel, plot, self.pageDisplay)
@@ -997,9 +1018,6 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         self._wdgImpactMatrix.refresh()
         emit_event(self.novel, StorylineRemovedEvent(self, plot))
 
-    def _displayImpactMatrix(self, checked: bool):
-        self._wdgList.clearSelection()
-        if checked:
-            self.stack.setCurrentWidget(self.pageMatrix)
-        else:
-            self.stack.setCurrentWidget(self.pageDisplay)
+    @busy
+    def _displayImpactMatrix(self):
+        self.stack.setCurrentWidget(self.pageMatrix)
