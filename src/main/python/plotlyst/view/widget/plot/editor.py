@@ -484,6 +484,11 @@ class PlotWidget(QWidget, EventListener):
             properties=['secondary-selector', 'transparent'], checkable=True)
         self.btnTimeline.installEventFilter(
             OpacityEventFilter(self.btnTimeline, leaveOpacity=0.7, ignoreCheckedButton=True))
+        self.btnEscalation = push_btn(
+            IconRegistry.from_name('ph.shuffle-bold', 'grey', PLOTLYST_SECONDARY_COLOR), text='Escalation',
+            properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnEscalation.installEventFilter(
+            OpacityEventFilter(self.btnEscalation, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.btnAllies = push_btn(
             IconRegistry.from_name(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES.icon(), 'grey',
                                    PLOTLYST_SECONDARY_COLOR), text='Allies',
@@ -511,11 +516,13 @@ class PlotWidget(QWidget, EventListener):
 
         self.wdgNavs.layout().addWidget(self.btnPrinciples)
         self.wdgNavs.layout().addWidget(self.btnTimeline)
+        self.wdgNavs.layout().addWidget(self.btnEscalation)
         self.wdgNavs.layout().addWidget(self.btnAllies)
         self.wdgNavs.layout().addWidget(self.btnSuspects)
         self.wdgNavs.layout().addWidget(self.btnCast)
         self.wdgNavs.layout().addWidget(self.btnMonster)
         self.btnTimeline.setVisible(self.plot.has_progression)
+        self.btnEscalation.setVisible(self.plot.has_escalation)
         self.btnAllies.setVisible(self.plot.has_allies)
         self.btnSuspects.setVisible(self.plot.has_suspects)
         self.btnCast.setVisible(self.plot.has_cast)
@@ -525,6 +532,7 @@ class PlotWidget(QWidget, EventListener):
         self.btnGroup = QButtonGroup(self)
         self.btnGroup.addButton(self.btnPrinciples)
         self.btnGroup.addButton(self.btnTimeline)
+        self.btnGroup.addButton(self.btnEscalation)
         self.btnGroup.addButton(self.btnAllies)
         self.btnGroup.addButton(self.btnSuspects)
         self.btnGroup.addButton(self.btnCast)
@@ -534,6 +542,7 @@ class PlotWidget(QWidget, EventListener):
         self.stack = QStackedWidget(self)
         self.pagePrinciples, self.wdgPrinciples = self.__page(LayoutType.FLOW)
         self.pageTimeline, self.wdgTimeline = self.__page()
+        self.pageEscalation, self.wdgEscalation = self.__page()
         self.pageAllies, self.wdgAllies = self.__page()
         margins(self.wdgAllies, left=5, right=5)
         self.pageSuspects, self.wdgSuspects = self.__page()
@@ -543,6 +552,7 @@ class PlotWidget(QWidget, EventListener):
 
         link_buttons_to_pages(self.stack, [(self.btnPrinciples, self.pagePrinciples),
                                            (self.btnTimeline, self.pageTimeline),
+                                           (self.btnEscalation, self.pageEscalation),
                                            (self.btnAllies, self.pageAllies),
                                            (self.btnSuspects, self.pageSuspects),
                                            (self.btnCast, self.pageCast),
@@ -567,6 +577,8 @@ class PlotWidget(QWidget, EventListener):
             self._addGroup(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES)
         if self.plot.has_progression:
             self._addGroup(DynamicPlotPrincipleGroupType.TIMELINE)
+        if self.plot.has_escalation:
+            self._addGroup(DynamicPlotPrincipleGroupType.ESCALATION)
         if self.plot.has_villain:
             self._addGroup(DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER)
         if self.plot.has_suspects:
@@ -690,6 +702,9 @@ class PlotWidget(QWidget, EventListener):
         if editorType == DynamicPlotPrincipleGroupType.TIMELINE:
             self.btnTimeline.setVisible(toggled)
             self.plot.has_progression = toggled
+        elif editorType == DynamicPlotPrincipleGroupType.ESCALATION:
+            self.btnEscalation.setVisible(toggled)
+            self.plot.has_escalation = toggled
         elif editorType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
             self.btnAllies.setVisible(toggled)
             self.plot.has_allies = toggled
