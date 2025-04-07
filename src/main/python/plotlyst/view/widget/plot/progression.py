@@ -19,23 +19,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from functools import partial
 
-from PyQt6.QtCore import Qt, pyqtSignal, QPointF
-from PyQt6.QtGui import QPaintEvent, QPainter, QBrush, QColor
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
 from qthandy import margins, transparent
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
-from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, DynamicPlotPrincipleGroupType, DynamicPlotPrinciple, DynamicPlotPrincipleType, \
     DynamicPlotPrincipleGroup, LayoutType, Character
-from plotlyst.core.template import antagonist_role
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import action
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
-from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.outline import OutlineItemWidget, OutlineTimelineWidget
 
@@ -67,13 +64,6 @@ class DynamicPlotPrincipleWidget(OutlineItemWidget):
                 character = entities_registry.character(self.principle.character_id)
                 if character:
                     self._charSelector.setCharacter(character)
-
-        if principle.type == DynamicPlotPrincipleType.MONSTER:
-            self._btnName.setFixedHeight(45)
-            apply_button_palette_color(self._btnName, RELAXED_WHITE_COLOR)
-            self._btnName.setGraphicsEffect(None)
-            self._btnName.setText('Evolution')
-            self._btnName.setIcon(IconRegistry.from_name(self.principle.type.icon(), RELAXED_WHITE_COLOR))
 
     @overrides
     def mimeType(self) -> str:
@@ -108,6 +98,11 @@ class DynamicPlotMultiPrincipleWidget(DynamicPlotPrincipleWidget):
         self._text.setHidden(True)
         self.layout().addWidget(self.elements)
 
+        self.setMinimumHeight(150)
+        self.setMinimumWidth(210)
+
+        self._btnName.setIcon(QIcon())
+
 
 class DynamicPlotPrincipleElementWidget(DynamicPlotPrincipleWidget):
     def __init__(self, novel: Novel, principle: DynamicPlotPrinciple, parent=None):
@@ -121,15 +116,13 @@ class DynamicPlotMultiPrincipleElements(OutlineTimelineWidget):
                  parent=None):
         self.novel = novel
         self._principleType = principleType
-        super().__init__(parent, paintTimeline=False, layout=LayoutType.FLOW, framed=True,
-                         frameColor=self._principleType.color())
+        self._groupType = groupType
+        super().__init__(parent, paintTimeline=False, layout=LayoutType.VERTICAL, framed=True, frameColor='grey')
         self.setProperty('white-bg', True)
         self.setProperty('large-rounded', True)
         margins(self, 0, 0, 0, 0)
         self.layout().setSpacing(0)
 
-        self._menu = DynamicPlotPrincipleSelectorMenu(groupType)
-        self._menu.selected.connect(self._insertPrinciple)
 
     @overrides
     def _newBeatWidget(self, item: DynamicPlotPrinciple) -> OutlineItemWidget:
@@ -149,7 +142,10 @@ class DynamicPlotMultiPrincipleElements(OutlineTimelineWidget):
     @overrides
     def _placeholderClicked(self, placeholder: QWidget):
         self._currentPlaceholder = placeholder
-        self._menu.exec(self.mapToGlobal(self._currentPlaceholder.pos()))
+        _menu = DynamicPlotPrincipleSelectorMenu(self._groupType)
+        _menu.selected.connect(self._insertPrinciple)
+
+        _menu.exec(self.mapToGlobal(self._currentPlaceholder.pos()))
 
     def _insertPrinciple(self, principleType: DynamicPlotPrincipleType):
         item = DynamicPlotPrinciple(type=principleType)
@@ -207,33 +203,6 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
         self.layout().setSpacing(1)
         self.novel = novel
         self.group = group
-        self._hasMenu = self.group.type in [DynamicPlotPrincipleGroupType.ESCALATION]
-        if self._hasMenu:
-            self._menu = DynamicPlotPrincipleSelectorMenu(self.group.type)
-            self._menu.selected.connect(self._insertPrinciple)
-
-    @overrides
-    def paintEvent(self, event: QPaintEvent) -> None:
-        if self.group.type != DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            return super().paintEvent(event)
-
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setPen(QColor(antagonist_role.icon_color))
-        painter.setBrush(QBrush(QColor(antagonist_role.icon_color)))
-
-        height = 50
-        offset = 20
-        for i, wdg in enumerate(self._beatWidgets):
-            painter.setOpacity(0.4 + (i + 1) * 0.6 / len(self._beatWidgets))
-            painter.drawConvexPolygon([
-                QPointF(wdg.x() - offset, wdg.y()),
-                QPointF(wdg.x(), wdg.y() + height / 2),
-                QPointF(wdg.x() - offset, wdg.y() + height),
-                QPointF(wdg.x() + wdg.width(), wdg.y() + height),
-                QPointF(wdg.x() + wdg.width() + offset, wdg.y() + height / 2),
-                QPointF(wdg.x() + wdg.width(), wdg.y())
-            ])
 
     def refreshCharacters(self):
         for wdg in self._beatWidgets:
@@ -242,10 +211,7 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
 
     @overrides
     def _newBeatWidget(self, item: DynamicPlotPrinciple) -> OutlineItemWidget:
-        if self.group.type in [DynamicPlotPrincipleGroupType.SUSPECTS, DynamicPlotPrincipleGroupType.CAST]:
-            wdg = DynamicPlotMultiPrincipleWidget(self.novel, item, self.group.type)
-        else:
-            wdg = DynamicPlotPrincipleWidget(self.novel, item)
+        wdg = DynamicPlotMultiPrincipleWidget(self.novel, item, self.group.type)
         wdg.removed.connect(self._beatRemoved)
         return wdg
 
@@ -256,33 +222,22 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
             text = 'Add a new cast member'
         elif self.group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
             text = 'Add a new suspect'
-        elif self.group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            text = 'Add a new character'
-        elif self.group.type == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            text = 'Add a new evolution'
         else:
             text = 'Add a new element'
 
         if displayText:
             wdg.btn.setText(text)
-        wdg.btn.setToolTip(text)
+        else:
+            wdg.btn.setToolTip(text)
         return wdg
 
     @overrides
     def _placeholderClicked(self, placeholder: QWidget):
         self._currentPlaceholder = placeholder
-        if self._hasMenu:
-            self._menu.exec(self.mapToGlobal(self._currentPlaceholder.pos()))
-        elif self.group.type == DynamicPlotPrincipleGroupType.ELEMENTS_OF_WONDER:
-            self._insertPrinciple(DynamicPlotPrincipleType.WONDER)
-        elif self.group.type == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            self._insertPrinciple(DynamicPlotPrincipleType.MONSTER)
-        elif self.group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
+        if self.group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
             self._insertPrinciple(DynamicPlotPrincipleType.SUSPECT)
         elif self.group.type == DynamicPlotPrincipleGroupType.CAST:
             self._insertPrinciple(DynamicPlotPrincipleType.CREW_MEMBER)
-        elif self.group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            self._insertPrinciple(DynamicPlotPrincipleType.ALLY)
 
     def _insertPrinciple(self, principleType: DynamicPlotPrincipleType):
         item = DynamicPlotPrinciple(type=principleType)
@@ -292,6 +247,7 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
 
         self.principleAdded.emit(item)
 
+    @overrides
     def _beatRemoved(self, wdg: OutlineItemWidget, teardownFunction=None):
         principle = wdg.item
         super()._beatRemoved(wdg, teardownFunction)

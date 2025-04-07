@@ -1402,7 +1402,9 @@ class Plot(SelectionItem, CharacterBased):
     has_allies: bool = False
     allies: Optional[DynamicPlotPrincipleGroup] = None
     has_suspects: bool = False
+    suspects: Optional[DynamicPlotPrincipleGroup] = None
     has_cast: bool = False
+    cast: Optional[DynamicPlotPrincipleGroup] = None
     has_villain: bool = False
     villain: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     has_dynamic_principles: bool = True
