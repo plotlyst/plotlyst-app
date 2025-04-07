@@ -24,6 +24,7 @@ from typing import Optional, List
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QLineEdit, QGraphicsColorizeEffect, QGridLayout
 from overrides import overrides
 from qthandy import vbox, incr_font, vspacer, line, clear_layout, incr_icon, decr_icon, margins, spacer, hbox, grid, sp
@@ -42,6 +43,7 @@ from plotlyst.view.common import fade_in, insert_before_the_end, DelayedSignalSl
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
+from plotlyst.view.style.theme import TEXT_COLOR_ON_DARK_BG
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import Emoji
 from plotlyst.view.widget.input import DecoratedTextEdit, Toggle
@@ -272,6 +274,7 @@ class LocationAttributeTextEdit(DecoratedTextEdit):
 
         self.setProperty('rounded', True)
         if nightMode:
+            self.setPlaceholderTextColor(QColor(TEXT_COLOR_ON_DARK_BG))
             self.setProperty('night-mode', True)
         else:
             self.setProperty('white-bg', True)
