@@ -242,7 +242,6 @@ class BackstoryEvent(Event):
     type: BackstoryEventType = BackstoryEventType.Event
     type_icon: str = 'ri.calendar-event-fill'
     type_color: str = 'darkBlue'
-    follow_up: bool = False
     position: Optional[Position] = None
 
 
@@ -1397,13 +1396,18 @@ class Plot(SelectionItem, CharacterBased):
     question: str = ''
     principles: List[PlotPrinciple] = field(default_factory=list)
     dynamic_principles: List[DynamicPlotPrincipleGroup] = field(default_factory=list)
-    has_progression: bool = True
+    has_progression: bool = False
+    timeline: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     has_escalation: bool = False
+    escalation: Optional[DynamicPlotPrincipleGroup] = None
     has_allies: bool = False
     allies: Optional[DynamicPlotPrincipleGroup] = None
     has_suspects: bool = False
+    suspects: Optional[DynamicPlotPrincipleGroup] = None
     has_cast: bool = False
+    cast: Optional[DynamicPlotPrincipleGroup] = None
     has_villain: bool = False
+    villain: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     has_dynamic_principles: bool = True
     has_thematic_relevance: bool = False
     events: List[PlotEvent] = field(default_factory=list)
@@ -4177,10 +4181,7 @@ class Novel(NovelDescriptor):
         scene.chapter = chapter
         novel.scenes.append(scene)
 
-        plot = Plot('Main plot', icon='fa5s.theater-masks', icon_color='#03396c',
-                    progression=[PlotProgressionItem(type=PlotProgressionItemType.BEGINNING),
-                                 PlotProgressionItem(type=PlotProgressionItemType.MIDDLE),
-                                 PlotProgressionItem(type=PlotProgressionItemType.ENDING)])
+        plot = Plot('Main plot', icon='fa5s.theater-masks', icon_color='#03396c')
         novel.plots.append(plot)
 
         return novel

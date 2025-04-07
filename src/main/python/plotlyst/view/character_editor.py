@@ -40,7 +40,7 @@ from plotlyst.events import NovelAboutToSyncEvent
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.service.tour import TourService
-from plotlyst.view.common import set_tab_icon, ButtonPressResizeEventFilter, set_tab_visible, action
+from plotlyst.view.common import set_tab_icon, ButtonPressResizeEventFilter, set_tab_visible, action, scroll_to_bottom
 from plotlyst.view.generated.character_editor_ui import Ui_CharacterEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_bg_image, apply_white_menu
@@ -75,9 +75,7 @@ class CharacterEditor(QObject, EventListener):
                               self._edit_displayed_name))
         self.ui.wdgToolbar.layout().addWidget(self._btnMenu, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.ui.btnNewBackstory.setIcon(IconRegistry.plus_icon('white'))
-        self.ui.btnNewBackstory.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnNewBackstory))
-        self.ui.btnNewBackstory.clicked.connect(lambda: self.ui.wdgBackstory.add())
+        self.ui.wdgBackstory.addedToTheEnd.connect(lambda: scroll_to_bottom(self.ui.scrollAreaBackstory))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, app_env.profile().get('origin', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))

@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from plotlyst.core.domain import Novel, Document, DocumentType, StoryElementType, SceneReaderInformation, \
-    ReaderInformationType, Scene
+    ReaderInformationType, Scene, Plot, DynamicPlotPrincipleGroupType, BackstoryEvent, Position
 from plotlyst.service.persistence import RepositoryPersistenceManager
 
 
@@ -36,10 +36,55 @@ def migrate_novel(novel: Novel):
         novel.synopsis = None
         RepositoryPersistenceManager.instance().update_novel(novel)
 
+    for plot in novel.plots:
+        migrate_plot_principles(novel, plot)
+        migrate_plot_timeline(novel, plot)
+
     for scene in novel.scenes:
         if scene.migration.migrated_functions:
             continue
         migrate_scene_functions(scene)
+
+
+def migrate_plot_principles(novel: Novel, plot: Plot):
+    if not plot.dynamic_principles:
+        return
+
+    for dyn_prin in plot.dynamic_principles:
+        if dyn_prin.type == DynamicPlotPrincipleGroupType.SUSPECTS:
+            plot.suspects = dyn_prin
+            plot.has_suspects = True
+        if dyn_prin.type == DynamicPlotPrincipleGroupType.CAST:
+            plot.cast = dyn_prin
+            plot.has_cast = True
+        if dyn_prin.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
+            plot.allies = dyn_prin
+            plot.has_allies = True
+        if dyn_prin.type == DynamicPlotPrincipleGroupType.ESCALATION:
+            plot.escalation = dyn_prin
+            plot.has_escalation = True
+        if dyn_prin.type == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
+            for el in dyn_prin.principles:
+                plot.villain.append(BackstoryEvent('Evolution', el.text, position=Position.CENTER))
+            plot.has_villain = True
+
+    plot.dynamic_principles.clear()
+
+    RepositoryPersistenceManager.instance().update_novel(novel)
+
+
+def migrate_plot_timeline(novel: Novel, plot: Plot):
+    if not plot.progression:
+        return
+
+    for event in plot.progression:
+        bk_event = BackstoryEvent('', event.text, position=Position.CENTER)
+        plot.timeline.append(bk_event)
+
+    plot.has_progression = True
+    plot.progression.clear()
+
+    RepositoryPersistenceManager.instance().update_novel(novel)
 
 
 def migrate_scene_functions(scene: Scene):

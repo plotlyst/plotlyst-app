@@ -21,19 +21,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from functools import partial
 from typing import Set, Dict, Tuple, List, Optional
 
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent
-from PyQt6.QtGui import QColor, QIcon, QResizeEvent, QEnterEvent
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QEvent, QObject, QRectF
+from PyQt6.QtGui import QColor, QIcon, QResizeEvent, QEnterEvent, QPaintEvent, QPainter, QRadialGradient, QPainterPath
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame, QLabel
 from overrides import overrides
 from qthandy import flow, incr_font, \
-    margins, italic, clear_layout, vspacer, sp, vbox, transparent, incr_icon, bold, hbox, line, spacer
+    margins, italic, clear_layout, vspacer, sp, vbox, transparent, incr_icon, bold, hbox, line, spacer, busy
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotType, Character, PlotPrinciple, \
-    PlotPrincipleType, PlotProgressionItem, \
-    PlotProgressionItemType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup
+    PlotPrincipleType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup, BackstoryEvent, \
+    Position
+from plotlyst.core.template import antagonist_role
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, StorylineCreatedEvent, \
@@ -42,7 +43,7 @@ from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, label, frame, tool_btn, columns, \
-    push_btn, link_buttons_to_pages, scroll_area, rows, exclusive_buttons
+    push_btn, link_buttons_to_pages, scroll_area, rows, exclusive_buttons, scroll_to_bottom
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
@@ -53,9 +54,12 @@ from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import SeparatorLineWithShadow, PopupDialog, IconText, icon_text
 from plotlyst.view.widget.input import AutoAdjustableLineEdit, Toggle
 from plotlyst.view.widget.plot.allies import AlliesPrinciplesGroupWidget
+from plotlyst.view.widget.plot.escalation import StorylineEscalationEditorWidget
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, principle_type_index, principle_icon, principle_hint
+from plotlyst.view.widget.plot.progression import DynamicPlotPrinciplesWidget
+from plotlyst.view.widget.plot.timeline import StorylineTimelineWidget, StorylineVillainEvolutionWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
 from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
 
@@ -83,9 +87,19 @@ class PlotNode(ContainerNode):
         self._lblTitle.setText(self._plot.text)
 
 
+class ImpactNode(ContainerNode):
+    def __init__(self, parent=None):
+        super().__init__('Impact matrix', IconRegistry.from_name('mdi6.camera-metering-matrix'), parent)
+        self.setPlusButtonEnabled(False)
+        self.setMenuEnabled(False)
+        incr_font(self._lblTitle)
+        margins(self._wdgTitle, top=5, bottom=5)
+
+
 class PlotTreeView(TreeView, EventListener):
     plotSelected = pyqtSignal(Plot)
     plotRemoved = pyqtSignal(Plot)
+    impactGridSelected = pyqtSignal()
 
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -93,6 +107,8 @@ class PlotTreeView(TreeView, EventListener):
         self._plots: Dict[Plot, PlotNode] = {}
         self._characterNodes: Dict[Character, ContainerNode] = {}
         self._selectedPlots: Set[Plot] = set()
+
+        self._impactNode: Optional[ImpactNode] = None
 
         self.refresh()
 
@@ -129,6 +145,11 @@ class PlotTreeView(TreeView, EventListener):
             else:
                 self._centralWidget.layout().addWidget(wdg)
 
+        self._centralWidget.layout().addWidget(line())
+        self._impactNode = ImpactNode()
+        self._impactNode.selectionChanged.connect(self._impactGridSelectionChanged)
+        self._centralWidget.layout().addWidget(self._impactNode)
+
         self._centralWidget.layout().addWidget(vspacer())
 
     def refreshPlot(self, plot: Plot):
@@ -139,7 +160,7 @@ class PlotTreeView(TreeView, EventListener):
 
     def addPlot(self, plot: Plot):
         wdg = self.__initPlotWidget(plot)
-        self._centralWidget.layout().insertWidget(self._centralWidget.layout().count() - 1, wdg)
+        self._centralWidget.layout().insertWidget(self._centralWidget.layout().count() - 3, wdg)
 
     def selectPlot(self, plot: Plot):
         self._plots[plot].select()
@@ -157,10 +178,16 @@ class PlotTreeView(TreeView, EventListener):
     def _plotSelectionChanged(self, wdg: PlotNode, selected: bool):
         if selected:
             self.clearSelection()
+            self._impactNode.deselect()
             self._selectedPlots.add(wdg.plot())
             QTimer.singleShot(10, lambda: self.plotSelected.emit(wdg.plot()))
         elif wdg.plot() in self._selectedPlots:
             self._selectedPlots.remove(wdg.plot())
+
+    def _impactGridSelectionChanged(self, selected: bool):
+        if selected:
+            self.clearSelection()
+            QTimer.singleShot(10, lambda: self.impactGridSelected.emit())
 
     def _removePlot(self, wdg: PlotNode):
         plot = wdg.plot()
@@ -411,6 +438,10 @@ class PlotWidget(QWidget, EventListener):
         vbox(self, 10)
 
         self._alliesEditor: Optional[AlliesPrinciplesGroupWidget] = None
+        self._timelineEditor: Optional[StorylineTimelineWidget] = None
+        self._villainEditor: Optional[StorylineVillainEvolutionWidget] = None
+        self._suspectsEditor: Optional[DynamicPlotPrinciplesWidget] = None
+        self._castEditor: Optional[DynamicPlotPrinciplesWidget] = None
 
         self.btnPlotIcon = tool_btn(QIcon(), transparent_=True)
         self.btnPlotIcon.setIconSize(QSize(48, 48))
@@ -450,6 +481,12 @@ class PlotWidget(QWidget, EventListener):
         self.installEventFilter(VisibilityToggleEventFilter(target=self.btnEditElements, parent=self))
         self.btnEditElements.clicked.connect(self._editElements)
 
+        self.btnInit = push_btn(IconRegistry.plus_edit_icon(RELAXED_WHITE_COLOR), 'Initialize elements',
+                                properties=['confirm', 'positive'])
+        incr_icon(self.btnInit, 2)
+        incr_font(self.btnInit)
+        self.btnInit.clicked.connect(self._editElements)
+
         self._characterSelector = CharacterAvatar(self, 88, 120, 92, 8)
         menu = CharacterSelectorMenu(self.novel, self._characterSelector.btnAvatar)
         menu.selected.connect(self._characterSelected)
@@ -476,6 +513,11 @@ class PlotWidget(QWidget, EventListener):
             properties=['secondary-selector', 'transparent'], checkable=True)
         self.btnTimeline.installEventFilter(
             OpacityEventFilter(self.btnTimeline, leaveOpacity=0.7, ignoreCheckedButton=True))
+        self.btnEscalation = push_btn(
+            IconRegistry.from_name('ph.shuffle-bold', 'grey', PLOTLYST_SECONDARY_COLOR), text='Escalation',
+            properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnEscalation.installEventFilter(
+            OpacityEventFilter(self.btnEscalation, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.btnAllies = push_btn(
             IconRegistry.from_name(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES.icon(), 'grey',
                                    PLOTLYST_SECONDARY_COLOR), text='Allies',
@@ -503,11 +545,13 @@ class PlotWidget(QWidget, EventListener):
 
         self.wdgNavs.layout().addWidget(self.btnPrinciples)
         self.wdgNavs.layout().addWidget(self.btnTimeline)
+        self.wdgNavs.layout().addWidget(self.btnEscalation)
         self.wdgNavs.layout().addWidget(self.btnAllies)
         self.wdgNavs.layout().addWidget(self.btnSuspects)
         self.wdgNavs.layout().addWidget(self.btnCast)
         self.wdgNavs.layout().addWidget(self.btnMonster)
         self.btnTimeline.setVisible(self.plot.has_progression)
+        self.btnEscalation.setVisible(self.plot.has_escalation)
         self.btnAllies.setVisible(self.plot.has_allies)
         self.btnSuspects.setVisible(self.plot.has_suspects)
         self.btnCast.setVisible(self.plot.has_cast)
@@ -517,6 +561,7 @@ class PlotWidget(QWidget, EventListener):
         self.btnGroup = QButtonGroup(self)
         self.btnGroup.addButton(self.btnPrinciples)
         self.btnGroup.addButton(self.btnTimeline)
+        self.btnGroup.addButton(self.btnEscalation)
         self.btnGroup.addButton(self.btnAllies)
         self.btnGroup.addButton(self.btnSuspects)
         self.btnGroup.addButton(self.btnCast)
@@ -525,15 +570,18 @@ class PlotWidget(QWidget, EventListener):
 
         self.stack = QStackedWidget(self)
         self.pagePrinciples, self.wdgPrinciples = self.__page(LayoutType.FLOW)
-        self.pageLinearStructure, self.wdgLinearStructure = self.__page()
+        self.pageTimeline, self.wdgTimeline = self.__page()
+        self.pageEscalation, self.wdgEscalation = self.__page()
         self.pageAllies, self.wdgAllies = self.__page()
         margins(self.wdgAllies, left=5, right=5)
         self.pageSuspects, self.wdgSuspects = self.__page()
         self.pageCast, self.wdgCast = self.__page()
         self.pageMonster, self.wdgMonster = self.__page()
+        self.wdgMonster.installEventFilter(self)
 
         link_buttons_to_pages(self.stack, [(self.btnPrinciples, self.pagePrinciples),
-                                           (self.btnTimeline, self.pageLinearStructure),
+                                           (self.btnTimeline, self.pageTimeline),
+                                           (self.btnEscalation, self.pageEscalation),
                                            (self.btnAllies, self.pageAllies),
                                            (self.btnSuspects, self.pageSuspects),
                                            (self.btnCast, self.pageCast),
@@ -544,18 +592,11 @@ class PlotWidget(QWidget, EventListener):
         self.layout().addWidget(self.lineName, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgNavs, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._divider)
+        self.layout().addWidget(self.btnInit, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.stack)
 
         for principle in self.plot.principles:
             self._initPrincipleEditor(principle)
-
-        # self._timeline = PlotEventsTimeline(self.novel, self.plot.plot_type)
-        # self.wdgLinearStructure.layout().addWidget(self._timeline)
-        # self._timeline.setStructure(self.plot.progression)
-        # self._timeline.timelineChanged.connect(self._timelineChanged)
-
-        # for group in self.plot.dynamic_principles:
-        #     self._addGroup(group)
 
         self.repo = RepositoryPersistenceManager.instance()
 
@@ -564,6 +605,16 @@ class PlotWidget(QWidget, EventListener):
 
         if self.plot.has_allies:
             self._addGroup(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES)
+        if self.plot.has_progression:
+            self._addGroup(DynamicPlotPrincipleGroupType.TIMELINE)
+        if self.plot.has_escalation:
+            self._addGroup(DynamicPlotPrincipleGroupType.ESCALATION)
+        if self.plot.has_villain:
+            self._addGroup(DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER)
+        if self.plot.has_suspects:
+            self._addGroup(DynamicPlotPrincipleGroupType.SUSPECTS)
+        if self.plot.has_cast:
+            self._addGroup(DynamicPlotPrincipleGroupType.CAST)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -573,6 +624,34 @@ class PlotWidget(QWidget, EventListener):
                                          self.btnEditElements.sizeHint().height())
 
         self.__updateNavLayout()
+
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched is self.wdgMonster and isinstance(event, QPaintEvent):
+            painter = QPainter(self.wdgMonster)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+            rect: QRectF = self.wdgMonster.rect().toRectF()
+            corner_radius = 12
+
+            path = QPainterPath()
+            path.addRoundedRect(rect, corner_radius, corner_radius)
+
+            center = rect.center()
+            radius = max(rect.width(), rect.height()) / 2
+            gradient = QRadialGradient(center, radius)
+
+            gradient.setColorAt(0.0, QColor('#872210'))
+            gradient.setColorAt(0.5, QColor(antagonist_role.icon_color))
+            gradient.setColorAt(1.0, QColor("#FAB2A5"))
+
+            painter.fillPath(path, gradient)
+
+            IconRegistry.from_name('ri.ghost-2-fill').paint(
+                painter, self.wdgMonster.rect(), alignment=Qt.AlignmentFlag.AlignCenter
+            )
+
+        return super().eventFilter(watched, event)
 
     @overrides
     def event_received(self, event: Event):
@@ -591,6 +670,10 @@ class PlotWidget(QWidget, EventListener):
 
         if self._alliesEditor:
             self._alliesEditor.refreshCharacters()
+        if self._suspectsEditor:
+            self._suspectsEditor.refreshCharacters()
+        if self._castEditor:
+            self._castEditor.refreshCharacters()
 
     def _updateIcon(self):
         if self.plot.icon:
@@ -631,6 +714,7 @@ class PlotWidget(QWidget, EventListener):
         PlotElementSelectorPopup.popup(self.plot, object)
 
     def _principleToggled(self, principleType: PlotPrincipleType, toggled: bool):
+        self.btnInit.setHidden(True)
         if toggled:
             principle = PlotPrinciple(principleType)
             self._initPrincipleEditor(principle)
@@ -646,59 +730,48 @@ class PlotWidget(QWidget, EventListener):
         self._save()
 
     def _editorToggled(self, editorType: DynamicPlotPrincipleGroupType, toggled: bool):
+        self.btnInit.setHidden(True)
         if editorType == DynamicPlotPrincipleGroupType.TIMELINE:
-            self.btnTimeline.setVisible(toggled)
             self.plot.has_progression = toggled
+            btn = self.btnTimeline
+            page = self.pageTimeline
+        elif editorType == DynamicPlotPrincipleGroupType.ESCALATION:
+            self.plot.has_escalation = toggled
+            btn = self.btnEscalation
+            page = self.pageEscalation
         elif editorType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            self.btnAllies.setVisible(toggled)
             self.plot.has_allies = toggled
+            btn = self.btnAllies
+            page = self.pageAllies
         elif editorType == DynamicPlotPrincipleGroupType.SUSPECTS:
-            self.btnSuspects.setVisible(toggled)
             self.plot.has_suspects = toggled
+            btn = self.btnSuspects
+            page = self.pageSuspects
         elif editorType == DynamicPlotPrincipleGroupType.CAST:
-            self.btnCast.setVisible(toggled)
             self.plot.has_cast = toggled
+            btn = self.btnCast
+            page = self.pageCast
         elif editorType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            self.btnMonster.setVisible(toggled)
             self.plot.has_villain = toggled
+            btn = self.btnMonster
+            page = self.pageMonster
+        else:
+            return
 
+        btn.setVisible(toggled)
         if toggled:
             self._addGroup(editorType)
+            btn.setChecked(True)
         else:
             self._clearGroup(editorType)
+            if self.stack.currentWidget() is page:
+                self.btnPrinciples.setChecked(True)
 
         self._navWidth = self.wdgNavs.sizeHint().width()
         self.__updateNavLayout()
 
-    # def _progressionToggled(self, toggled: bool):
-    #     self.plot.has_progression = toggled
-    #     if self.plot.has_progression:
-    #         qtanim.fade_in(self.wdgProgression, teardown=lambda: self.wdgProgression.setGraphicsEffect(None))
-    #     else:
-    #         qtanim.fade_out(self.wdgProgression, teardown=lambda: self.wdgProgression.setGraphicsEffect(None))
-    #     self._save()
-
-    # def _dynamicPrinciplesToggled(self, toggled: bool):
-    #     self.plot.has_dynamic_principles = toggled
-    #     if self.plot.has_dynamic_principles:
-    #         qtanim.fade_in(self.wdgDynamicPrinciples,
-    #                        teardown=lambda: self.wdgDynamicPrinciples.setGraphicsEffect(None))
-    #     else:
-    #         qtanim.fade_out(self.wdgDynamicPrinciples,
-    #                         teardown=lambda: self.wdgDynamicPrinciples.setGraphicsEffect(None))
-    #     self._save()
-
-    # def _genresSelected(self):
-    #     object = PrincipleSelectorObject()
-    #     object.principleToggled.connect(self._principleToggled)
-    #     GenrePrincipleSelectorDialog.popup(self.plot, object)
-    #
-    # def _addDynamicGroup(self, groupType: DynamicPlotPrincipleGroupType):
-    #     wdg = self._dynamicPrinciplesEditor.addNewGroup(groupType)
-    #     wdg.show()
-    #     self.scrollArea.ensureWidgetVisible(wdg, 50, 150)
-
     def _initPrincipleEditor(self, principle: PlotPrinciple):
+        self.btnInit.setHidden(True)
         editor = PlotPrincipleEditor(principle, self.plot.plot_type)
         editor.principleEdited.connect(self._save)
         # self.wdgPrinciples.layout().insertWidget(principle_type_index[principle.type], editor)
@@ -709,6 +782,7 @@ class PlotWidget(QWidget, EventListener):
         return editor
 
     def _addGroup(self, groupType: DynamicPlotPrincipleGroupType):
+        self.btnInit.setHidden(True)
         if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
             if self.plot.allies is None:
                 self.plot.allies = DynamicPlotPrincipleGroup(groupType)
@@ -716,85 +790,70 @@ class PlotWidget(QWidget, EventListener):
             self._alliesEditor = AlliesPrinciplesGroupWidget(self.novel, self.plot.allies)
             self._alliesEditor.changed.connect(self._save)
             self.wdgAllies.layout().addWidget(self._alliesEditor)
-        #     else:
-        #         wdg = DynamicPlotPrinciplesGroupWidget(self.novel, group)
-        #
+        if groupType == DynamicPlotPrincipleGroupType.TIMELINE:
+            if not self.plot.timeline:
+                self.plot.timeline.append(BackstoryEvent('', ''))
+                self._save()
+            self._timelineEditor = StorylineTimelineWidget(self.plot)
+            self._timelineEditor.refresh()
+            self._timelineEditor.changed.connect(self._save)
+            self._timelineEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageTimeline))
+            self.wdgTimeline.layout().addWidget(self._timelineEditor)
+        if groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
+            if not self.plot.villain:
+                self.plot.villain.append(BackstoryEvent('', '', position=Position.CENTER))
+                self._save()
+            self._villainEditor = StorylineVillainEvolutionWidget(self.plot)
+            self._villainEditor.refresh()
+            self._villainEditor.changed.connect(self._save)
+            self._villainEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageMonster))
+            self.wdgMonster.layout().addWidget(self._villainEditor)
+        if groupType == DynamicPlotPrincipleGroupType.SUSPECTS:
+            if self.plot.suspects is None:
+                self.plot.suspects = DynamicPlotPrincipleGroup(groupType)
+                self._save()
+            self._suspectsEditor = DynamicPlotPrinciplesWidget(self.novel, self.plot.suspects)
+            self._suspectsEditor.timelineChanged.connect(self._save)
+            self.wdgSuspects.layout().addWidget(self._suspectsEditor)
+            self._suspectsEditor.setStructure(self.plot.suspects.principles)
+        if groupType == DynamicPlotPrincipleGroupType.CAST:
+            if self.plot.cast is None:
+                self.plot.cast = DynamicPlotPrincipleGroup(groupType)
+                self._save()
+            self._castEditor = DynamicPlotPrinciplesWidget(self.novel, self.plot.cast)
+            self._castEditor.timelineChanged.connect(self._save)
+            self.wdgCast.layout().addWidget(self._castEditor)
+            self._castEditor.setStructure(self.plot.cast.principles)
+        if groupType == DynamicPlotPrincipleGroupType.ESCALATION:
+            if self.plot.escalation is None:
+                self.plot.escalation = DynamicPlotPrincipleGroup(groupType)
+                self._save()
+            self._escalationEditor = StorylineEscalationEditorWidget(self.novel, self.plot)
+            self._escalationEditor.changed.connect(self._save)
+            self.wdgEscalation.layout().addWidget(self._escalationEditor)
 
     def _clearGroup(self, groupType: DynamicPlotPrincipleGroupType):
         if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
             clear_layout(self.wdgAllies)
             self._alliesEditor = None
-
-    #     elif group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
-    #         self.wdgSuspects.layout().addWidget(wdg)
-    #     elif group.type == DynamicPlotPrincipleGroupType.CAST:
-    #         self.wdgCast.layout().addWidget(wdg)
-    #     elif group.type == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-    #         self.wdgMonster.layout().addWidget(wdg)
-    #
-    #     wdg.remove.connect(partial(self._removeGroup, wdg))
-    #
-    #     return wdg
-
-    # def _removeGroup(self, wdg: DynamicPlotPrinciplesGroupWidget):
-    #     title = f'Are you sure you want to delete the storyline elements "{wdg.group.type.display_name()}"?'
-    #     if wdg.group.principles and not confirmed("This action cannot be undone.", title):
-    #         return
-    #
-    #     self.plot.dynamic_principles.remove(wdg.group)
-    #     fade_out_and_gc(self, wdg)
-    #     self._save()
+        elif groupType == DynamicPlotPrincipleGroupType.TIMELINE:
+            clear_layout(self.wdgTimeline)
+            self._timelineEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.ESCALATION:
+            clear_layout(self.wdgEscalation)
+            self._escalationEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
+            clear_layout(self.wdgMonster)
+            self._villainEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.SUSPECTS:
+            clear_layout(self.wdgSuspects)
+            self._suspectsEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.CAST:
+            clear_layout(self.wdgCast)
+            self._castEditor = None
 
     def _save(self):
         self.repo.update_novel(self.novel)
-
-    # def _timelineChanged(self):
-    #     self._save()
-
-    # def _newValue(self):
-    #     value = PlotValueEditorDialog().display()
-    #     if value:
-    #         self.plot.values.append(value)
-    #         self.wdgValues.layout().removeWidget(self._btnAddValue)
-    #         self._addValue(value)
-    #         self.wdgValues.layout().addWidget(self._btnAddValue)
-    #
-    #         self._save()
-
-    # def _addValue(self, value: PlotValue):
-    #     label = PlotValueLabel(value, parent=self.wdgValues, simplified=True)
-    #     sp(label).h_max()
-    #     label.installEventFilter(OpacityEventFilter(label, leaveOpacity=0.7))
-    #     pointy(label)
-    #     insert_before_the_end(self.wdgValues, label)
-    #     label.removalRequested.connect(partial(self._removeValue, label))
-    #     label.clicked.connect(partial(self._plotValueClicked, label))
-    #
-    #     self.btnValues.setText('')
-
-    # def _removeValue(self, label: PlotValueLabel):
-    #     if app_env.test_env():
-    #         self.__destroyValue(label)
-    #     else:
-    #         anim = qtanim.fade_out(label, duration=150, hide_if_finished=False)
-    #         anim.finished.connect(partial(self.__destroyValue, label))
-
-    # def _editValue(self, label: PlotValueLabel):
-    #     value = PlotValueEditorDialog().display(label.value)
-    #     if value:
-    #         label.value.text = value.text
-    #         label.value.negative = value.negative
-    #         label.value.icon = value.icon
-    #         label.value.icon_color = value.icon_color
-    #         label.refresh()
-    #         self._save()
-
-    # def _plotValueClicked(self, label: PlotValueLabel):
-    #     menu = MenuWidget()
-    #     menu.addAction(action('Edit', IconRegistry.edit_icon(), partial(self._editValue, label)))
-    #     menu.addSeparator()
-    #     menu.addAction(action('Remove', IconRegistry.trash_can_icon(), label.removalRequested.emit))
-    #     menu.exec(QCursor.pos())
 
     def __page(self, layoutType: LayoutType = LayoutType.VERTICAL) -> Tuple[QScrollArea, QWidget]:
         scroll_ = scroll_area(frameless=True)
@@ -828,12 +887,6 @@ class PlotWidget(QWidget, EventListener):
             self.btnCast.setText('Cast')
             self.btnMonster.setText('Monster')
 
-    # def __destroyValue(self, label: PlotValueLabel):
-    #     self.plot.values.remove(label.value)
-    #     self._save()
-    #     fade_out_and_gc(self.wdgValues, label)
-    #     self.btnValues.setText('' if self.plot.values else 'Values')
-
 
 class PlotEditor(QWidget, Ui_PlotEditor):
     def __init__(self, novel: Novel, parent=None):
@@ -845,6 +898,7 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         self.wdgPlotListParent.layout().addWidget(self._wdgList)
         self._wdgList.plotSelected.connect(self._plotSelected)
         self._wdgList.plotRemoved.connect(self._plotRemoved)
+        self._wdgList.impactGridSelected.connect(self._displayImpactMatrix)
         self.stack.setCurrentWidget(self.pageDisplay)
 
         self.wdgEditor = frame()
@@ -861,8 +915,6 @@ class PlotEditor(QWidget, Ui_PlotEditor):
 
         italic(self.btnAdd)
         self.btnAdd.setIcon(IconRegistry.plus_icon('white'))
-        # self.btnImpactMatrix.setIcon(IconRegistry.from_name('mdi6.camera-metering-matrix'))
-        # self.btnImpactMatrix.clicked.connect(self._displayImpactMatrix)
 
         menu = MenuWidget(self.btnAdd, largeIcons=True)
         menu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
@@ -909,10 +961,7 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         else:
             name = 'Main plot'
             icon = 'fa5s.theater-masks'
-        plot = Plot(name, plot_type=plot_type, icon=icon,
-                    progression=[PlotProgressionItem(type=PlotProgressionItemType.BEGINNING),
-                                 PlotProgressionItem(type=PlotProgressionItemType.MIDDLE),
-                                 PlotProgressionItem(type=PlotProgressionItemType.ENDING)])
+        plot = Plot(name, plot_type=plot_type, icon=icon)
         self.novel.plots.append(plot)
 
         plot_colors = list(STORY_LINE_COLOR_CODES[plot_type.value])
@@ -934,7 +983,6 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         emit_event(self.novel, StorylineCreatedEvent(self, plot))
 
     def _plotSelected(self, plot: Plot) -> PlotWidget:
-        # self.btnImpactMatrix.setChecked(False)
         self.stack.setCurrentWidget(self.pageDisplay)
 
         widget = PlotWidget(self.novel, plot, self.pageDisplay)
@@ -966,9 +1014,6 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         self._wdgImpactMatrix.refresh()
         emit_event(self.novel, StorylineRemovedEvent(self, plot))
 
-    def _displayImpactMatrix(self, checked: bool):
-        self._wdgList.clearSelection()
-        if checked:
-            self.stack.setCurrentWidget(self.pageMatrix)
-        else:
-            self.stack.setCurrentWidget(self.pageDisplay)
+    @busy
+    def _displayImpactMatrix(self):
+        self.stack.setCurrentWidget(self.pageMatrix)
