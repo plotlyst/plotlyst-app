@@ -17,21 +17,46 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from functools import partial
+
+import qtanim
 from PyQt6.QtCore import pyqtSignal, QSize, Qt
+from PyQt6.QtGui import QResizeEvent
 from PyQt6.QtWidgets import QWidget, QFrame
+from overrides import overrides
 from qthandy import vbox, flow, sp, incr_font, incr_icon, line, vspacer, margins
 
 from plotlyst.common import LIGHTGREY_ACTIVE_COLOR
-from plotlyst.core.domain import Plot, DynamicPlotPrincipleType, DynamicPlotPrincipleGroupType
-from plotlyst.view.common import push_btn, rows, label
+from plotlyst.core.domain import Plot, DynamicPlotPrincipleType, DynamicPlotPrincipleGroupType, Novel, \
+    DynamicPlotPrinciple
+from plotlyst.view.common import push_btn, rows, label, insert_before_the_end, fade_out_and_gc
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.display import icon_text
+from plotlyst.view.widget.plot.progression import DynamicPlotPrincipleWidget
+
+
+class EscalationPlotPrincipleWidget(DynamicPlotPrincipleWidget):
+    def __init__(self, novel: Novel, principle: DynamicPlotPrinciple, parent=None):
+        super().__init__(novel, principle, parent)
+
+        self._btnName.setHidden(True)
+
+    @overrides
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width() - 5, 7,
+                                    self._btnRemove.sizeHint().width(), self._btnRemove.sizeHint().height())
+        self._btnRemove.raise_()
 
 
 class EscalationWidget(QFrame):
-    def __init__(self, type_: DynamicPlotPrincipleType, parent=None):
+    changed = pyqtSignal()
+
+    def __init__(self, novel: Novel, plot: Plot, type_: DynamicPlotPrincipleType, parent=None):
         super().__init__(parent)
         vbox(self, 5)
+        self.novel = novel
+        self.plot = plot
+        self.type = type_
 
         self.setProperty('large-rounded', True)
         self.setProperty('muted-bg', True)
@@ -58,23 +83,49 @@ class EscalationWidget(QFrame):
 
         sp(self).v_max()
 
+        for principle in self.plot.escalation.principles:
+            if principle.type == self.type:
+                self._addPrinciple(principle)
+
     def _plusClicked(self):
-        pass
+        principle = DynamicPlotPrinciple('', self.type)
+        self.plot.escalation.principles.append(principle)
+        wdg = self._addPrinciple(principle)
+        qtanim.fade_in(wdg, 150, teardown=wdg.activate)
+
+        self.changed.emit()
+
+    def _addPrinciple(self, principle: DynamicPlotPrinciple) -> EscalationPlotPrincipleWidget:
+        wdg = EscalationPlotPrincipleWidget(self.novel, principle)
+        wdg.removed.connect(partial(self._removePrinciple, wdg))
+        wdg.changed.connect(self.changed)
+        insert_before_the_end(self.container, wdg)
+
+        return wdg
+
+    def _removePrinciple(self, wdg: EscalationPlotPrincipleWidget):
+        self.plot.escalation.principles.remove(wdg.principle)
+        fade_out_and_gc(self.container, wdg)
+        self.changed.emit()
 
 
 class StorylineEscalationEditorWidget(QWidget):
     changed = pyqtSignal()
 
-    def __init__(self, plot: Plot, parent=None):
+    def __init__(self, novel: Novel, plot: Plot, parent=None):
         super().__init__(parent)
         self._plot = plot
 
         vbox(self, 5, 8)
         margins(self, left=25, right=25)
 
-        self.wdgTurns = EscalationWidget(DynamicPlotPrincipleType.TURN)
-        self.wdgTwists = EscalationWidget(DynamicPlotPrincipleType.TWIST)
-        self.wdgDanger = EscalationWidget(DynamicPlotPrincipleType.DANGER)
+        self.wdgTurns = EscalationWidget(novel, self._plot, DynamicPlotPrincipleType.TURN)
+        self.wdgTwists = EscalationWidget(novel, self._plot, DynamicPlotPrincipleType.TWIST)
+        self.wdgDanger = EscalationWidget(novel, self._plot, DynamicPlotPrincipleType.DANGER)
+
+        self.wdgTurns.changed.connect(self.changed)
+        self.wdgTwists.changed.connect(self.changed)
+        self.wdgDanger.changed.connect(self.changed)
 
         self.layout().addWidget(label(DynamicPlotPrincipleGroupType.ESCALATION.description(), description=True))
         self.layout().addWidget(self.wdgTurns)

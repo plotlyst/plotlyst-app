@@ -783,7 +783,7 @@ class PlotWidget(QWidget, EventListener):
             if self.plot.escalation is None:
                 self.plot.escalation = DynamicPlotPrincipleGroup(groupType)
                 self._save()
-            self._escalationEditor = StorylineEscalationEditorWidget(self.plot)
+            self._escalationEditor = StorylineEscalationEditorWidget(self.novel, self.plot)
             self._escalationEditor.changed.connect(self._save)
             self.wdgEscalation.layout().addWidget(self._escalationEditor)
 
