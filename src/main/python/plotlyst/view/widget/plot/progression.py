@@ -19,8 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from functools import partial
 
-from PyQt6.QtCore import Qt, pyqtSignal, QPointF
-from PyQt6.QtGui import QPaintEvent, QPainter, QBrush, QColor
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
 from qthandy import margins, transparent
@@ -29,7 +28,6 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, DynamicPlotPrincipleGroupType, DynamicPlotPrinciple, DynamicPlotPrincipleType, \
     DynamicPlotPrincipleGroup, LayoutType, Character
-from plotlyst.core.template import antagonist_role
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import action
@@ -121,7 +119,7 @@ class DynamicPlotMultiPrincipleElements(OutlineTimelineWidget):
                  parent=None):
         self.novel = novel
         self._principleType = principleType
-        super().__init__(parent, paintTimeline=False, layout=LayoutType.FLOW, framed=True,
+        super().__init__(parent, paintTimeline=False, layout=LayoutType.VERTICAL, framed=True,
                          frameColor=self._principleType.color())
         self.setProperty('white-bg', True)
         self.setProperty('large-rounded', True)
@@ -207,33 +205,6 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
         self.layout().setSpacing(1)
         self.novel = novel
         self.group = group
-        self._hasMenu = self.group.type in [DynamicPlotPrincipleGroupType.ESCALATION]
-        if self._hasMenu:
-            self._menu = DynamicPlotPrincipleSelectorMenu(self.group.type)
-            self._menu.selected.connect(self._insertPrinciple)
-
-    @overrides
-    def paintEvent(self, event: QPaintEvent) -> None:
-        if self.group.type != DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            return super().paintEvent(event)
-
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setPen(QColor(antagonist_role.icon_color))
-        painter.setBrush(QBrush(QColor(antagonist_role.icon_color)))
-
-        height = 50
-        offset = 20
-        for i, wdg in enumerate(self._beatWidgets):
-            painter.setOpacity(0.4 + (i + 1) * 0.6 / len(self._beatWidgets))
-            painter.drawConvexPolygon([
-                QPointF(wdg.x() - offset, wdg.y()),
-                QPointF(wdg.x(), wdg.y() + height / 2),
-                QPointF(wdg.x() - offset, wdg.y() + height),
-                QPointF(wdg.x() + wdg.width(), wdg.y() + height),
-                QPointF(wdg.x() + wdg.width() + offset, wdg.y() + height / 2),
-                QPointF(wdg.x() + wdg.width(), wdg.y())
-            ])
 
     def refreshCharacters(self):
         for wdg in self._beatWidgets:
@@ -242,10 +213,7 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
 
     @overrides
     def _newBeatWidget(self, item: DynamicPlotPrinciple) -> OutlineItemWidget:
-        if self.group.type in [DynamicPlotPrincipleGroupType.SUSPECTS, DynamicPlotPrincipleGroupType.CAST]:
-            wdg = DynamicPlotMultiPrincipleWidget(self.novel, item, self.group.type)
-        else:
-            wdg = DynamicPlotPrincipleWidget(self.novel, item)
+        wdg = DynamicPlotMultiPrincipleWidget(self.novel, item, self.group.type)
         wdg.removed.connect(self._beatRemoved)
         return wdg
 
@@ -256,10 +224,6 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
             text = 'Add a new cast member'
         elif self.group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
             text = 'Add a new suspect'
-        elif self.group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            text = 'Add a new character'
-        elif self.group.type == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            text = 'Add a new evolution'
         else:
             text = 'Add a new element'
 
@@ -271,18 +235,10 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
     @overrides
     def _placeholderClicked(self, placeholder: QWidget):
         self._currentPlaceholder = placeholder
-        if self._hasMenu:
-            self._menu.exec(self.mapToGlobal(self._currentPlaceholder.pos()))
-        elif self.group.type == DynamicPlotPrincipleGroupType.ELEMENTS_OF_WONDER:
-            self._insertPrinciple(DynamicPlotPrincipleType.WONDER)
-        elif self.group.type == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-            self._insertPrinciple(DynamicPlotPrincipleType.MONSTER)
-        elif self.group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
+        if self.group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
             self._insertPrinciple(DynamicPlotPrincipleType.SUSPECT)
         elif self.group.type == DynamicPlotPrincipleGroupType.CAST:
             self._insertPrinciple(DynamicPlotPrincipleType.CREW_MEMBER)
-        elif self.group.type == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            self._insertPrinciple(DynamicPlotPrincipleType.ALLY)
 
     def _insertPrinciple(self, principleType: DynamicPlotPrincipleType):
         item = DynamicPlotPrinciple(type=principleType)

@@ -58,6 +58,7 @@ from plotlyst.view.widget.plot.allies import AlliesPrinciplesGroupWidget
 from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, principle_type_index, principle_icon, principle_hint
+from plotlyst.view.widget.plot.progression import DynamicPlotPrinciplesWidget
 from plotlyst.view.widget.plot.timeline import StorylineTimelineWidget, StorylineVillainEvolutionWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
 from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
@@ -416,6 +417,8 @@ class PlotWidget(QWidget, EventListener):
         self._alliesEditor: Optional[AlliesPrinciplesGroupWidget] = None
         self._timelineEditor: Optional[StorylineTimelineWidget] = None
         self._villainEditor: Optional[StorylineVillainEvolutionWidget] = None
+        self._suspectsEditor: Optional[DynamicPlotPrinciplesWidget] = None
+        self._castEditor: Optional[DynamicPlotPrinciplesWidget] = None
 
         self.btnPlotIcon = tool_btn(QIcon(), transparent_=True)
         self.btnPlotIcon.setIconSize(QSize(48, 48))
@@ -574,6 +577,10 @@ class PlotWidget(QWidget, EventListener):
             self._addGroup(DynamicPlotPrincipleGroupType.TIMELINE)
         if self.plot.has_villain:
             self._addGroup(DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER)
+        if self.plot.has_suspects:
+            self._addGroup(DynamicPlotPrincipleGroupType.SUSPECTS)
+        if self.plot.has_cast:
+            self._addGroup(DynamicPlotPrincipleGroupType.CAST)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -762,6 +769,16 @@ class PlotWidget(QWidget, EventListener):
             self._villainEditor.changed.connect(self._save)
             self._villainEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageMonster))
             self.wdgMonster.layout().addWidget(self._villainEditor)
+        if groupType == DynamicPlotPrincipleGroupType.SUSPECTS:
+            group = DynamicPlotPrincipleGroup(groupType)
+            self._suspectsEditor = DynamicPlotPrinciplesWidget(self.novel, group)
+            self.wdgSuspects.layout().addWidget(self._suspectsEditor)
+            self._suspectsEditor.setStructure(group.principles)
+        if groupType == DynamicPlotPrincipleGroupType.CAST:
+            group = DynamicPlotPrincipleGroup(groupType)
+            self._castEditor = DynamicPlotPrinciplesWidget(self.novel, group)
+            self.wdgCast.layout().addWidget(self._castEditor)
+            self._castEditor.setStructure(group.principles)
 
     def _clearGroup(self, groupType: DynamicPlotPrincipleGroupType):
         if groupType == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
@@ -773,32 +790,18 @@ class PlotWidget(QWidget, EventListener):
         elif groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
             clear_layout(self.wdgMonster)
             self._villainEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.SUSPECTS:
+            clear_layout(self.wdgSuspects)
+            self._suspectsEditor = None
 
     #     elif group.type == DynamicPlotPrincipleGroupType.SUSPECTS:
     #         self.wdgSuspects.layout().addWidget(wdg)
     #     elif group.type == DynamicPlotPrincipleGroupType.CAST:
     #         self.wdgCast.layout().addWidget(wdg)
-    #     elif group.type == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
-    #         self.wdgMonster.layout().addWidget(wdg)
     #
-    #     wdg.remove.connect(partial(self._removeGroup, wdg))
-    #
-    #     return wdg
-
-    # def _removeGroup(self, wdg: DynamicPlotPrinciplesGroupWidget):
-    #     title = f'Are you sure you want to delete the storyline elements "{wdg.group.type.display_name()}"?'
-    #     if wdg.group.principles and not confirmed("This action cannot be undone.", title):
-    #         return
-    #
-    #     self.plot.dynamic_principles.remove(wdg.group)
-    #     fade_out_and_gc(self, wdg)
-    #     self._save()
 
     def _save(self):
         self.repo.update_novel(self.novel)
-
-    # def _timelineChanged(self):
-    #     self._save()
 
     # def _newValue(self):
     #     value = PlotValueEditorDialog().display()
