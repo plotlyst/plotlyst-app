@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from plotlyst.core.domain import Novel, Document, DocumentType, StoryElementType, SceneReaderInformation, \
-    ReaderInformationType, Scene
+    ReaderInformationType, Scene, Plot, DynamicPlotPrincipleGroupType
 from plotlyst.service.persistence import RepositoryPersistenceManager
 
 
@@ -36,10 +36,31 @@ def migrate_novel(novel: Novel):
         novel.synopsis = None
         RepositoryPersistenceManager.instance().update_novel(novel)
 
+    # for plot in novel.plots:
+    #     migrate_plot_principles(novel, plot)
+    #     migrate_plot_timeline(novel, plot)
+
     for scene in novel.scenes:
         if scene.migration.migrated_functions:
             continue
         migrate_scene_functions(scene)
+
+
+def migrate_plot_principles(novel: Novel, plot: Plot):
+    if not plot.dynamic_principles:
+        return
+
+    for dyn_prin in plot.dynamic_principles:
+        if dyn_prin.type == DynamicPlotPrincipleGroupType.ESCALATION:
+            pass
+
+    RepositoryPersistenceManager.instance().update_novel(novel)
+
+
+def migrate_plot_timeline(novel: Novel, plot: Plot):
+    if not plot.progression:
+        return
+    RepositoryPersistenceManager.instance().update_novel(novel)
 
 
 def migrate_scene_functions(scene: Scene):
