@@ -229,7 +229,8 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
 
         if displayText:
             wdg.btn.setText(text)
-        wdg.btn.setToolTip(text)
+        else:
+            wdg.btn.setToolTip(text)
         return wdg
 
     @overrides
@@ -248,6 +249,7 @@ class DynamicPlotPrinciplesWidget(OutlineTimelineWidget):
 
         self.principleAdded.emit(item)
 
+    @overrides
     def _beatRemoved(self, wdg: OutlineItemWidget, teardownFunction=None):
         principle = wdg.item
         super()._beatRemoved(wdg, teardownFunction)
