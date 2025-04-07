@@ -956,6 +956,7 @@ class ScenesOutlineView(AbstractNovelView):
 
         card = self.ui.cards.card(scene)
         card.refreshBeat()
+        self._storyGrid.refreshBeatFor(scene)
         self.repo.update_scene(scene)
         emit_event(self.novel, SceneStoryBeatChangedEvent(self, scene, beat, toggled=toggled))
 

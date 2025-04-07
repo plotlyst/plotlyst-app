@@ -26,7 +26,7 @@ from PyQt6.QtCore import pyqtSignal, QEvent
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QTextEdit, QButtonGroup
 from overrides import overrides
-from qthandy import hbox, spacer, vbox
+from qthandy import hbox, spacer, vbox, busy
 from qthandy import margins, vspacer, line, incr_font, clear_layout, gc
 from qthandy.filter import OpacityEventFilter
 
@@ -303,6 +303,7 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
         self.cardsView.clearSelection()
         self.cardsView.reorderCards(self._novel.scenes)
 
+    @busy
     def setOrientation(self, orientation: Qt.Orientation):
         clear_layout(self.wdgRows, auto_delete=self._scenesInColumns)  # delete plots
         clear_layout(self.wdgColumns, auto_delete=not self._scenesInColumns)  # delete plots
@@ -349,6 +350,11 @@ class ScenesGridWidget(TimelineGridWidget, EventListener):
 
         self.initRefs()
         self._applyFilterOnLines()
+
+    def refreshBeatFor(self, scene: Scene):
+        card = self.cardsView.card(scene)
+        if card:
+            card.refreshBeat()
 
     def initRefs(self):
         for i, scene in enumerate(self._novel.scenes):
