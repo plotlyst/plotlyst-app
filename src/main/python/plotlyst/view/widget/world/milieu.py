@@ -23,8 +23,8 @@ from functools import partial
 from typing import Optional, List
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject, QRectF
-from PyQt6.QtGui import QColor, QPainter, QMouseEvent
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject, QRectF, QRect
+from PyQt6.QtGui import QColor, QPainter, QMouseEvent, QImage
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QWidget, QGraphicsColorizeEffect, QGridLayout
 from overrides import overrides
@@ -41,6 +41,7 @@ from plotlyst.events import LocationAddedEvent, LocationDeletedEvent, \
     RequestMilieuDictionaryResetEvent
 from plotlyst.resources import resource_registry
 from plotlyst.service.cache import entities_registry
+from plotlyst.service.image import upload_image, load_image
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import fade_in, insert_before_the_end, DelayedSignalSlotConnector, push_btn, tool_btn, label, \
     fade_out_and_gc, columns, rows, wrap
@@ -375,27 +376,31 @@ class LocationAttributeSelectorMenu(MenuWidget):
 
 
 class StampFramedImage(QWidget):
+    clicked = pyqtSignal()
+
     def __init__(self, parent=None, size: int = 180):
         super().__init__(parent)
         self.svg_renderer = QSvgRenderer(resource_registry.stamp_frame)
         self.setFixedSize(size, size)
         self._padding: int = 10
-        self._iconPadding: int = 10
+        self._imagePadding: int = 10
 
         self._idleIcon = IconRegistry.image_icon(color='lightgrey')
+        self._image: Optional[QImage] = None
 
         self.installEventFilter(OpacityEventFilter(self, 0.7, 0.9))
         pointy(self)
 
     @overrides
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        self._iconPadding = 12
+        self._imagePadding = 12
         self.update()
 
     @overrides
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        self._iconPadding = 10
+        self._imagePadding = 10
         self.update()
+        self.clicked.emit()
 
     @overrides
     def paintEvent(self, event):
@@ -409,8 +414,29 @@ class StampFramedImage(QWidget):
         painter.drawRect(self._padding, self._padding, self.width() - self._padding * 2,
                          self.height() - self._padding * 2)
 
-        self._idleIcon.paint(painter, self._iconPadding, self._iconPadding, self.width() - self._iconPadding * 2,
-                             self.height() - self._iconPadding * 2)
+        if self._image:
+            painter.drawImage(QRect(self._imagePadding, self._imagePadding, self.width() - self._imagePadding * 2,
+                                    self.height() - self._imagePadding * 2), self._image)
+        else:
+            self._idleIcon.paint(painter, self._imagePadding, self._imagePadding, self.width() - self._imagePadding * 2,
+                                 self.height() - self._imagePadding * 2)
+
+    def setImage(self, image: QImage):
+        available_width = self.width() - self._imagePadding * 2
+        available_height = self.height() - self._imagePadding * 2
+
+        self._image = image.scaled(
+            available_width,
+            available_height,
+            Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+            Qt.TransformationMode.SmoothTransformation
+        )
+
+        self.update()
+
+    def clearImage(self):
+        self._image = None
+        self.update()
 
 
 class LocationEditor(QWidget):
@@ -444,6 +470,7 @@ class LocationEditor(QWidget):
         self.lineEditName.installEventFilter(self)
 
         self.imageFrame = StampFramedImage()
+        self.imageFrame.clicked.connect(self._imageClicked)
 
         self.wdgHeader = columns()
         sp(self.wdgHeader).v_max()
@@ -541,6 +568,13 @@ class LocationEditor(QWidget):
         self.wdgDayNightHeader.setVisible(self._location.sensory_detail.night_mode)
         self._attributesSelectorMenu.toggleDayNight.setChecked(self._location.sensory_detail.night_mode)
 
+        if self._location.image_ref:
+            image = load_image(self._novel, self._location.image_ref)
+            if image is not None:
+                self.imageFrame.setImage(image)
+        else:
+            self.imageFrame.clearImage()
+
         if not self._location.name:
             self.lineEditName.setFocus()
 
@@ -613,6 +647,13 @@ class LocationEditor(QWidget):
         item = self._gridAttributesLayout.itemAtPosition(attrType.value, col)
         if item and item.widget():
             fade_out_and_gc(self.wdgAttributes, item.widget())
+
+    def _imageClicked(self):
+        loaded_image = upload_image(self._novel)
+        if loaded_image:
+            self._location.image_ref = loaded_image.ref
+            self.imageFrame.setImage(loaded_image.image)
+            self._save()
 
     def _save(self):
         self.repo.update_novel(self._novel)

@@ -43,7 +43,6 @@ from plotlyst.events import CharacterSummaryChangedEvent, CharacterBackstoryChan
 from plotlyst.resources import resource_registry
 from plotlyst.settings import CHARACTER_INITIAL_AVATAR_COLOR_CODES
 from plotlyst.view.common import action, ButtonPressResizeEventFilter, tool_btn, label, push_btn, scroll_area
-from plotlyst.view.dialog.utility import ImageCropDialog
 from plotlyst.view.generated.characters_progress_widget_ui import Ui_CharactersProgressWidget
 from plotlyst.view.icons import avatars, IconRegistry
 from plotlyst.view.style.base import apply_border_image, transparent_menu
@@ -51,7 +50,7 @@ from plotlyst.view.widget.display import IconText, Icon, OverlayWidget
 from plotlyst.view.widget.labels import CharacterLabel
 from plotlyst.view.widget.progress import CircularProgressBar, ProgressTooltipMode, \
     CharacterRoleProgressChart
-from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
+from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog, ImageCropDialog
 
 
 class CharacterToolButton(QToolButton):
