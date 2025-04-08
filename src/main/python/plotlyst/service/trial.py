@@ -21,11 +21,11 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QPushButton
 from qthandy.filter import OpacityEventFilter
 
-from plotlyst.common import RELAXED_WHITE_COLOR
-from plotlyst.core.domain import TrialType
+from plotlyst.common import RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK
 from plotlyst.env import app_env
-from plotlyst.view.common import push_btn
+from plotlyst.view.common import push_btn, open_url
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import PopupDialog
 
 
@@ -42,12 +42,16 @@ class TrialPopup(PopupDialog):
         self.exec()
 
 
-def launch_trial(trial: TrialType):
-    if trial == TrialType.Mindmap:
+def launch_trial(trial: str):
+    if trial == 'mindmap':
         TrialPopup.popup()
+    else:
+        if asked("To try this feature out, please upgrade to the latest version of Plotlyst.", 'Old Plotlyst version',
+                 btnConfirmText='Understood', btnCancelText='Close'):
+            open_url(DEFAULT_PREMIUM_LINK)
 
 
-def trial_button(trial: TrialType) -> QPushButton:
+def trial_button(trial: str) -> QPushButton:
     btnTrial = push_btn(IconRegistry.from_name('fa5s.rocket', RELAXED_WHITE_COLOR), 'TRY IT OUT',
                         properties=['confirm', 'positive'])
     font = btnTrial.font()
