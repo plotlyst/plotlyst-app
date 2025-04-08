@@ -49,7 +49,7 @@ from plotlyst.view.common import emoji_font, insert_before_the_end, \
     ButtonPressResizeEventFilter, restyle, label, frame, tool_btn, push_btn, action, open_url, fade_in, wrap
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
-from plotlyst.view.widget.trial import trial_button
+from plotlyst.view.widget.preview import preview_button
 
 
 class ChartView(QChartView):
@@ -692,7 +692,7 @@ class _PremiumMessageWidgetBase(QWidget):
         self.layout().addWidget(self.btnLinkToAllFeatures, alignment=Qt.AlignmentFlag.AlignLeft)
 
         if trial:
-            self.btnTrial = trial_button(trial, self, connect=False)
+            self.btnTrial = preview_button(trial, self, connect=False)
             self.btnTrial.setGeometry(self.sizeHint().width() - self.btnTrial.sizeHint().width() - 5, 0,
                                       self.btnTrial.sizeHint().width(),
                                       self.btnTrial.sizeHint().height())

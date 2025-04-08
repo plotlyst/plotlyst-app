@@ -23,12 +23,12 @@ from qthandy.filter import OpacityEventFilter
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.env import app_env
 from plotlyst.event.core import emit_global_event
-from plotlyst.events import TrialFeatureEvent
+from plotlyst.events import PreviewFeatureEvent
 from plotlyst.view.common import push_btn
 from plotlyst.view.icons import IconRegistry
 
 
-def trial_button(trial: str, parent=None, connect: bool = True) -> QPushButton:
+def preview_button(trial: str, parent=None, connect: bool = True) -> QPushButton:
     btnTrial = push_btn(IconRegistry.from_name('fa5s.rocket', RELAXED_WHITE_COLOR), 'TRY IT OUT',
                         properties=['confirm', 'positive'], parent=parent)
     font = btnTrial.font()
@@ -38,6 +38,6 @@ def trial_button(trial: str, parent=None, connect: bool = True) -> QPushButton:
     btnTrial.installEventFilter(OpacityEventFilter(btnTrial, 0.8, 0.6))
 
     if connect:
-        btnTrial.clicked.connect(lambda: emit_global_event(TrialFeatureEvent(btnTrial, trial)))
+        btnTrial.clicked.connect(lambda: emit_global_event(PreviewFeatureEvent(btnTrial, trial)))
 
     return btnTrial

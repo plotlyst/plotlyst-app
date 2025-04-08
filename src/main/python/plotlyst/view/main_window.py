@@ -48,7 +48,7 @@ from plotlyst.events import NovelDeletedEvent, \
     NovelUpdatedEvent, OpenDistractionFreeMode, ExitDistractionFreeMode, CloseNovelEvent, NovelPanelCustomizationEvent, \
     NovelWorldBuildingToggleEvent, NovelCharactersToggleEvent, NovelScenesToggleEvent, NovelDocumentsToggleEvent, \
     NovelManagementToggleEvent, NovelManuscriptToggleEvent, SocialSnapshotRequested, SelectNovelEvent, ShowRoadmapEvent, \
-    TrialFeatureEvent
+    PreviewFeatureEvent
 from plotlyst.resources import resource_manager, ResourceType, ResourceDownloadedEvent
 from plotlyst.service.cache import acts_registry, entities_registry
 from plotlyst.service.common import try_shutdown_to_apply_change
@@ -57,10 +57,10 @@ from plotlyst.service.grammar import LanguageToolServerSetupWorker, dictionary, 
 from plotlyst.service.importer import ScrivenerSyncImporter
 from plotlyst.service.migration import migrate_novel
 from plotlyst.service.persistence import RepositoryPersistenceManager, flush_or_fail
+from plotlyst.service.preview import launch_preview
 from plotlyst.service.resource import download_resource, download_nltk_resources, ResourceManagerDialog
 from plotlyst.service.snapshot import SocialSnapshotPopup
 from plotlyst.service.tour import TourService
-from plotlyst.service.trial import launch_preview
 from plotlyst.settings import settings
 from plotlyst.view._view import AbstractView
 from plotlyst.view.board_view import BoardView
@@ -199,7 +199,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
                                          GeneralNovelViewTourEvent,
                                          CharacterViewTourEvent, ScenesViewTourEvent, DocumentsViewTourEvent,
                                          ManuscriptViewTourEvent, AnalysisViewTourEvent, BoardViewTourEvent,
-                                         CloseNovelEvent, SelectNovelEvent, ShowRoadmapEvent, TrialFeatureEvent)
+                                         CloseNovelEvent, SelectNovelEvent, ShowRoadmapEvent, PreviewFeatureEvent)
 
         self._init_views()
 
@@ -353,7 +353,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         elif isinstance(event, ShowRoadmapEvent):
             self.home_mode.setChecked(True)
             self.home_view.showRoadmap()
-        elif isinstance(event, TrialFeatureEvent):
+        elif isinstance(event, PreviewFeatureEvent):
             launch_preview(event.feature)
         elif isinstance(event, NovelPanelCustomizationEvent):
             self._handle_customization_event(event)

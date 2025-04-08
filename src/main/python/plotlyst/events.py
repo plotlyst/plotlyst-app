@@ -356,5 +356,5 @@ class ShowRoadmapEvent(Event):
 
 
 @dataclass
-class TrialFeatureEvent(Event):
+class PreviewFeatureEvent(Event):
     feature: str
