@@ -24,11 +24,12 @@ from typing import Optional, List
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject, QRectF
-from PyQt6.QtGui import QColor, QPainter
+from PyQt6.QtGui import QColor, QPainter, QMouseEvent
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QWidget, QGraphicsColorizeEffect, QGridLayout
 from overrides import overrides
-from qthandy import vbox, incr_font, vspacer, clear_layout, incr_icon, decr_icon, margins, spacer, hbox, grid, sp
+from qthandy import vbox, incr_font, vspacer, clear_layout, incr_icon, decr_icon, margins, spacer, hbox, grid, sp, \
+    pointy
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
@@ -374,23 +375,42 @@ class LocationAttributeSelectorMenu(MenuWidget):
 
 
 class StampFramedImage(QWidget):
-    def __init__(self, parent=None, size: int = 200):
+    def __init__(self, parent=None, size: int = 180):
         super().__init__(parent)
         self.svg_renderer = QSvgRenderer(resource_registry.stamp_frame)
-        self.setMinimumSize(size, size)
+        self.setFixedSize(size, size)
+        self._padding: int = 10
+        self._iconPadding: int = 10
+
+        self._idleIcon = IconRegistry.image_icon(color='lightgrey')
+
+        self.installEventFilter(OpacityEventFilter(self, 0.7, 0.9))
+        pointy(self)
+
+    @overrides
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        self._iconPadding = 12
+        self.update()
+
+    @overrides
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        self._iconPadding = 10
+        self.update()
 
     @overrides
     def paintEvent(self, event):
         painter = QPainter(self)
 
         rect = QRectF(0, 0, self.width(), self.height())
-
         self.svg_renderer.render(painter, rect)
 
         painter.setBrush(QColor(BG_MUTED_COLOR))
         painter.setPen(Qt.PenStyle.NoPen)
-        padding = 12
-        painter.drawRect(padding, padding, self.width() - padding * 2, self.height() - padding * 2)
+        painter.drawRect(self._padding, self._padding, self.width() - self._padding * 2,
+                         self.height() - self._padding * 2)
+
+        self._idleIcon.paint(painter, self._iconPadding, self._iconPadding, self.width() - self._iconPadding * 2,
+                             self.height() - self._iconPadding * 2)
 
 
 class LocationEditor(QWidget):
@@ -426,9 +446,10 @@ class LocationEditor(QWidget):
         self.imageFrame = StampFramedImage()
 
         self.wdgHeader = columns()
+        sp(self.wdgHeader).v_max()
         self.wdgSummary = rows(spacing=8)
         self.wdgHeader.layout().addWidget(self.wdgSummary)
-        self.wdgHeader.layout().addWidget(self.imageFrame)
+        self.wdgHeader.layout().addWidget(self.imageFrame, alignment=Qt.AlignmentFlag.AlignTop)
 
         self.textSummary = DecoratedTextEdit()
         self.textSummary.setProperty('rounded', True)
