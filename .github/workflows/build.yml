@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-20.04, windows-2019, macos-13 ]
+        os: [ ubuntu-22.04, windows-2019, macos-13 ]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -41,7 +41,7 @@ jobs:
         with:
           ruby-version: 2.5.1
 
-      - if: matrix.os == 'ubuntu-20.04'
+      - if: matrix.os == 'ubuntu-22.04'
         name: Install libEgl libraries for Linux
         run: |
           sudo apt update
@@ -111,7 +111,7 @@ jobs:
           fbs installer
 
       - uses: actions/upload-artifact@v4
-        if: matrix.os == 'ubuntu-20.04'
+        if: matrix.os == 'ubuntu-22.04'
         with:
           name: app-deb-artifact
           path: target/Plotlyst.deb
