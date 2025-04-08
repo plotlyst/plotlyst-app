@@ -18,11 +18,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QPushButton
-from qthandy.filter import OpacityEventFilter
 
-from plotlyst.common import RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK
-from plotlyst.env import app_env
+from plotlyst.common import DEFAULT_PREMIUM_LINK
 from plotlyst.view.common import push_btn, open_url
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import asked
@@ -42,24 +39,26 @@ class TrialPopup(PopupDialog):
         self.exec()
 
 
+MINDMAP_TRIAL = 'mindmap'
+
+
 def launch_trial(trial: str):
-    if trial == 'mindmap':
+    if trial == MINDMAP_TRIAL:
         TrialPopup.popup()
     else:
         if asked("To try this feature out, please upgrade to the latest version of Plotlyst.", 'Old Plotlyst version',
                  btnConfirmText='Understood', btnCancelText='Close'):
             open_url(DEFAULT_PREMIUM_LINK)
 
-
-def trial_button(trial: str) -> QPushButton:
-    btnTrial = push_btn(IconRegistry.from_name('fa5s.rocket', RELAXED_WHITE_COLOR), 'TRY IT OUT',
-                        properties=['confirm', 'positive'])
-    font = btnTrial.font()
-    font.setFamily(app_env.serif_font())
-    font.setPointSize(font.pointSize() - 1)
-    btnTrial.setFont(font)
-    btnTrial.installEventFilter(OpacityEventFilter(btnTrial, 0.8, 0.6))
-
-    btnTrial.clicked.connect(lambda: launch_trial(trial))
-
-    return btnTrial
+# def trial_button(trial: str) -> QPushButton:
+#     btnTrial = push_btn(IconRegistry.from_name('fa5s.rocket', RELAXED_WHITE_COLOR), 'TRY IT OUT',
+#                         properties=['confirm', 'positive'])
+#     font = btnTrial.font()
+#     font.setFamily(app_env.serif_font())
+#     font.setPointSize(font.pointSize() - 1)
+#     btnTrial.setFont(font)
+#     btnTrial.installEventFilter(OpacityEventFilter(btnTrial, 0.8, 0.6))
+#
+#     btnTrial.clicked.connect(lambda: launch_trial(trial))
+#
+#     return btnTrial

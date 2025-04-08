@@ -33,13 +33,13 @@ from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Board, Task, TaskStatus
 from plotlyst.env import app_env
 from plotlyst.service.resource import JsonDownloadWorker, JsonDownloadResult
-from plotlyst.service.trial import trial_button
 from plotlyst.view.common import push_btn, spin, tool_btn, open_url, ButtonPressResizeEventFilter, \
     ExclusiveOptionalButtonGroup, label
 from plotlyst.view.generated.roadmap_view_ui import Ui_RoadmapView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.widget.display import IconText, Icon
+from plotlyst.view.widget.trial import trial_button
 
 tags_counter: Dict[str, int] = {}
 versions_counter: Dict[str, int] = {}

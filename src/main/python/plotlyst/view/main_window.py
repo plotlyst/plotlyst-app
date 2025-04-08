@@ -47,7 +47,8 @@ from plotlyst.event.handler import EventLogHandler, global_event_dispatcher, eve
 from plotlyst.events import NovelDeletedEvent, \
     NovelUpdatedEvent, OpenDistractionFreeMode, ExitDistractionFreeMode, CloseNovelEvent, NovelPanelCustomizationEvent, \
     NovelWorldBuildingToggleEvent, NovelCharactersToggleEvent, NovelScenesToggleEvent, NovelDocumentsToggleEvent, \
-    NovelManagementToggleEvent, NovelManuscriptToggleEvent, SocialSnapshotRequested, SelectNovelEvent, ShowRoadmapEvent
+    NovelManagementToggleEvent, NovelManuscriptToggleEvent, SocialSnapshotRequested, SelectNovelEvent, ShowRoadmapEvent, \
+    TrialFeatureEvent
 from plotlyst.resources import resource_manager, ResourceType, ResourceDownloadedEvent
 from plotlyst.service.cache import acts_registry, entities_registry
 from plotlyst.service.common import try_shutdown_to_apply_change
@@ -59,6 +60,7 @@ from plotlyst.service.persistence import RepositoryPersistenceManager, flush_or_
 from plotlyst.service.resource import download_resource, download_nltk_resources, ResourceManagerDialog
 from plotlyst.service.snapshot import SocialSnapshotPopup
 from plotlyst.service.tour import TourService
+from plotlyst.service.trial import launch_trial
 from plotlyst.settings import settings
 from plotlyst.view._view import AbstractView
 from plotlyst.view.board_view import BoardView
@@ -165,7 +167,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.btnManuscript.setIcon(
             IconRegistry.manuscript_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.btnReports.setIcon(IconRegistry.reports_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
-        self.btnFormatting.setIcon(IconRegistry.formatting_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
+        self.btnFormatting.setIcon(
+            IconRegistry.formatting_icon(NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.btnSettingsLink.setIcon(IconRegistry.cog_icon(color=NAV_BAR_BUTTON_DEFAULT_COLOR))
         self.btnSettingsLink.installEventFilter(ButtonPressResizeEventFilter(self.btnSettingsLink))
         self.btnSettingsLink.installEventFilter(OpacityEventFilter(self.btnSettingsLink, leaveOpacity=0.6))
@@ -196,7 +199,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
                                          GeneralNovelViewTourEvent,
                                          CharacterViewTourEvent, ScenesViewTourEvent, DocumentsViewTourEvent,
                                          ManuscriptViewTourEvent, AnalysisViewTourEvent, BoardViewTourEvent,
-                                         CloseNovelEvent, SelectNovelEvent, ShowRoadmapEvent)
+                                         CloseNovelEvent, SelectNovelEvent, ShowRoadmapEvent, TrialFeatureEvent)
 
         self._init_views()
 
@@ -350,6 +353,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         elif isinstance(event, ShowRoadmapEvent):
             self.home_mode.setChecked(True)
             self.home_view.showRoadmap()
+        elif isinstance(event, TrialFeatureEvent):
+            launch_trial(event.feature)
         elif isinstance(event, NovelPanelCustomizationEvent):
             self._handle_customization_event(event)
         elif isinstance(event, NovelEditorDisplayTourEvent):

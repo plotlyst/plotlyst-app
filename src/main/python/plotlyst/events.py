@@ -353,3 +353,8 @@ class SocialSnapshotRequested(Event):
 @dataclass
 class ShowRoadmapEvent(Event):
     pass
+
+
+@dataclass
+class TrialFeatureEvent(Event):
+    feature: str
