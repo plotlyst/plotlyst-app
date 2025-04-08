@@ -25,10 +25,11 @@ from PyQt6.QtGui import QColor, QBrush, QResizeEvent
 from PyQt6.QtWidgets import QWidget, QListView, QSizePolicy, QToolButton, QButtonGroup, QDialog, QColorDialog
 from overrides import overrides
 from qthandy import flow, transparent, pointy, grid, vline
+from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, RED_COLOR
 from plotlyst.model.common import proxy
-from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, push_btn, shadow
+from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, push_btn, shadow, action
 from plotlyst.view.generated.icon_selector_widget_ui import Ui_IconsSelectorWidget
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget._icons import icons_registry
@@ -367,3 +368,22 @@ class IconSelectorButton(SecondaryActionToolButton):
         if result:
             self.selectIcon(result[0], result[1].name())
             self.iconSelected.emit(result[0], result[1])
+
+
+class IconPickerMenu(MenuWidget):
+    iconSelected = pyqtSignal(str)
+
+    def __init__(self, icons: List[str], maxColumn: Optional[int] = None, iconSize: int = 22, parent=None):
+        super().__init__(parent)
+
+        self.picker = IconPicker(icons, self, maxColumn, iconSize)
+        self.picker.iconSelected.connect(self.iconSelected)
+
+        self.addWidget(self.picker)
+        self.addSeparator()
+        self.addAction(action('Custom icon...', IconRegistry.icons_icon(), slot=self._customIconTriggered))
+
+    def _customIconTriggered(self):
+        result = IconSelectorDialog.popup(pickColor=False)
+        if result:
+            self.iconSelected.emit(result[0])

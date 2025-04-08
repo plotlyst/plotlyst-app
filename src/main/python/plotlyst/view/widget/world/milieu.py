@@ -23,16 +23,17 @@ from functools import partial
 from typing import Optional, List
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QWidget, QLineEdit, QGraphicsColorizeEffect, QGridLayout
+from PyQt6.QtWidgets import QWidget, QGraphicsColorizeEffect, QGridLayout
 from overrides import overrides
-from qthandy import vbox, incr_font, vspacer, line, clear_layout, incr_icon, decr_icon, margins, spacer, hbox, grid, sp
+from qthandy import vbox, incr_font, vspacer, clear_layout, incr_icon, decr_icon, margins, spacer, hbox, grid, sp
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import recursive
+from plotlyst.common import recursive, PLACEHOLDER_TEXT_COLOR
 from plotlyst.core.domain import Novel, Location, WorldBuildingEntity, LocationSensorType, SensoryPerception
+from plotlyst.env import app_env
 from plotlyst.event.core import emit_event
 from plotlyst.events import LocationAddedEvent, LocationDeletedEvent, \
     RequestMilieuDictionaryResetEvent
@@ -45,10 +46,11 @@ from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.style.theme import TEXT_COLOR_ON_DARK_BG
 from plotlyst.view.widget.confirm import confirmed
-from plotlyst.view.widget.display import Emoji
-from plotlyst.view.widget.input import DecoratedTextEdit, Toggle
+from plotlyst.view.widget.display import Emoji, SeparatorLineWithShadow
+from plotlyst.view.widget.input import DecoratedTextEdit, Toggle, DecoratedLineEdit
 from plotlyst.view.widget.settings import SettingBaseWidget
 from plotlyst.view.widget.tree import TreeSettings, ItemBasedTreeView, ItemBasedNode
+from plotlyst.view.widget.utility import IconPickerMenu
 
 
 class LocationNode(ItemBasedNode):
@@ -377,12 +379,27 @@ class LocationEditor(QWidget):
         self._novel = novel
         self._location: Optional[Location] = None
 
-        self.lineEditName = QLineEdit()
-        self.lineEditName.setPlaceholderText('Location name')
-        self.lineEditName.setProperty('transparent', True)
-        incr_font(self.lineEditName, 8)
-        self.lineEditName.textEdited.connect(self._nameEdited)
-        DelayedSignalSlotConnector(self.lineEditName.textEdited, self._nameSet, parent=self)
+        self.lineEditName = DecoratedLineEdit(iconEditable=True, pickIconColor=False)
+        self._iconPicker = IconPickerMenu(
+            ['mdi.castle', 'mdi.chess-rook', 'mdi6.town-hall', 'fa5s.dungeon', 'mdi6.temple-hindu', 'fa5s.church',
+             'mdi6.mosque',
+             'fa5s.city',
+             'fa5s.building', 'ph.buildings-light', 'mdi.lighthouse', 'ph.house-line-fill', 'fa5s.school',
+             'fa5s.university', 'mdi6.forest', 'fa5s.tree', 'mdi.tree', 'fa5s.mountain', 'fa5s.water', 'mdi.island',
+             'mdi.campfire', 'fa5s.bed', 'fa5s.bath', 'fa5s.couch'],
+            maxColumn=5)
+        self._iconPicker.iconSelected.connect(self._iconSelected)
+        self.lineEditName.setIconPickerMenu(self._iconPicker)
+        self.lineEditName.lineEdit.setPlaceholderText('Location name')
+        self.lineEditName.lineEdit.setProperty('transparent', True)
+        font = self.lineEditName.lineEdit.font()
+        font.setFamily(app_env.serif_font())
+        font.setPointSize(font.pointSize() + 8)
+        self.lineEditName.lineEdit.setFont(font)
+        incr_icon(self.lineEditName.icon, 10)
+        self.lineEditName.lineEdit.textEdited.connect(self._nameEdited)
+        DelayedSignalSlotConnector(self.lineEditName.lineEdit.textEdited, self._nameSet, parent=self)
+        self.lineEditName.installEventFilter(self)
 
         self.textSummary = DecoratedTextEdit()
         self.textSummary.setProperty('rounded', True)
@@ -422,9 +439,9 @@ class LocationEditor(QWidget):
         self._gridAttributesLayout.setVerticalSpacing(15)
         self._gridAttributesLayout.setHorizontalSpacing(7)
 
-        vbox(self)
-        self.layout().addWidget(self.lineEditName)
-        self.layout().addWidget(line())
+        vbox(self, spacing=6)
+        self.layout().addWidget(self.lineEditName, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(SeparatorLineWithShadow())
         self.layout().addWidget(self.textSummary)
         self.layout().addWidget(group(self.btnAttributes, self.btnAttributesEditor, margin=0, spacing=0, margin_top=15),
                                 alignment=Qt.AlignmentFlag.AlignLeft)
@@ -436,6 +453,15 @@ class LocationEditor(QWidget):
 
         self.setVisible(False)
 
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Enter and not self._location.icon:
+            self.lineEditName.setIcon(IconRegistry.location_icon(PLACEHOLDER_TEXT_COLOR))
+        elif event.type() == QEvent.Type.Leave and not self._location.icon:
+            self.lineEditName.setIcon(IconRegistry.empty_icon())
+
+        return super().eventFilter(watched, event)
+
     def setLocation(self, location: Location):
         clear_layout(self.wdgAttributes)
         self._attributesSelectorMenu.reset()
@@ -443,6 +469,10 @@ class LocationEditor(QWidget):
         self.setVisible(True)
         self._location = location
         self.lineEditName.setText(self._location.name)
+        if location.icon:
+            self.lineEditName.icon.setIcon(IconRegistry.from_name(location.icon))
+        else:
+            self.lineEditName.icon.setIcon(IconRegistry.empty_icon())
         self.textSummary.setText(self._location.summary)
 
         for k, v in self._location.sensory_detail.perceptions.items():
@@ -468,6 +498,12 @@ class LocationEditor(QWidget):
 
     def _nameSet(self, _: str):
         emit_event(self._novel, RequestMilieuDictionaryResetEvent(self))
+
+    def _iconSelected(self, icon: str):
+        self._location.icon = icon
+        self.lineEditName.setIcon(IconRegistry.from_name(icon))
+        self._save()
+        self.locationNameChanged.emit(self._location)
 
     def _summaryChanged(self):
         self._location.summary = self.textSummary.toPlainText()

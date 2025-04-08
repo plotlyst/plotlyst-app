@@ -1464,6 +1464,8 @@ class DecoratedLineEdit(QWidget):
                  autoAdjustable: bool = True, pickIconColor: bool = True):
         super().__init__(parent)
         self._pickIconColor = pickIconColor
+        self._pickerMenu: Optional[MenuWidget] = None
+
         hbox(self, 0, 0)
         self.icon = QToolButton()
         transparent(self.icon)
@@ -1488,11 +1490,17 @@ class DecoratedLineEdit(QWidget):
     def setText(self, text: str):
         self.lineEdit.setText(text)
 
+    def setIconPickerMenu(self, menu: MenuWidget):
+        self._pickerMenu = menu
+
     def _changeIcon(self):
-        result = IconSelectorDialog.popup(pickColor=self._pickIconColor)
-        if result:
-            self.icon.setIcon(IconRegistry.from_name(result[0], result[1].name()))
-            self.iconChanged.emit(result[0], result[1].name())
+        if self._pickerMenu:
+            self._pickerMenu.exec()
+        else:
+            result = IconSelectorDialog.popup(pickColor=self._pickIconColor)
+            if result:
+                self.icon.setIcon(IconRegistry.from_name(result[0], result[1].name()))
+                self.iconChanged.emit(result[0], result[1].name())
 
 
 class TextEditBubbleWidget(QFrame):

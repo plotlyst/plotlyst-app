@@ -149,8 +149,8 @@ class IconRegistry:
         return IconRegistry.from_name('mdi.chess-pawn', CHARACTER_MINOR_COLOR)
 
     @staticmethod
-    def location_icon(color: str = 'black') -> QIcon:
-        return qtawesome.icon('fa5s.map-pin', color=color, color_on='darkBlue', options=[{'scale_factor': 1.1}])
+    def location_icon(color: str = 'black', color_on: str = 'black') -> QIcon:
+        return qtawesome.icon('fa5s.map-pin', color=color, color_on=color_on, options=[{'scale_factor': 1.1}])
 
     @staticmethod
     def world_building_icon(color: str = 'black', color_on: str = PLOTLYST_SECONDARY_COLOR) -> QIcon:

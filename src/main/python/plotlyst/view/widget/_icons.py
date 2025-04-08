@@ -156,7 +156,7 @@ sports = [
 places = [
     "fa5.building", "fa5s.school", "fa5.hospital", 'mdi.hospital-building', "fa5s.hospital-alt", 'mdi.bank',
     'mdi.bank-outline',
-    'mdi.castle', 'mdi.church', 'mdi.office-building', 'mdi.office-building-outline', 'mdi.routes',
+    'mdi.castle', 'fa5s.dungeon', 'mdi.church', 'mdi.office-building', 'mdi.office-building-outline', 'mdi.routes',
     'mdi.city', 'mdi.city-variant', 'mdi.city-variant-outline', 'mdi.garage', 'mdi.garage-open', 'mdi.home',
     'mdi.home-city', 'mdi.home-group', 'mdi.home-heart', 'mdi.home-lightbulb', 'mdi.home-modern', 'mdi.home-outline',
     'mdi.home-roof', 'mdi.home-variant', 'mdi.home-variant-outline',
