@@ -33,6 +33,7 @@ from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Board, Task, TaskStatus
 from plotlyst.env import app_env
 from plotlyst.service.resource import JsonDownloadWorker, JsonDownloadResult
+from plotlyst.service.trial import trial_button
 from plotlyst.view.common import push_btn, spin, tool_btn, open_url, ButtonPressResizeEventFilter, \
     ExclusiveOptionalButtonGroup, label
 from plotlyst.view.generated.roadmap_view_ui import Ui_RoadmapView
@@ -84,7 +85,11 @@ class TaskWidget(QWidget):
         else:
             self._btnOpenInExternal.setHidden(True)
 
-        self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
+        if task.trial:
+            self.layout().addWidget(group(self.lblStatus, trial_button(task.trial)),
+                                    alignment=Qt.AlignmentFlag.AlignLeft)
+        else:
+            self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(group(self.lblName, self._btnOpenInExternal, spacer(), self.iconPlus))
         self.iconPlus.setHidden(self.task.version != 'Plus')
         self.layout().addWidget(self.lblDescription)
