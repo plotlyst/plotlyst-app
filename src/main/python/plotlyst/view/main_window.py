@@ -60,7 +60,7 @@ from plotlyst.service.persistence import RepositoryPersistenceManager, flush_or_
 from plotlyst.service.resource import download_resource, download_nltk_resources, ResourceManagerDialog
 from plotlyst.service.snapshot import SocialSnapshotPopup
 from plotlyst.service.tour import TourService
-from plotlyst.service.trial import launch_trial
+from plotlyst.service.trial import launch_preview
 from plotlyst.settings import settings
 from plotlyst.view._view import AbstractView
 from plotlyst.view.board_view import BoardView
@@ -354,7 +354,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             self.home_mode.setChecked(True)
             self.home_view.showRoadmap()
         elif isinstance(event, TrialFeatureEvent):
-            launch_trial(event.feature)
+            launch_preview(event.feature)
         elif isinstance(event, NovelPanelCustomizationEvent):
             self._handle_customization_event(event)
         elif isinstance(event, NovelEditorDisplayTourEvent):
