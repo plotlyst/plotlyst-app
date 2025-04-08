@@ -23,8 +23,9 @@ from functools import partial
 from typing import Optional, List
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject
-from PyQt6.QtGui import QColor
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject, QRectF
+from PyQt6.QtGui import QColor, QPainter
+from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QWidget, QGraphicsColorizeEffect, QGridLayout
 from overrides import overrides
 from qthandy import vbox, incr_font, vspacer, clear_layout, incr_icon, decr_icon, margins, spacer, hbox, grid, sp
@@ -37,14 +38,15 @@ from plotlyst.env import app_env
 from plotlyst.event.core import emit_event
 from plotlyst.events import LocationAddedEvent, LocationDeletedEvent, \
     RequestMilieuDictionaryResetEvent
+from plotlyst.resources import resource_registry
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import fade_in, insert_before_the_end, DelayedSignalSlotConnector, push_btn, tool_btn, label, \
-    fade_out_and_gc
+    fade_out_and_gc, columns, rows, wrap
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
-from plotlyst.view.style.theme import TEXT_COLOR_ON_DARK_BG
+from plotlyst.view.style.theme import TEXT_COLOR_ON_DARK_BG, BG_MUTED_COLOR
 from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import Emoji, SeparatorLineWithShadow
 from plotlyst.view.widget.input import DecoratedTextEdit, Toggle, DecoratedLineEdit
@@ -371,6 +373,26 @@ class LocationAttributeSelectorMenu(MenuWidget):
             self.settingTexture.setChecked(checked)
 
 
+class StampFramedImage(QWidget):
+    def __init__(self, parent=None, size: int = 200):
+        super().__init__(parent)
+        self.svg_renderer = QSvgRenderer(resource_registry.stamp_frame)
+        self.setMinimumSize(size, size)
+
+    @overrides
+    def paintEvent(self, event):
+        painter = QPainter(self)
+
+        rect = QRectF(0, 0, self.width(), self.height())
+
+        self.svg_renderer.render(painter, rect)
+
+        painter.setBrush(QColor(BG_MUTED_COLOR))
+        painter.setPen(Qt.PenStyle.NoPen)
+        padding = 12
+        painter.drawRect(padding, padding, self.width() - padding * 2, self.height() - padding * 2)
+
+
 class LocationEditor(QWidget):
     locationNameChanged = pyqtSignal(Location)
 
@@ -401,6 +423,13 @@ class LocationEditor(QWidget):
         DelayedSignalSlotConnector(self.lineEditName.lineEdit.textEdited, self._nameSet, parent=self)
         self.lineEditName.installEventFilter(self)
 
+        self.imageFrame = StampFramedImage()
+
+        self.wdgHeader = columns()
+        self.wdgSummary = rows(spacing=8)
+        self.wdgHeader.layout().addWidget(self.wdgSummary)
+        self.wdgHeader.layout().addWidget(self.imageFrame)
+
         self.textSummary = DecoratedTextEdit()
         self.textSummary.setProperty('rounded', True)
         self.textSummary.setProperty('white-bg', True)
@@ -408,6 +437,11 @@ class LocationEditor(QWidget):
         self.textSummary.setMaximumSize(450, 85)
         self.textSummary.setEmoji(':scroll:', 'Summary')
         self.textSummary.textChanged.connect(self._summaryChanged)
+
+        self.wdgSummary.layout().addWidget(self.lineEditName, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgSummary.layout().addWidget(SeparatorLineWithShadow())
+        self.wdgSummary.layout().addWidget(wrap(self.textSummary, margin_left=15))
+        self.wdgSummary.layout().addWidget(vspacer())
 
         self.btnAttributes = push_btn(IconRegistry.from_name('mdi6.note-text-outline', 'grey'), text='Attributes',
                                       transparent_=True)
@@ -439,11 +473,13 @@ class LocationEditor(QWidget):
         self._gridAttributesLayout.setVerticalSpacing(15)
         self._gridAttributesLayout.setHorizontalSpacing(7)
 
-        vbox(self, spacing=6)
-        self.layout().addWidget(self.lineEditName, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(SeparatorLineWithShadow())
-        self.layout().addWidget(self.textSummary)
-        self.layout().addWidget(group(self.btnAttributes, self.btnAttributesEditor, margin=0, spacing=0, margin_top=15),
+        vbox(self, 0, spacing=0)
+        margins(self, left=40, bottom=15)
+        margins(self.wdgSummary, top=30, right=10)
+        margins(self.wdgHeader, top=5, right=5)
+        margins(self.wdgAttributes, right=40)
+        self.layout().addWidget(self.wdgHeader)
+        self.layout().addWidget(group(self.btnAttributes, self.btnAttributesEditor, margin=0, spacing=0),
                                 alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(self.wdgDayNightHeader)
         self.layout().addWidget(self.wdgAttributes)

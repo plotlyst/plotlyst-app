@@ -49,6 +49,7 @@ class ResourceRegistry:
         self._top_frame2 = None
         self._banner = None
         self._circular_frame1 = None
+        self._stamp_frame = None
         self._manuscript_docx_template = None
         self._plotlyst_icon = None
         self._confetti_anim = None
@@ -67,6 +68,7 @@ class ResourceRegistry:
         self._top_frame2 = self.__get_resource('top_frame2.svg', context)
         self._banner = self.__get_resource('plotlyst_banner.png', context)
         self._circular_frame1 = self.__get_resource('circular_frame1.png', context)
+        self._stamp_frame = self.__get_resource('stamp_frame.svg', context)
         self._manuscript_docx_template = self.__get_resource('manuscript-template.docx', context)
         self._plotlyst_icon = self.__get_resource('Icon.ico', context)
         self._confetti_anim = self.__get_resource('confetti.gif', context)
@@ -124,6 +126,10 @@ class ResourceRegistry:
     @property
     def circular_frame1(self) -> str:
         return self._circular_frame1
+
+    @property
+    def stamp_frame(self) -> str:
+        return self._stamp_frame
 
     @property
     def manuscript_docx_template(self) -> str:
