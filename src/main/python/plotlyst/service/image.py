@@ -63,6 +63,8 @@ def upload_image(novel: Novel, crop: bool = False, roundedCroppedPreview: bool =
             cropped_pixmap: Optional[QPixmap] = ImageCropDialog.popup(QPixmap.fromImage(image), roundedCroppedPreview)
             if cropped_pixmap:
                 image = cropped_pixmap.toImage()
+            else:
+                return None
 
         file_extension = Path(file_path).suffix.lower()
         ref = ImageRef(file_extension)

@@ -44,7 +44,7 @@ from plotlyst.service.cache import entities_registry
 from plotlyst.service.image import upload_image, load_image
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import fade_in, insert_before_the_end, DelayedSignalSlotConnector, push_btn, tool_btn, label, \
-    fade_out_and_gc, columns, rows, wrap
+    fade_out_and_gc, columns, rows, wrap, action
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
@@ -649,6 +649,21 @@ class LocationEditor(QWidget):
             fade_out_and_gc(self.wdgAttributes, item.widget())
 
     def _imageClicked(self):
+        if self._location.image_ref:
+            menu = MenuWidget()
+            menu.addAction(action('Remove image', IconRegistry.trash_can_icon(), slot=self._removeImage))
+            menu.addSeparator()
+            menu.addAction(action('Upload new image', IconRegistry.image_icon(), slot=self._uploadImage))
+            menu.exec()
+        else:
+            self._uploadImage()
+
+    def _removeImage(self):
+        self.imageFrame.clearImage()
+        self._location.image_ref = None
+        self._save()
+
+    def _uploadImage(self):
         loaded_image = upload_image(self._novel, crop=True)
         if loaded_image:
             self._location.image_ref = loaded_image.ref
