@@ -401,10 +401,11 @@ class Corner(Enum):
 
 
 class ImageCropDialog(PopupDialog):
-    def __init__(self, pixmap: QPixmap, parent=None):
+    def __init__(self, pixmap: QPixmap, rounded: bool = True, parent=None):
         super().__init__(parent)
         self._pixmap = pixmap
         self.cropped = None
+        self._roundedPreview = rounded
         self.lblPreview = label()
         self.lblImage = label()
 
@@ -458,9 +459,14 @@ class ImageCropDialog(PopupDialog):
         painter.drawPixmap(self.cropped.rect(), self.scaled, cropped_rect)
         painter.end()
 
-        self.lblPreview.setPixmap(
-            rounded_pixmap(self.cropped.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio,
-                                               Qt.TransformationMode.SmoothTransformation)))
+        scaled_pixmap = self.cropped.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio,
+                                            Qt.TransformationMode.SmoothTransformation)
+        if self._roundedPreview:
+            self.lblPreview.setPixmap(
+                rounded_pixmap(scaled_pixmap))
+        else:
+            self.lblPreview.setPixmap(scaled_pixmap)
+
 
     class CropFrame(QPushButton):
         cropped = pyqtSignal()

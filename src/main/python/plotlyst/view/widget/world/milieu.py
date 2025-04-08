@@ -649,7 +649,7 @@ class LocationEditor(QWidget):
             fade_out_and_gc(self.wdgAttributes, item.widget())
 
     def _imageClicked(self):
-        loaded_image = upload_image(self._novel)
+        loaded_image = upload_image(self._novel, crop=True)
         if loaded_image:
             self._location.image_ref = loaded_image.ref
             self.imageFrame.setImage(loaded_image.image)
