@@ -34,7 +34,7 @@ from plotlyst.env import app_env
 from plotlyst.event.core import emit_global_event
 from plotlyst.events import TrialFeatureEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.service.trial import MINDMAP_TRIAL
+from plotlyst.service.trial import MINDMAP_PREVIEW
 from plotlyst.view.common import fade_out_and_gc, action
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
@@ -97,9 +97,9 @@ class DocumentAdditionMenu(MenuWidget):
             self.documentTriggered.emit(doc)
         else:
             trial = PremiumMessagePopup.popup('Mindmap', 'ri.mind-map', 'https://plotlyst.com/docs/characters/',
-                                              trial=MINDMAP_TRIAL)
+                                              trial=MINDMAP_PREVIEW)
             if trial:
-                QTimer.singleShot(50, lambda: emit_global_event(TrialFeatureEvent(self, MINDMAP_TRIAL)))
+                QTimer.singleShot(50, lambda: emit_global_event(TrialFeatureEvent(self, MINDMAP_PREVIEW)))
 
     def _premiseSelected(self):
         doc = Document('Premise', type=DocumentType.PREMISE, icon='mdi.flower')
