@@ -2476,6 +2476,7 @@ class Location:
     icon: str = field(default='', metadata=config(exclude=exclude_if_empty))
     icon_color: str = field(default='', metadata=config(exclude=exclude_if_empty))
     origin_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+    image_ref: Optional[ImageRef] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
     @overrides
     def __eq__(self, other: 'Location'):

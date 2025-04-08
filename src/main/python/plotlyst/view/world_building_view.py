@@ -99,10 +99,6 @@ class WorldBuildingView(AbstractNovelView):
         self.ui.btnAddLocation.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnAddLocation))
         self.ui.btnTreeToggleMilieu.setIcon(IconRegistry.from_name('mdi.file-tree-outline'))
         self.ui.btnTreeToggleMilieu.clicked.connect(lambda x: qtanim.toggle_expansion(self.ui.wdgMilieuSidebar, x))
-        # self.ui.btnMilieuImage.setIcon(IconRegistry.image_icon(color='grey'))
-        # self.ui.btnMilieuImage.installEventFilter(
-        #     OpacityEventFilter(self.ui.btnMilieuImage, leaveOpacity=1.0, enterOpacity=0.7))
-        self.ui.wdgMilieuRightBar.setHidden(True)
 
         self.locationEditor = LocationEditor(self.novel)
         self.ui.wdgMilieuCenterEditor.layout().insertWidget(0, self.locationEditor)
