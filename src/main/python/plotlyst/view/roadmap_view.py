@@ -85,8 +85,8 @@ class TaskWidget(QWidget):
         else:
             self._btnOpenInExternal.setHidden(True)
 
-        if task.trial:
-            self.layout().addWidget(group(self.lblStatus, preview_button(task.trial)),
+        if task.preview:
+            self.layout().addWidget(group(self.lblStatus, preview_button(task.preview)),
                                     alignment=Qt.AlignmentFlag.AlignLeft)
         else:
             self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)

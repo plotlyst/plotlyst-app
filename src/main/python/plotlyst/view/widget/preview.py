@@ -28,16 +28,16 @@ from plotlyst.view.common import push_btn
 from plotlyst.view.icons import IconRegistry
 
 
-def preview_button(trial: str, parent=None, connect: bool = True) -> QPushButton:
-    btnTrial = push_btn(IconRegistry.from_name('fa5s.rocket', RELAXED_WHITE_COLOR), 'TRY IT OUT',
-                        properties=['confirm', 'positive'], parent=parent)
-    font = btnTrial.font()
+def preview_button(preview: str, parent=None, connect: bool = True) -> QPushButton:
+    btnPreview = push_btn(IconRegistry.from_name('fa5s.rocket', RELAXED_WHITE_COLOR), 'TRY IT OUT',
+                          properties=['confirm', 'positive'], parent=parent)
+    font = btnPreview.font()
     font.setFamily(app_env.serif_font())
     font.setPointSize(font.pointSize() - 1)
-    btnTrial.setFont(font)
-    btnTrial.installEventFilter(OpacityEventFilter(btnTrial, 0.8, 0.6))
+    btnPreview.setFont(font)
+    btnPreview.installEventFilter(OpacityEventFilter(btnPreview, 0.8, 0.6))
 
     if connect:
-        btnTrial.clicked.connect(lambda: emit_global_event(PreviewFeatureEvent(btnTrial, trial)))
+        btnPreview.clicked.connect(lambda: emit_global_event(PreviewFeatureEvent(btnPreview, preview)))
 
-    return btnTrial
+    return btnPreview

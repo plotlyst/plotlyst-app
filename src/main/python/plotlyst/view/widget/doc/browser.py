@@ -96,9 +96,9 @@ class DocumentAdditionMenu(MenuWidget):
             doc.diagram.loaded = True
             self.documentTriggered.emit(doc)
         else:
-            trial = PremiumMessagePopup.popup('Mindmap', 'ri.mind-map', 'https://plotlyst.com/docs/characters/',
-                                              trial=MINDMAP_PREVIEW)
-            if trial:
+            preview = PremiumMessagePopup.popup('Mindmap', 'ri.mind-map', 'https://plotlyst.com/docs/characters/',
+                                                preview=MINDMAP_PREVIEW)
+            if preview:
                 QTimer.singleShot(50, lambda: emit_global_event(PreviewFeatureEvent(self, MINDMAP_PREVIEW)))
 
     def _premiseSelected(self):
