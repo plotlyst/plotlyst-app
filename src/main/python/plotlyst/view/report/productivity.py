@@ -21,7 +21,7 @@ from datetime import datetime
 from functools import partial
 from typing import List, Optional
 
-from PyQt6.QtCore import Qt, QRect, QDate, QPoint
+from PyQt6.QtCore import Qt, QRect, QDate, QPoint, QObject, QEvent
 from PyQt6.QtGui import QPainter, QTextOption, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView
 from overrides import overrides
@@ -32,8 +32,8 @@ from qtmenu import MenuWidget
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, DailyProductivity, SnapshotType, ProductivityType
 from plotlyst.env import app_env
-from plotlyst.event.core import emit_event
-from plotlyst.events import SocialSnapshotRequested
+from plotlyst.event.core import emit_event, emit_global_event
+from plotlyst.events import SocialSnapshotRequested, DailyProductivityChanged
 from plotlyst.service.productivity import find_daily_productivity, set_daily_productivity, clear_daily_productivity
 from plotlyst.view.common import label, scroll_area, tool_btn, action
 from plotlyst.view.icons import IconRegistry
@@ -127,10 +127,12 @@ class ProductivityReport(AbstractReport, QWidget):
         def categorySelected(category: ProductivityType):
             set_daily_productivity(self.novel, category, date_to_str(date))
             calendar.updateCell(date)
+            emit_global_event(DailyProductivityChanged(self))
 
         def categoryCleared():
             clear_daily_productivity(self.novel, date_to_str(date))
             calendar.updateCell(date)
+            emit_global_event(DailyProductivityChanged(self))
 
         for cal in self._calendars:
             if cal is calendar:
@@ -182,11 +184,17 @@ class ProductivityCalendar(QCalendarWidget):
                     ''')
             widget.horizontalHeader().setMinimumSectionSize(30)
             widget.verticalHeader().setMinimumSectionSize(30)
+            widget.viewport().installEventFilter(self)
 
         today = QDate.currentDate()
         self.setMaximumDate(today)
 
-        self.currentPageChanged.connect(self._pageChanged)
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Wheel:
+            event.ignore()
+            return True
+        return super().eventFilter(watched, event)
 
     def setYear(self, year: int):
         self._year = year
@@ -234,6 +242,3 @@ class ProductivityCalendar(QCalendarWidget):
                 painter.setPen(QColor('grey'))
 
             painter.drawText(rect.toRectF(), str(date.day()), option)
-
-    def _pageChanged(self, year: int, month: int):
-        self.setCurrentPage(self._year, self._month)

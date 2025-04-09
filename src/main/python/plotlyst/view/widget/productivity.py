@@ -32,6 +32,9 @@ from qtmenu import MenuWidget
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, DailyProductivity, ProductivityType
 from plotlyst.env import app_env
+from plotlyst.event.core import EventListener, Event
+from plotlyst.event.handler import global_event_dispatcher
+from plotlyst.events import DailyProductivityChanged
 from plotlyst.resources import resource_registry
 from plotlyst.service.productivity import find_daily_productivity, set_daily_productivity
 from plotlyst.view.common import label, frame, ButtonPressResizeEventFilter, to_rgba_str
@@ -232,7 +235,7 @@ class ProductivityTrackingWidget(QFrame):
             self.lblAnimation.setHidden(True)
 
 
-class ProductivityButton(QWidget):
+class ProductivityButton(QWidget, EventListener):
     def __init__(self, parent=None):
         super().__init__(parent)
         hbox(self, spacing=0)
@@ -261,6 +264,13 @@ class ProductivityButton(QWidget):
 
         pointy(self)
         self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7))
+
+        global_event_dispatcher.register(self, DailyProductivityChanged)
+
+    @overrides
+    def event_received(self, event: Event):
+        if self._novel and isinstance(event, DailyProductivityChanged):
+            self._updateStreak()
 
     def setNovel(self, novel: Novel):
         self._novel = novel
