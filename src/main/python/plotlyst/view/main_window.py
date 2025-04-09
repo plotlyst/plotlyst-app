@@ -423,7 +423,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         for btn in self.buttonGroup.buttons():
             btn.setVisible(True)
 
-        self._actionProgress.setVisible(app_env.profile().get('productivity', False))
         self.menuDetachPanels.setEnabled(True)
         self.outline_mode.setEnabled(True)
         self.outline_mode.setVisible(True)
