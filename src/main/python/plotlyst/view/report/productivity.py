@@ -18,23 +18,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from datetime import datetime
+from functools import partial
+from typing import List, Optional
 
-from PyQt6.QtCore import Qt, QRect, QDate, QPoint
-from PyQt6.QtGui import QPainter, QTextOption, QColor
+from PyQt6.QtCore import Qt, QRect, QDate, QPoint, QObject, QEvent
+from PyQt6.QtGui import QPainter, QTextOption, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView
 from overrides import overrides
-from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon
+from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon, incr_font
 from qthandy.filter import OpacityEventFilter
+from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
-from plotlyst.core.domain import Novel, DailyProductivity, SnapshotType
-from plotlyst.event.core import emit_event
-from plotlyst.events import SocialSnapshotRequested
-from plotlyst.service.productivity import find_daily_productivity
-from plotlyst.view.common import label, scroll_area, tool_btn
+from plotlyst.core.domain import Novel, DailyProductivity, SnapshotType, ProductivityType
+from plotlyst.env import app_env
+from plotlyst.event.core import emit_event, emit_global_event
+from plotlyst.events import SocialSnapshotRequested, DailyProductivityChanged
+from plotlyst.service.productivity import find_daily_productivity, set_daily_productivity, clear_daily_productivity
+from plotlyst.view.common import label, scroll_area, tool_btn, action
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report import AbstractReport
-from plotlyst.view.widget.display import icon_text
+from plotlyst.view.widget.button import YearSelectorButton
+from plotlyst.view.widget.display import icon_text, PremiumOverlayWidget
 
 months = {
     1: "January",
@@ -57,6 +62,7 @@ class ProductivityReport(AbstractReport, QWidget):
         super().__init__(novel, parent, setupUi=False)
         vbox(self, 0, 8)
         margins(self, bottom=15)
+        self._calendars: List[ProductivityCalendar] = []
 
         self.btnSnapshot = tool_btn(IconRegistry.from_name('mdi.camera', 'grey'), 'Take a snapshot for social media',
                                     transparent_=True)
@@ -69,6 +75,11 @@ class ProductivityReport(AbstractReport, QWidget):
         self.wdgCalendars = QWidget()
         flow(self.wdgCalendars, 5, 10)
         margins(self.wdgCalendars, left=15, right=15, top=15)
+
+        self.btnYearSelector = YearSelectorButton()
+        self.btnYearSelector.selected.connect(self._yearSelected)
+        incr_font(self.btnYearSelector, 4)
+        incr_icon(self.btnYearSelector, 2)
 
         self.wdgCategoriesScroll = scroll_area(False, False, True)
         self.wdgCategories = QWidget()
@@ -90,15 +101,57 @@ class ProductivityReport(AbstractReport, QWidget):
             vbox(wdg)
             calendar = ProductivityCalendar(novel.productivity)
             calendar.setCurrentPage(current_year, i + 1)
+            calendar.clicked.connect(partial(self._dateSelected, calendar))
+            self._calendars.append(calendar)
             wdg.layout().addWidget(label(months[i + 1], h5=True), alignment=Qt.AlignmentFlag.AlignCenter)
             wdg.layout().addWidget(calendar)
             self.wdgCalendars.layout().addWidget(wdg)
 
         self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
         self.layout().addWidget(label('Daily Productivity Report', h2=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.btnYearSelector, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgCategoriesScroll)
         self.layout().addWidget(self.wdgCalendars)
 
+        if not app_env.profile().get('productivity', False):
+            PremiumOverlayWidget(self, 'Daily Productivity Tracking',
+                                 icon='mdi6.progress-star-four-points',
+                                 alt_link='https://plotlyst.com/docs/')
+
+    def _yearSelected(self, year: int):
+        for i, calendar in enumerate(self._calendars):
+            calendar.setCurrentPage(year, i + 1)
+
+    def _dateSelected(self, calendar: 'ProductivityCalendar', date: QDate):
+        def categorySelected(category: ProductivityType):
+            set_daily_productivity(self.novel, category, date_to_str(date))
+            calendar.updateCell(date)
+            emit_global_event(DailyProductivityChanged(self))
+
+        def categoryCleared():
+            clear_daily_productivity(self.novel, date_to_str(date))
+            calendar.updateCell(date)
+            emit_global_event(DailyProductivityChanged(self))
+
+        for cal in self._calendars:
+            if cal is calendar:
+                cal.selectDate(date)
+                continue
+            cal.clearSelection()
+
+        menu = MenuWidget()
+        menu.addSection(date.toString(Qt.DateFormat.ISODate), IconRegistry.from_name('mdi.calendar-blank'))
+        menu.addSeparator()
+
+        for category in self.novel.productivity.categories:
+            menu.addAction(action(category.text, IconRegistry.from_name(category.icon, category.icon_color),
+                                  slot=partial(categorySelected, category), incr_font_=1))
+
+        ref = find_daily_productivity(self.novel.productivity, date_to_str(date))
+        if ref:
+            menu.addSeparator()
+            menu.addAction(action('Reset', icon=IconRegistry.trash_can_icon(), slot=categoryCleared))
+        menu.exec(QCursor.pos() + QPoint(0, 15))
 
 
 def date_to_str(date: QDate) -> str:
@@ -109,6 +162,7 @@ class ProductivityCalendar(QCalendarWidget):
     def __init__(self, productivity: DailyProductivity, parent=None):
         super().__init__(parent)
         self.productivity = productivity
+        self._selectedDate: Optional[QDate] = None
 
         self.setVerticalHeaderFormat(QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
         self.setHorizontalHeaderFormat(QCalendarWidget.HorizontalHeaderFormat.NoHorizontalHeader)
@@ -127,11 +181,26 @@ class ProductivityCalendar(QCalendarWidget):
                     ''')
             widget.horizontalHeader().setMinimumSectionSize(30)
             widget.verticalHeader().setMinimumSectionSize(30)
+            widget.viewport().installEventFilter(self)
 
         today = QDate.currentDate()
         self.setMaximumDate(today)
 
-        self.setDisabled(True)
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Wheel:
+            event.ignore()
+            return True
+        return super().eventFilter(watched, event)
+
+    def selectDate(self, date: QDate):
+        self._selectedDate = date
+        self.updateCell(self._selectedDate)
+
+    def clearSelection(self):
+        if self._selectedDate:
+            self.updateCell(self._selectedDate)
+        self._selectedDate = None
 
     @overrides
     def paintCell(self, painter: QPainter, rect: QRect, date: QDate) -> None:
@@ -140,8 +209,8 @@ class ProductivityCalendar(QCalendarWidget):
         if date.month() == self.monthShown():
             option = QTextOption()
             option.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            bold(painter, date == self.selectedDate())
-            underline(painter, date == self.selectedDate())
+            bold(painter, date == self._selectedDate)
+            underline(painter, date == self._selectedDate)
 
             category = find_daily_productivity(self.productivity, date_to_str(date))
             if category:
@@ -156,12 +225,10 @@ class ProductivityCalendar(QCalendarWidget):
                 # IconRegistry.from_name('mdi.circle-slice-8', category.icon_color).paint(painter, rect)
                 painter.drawEllipse(rect.center() + QPoint(1, 1), rad, rad)
 
-                return
-
             if date > self.maximumDate():
                 painter.setPen(QColor('#adb5bd'))
-            # elif category:
-            #     painter.setPen(QColor(RELAXED_WHITE_COLOR))
+            elif category:
+                painter.setPen(QColor(RELAXED_WHITE_COLOR))
             elif date == self.maximumDate():
                 painter.setPen(QColor('black'))
             else:

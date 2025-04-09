@@ -27,19 +27,18 @@ from PyQt6.QtCore import QUrl, QObject, pyqtSignal, QTimer, Qt, QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QWidget, QFrame
-from qthandy import vbox, incr_font, hbox, decr_icon, translucent, decr_font
+from qthandy import vbox, incr_font, hbox, decr_icon, translucent
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR, BLACK_COLOR
 from plotlyst.env import app_env
-from plotlyst.event.core import emit_global_event
-from plotlyst.events import ShowRoadmapEvent
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import push_btn, ButtonIconSwitchEventFilter, frame, tool_btn, restyle
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
+from plotlyst.view.widget.button import premium_button_notice_small
 from plotlyst.view.widget.display import icon_text, TimerDisplay, MenuOverlayEventFilter, PremiumMessagePopup
 from plotlyst.view.widget.input import DecoratedSpinBox, Toggle
 
@@ -223,11 +222,7 @@ class TimerSetupWidget(QFrame):
         self.btnStart = push_btn(IconRegistry.from_name('fa5s.play', RELAXED_WHITE_COLOR), 'Start writing sprint',
                                  properties=['confirm', 'positive'])
         if not app_env.profile().get('writing-sprint', False):
-            btnPlus = push_btn(text='Plotlyst Plus Feature', transparent_=True)
-            decr_font(btnPlus)
-            btnPlus.installEventFilter(OpacityEventFilter(btnPlus, leaveOpacity=0.6))
-            btnPlus.clicked.connect(lambda: emit_global_event(ShowRoadmapEvent(self)))
-            self.layout().addWidget(btnPlus, alignment=Qt.AlignmentFlag.AlignRight)
+            self.layout().addWidget(premium_button_notice_small(self), alignment=Qt.AlignmentFlag.AlignRight)
 
             self.btnStart.setText('Upgrade')
             self.btnStart.setIcon(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR))

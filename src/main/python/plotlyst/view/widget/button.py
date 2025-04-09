@@ -17,17 +17,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from datetime import datetime
 from functools import partial
 from typing import Optional, Set
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt, pyqtProperty, QTimer, QEvent, QSize
-from PyQt6.QtGui import QIcon, QMouseEvent, QEnterEvent, QAction, QColor
-from PyQt6.QtWidgets import QPushButton, QSizePolicy, QToolButton, QAbstractButton, QLabel, QButtonGroup, QMenu, QWidget
+from PyQt6.QtCore import pyqtSignal, Qt, pyqtProperty, QTimer, QEvent, QSize, QPoint
+from PyQt6.QtGui import QIcon, QMouseEvent, QEnterEvent, QAction, QColor, QPaintEvent, QPainter
+from PyQt6.QtWidgets import QPushButton, QSizePolicy, QToolButton, QAbstractButton, QLabel, QButtonGroup, QMenu, \
+    QWidget
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, translucent, bold, incr_font, transparent, retain_when_hidden, underline, vbox, decr_icon, \
-    incr_icon, italic, pointy, sp
+    incr_icon, italic, pointy, sp, decr_font
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
 
@@ -38,11 +40,11 @@ from plotlyst.core.domain import SelectionItem, Novel, tag_characterization, tag
     tag_editing, tag_collect_feedback, tag_publishing, tag_marketing, tag_book_cover_design, tag_formatting, \
     SnapshotType
 from plotlyst.env import app_env
-from plotlyst.event.core import emit_event
-from plotlyst.events import SocialSnapshotRequested
+from plotlyst.event.core import emit_event, emit_global_event
+from plotlyst.events import SocialSnapshotRequested, ShowRoadmapEvent
 from plotlyst.service.importer import SyncImporter
 from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action, label, \
-    ButtonIconSwitchEventFilter
+    ButtonIconSwitchEventFilter, push_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 
@@ -775,3 +777,51 @@ class SnapshotButton(QPushButton):
 
         incr_icon(self, 6)
         self.clicked.connect(lambda: emit_event(novel, SocialSnapshotRequested(self, snapshotType)))
+
+
+def premium_button_notice_small(parent) -> QPushButton:
+    btn = push_btn(icon=IconRegistry.from_name('mdi.certificate'), text='Plotlyst Premium Feature', transparent_=True,
+                   parent=parent)
+    decr_font(btn)
+    btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.6))
+    btn.clicked.connect(lambda: emit_global_event(ShowRoadmapEvent(parent)))
+
+    return btn
+
+
+class YearSelectorButton(QPushButton):
+    selected = pyqtSignal(int)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        current_year = datetime.today().year
+        self.setText(str(current_year))
+        self.setIcon(IconRegistry.from_name('mdi.calendar-blank'))
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+        pointy(self)
+
+        self._dropDownIcon = IconRegistry.from_name('ri.arrow-down-s-fill')
+        self._dropDownIconSize: int = 15
+        self.setStyleSheet(
+            f'border: 0px; background-color: rgba(0, 0, 0, 0); padding-right: {self._dropDownIconSize}px;')
+
+        self.clicked.connect(self._showSelector)
+
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        self._dropDownIcon.paint(painter, self.width() - self._dropDownIconSize,
+                                 (self.height() - self._dropDownIconSize) // 2,
+                                 self._dropDownIconSize, self._dropDownIconSize)
+
+    def _showSelector(self):
+        menu = MenuWidget()
+        for year in range(datetime.today().year, 2023, -1):
+            menu.addAction(action(str(year), slot=partial(self._selected, year)))
+
+        menu.exec(self.mapToGlobal(QPoint(0, self.sizeHint().height() + 10)))
+
+    def _selected(self, year: int):
+        self.setText(str(year))
+        self.selected.emit(year)

@@ -358,3 +358,8 @@ class ShowRoadmapEvent(Event):
 @dataclass
 class PreviewFeatureEvent(Event):
     feature: str
+
+
+@dataclass
+class DailyProductivityChanged(Event):
+    pass

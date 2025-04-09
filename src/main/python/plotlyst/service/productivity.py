@@ -41,3 +41,8 @@ def set_daily_productivity(novel: Novel, category: ProductivityType,
 
     novel.productivity.progress[date] = str(category.id)
     RepositoryPersistenceManager.instance().update_novel(novel)
+
+
+def clear_daily_productivity(novel: Novel, date: str):
+    novel.productivity.progress.pop(date)
+    RepositoryPersistenceManager.instance().update_novel(novel)

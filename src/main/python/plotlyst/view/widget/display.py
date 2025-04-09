@@ -671,7 +671,7 @@ class _PremiumMessageWidgetBase(QWidget):
             self.layout().addWidget(iconWdg, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.layout().addWidget(self.title)
-        self.layout().addWidget(label("To use this feature, please purchase Plotlyst Plus.", incr_font_diff=2),
+        self.layout().addWidget(label("To use this feature, please purchase Plotlyst.", incr_font_diff=2),
                                 alignment=Qt.AlignmentFlag.AlignCenter)
         if alt_link:
             btnLink = push_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'),
