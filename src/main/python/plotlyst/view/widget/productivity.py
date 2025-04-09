@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 import qtanim
-from PyQt6.QtCore import QPoint, QSize, Qt, pyqtSignal
+from PyQt6.QtCore import QPoint, QSize, Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QMouseEvent, QColor, QMovie
 from PyQt6.QtWidgets import QWidget, QButtonGroup, QToolButton, QFrame, QLabel
 from overrides import overrides
@@ -39,7 +39,7 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import transparent_menu
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.button import premium_button_notice_small
-from plotlyst.view.widget.display import IconText, OverlayWidget, icon_text
+from plotlyst.view.widget.display import IconText, OverlayWidget, icon_text, PremiumMessagePopup
 
 
 class ProductivityTypeButton(QToolButton):
@@ -163,6 +163,7 @@ class DaysDisplayWidget(QWidget):
 
 class ProductivityTrackingWidget(QFrame):
     categorySelected = pyqtSignal()
+    showPremium = pyqtSignal()
 
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -194,8 +195,9 @@ class ProductivityTrackingWidget(QFrame):
         title = icon_text('mdi6.progress-star-four-points', 'Daily productivity tracker')
         incr_font(title, 3)
 
-        if not app_env.profile().get('writing-sprint', False):
-            self.layout().addWidget(premium_button_notice_small(self), alignment=Qt.AlignmentFlag.AlignRight)
+        if not app_env.profile().get('productivity', False):
+            self._btnPremium = premium_button_notice_small(self)
+            self.layout().addWidget(self._btnPremium, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.layout().addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(label('In which category did you make the most progress today?', description=True))
@@ -216,10 +218,13 @@ class ProductivityTrackingWidget(QFrame):
         self.lblAnimation.setVisible(True)
         self.movie.start()
 
-        self.wdgDays.activateCategory(btn.category)
-        set_daily_productivity(self.novel, btn.category)
+        if app_env.profile().get('productivity', False):
+            self.wdgDays.activateCategory(btn.category)
+            set_daily_productivity(self.novel, btn.category)
 
-        self.categorySelected.emit()
+            self.categorySelected.emit()
+        else:
+            qtanim.shake(self._btnPremium, loop=5, teardown=lambda: self.showPremium.emit())
 
     def _checkAnimation(self, frame_number: int):
         if frame_number == self.movie.frameCount() - 1:
@@ -272,12 +277,19 @@ class ProductivityButton(QWidget):
         self._menu.clear()
         self._trackerWdg = ProductivityTrackingWidget(self._novel)
         self._trackerWdg.categorySelected.connect(self._updateStreak)
+        self._trackerWdg.showPremium.connect(self._showPremiumPopup)
         self._menu.addWidget(self._trackerWdg)
 
         self._overlay = OverlayWidget.getActiveWindowOverlay(alpha=75)
         self._overlay.show()
 
         self._menu.exec(self.mapToGlobal(QPoint(0, self.sizeHint().height() + 10)))
+
+    def _showPremiumPopup(self):
+        self._menu.close()
+        QTimer.singleShot(50, lambda: PremiumMessagePopup.popup('Daily Productivity Tracking',
+                                                                'mdi6.progress-star-four-points',
+                                                                'https://plotlyst.com/docs/'))
 
     def _hide(self):
         if self._overlay:
