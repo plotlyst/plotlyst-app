@@ -68,7 +68,8 @@ def upload_image(novel: Novel, crop: bool = False, roundedCroppedPreview: bool =
 
         file_extension = Path(file_path).suffix.lower()
         ref = ImageRef(file_extension)
-        save_image(novel, image, ref)
+        if not novel.tutorial:
+            save_image(novel, image, ref)
         return LoadedImage(ref, image)
 
 

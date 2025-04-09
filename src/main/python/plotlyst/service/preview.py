@@ -18,7 +18,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import uuid
-from typing import Optional
 
 from PyQt6.QtCore import Qt, QSize
 from overrides import overrides
@@ -26,7 +25,6 @@ from qthandy import decr_icon
 
 from plotlyst.common import DEFAULT_PREMIUM_LINK
 from plotlyst.core.domain import Novel, Diagram, DiagramData, Character, CharacterPreferences, AvatarPreferences
-from plotlyst.service.image import LoadedImage
 from plotlyst.view.common import push_btn, open_url, label
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import asked
@@ -59,10 +57,6 @@ class MindmapPreviewScene(EventsMindMapScene):
 
     @overrides
     def _save(self):
-        pass
-
-    @overrides
-    def _uploadImage(self) -> Optional[LoadedImage]:
         pass
 
 
