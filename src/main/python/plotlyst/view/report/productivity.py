@@ -73,7 +73,8 @@ class ProductivityReport(AbstractReport, QWidget):
         margins(self.wdgCalendars, left=15, right=15, top=15)
 
         self.btnYearSelector = YearSelectorButton()
-        incr_font(self.btnYearSelector)
+        incr_font(self.btnYearSelector, 4)
+        incr_icon(self.btnYearSelector, 2)
 
         self.wdgCategoriesScroll = scroll_area(False, False, True)
         self.wdgCategories = QWidget()

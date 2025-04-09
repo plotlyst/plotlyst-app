@@ -23,7 +23,7 @@ from typing import Optional, Set
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, pyqtProperty, QTimer, QEvent, QSize, QPoint
-from PyQt6.QtGui import QIcon, QMouseEvent, QEnterEvent, QAction, QColor
+from PyQt6.QtGui import QIcon, QMouseEvent, QEnterEvent, QAction, QColor, QPaintEvent, QPainter
 from PyQt6.QtWidgets import QPushButton, QSizePolicy, QToolButton, QAbstractButton, QLabel, QButtonGroup, QMenu, \
     QWidget
 from overrides import overrides
@@ -797,14 +797,27 @@ class YearSelectorButton(QPushButton):
         current_year = datetime.today().year
         self.setText(str(current_year))
         self.setIcon(IconRegistry.from_name('mdi.calendar-blank'))
-        transparent(self)
         self.installEventFilter(ButtonPressResizeEventFilter(self))
+        pointy(self)
+
+        self._dropDownIcon = IconRegistry.from_name('ri.arrow-down-s-fill')
+        self._dropDownIconSize: int = 15
+        self.setStyleSheet(
+            f'border: 0px; background-color: rgba(0, 0, 0, 0); padding-right: {self._dropDownIconSize}px;')
 
         self.clicked.connect(self._showSelector)
 
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        self._dropDownIcon.paint(painter, self.width() - self._dropDownIconSize,
+                                 (self.height() - self._dropDownIconSize) // 2,
+                                 self._dropDownIconSize, self._dropDownIconSize)
+
     def _showSelector(self):
         menu = MenuWidget()
-        for year in range(2024, datetime.today().year + 1):
+        for year in range(datetime.today().year, 2023, -1):
             menu.addAction(action(str(year), slot=partial(self._selected, year)))
 
         menu.exec(self.mapToGlobal(QPoint(0, self.sizeHint().height() + 10)))
