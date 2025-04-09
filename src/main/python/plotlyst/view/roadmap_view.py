@@ -64,7 +64,7 @@ class TaskWidget(QWidget):
         ''')
 
         self.iconPlus = Icon()
-        self.iconPlus.setToolTip('Plotlyst Plus feature')
+        self.iconPlus.setToolTip('Plotlyst Premium feature')
         self.iconPlus.setIcon(IconRegistry.from_name('mdi.certificate', PLOTLYST_SECONDARY_COLOR))
         translucent(self.iconPlus, 0.5)
 

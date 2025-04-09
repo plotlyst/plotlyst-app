@@ -38,6 +38,7 @@ from plotlyst.view.common import label, frame, ButtonPressResizeEventFilter, to_
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import transparent_menu
 from plotlyst.view.style.button import apply_button_palette_color
+from plotlyst.view.widget.button import premium_button_notice_small
 from plotlyst.view.widget.display import IconText, OverlayWidget, icon_text
 
 
@@ -192,7 +193,10 @@ class ProductivityTrackingWidget(QFrame):
 
         title = icon_text('mdi6.progress-star-four-points', 'Daily productivity tracker')
         incr_font(title, 3)
-        # self.layout().addWidget(label('Daily productivity tracker', h5=True), alignment=Qt.AlignmentFlag.AlignCenter)
+
+        if not app_env.profile().get('writing-sprint', False):
+            self.layout().addWidget(premium_button_notice_small(self), alignment=Qt.AlignmentFlag.AlignRight)
+
         self.layout().addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(label('In which category did you make the most progress today?', description=True))
         self.layout().addWidget(line(color='lightgrey'))

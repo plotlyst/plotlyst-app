@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import QPushButton, QSizePolicy, QToolButton, QAbstractButt
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, translucent, bold, incr_font, transparent, retain_when_hidden, underline, vbox, decr_icon, \
-    incr_icon, italic, pointy, sp
+    incr_icon, italic, pointy, sp, decr_font
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
 
@@ -38,11 +38,11 @@ from plotlyst.core.domain import SelectionItem, Novel, tag_characterization, tag
     tag_editing, tag_collect_feedback, tag_publishing, tag_marketing, tag_book_cover_design, tag_formatting, \
     SnapshotType
 from plotlyst.env import app_env
-from plotlyst.event.core import emit_event
-from plotlyst.events import SocialSnapshotRequested
+from plotlyst.event.core import emit_event, emit_global_event
+from plotlyst.events import SocialSnapshotRequested, ShowRoadmapEvent
 from plotlyst.service.importer import SyncImporter
 from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action, label, \
-    ButtonIconSwitchEventFilter
+    ButtonIconSwitchEventFilter, push_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 
@@ -775,3 +775,13 @@ class SnapshotButton(QPushButton):
 
         incr_icon(self, 6)
         self.clicked.connect(lambda: emit_event(novel, SocialSnapshotRequested(self, snapshotType)))
+
+
+def premium_button_notice_small(parent) -> QPushButton:
+    btn = push_btn(icon=IconRegistry.from_name('mdi.certificate'), text='Plotlyst Premium Feature', transparent_=True,
+                   parent=parent)
+    decr_font(btn)
+    btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.6))
+    btn.clicked.connect(lambda: emit_global_event(ShowRoadmapEvent(parent)))
+
+    return btn
