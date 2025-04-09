@@ -28,13 +28,14 @@ from qthandy.filter import OpacityEventFilter
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, DailyProductivity, SnapshotType
+from plotlyst.env import app_env
 from plotlyst.event.core import emit_event
 from plotlyst.events import SocialSnapshotRequested
 from plotlyst.service.productivity import find_daily_productivity
 from plotlyst.view.common import label, scroll_area, tool_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report import AbstractReport
-from plotlyst.view.widget.display import icon_text
+from plotlyst.view.widget.display import icon_text, PremiumOverlayWidget
 
 months = {
     1: "January",
@@ -99,6 +100,10 @@ class ProductivityReport(AbstractReport, QWidget):
         self.layout().addWidget(self.wdgCategoriesScroll)
         self.layout().addWidget(self.wdgCalendars)
 
+        if not app_env.profile().get('productivity', False):
+            PremiumOverlayWidget(self, 'Daily Productivity Tracking',
+                                 icon='mdi6.progress-star-four-points',
+                                 alt_link='https://plotlyst.com/docs/')
 
 
 def date_to_str(date: QDate) -> str:

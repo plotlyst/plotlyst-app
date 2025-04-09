@@ -373,7 +373,7 @@ class PatreonTierSection(QWidget):
             self.btnResults.installEventFilter(OpacityEventFilter(self.btnResults, leaveOpacity=0.7))
             self.layout().addWidget(wrap(self.btnResults, margin_left=20), alignment=Qt.AlignmentFlag.AlignLeft)
         if tier.has_plotlyst_plus:
-            self.btnPlus = push_btn(IconRegistry.from_name('mdi.certificate'), 'See Plotlyst Plus features',
+            self.btnPlus = push_btn(IconRegistry.from_name('mdi.certificate'), 'Premium Plotlyst features',
                                     transparent_=True)
             self.btnPlus.installEventFilter(OpacityEventFilter(self.btnPlus, leaveOpacity=0.7))
             self.layout().addWidget(wrap(self.btnPlus, margin_left=20), alignment=Qt.AlignmentFlag.AlignLeft)
