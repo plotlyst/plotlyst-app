@@ -23,7 +23,7 @@ from PyQt6.QtCore import Qt, QRect, QDate, QPoint
 from PyQt6.QtGui import QPainter, QTextOption, QColor
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView
 from overrides import overrides
-from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon
+from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon, incr_font
 from qthandy.filter import OpacityEventFilter
 
 from plotlyst.common import RELAXED_WHITE_COLOR
@@ -35,6 +35,7 @@ from plotlyst.service.productivity import find_daily_productivity
 from plotlyst.view.common import label, scroll_area, tool_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report import AbstractReport
+from plotlyst.view.widget.button import YearSelectorButton
 from plotlyst.view.widget.display import icon_text, PremiumOverlayWidget
 
 months = {
@@ -71,6 +72,9 @@ class ProductivityReport(AbstractReport, QWidget):
         flow(self.wdgCalendars, 5, 10)
         margins(self.wdgCalendars, left=15, right=15, top=15)
 
+        self.btnYearSelector = YearSelectorButton()
+        incr_font(self.btnYearSelector)
+
         self.wdgCategoriesScroll = scroll_area(False, False, True)
         self.wdgCategories = QWidget()
         self.wdgCategories.setProperty('relaxed-white-bg', True)
@@ -97,6 +101,7 @@ class ProductivityReport(AbstractReport, QWidget):
 
         self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
         self.layout().addWidget(label('Daily Productivity Report', h2=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.btnYearSelector, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgCategoriesScroll)
         self.layout().addWidget(self.wdgCalendars)
 

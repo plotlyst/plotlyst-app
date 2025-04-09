@@ -17,13 +17,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from datetime import datetime
 from functools import partial
 from typing import Optional, Set
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt, pyqtProperty, QTimer, QEvent, QSize
+from PyQt6.QtCore import pyqtSignal, Qt, pyqtProperty, QTimer, QEvent, QSize, QPoint
 from PyQt6.QtGui import QIcon, QMouseEvent, QEnterEvent, QAction, QColor
-from PyQt6.QtWidgets import QPushButton, QSizePolicy, QToolButton, QAbstractButton, QLabel, QButtonGroup, QMenu, QWidget
+from PyQt6.QtWidgets import QPushButton, QSizePolicy, QToolButton, QAbstractButton, QLabel, QButtonGroup, QMenu, \
+    QWidget
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, translucent, bold, incr_font, transparent, retain_when_hidden, underline, vbox, decr_icon, \
@@ -785,3 +787,28 @@ def premium_button_notice_small(parent) -> QPushButton:
     btn.clicked.connect(lambda: emit_global_event(ShowRoadmapEvent(parent)))
 
     return btn
+
+
+class YearSelectorButton(QPushButton):
+    selected = pyqtSignal(int)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        current_year = datetime.today().year
+        self.setText(str(current_year))
+        self.setIcon(IconRegistry.from_name('mdi.calendar-blank'))
+        transparent(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+
+        self.clicked.connect(self._showSelector)
+
+    def _showSelector(self):
+        menu = MenuWidget()
+        for year in range(2024, datetime.today().year + 1):
+            menu.addAction(action(str(year), slot=partial(self._selected, year)))
+
+        menu.exec(self.mapToGlobal(QPoint(0, self.sizeHint().height() + 10)))
+
+    def _selected(self, year: int):
+        self.setText(str(year))
+        self.selected.emit(year)
