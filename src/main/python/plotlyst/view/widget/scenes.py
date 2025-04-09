@@ -297,6 +297,9 @@ class SceneFilterWidget(QWidget):
         self.layout().addWidget(self.lblActs, 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(self.wdgActs, 1, 1, alignment=Qt.AlignmentFlag.AlignLeft)
 
+    def refreshCharacterFilters(self):
+        self.povFilter.updateCharacters(self.novel.pov_characters(), checkAll=True)
+
 
 class ScenePreferencesTabType(Enum):
     CARDS = 0

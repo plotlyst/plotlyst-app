@@ -338,6 +338,7 @@ class ScenesOutlineView(AbstractNovelView):
             return
         elif isinstance(event, SceneChangedEvent):
             self._handle_scene_changed(event.scene)
+            self._scene_filter.refreshCharacterFilters()
             return
         elif isinstance(event, SceneDeletedEvent):
             self._handle_scene_deletion(event.scene)
@@ -546,7 +547,7 @@ class ScenesOutlineView(AbstractNovelView):
     def _on_close_editor(self):
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageView)
         self.title.setVisible(True)
-        self._scene_filter.povFilter.updateCharacters(self.novel.pov_characters(), checkAll=True)
+        self._scene_filter.refreshCharacterFilters()
 
         if self._scene_added is not None:
             emit_event(self.novel, SceneAddedEvent(self, self._scene_added), delay=10)
@@ -839,7 +840,7 @@ class ScenesOutlineView(AbstractNovelView):
 
     @busy
     def _handle_character_changed(self, _: Character):
-        self._scene_filter.povFilter.updateCharacters(self.novel.pov_characters(), checkAll=True)
+        self._scene_filter.refreshCharacterFilters()
         for card in self.ui.cards.cards():
             card.refreshPov()
             card.refreshCharacters()
