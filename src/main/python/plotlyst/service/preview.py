@@ -17,6 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import uuid
 from typing import Optional
 
 from PyQt6.QtCore import Qt, QSize
@@ -24,9 +25,9 @@ from overrides import overrides
 from qthandy import decr_icon
 
 from plotlyst.common import DEFAULT_PREMIUM_LINK
-from plotlyst.core.domain import Novel, Diagram, DiagramData
+from plotlyst.core.domain import Novel, Diagram, DiagramData, Character, CharacterPreferences, AvatarPreferences
 from plotlyst.service.image import LoadedImage
-from plotlyst.view.common import push_btn, open_url
+from plotlyst.view.common import push_btn, open_url, label
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import PopupDialog
@@ -72,12 +73,28 @@ class MindmapPreview(EventsMindMapView):
         return MindmapPreviewScene(self._novel)
 
 
+def preview_novel() -> Novel:
+    novel = Novel('Preview', tutorial=True)
+    novel.characters.append(
+        _preview_character('Jane Doe', uuid.UUID('dd72a22e-2fff-495b-9e68-abeb0d726462'), 'mdi.alpha-j-circle-outline'))
+    novel.characters.append(
+        _preview_character('Anne', uuid.UUID('a6af7bab-f7c7-4f87-bb83-b5f3db8eb7a7'), 'mdi.flower-poppy'))
+    novel.characters.append(
+        _preview_character('Zsolt', uuid.UUID('66c17718-d4ac-4088-b9c9-0914add0ebb3'), 'mdi.alpha-z-box'))
+
+    return novel
+
+
+def _preview_character(name: str, id_, icon: str) -> Character:
+    return Character(name, id=id_, prefs=CharacterPreferences(
+        avatar=AvatarPreferences(use_image=False, use_custom_icon=True, icon=icon)))
+
+
 class MindmapPreviewPopup(PreviewPopup):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        novel = Novel('Preview', tutorial=True)
-        self.editor = MindmapPreview(novel)
+        self.editor = MindmapPreview(preview_novel())
 
         diagram = Diagram()
         diagram.loaded = True
@@ -86,6 +103,9 @@ class MindmapPreviewPopup(PreviewPopup):
         self.editor.setDiagram(diagram)
 
         self.frame.layout().insertWidget(0, self.editor)
+        self.frame.layout().insertWidget(0, label(
+            "This is a preview of the Mindmap feature. Feel free to explore the different mindmap items and connectors, but note that your work won't be saved.",
+            description=True, wordWrap=True))
 
         self.setMinimumSize(self._adjustedSize(0.9, 0.8, 600, 500))
 
