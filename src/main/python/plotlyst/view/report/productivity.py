@@ -99,7 +99,7 @@ class ProductivityReport(AbstractReport, QWidget):
         for i in range(12):
             wdg = QWidget()
             vbox(wdg)
-            calendar = ProductivityCalendar(novel.productivity, current_year, i + 1)
+            calendar = ProductivityCalendar(novel.productivity)
             calendar.setCurrentPage(current_year, i + 1)
             calendar.clicked.connect(partial(self._dateSelected, calendar))
             self._calendars.append(calendar)
@@ -120,8 +120,7 @@ class ProductivityReport(AbstractReport, QWidget):
 
     def _yearSelected(self, year: int):
         for i, calendar in enumerate(self._calendars):
-            # calendar.setCurrentPage(year, i + 1)
-            calendar.setYear(year)
+            calendar.setCurrentPage(year, i + 1)
 
     def _dateSelected(self, calendar: 'ProductivityCalendar', date: QDate):
         def categorySelected(category: ProductivityType):
@@ -146,7 +145,7 @@ class ProductivityReport(AbstractReport, QWidget):
 
         for category in self.novel.productivity.categories:
             menu.addAction(action(category.text, IconRegistry.from_name(category.icon, category.icon_color),
-                                  slot=partial(categorySelected, category)))
+                                  slot=partial(categorySelected, category), incr_font_=1))
 
         ref = find_daily_productivity(self.novel.productivity, date_to_str(date))
         if ref:
@@ -160,11 +159,9 @@ def date_to_str(date: QDate) -> str:
 
 
 class ProductivityCalendar(QCalendarWidget):
-    def __init__(self, productivity: DailyProductivity, year: int, month: int, parent=None):
+    def __init__(self, productivity: DailyProductivity, parent=None):
         super().__init__(parent)
         self.productivity = productivity
-        self._year = year
-        self._month = month
         self._selectedDate: Optional[QDate] = None
 
         self.setVerticalHeaderFormat(QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
@@ -195,10 +192,6 @@ class ProductivityCalendar(QCalendarWidget):
             event.ignore()
             return True
         return super().eventFilter(watched, event)
-
-    def setYear(self, year: int):
-        self._year = year
-        self.setCurrentPage(self._year, self._month)
 
     def selectDate(self, date: QDate):
         self._selectedDate = date
