@@ -22,19 +22,20 @@ from functools import partial
 from typing import List, Optional
 
 from PyQt6.QtCore import Qt, QRect, QDate, QPoint
-from PyQt6.QtGui import QPainter, QTextOption, QColor
+from PyQt6.QtGui import QPainter, QTextOption, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView
 from overrides import overrides
 from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon, incr_font
 from qthandy.filter import OpacityEventFilter
+from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
-from plotlyst.core.domain import Novel, DailyProductivity, SnapshotType
+from plotlyst.core.domain import Novel, DailyProductivity, SnapshotType, ProductivityType
 from plotlyst.env import app_env
 from plotlyst.event.core import emit_event
 from plotlyst.events import SocialSnapshotRequested
-from plotlyst.service.productivity import find_daily_productivity
-from plotlyst.view.common import label, scroll_area, tool_btn
+from plotlyst.service.productivity import find_daily_productivity, set_daily_productivity, clear_daily_productivity
+from plotlyst.view.common import label, scroll_area, tool_btn, action
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report import AbstractReport
 from plotlyst.view.widget.button import YearSelectorButton
@@ -122,11 +123,33 @@ class ProductivityReport(AbstractReport, QWidget):
             calendar.setCurrentPage(year, i + 1)
 
     def _dateSelected(self, calendar: 'ProductivityCalendar', date: QDate):
+        def categorySelected(category: ProductivityType):
+            set_daily_productivity(self.novel, category, date_to_str(date))
+            calendar.updateCell(date)
+
+        def categoryCleared():
+            clear_daily_productivity(self.novel, date_to_str(date))
+            calendar.updateCell(date)
+
         for cal in self._calendars:
             if cal is calendar:
                 cal.selectDate(date)
                 continue
             cal.clearSelection()
+
+        menu = MenuWidget()
+        menu.addSection(date.toString(Qt.DateFormat.ISODate), IconRegistry.from_name('mdi.calendar-blank'))
+        menu.addSeparator()
+
+        for category in self.novel.productivity.categories:
+            menu.addAction(action(category.text, IconRegistry.from_name(category.icon, category.icon_color),
+                                  slot=partial(categorySelected, category)))
+
+        ref = find_daily_productivity(self.novel.productivity, date_to_str(date))
+        if ref:
+            menu.addSeparator()
+            menu.addAction(action('Reset', icon=IconRegistry.trash_can_icon(), slot=categoryCleared))
+        menu.exec(QCursor.pos() + QPoint(0, 15))
 
 
 def date_to_str(date: QDate) -> str:
