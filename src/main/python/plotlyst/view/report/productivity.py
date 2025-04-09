@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from datetime import datetime
+from typing import List
 
 from PyQt6.QtCore import Qt, QRect, QDate, QPoint
 from PyQt6.QtGui import QPainter, QTextOption, QColor
@@ -59,6 +60,7 @@ class ProductivityReport(AbstractReport, QWidget):
         super().__init__(novel, parent, setupUi=False)
         vbox(self, 0, 8)
         margins(self, bottom=15)
+        self._calendars: List[ProductivityCalendar] = []
 
         self.btnSnapshot = tool_btn(IconRegistry.from_name('mdi.camera', 'grey'), 'Take a snapshot for social media',
                                     transparent_=True)
@@ -73,6 +75,7 @@ class ProductivityReport(AbstractReport, QWidget):
         margins(self.wdgCalendars, left=15, right=15, top=15)
 
         self.btnYearSelector = YearSelectorButton()
+        self.btnYearSelector.selected.connect(self._yearSelected)
         incr_font(self.btnYearSelector, 4)
         incr_icon(self.btnYearSelector, 2)
 
@@ -96,6 +99,7 @@ class ProductivityReport(AbstractReport, QWidget):
             vbox(wdg)
             calendar = ProductivityCalendar(novel.productivity)
             calendar.setCurrentPage(current_year, i + 1)
+            self._calendars.append(calendar)
             wdg.layout().addWidget(label(months[i + 1], h5=True), alignment=Qt.AlignmentFlag.AlignCenter)
             wdg.layout().addWidget(calendar)
             self.wdgCalendars.layout().addWidget(wdg)
@@ -110,6 +114,10 @@ class ProductivityReport(AbstractReport, QWidget):
             PremiumOverlayWidget(self, 'Daily Productivity Tracking',
                                  icon='mdi6.progress-star-four-points',
                                  alt_link='https://plotlyst.com/docs/')
+
+    def _yearSelected(self, year: int):
+        for i, calendar in enumerate(self._calendars):
+            calendar.setCurrentPage(year, i + 1)
 
 
 def date_to_str(date: QDate) -> str:
