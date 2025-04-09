@@ -18,7 +18,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from datetime import datetime
-from typing import List
+from functools import partial
+from typing import List, Optional
 
 from PyQt6.QtCore import Qt, QRect, QDate, QPoint
 from PyQt6.QtGui import QPainter, QTextOption, QColor
@@ -99,6 +100,7 @@ class ProductivityReport(AbstractReport, QWidget):
             vbox(wdg)
             calendar = ProductivityCalendar(novel.productivity)
             calendar.setCurrentPage(current_year, i + 1)
+            calendar.clicked.connect(partial(self._dateSelected, calendar))
             self._calendars.append(calendar)
             wdg.layout().addWidget(label(months[i + 1], h5=True), alignment=Qt.AlignmentFlag.AlignCenter)
             wdg.layout().addWidget(calendar)
@@ -119,6 +121,13 @@ class ProductivityReport(AbstractReport, QWidget):
         for i, calendar in enumerate(self._calendars):
             calendar.setCurrentPage(year, i + 1)
 
+    def _dateSelected(self, calendar: 'ProductivityCalendar', date: QDate):
+        for cal in self._calendars:
+            if cal is calendar:
+                cal.selectDate(date)
+                continue
+            cal.clearSelection()
+
 
 def date_to_str(date: QDate) -> str:
     return date.toString(Qt.DateFormat.ISODate)
@@ -128,6 +137,7 @@ class ProductivityCalendar(QCalendarWidget):
     def __init__(self, productivity: DailyProductivity, parent=None):
         super().__init__(parent)
         self.productivity = productivity
+        self._selectedDate: Optional[QDate] = None
 
         self.setVerticalHeaderFormat(QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
         self.setHorizontalHeaderFormat(QCalendarWidget.HorizontalHeaderFormat.NoHorizontalHeader)
@@ -150,7 +160,14 @@ class ProductivityCalendar(QCalendarWidget):
         today = QDate.currentDate()
         self.setMaximumDate(today)
 
-        self.setDisabled(True)
+    def selectDate(self, date: QDate):
+        self._selectedDate = date
+        self.updateCell(self._selectedDate)
+
+    def clearSelection(self):
+        if self._selectedDate:
+            self.updateCell(self._selectedDate)
+        self._selectedDate = None
 
     @overrides
     def paintCell(self, painter: QPainter, rect: QRect, date: QDate) -> None:
@@ -159,8 +176,8 @@ class ProductivityCalendar(QCalendarWidget):
         if date.month() == self.monthShown():
             option = QTextOption()
             option.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            bold(painter, date == self.selectedDate())
-            underline(painter, date == self.selectedDate())
+            bold(painter, date == self._selectedDate)
+            underline(painter, date == self._selectedDate)
 
             category = find_daily_productivity(self.productivity, date_to_str(date))
             if category:
