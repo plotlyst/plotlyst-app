@@ -49,6 +49,7 @@ from plotlyst.view.common import emoji_font, insert_before_the_end, \
     ButtonPressResizeEventFilter, restyle, label, frame, tool_btn, push_btn, action, open_url, fade_in, wrap
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
+from plotlyst.view.widget.preview import preview_button
 
 
 class ChartView(QChartView):
@@ -650,7 +651,7 @@ class _PremiumMessageWidgetBase(QWidget):
     visitRoadmap = pyqtSignal()
 
     def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
-                 parent=None):
+                 preview: str = '', parent=None):
         super().__init__(parent)
         vbox(self, 0, 8)
         self.btnUpgrade = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
@@ -690,6 +691,12 @@ class _PremiumMessageWidgetBase(QWidget):
         decr_icon(self.btnLinkToAllFeatures, 2)
         self.layout().addWidget(self.btnLinkToAllFeatures, alignment=Qt.AlignmentFlag.AlignLeft)
 
+        if preview:
+            self.btnPreview = preview_button(preview, self, connect=False)
+            self.btnPreview.setGeometry(self.sizeHint().width() - self.btnPreview.sizeHint().width() - 5, 0,
+                                        self.btnPreview.sizeHint().width(),
+                                        self.btnPreview.sizeHint().height())
+
 
 class PremiumMessageWidget(QFrame):
     def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
@@ -706,16 +713,24 @@ class PremiumMessageWidget(QFrame):
 
 class PremiumMessagePopup(PopupDialog):
     def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 preview: str = '',
                  parent=None):
         super().__init__(parent)
 
+        self._preview = preview
+
         self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
-        wdg = _PremiumMessageWidgetBase(feature, icon, alt_link, main_link)
+        wdg = _PremiumMessageWidgetBase(feature, icon, alt_link, main_link, preview=preview)
         wdg.visitRoadmap.connect(self._visitRoadmap)
         self.frame.layout().addWidget(wdg)
 
+        if self._preview:
+            wdg.btnPreview.clicked.connect(self.accept)
+
     def display(self):
-        self.exec()
+        result = self.exec()
+        if result == QDialog.DialogCode.Accepted:
+            return self._preview
 
     def _visitRoadmap(self):
         emit_global_event(ShowRoadmapEvent(self))

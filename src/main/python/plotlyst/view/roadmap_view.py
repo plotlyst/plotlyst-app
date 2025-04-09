@@ -39,6 +39,7 @@ from plotlyst.view.generated.roadmap_view_ui import Ui_RoadmapView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.widget.display import IconText, Icon
+from plotlyst.view.widget.preview import preview_button
 
 tags_counter: Dict[str, int] = {}
 versions_counter: Dict[str, int] = {}
@@ -84,7 +85,11 @@ class TaskWidget(QWidget):
         else:
             self._btnOpenInExternal.setHidden(True)
 
-        self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
+        if task.preview:
+            self.layout().addWidget(group(self.lblStatus, preview_button(task.preview)),
+                                    alignment=Qt.AlignmentFlag.AlignLeft)
+        else:
+            self.layout().addWidget(self.lblStatus, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(group(self.lblName, self._btnOpenInExternal, spacer(), self.iconPlus))
         self.iconPlus.setHidden(self.task.version != 'Plus')
         self.layout().addWidget(self.lblDescription)

@@ -31,7 +31,10 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from plotlyst.common import recursive
 from plotlyst.core.domain import Document, Novel, DocumentType, Character, PremiseBuilder, Diagram, DiagramData
 from plotlyst.env import app_env
+from plotlyst.event.core import emit_global_event
+from plotlyst.events import PreviewFeatureEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
+from plotlyst.service.preview import MINDMAP_PREVIEW
 from plotlyst.view.common import fade_out_and_gc, action
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
@@ -93,7 +96,10 @@ class DocumentAdditionMenu(MenuWidget):
             doc.diagram.loaded = True
             self.documentTriggered.emit(doc)
         else:
-            PremiumMessagePopup.popup('Mindmap', 'ri.mind-map', 'https://plotlyst.com/docs/characters/')
+            preview = PremiumMessagePopup.popup('Mindmap', 'ri.mind-map', 'https://plotlyst.com/docs/characters/',
+                                                preview=MINDMAP_PREVIEW)
+            if preview:
+                QTimer.singleShot(50, lambda: emit_global_event(PreviewFeatureEvent(self, MINDMAP_PREVIEW)))
 
     def _premiseSelected(self):
         doc = Document('Premise', type=DocumentType.PREMISE, icon='mdi.flower')
