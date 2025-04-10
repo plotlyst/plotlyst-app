@@ -30,6 +30,7 @@ from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import set_tab_icon, set_tab_visible
 from plotlyst.view.generated.novel_view_ui import Ui_NovelView
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.widget.display import PremiumOverlayWidget
 from plotlyst.view.widget.novel import NovelDescriptorsDisplay
 from plotlyst.view.widget.plot.editor import PlotEditor
 from plotlyst.view.widget.settings import NovelSettingsWidget
@@ -69,7 +70,10 @@ class NovelView(AbstractNovelView):
 
         self.ui.tabWidget.setCurrentWidget(self.ui.tabDescriptors)
 
-        set_tab_visible(self.ui.tabWidget, self.ui.tabPlot, app_env.profile().get('storylines', False))
+        if not app_env.profile().get('structure', False):
+            PremiumOverlayWidget(self.ui.wdgStructure.wdgCenter, 'Story structure',
+                                 icon='mdi6.bridge',
+                                 alt_link='https://plotlyst.com/docs/structure/')
 
     @overrides
     def event_received(self, event: Event):

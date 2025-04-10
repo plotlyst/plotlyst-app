@@ -59,7 +59,7 @@ from plotlyst.view.scene_editor import SceneEditor
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.cards import SceneCard, SceneCardFilter
 from plotlyst.view.widget.chart import ActDistributionChart
-from plotlyst.view.widget.display import ChartView
+from plotlyst.view.widget.display import ChartView, PremiumOverlayWidget
 from plotlyst.view.widget.input import RotatedButtonOrientation
 from plotlyst.view.widget.items_editor import ItemsEditorPopup
 from plotlyst.view.widget.novel import StoryStructureSelectorMenu
@@ -217,10 +217,6 @@ class ScenesOutlineView(AbstractNovelView):
         self.ui.btnStoryStructure.setVisible(structure_visible)
         self.ui.wdgStoryStructure.setVisible(structure_visible)
 
-        if not app_env.profile().get('storylines', False):
-            self.ui.btnStorymap.setHidden(True)
-            self.ui.btnGroupViews.removeButton(self.ui.btnStorymap)
-
         self.setNavigableButtonGroup(self.ui.btnGroupViews)
 
         self.ui.wdgOrientation.setHidden(True)
@@ -326,6 +322,18 @@ class ScenesOutlineView(AbstractNovelView):
 
         self.ui.cards.orderChanged.connect(self._on_scene_cards_swapped)
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageView)
+
+        if not app_env.profile().get('storylines', False):
+            PremiumOverlayWidget(self.ui.pageStoryGrid, 'Scene-storyline grid',
+                                 icon='mdi.timeline',
+                                 alt_link='https://plotlyst.com/docs/scenes/')
+
+            PremiumOverlayWidget(self.ui.pageStorymap, 'Storymap visualization',
+                                 icon='mdi.transit-connection-horizontal',
+                                 alt_link='https://plotlyst.com/docs/scenes/')
+
+        if not app_env.profile().get('structure', False):
+            self.ui.btnStoryStructure.setHidden(True)
 
     def close_event(self):
         if self.ui.stackedWidget.currentWidget() == self.ui.pageEditor:

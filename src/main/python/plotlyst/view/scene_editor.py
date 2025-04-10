@@ -46,6 +46,7 @@ from plotlyst.view.common import emoji_font, set_tab_icon, \
 from plotlyst.view.generated.scene_editor_ui import Ui_SceneEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
+from plotlyst.view.widget.display import PremiumOverlayWidget
 from plotlyst.view.widget.labels import CharacterLabel
 from plotlyst.view.widget.scene.agency import SceneAgencyEditor
 from plotlyst.view.widget.scene.editor import ScenePurposeTypeButton, SceneProgressEditor
@@ -86,7 +87,6 @@ class SceneEditor(QObject, EventListener):
         #              IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
         # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
         #              IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
-        set_tab_visible(self.ui.tabWidget, self.ui.tabFunctions, app_env.profile().get('scene-functions', False))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
         set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
 
@@ -127,6 +127,8 @@ class SceneEditor(QObject, EventListener):
         self.ui.wdgStructureParent.layout().addWidget(self._structureSelector, alignment=Qt.AlignmentFlag.AlignRight)
 
         self._structureSelector.setVisible(self.novel.prefs.toggled(NovelSetting.Structure))
+        if not app_env.profile().get('structure', False):
+            self._structureSelector.setHidden(True)
 
         self.ui.textNotes.setTitleVisible(False)
         self.ui.textNotes.setToolbarVisible(False)
@@ -170,11 +172,13 @@ class SceneEditor(QObject, EventListener):
         flow(self.ui.wdgStorylines)
         self.ui.wdgStorylinesParent.layout().insertWidget(0, self._btnPlotSelector)
         if app_env.profile().get('storylines', False):
-            self._btnPlotSelector.setVisible(app_env.profile().get('storylines', False))
-            self.ui.wdgStorylines.setVisible(app_env.profile().get('storylines', False))
+            self._btnPlotSelector.setVisible(True)
+            self.ui.wdgStorylines.setVisible(True)
+            self.ui.iconType.setVisible(True)
         else:
             self._btnPlotSelector.setHidden(True)
             self.ui.wdgStorylines.setHidden(True)
+            self.ui.iconType.setHidden(True)
 
         self._functionsEditor = SceneFunctionsWidget(self.novel)
         self._functionsEditor.storylineLinked.connect(self._storyline_linked_from_function)
@@ -209,6 +213,12 @@ class SceneEditor(QObject, EventListener):
 
         if app_env.profile().get('scene-functions', False):
             self.ui.tabWidget.setCurrentWidget(self.ui.tabFunctions)
+        else:
+            PremiumOverlayWidget(self._functionsEditor, 'Scene functions', icon='mdi.yin-yang',
+                                 alt_link='https://plotlyst.com/docs/scenes/')
+            PremiumOverlayWidget(self._informationEditor, "Reader's information tracking", icon='fa5s.book-reader',
+                                 alt_link='https://plotlyst.com/docs/scenes/')
+            self.ui.tabWidget.setCurrentWidget(self.ui.tabNotes)
         self.ui.tabWidgetDrive.setCurrentWidget(self.ui.tabAgency)
         self.ui.tabWidget.currentChanged.connect(self._page_toggled)
 

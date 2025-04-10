@@ -760,6 +760,18 @@ class PremiumOverlayWidget(QFrame):
         super().showEvent(event)
         fade_in(self.msg)
 
+    @staticmethod
+    def storylinesOverlay(parent: QWidget) -> 'PremiumOverlayWidget':
+        return PremiumOverlayWidget(parent, 'Storylines',
+                                    icon='fa5s.theater-masks',
+                                    alt_link='https://plotlyst.com/docs/storylines/')
+
+    @staticmethod
+    def worldbuildingOverlay(parent: QWidget) -> 'PremiumOverlayWidget':
+        return PremiumOverlayWidget(parent, 'World-building',
+                                    icon='mdi.globe-model',
+                                    alt_link='https://plotlyst.com/docs/world-building/')
+
 
 class HighQualityPaintedIcon(QWidget):
     def __init__(self, icon: QIcon, parent=None, size: int = 18):

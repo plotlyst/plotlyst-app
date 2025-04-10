@@ -35,6 +35,7 @@ from plotlyst.core.domain import Novel, Plot, PlotType, Character, PlotPrinciple
     PlotPrincipleType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup, BackstoryEvent, \
     Position
 from plotlyst.core.template import antagonist_role
+from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, StorylineCreatedEvent, \
@@ -51,7 +52,7 @@ from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.button import SelectorToggleButton
 from plotlyst.view.widget.characters import CharacterAvatar, CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
-from plotlyst.view.widget.display import SeparatorLineWithShadow, PopupDialog, IconText, icon_text
+from plotlyst.view.widget.display import SeparatorLineWithShadow, PopupDialog, IconText, icon_text, PremiumOverlayWidget
 from plotlyst.view.widget.input import AutoAdjustableLineEdit, Toggle
 from plotlyst.view.widget.plot.allies import AlliesPrinciplesGroupWidget
 from plotlyst.view.widget.plot.escalation import StorylineEscalationEditorWidget
@@ -941,6 +942,10 @@ class PlotEditor(QWidget, Ui_PlotEditor):
 
         if self.novel.plots:
             self._wdgList.selectPlot(self.novel.plots[0])
+
+        if not app_env.profile().get('storylines', False):
+            PremiumOverlayWidget.storylinesOverlay(self.pageDisplay)
+            PremiumOverlayWidget.storylinesOverlay(self.pageMatrix)
 
     def widgetList(self) -> PlotTreeView:
         return self._wdgList
