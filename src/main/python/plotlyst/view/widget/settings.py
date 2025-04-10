@@ -489,8 +489,6 @@ class NovelSettingsWidget(QWidget, EventListener):
         vbox(self, spacing=10)
         self._settings: Dict[NovelSetting, NovelSettingToggle] = {}
 
-        self._addSettingToggle(NovelSetting.Structure)
-
         wdgCharacters = self._addSettingToggle(NovelSetting.Characters)
         self._addSettingToggle(NovelSetting.Character_enneagram, wdgCharacters)
         self._addSettingToggle(NovelSetting.Character_mbti, wdgCharacters)
@@ -507,7 +505,10 @@ class NovelSettingsWidget(QWidget, EventListener):
         self._addSettingToggle(NovelSetting.Manuscript)
         self._addSettingToggle(NovelSetting.Documents)
 
-        if app_env.profile().get('license_type', 'FREE') == 'FREE':
+        free = app_env.profile().get('license_type', 'FREE') == 'FREE'
+        if free:
+            self._addAdvancedSettings()
+
             self.layout().addWidget(label('Premium panels', h5=True), alignment=Qt.AlignmentFlag.AlignLeft)
             btnPurchase = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
                                    'Upgrade to gain access to these additional panels',
@@ -515,21 +516,21 @@ class NovelSettingsWidget(QWidget, EventListener):
             btnPurchase.clicked.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
             btnPurchase.installEventFilter(OpacityEventFilter(btnPurchase, 0.8, 0.6))
             self.layout().addWidget(btnPurchase, alignment=Qt.AlignmentFlag.AlignLeft)
-        wdg = self._addSettingToggle(NovelSetting.Storylines, enabled=app_env.profile().get('storylines', False))
-        if not wdg.isEnabled():
+        wdg = self._addSettingToggle(NovelSetting.Structure)
+        if free:
             margins(wdg, left=20)
-        wdg = self._addSettingToggle(NovelSetting.World_building,
-                                     enabled=app_env.profile().get('world-building', False))
-        if not wdg.isEnabled():
+        wdg = self._addSettingToggle(NovelSetting.Storylines)
+        if free:
             margins(wdg, left=20)
-        wdg = self._addSettingToggle(NovelSetting.Management, enabled=app_env.profile().get('tasks', False))
-        if not wdg.isEnabled():
+        wdg = self._addSettingToggle(NovelSetting.World_building)
+        if free:
+            margins(wdg, left=20)
+        wdg = self._addSettingToggle(NovelSetting.Management)
+        if free:
             margins(wdg, left=20)
 
-        self.layout().addWidget(label('Advanced settings', h4=True), alignment=Qt.AlignmentFlag.AlignLeft)
-        wdgScenesOrg = self._addSettingToggle(NovelSetting.Scenes_organization, insertLine=False,
-                                              enabled=not novel.is_readonly())
-        margins(wdgScenesOrg, bottom=20)
+        if not free:
+            self._addAdvancedSettings()
 
         self.layout().addWidget(vspacer())
 
@@ -558,6 +559,12 @@ class NovelSettingsWidget(QWidget, EventListener):
                 self.layout().addWidget(line())
 
         return toggle
+
+    def _addAdvancedSettings(self):
+        self.layout().addWidget(label('Advanced settings', h4=True), alignment=Qt.AlignmentFlag.AlignLeft)
+        wdgScenesOrg = self._addSettingToggle(NovelSetting.Scenes_organization, insertLine=False,
+                                              enabled=not self._novel.is_readonly())
+        margins(wdgScenesOrg, bottom=20)
 
     def _toggled(self, setting: NovelSetting, toggled: bool):
         toggle_setting(self, self._novel, setting, toggled)

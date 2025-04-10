@@ -22,7 +22,6 @@ from overrides import overrides
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR
 from plotlyst.core.domain import Novel, NovelSetting
-from plotlyst.env import app_env
 from plotlyst.event.core import Event
 from plotlyst.events import NovelUpdatedEvent, \
     SceneChangedEvent, NovelStorylinesToggleEvent, NovelStructureToggleEvent, NovelPanelCustomizationEvent
@@ -68,8 +67,6 @@ class NovelView(AbstractNovelView):
         self.ui.wdgSettings.layout().addWidget(self._settings)
 
         self.ui.tabWidget.setCurrentWidget(self.ui.tabDescriptors)
-
-        set_tab_visible(self.ui.tabWidget, self.ui.tabPlot, app_env.profile().get('storylines', False))
 
     @overrides
     def event_received(self, event: Event):

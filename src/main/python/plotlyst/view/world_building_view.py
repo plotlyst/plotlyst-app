@@ -40,6 +40,7 @@ from plotlyst.view.common import link_buttons_to_pages, ButtonPressResizeEventFi
 from plotlyst.view.generated.world_building_view_ui import Ui_WorldBuildingView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_bg_image
+from plotlyst.view.widget.display import PremiumOverlayWidget
 from plotlyst.view.widget.importing import ImportLocationPopup
 from plotlyst.view.widget.tree import TreeSettings
 from plotlyst.view.widget.world.editor import WorldBuildingEntityEditor, WorldBuildingEditorSettingsWidget, \
@@ -183,6 +184,22 @@ class WorldBuildingView(AbstractNovelView):
         self.ui.btnHistoryView.setHidden(True)
 
         self._update_style()
+
+        if not app_env.profile().get('world-building', False):
+            PremiumOverlayWidget(self.ui.wdgMilieuCenterEditor, 'World-building',
+                                 icon='mdi.globe-model',
+                                 alt_link='https://plotlyst.com/docs/world-building/')
+            PremiumOverlayWidget(self.ui.wdgCenterEditor, 'World-building',
+                                 icon='mdi.globe-model',
+                                 alt_link='https://plotlyst.com/docs/world-building/')
+
+            PremiumOverlayWidget(self.ui.pageMap, 'World-building',
+                                 icon='mdi.globe-model',
+                                 alt_link='https://plotlyst.com/docs/world-building/')
+
+            PremiumOverlayWidget(self.ui.pageGlossary, 'World-building',
+                                 icon='mdi.globe-model',
+                                 alt_link='https://plotlyst.com/docs/world-building/')
 
     @overrides
     def refresh(self):
