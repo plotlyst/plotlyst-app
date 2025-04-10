@@ -332,6 +332,9 @@ class ScenesOutlineView(AbstractNovelView):
                                  icon='mdi.transit-connection-horizontal',
                                  alt_link='https://plotlyst.com/docs/scenes/')
 
+        if not app_env.profile().get('structure', False):
+            self.ui.btnStoryStructure.setHidden(True)
+
     def close_event(self):
         if self.ui.stackedWidget.currentWidget() == self.ui.pageEditor:
             self.editor.close_event()

@@ -22,6 +22,7 @@ from overrides import overrides
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR
 from plotlyst.core.domain import Novel, NovelSetting
+from plotlyst.env import app_env
 from plotlyst.event.core import Event
 from plotlyst.events import NovelUpdatedEvent, \
     SceneChangedEvent, NovelStorylinesToggleEvent, NovelStructureToggleEvent, NovelPanelCustomizationEvent
@@ -29,6 +30,7 @@ from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import set_tab_icon, set_tab_visible
 from plotlyst.view.generated.novel_view_ui import Ui_NovelView
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.widget.display import PremiumOverlayWidget
 from plotlyst.view.widget.novel import NovelDescriptorsDisplay
 from plotlyst.view.widget.plot.editor import PlotEditor
 from plotlyst.view.widget.settings import NovelSettingsWidget
@@ -67,6 +69,11 @@ class NovelView(AbstractNovelView):
         self.ui.wdgSettings.layout().addWidget(self._settings)
 
         self.ui.tabWidget.setCurrentWidget(self.ui.tabDescriptors)
+
+        if not app_env.profile().get('structure', False):
+            PremiumOverlayWidget(self.ui.wdgStructure.wdgCenter, 'Story structure',
+                                 icon='mdi6.bridge',
+                                 alt_link='https://plotlyst.com/docs/structure/')
 
     @overrides
     def event_received(self, event: Event):

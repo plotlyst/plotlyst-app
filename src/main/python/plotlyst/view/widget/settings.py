@@ -509,7 +509,7 @@ class NovelSettingsWidget(QWidget, EventListener):
         if free:
             self._addAdvancedSettings()
 
-            self.layout().addWidget(label('Premium panels', h5=True), alignment=Qt.AlignmentFlag.AlignLeft)
+            self.layout().addWidget(label('Premium panels', h4=True), alignment=Qt.AlignmentFlag.AlignLeft)
             btnPurchase = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
                                    'Upgrade to gain access to these additional panels',
                                    properties=['confirm', 'positive'])
@@ -561,7 +561,7 @@ class NovelSettingsWidget(QWidget, EventListener):
         return toggle
 
     def _addAdvancedSettings(self):
-        self.layout().addWidget(label('Advanced settings', h4=True), alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(label('Advanced settings', h5=True), alignment=Qt.AlignmentFlag.AlignLeft)
         wdgScenesOrg = self._addSettingToggle(NovelSetting.Scenes_organization, insertLine=False,
                                               enabled=not self._novel.is_readonly())
         margins(wdgScenesOrg, bottom=20)
