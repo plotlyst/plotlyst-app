@@ -23,10 +23,12 @@ from qthandy.filter import InstantTooltipEventFilter
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Novel
+from plotlyst.env import app_env
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import scroll_to_bottom, ButtonPressResizeEventFilter
 from plotlyst.view.generated.board_view_ui import Ui_BoardView
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.widget.display import PremiumOverlayWidget
 from plotlyst.view.widget.task import BoardWidget
 
 
@@ -58,6 +60,11 @@ class BoardView(AbstractNovelView):
         self.ui.btnNew.clicked.connect(self._board.addNewTask)
 
         self.ui.btnBoard.setChecked(True)
+
+        if not app_env.profile().get('tasks', False):
+            PremiumOverlayWidget(self._board, 'Task management',
+                                 icon='mdi6.clipboard-check-outline',
+                                 alt_link='https://plotlyst.com/docs/task-management/')
 
     @overrides
     def refresh(self):

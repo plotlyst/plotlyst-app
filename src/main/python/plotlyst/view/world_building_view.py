@@ -186,20 +186,10 @@ class WorldBuildingView(AbstractNovelView):
         self._update_style()
 
         if not app_env.profile().get('world-building', False):
-            PremiumOverlayWidget(self.ui.wdgMilieuCenterEditor, 'World-building',
-                                 icon='mdi.globe-model',
-                                 alt_link='https://plotlyst.com/docs/world-building/')
-            PremiumOverlayWidget(self.ui.wdgCenterEditor, 'World-building',
-                                 icon='mdi.globe-model',
-                                 alt_link='https://plotlyst.com/docs/world-building/')
-
-            PremiumOverlayWidget(self.ui.pageMap, 'World-building',
-                                 icon='mdi.globe-model',
-                                 alt_link='https://plotlyst.com/docs/world-building/')
-
-            PremiumOverlayWidget(self.ui.pageGlossary, 'World-building',
-                                 icon='mdi.globe-model',
-                                 alt_link='https://plotlyst.com/docs/world-building/')
+            PremiumOverlayWidget.worldbuildingOverlay(self.ui.wdgMilieuCenterEditor)
+            PremiumOverlayWidget.worldbuildingOverlay(self.ui.wdgCenterEditor)
+            PremiumOverlayWidget.worldbuildingOverlay(self.ui.pageMap)
+            PremiumOverlayWidget.worldbuildingOverlay(self.ui.pageGlossary)
 
     @overrides
     def refresh(self):
