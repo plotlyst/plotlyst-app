@@ -236,7 +236,7 @@ class TimelineSettingToggle(SettingBaseWidget):
         self.structure = structure
         self._title.setText('Proportional Timeline')
         self._description.setText(
-            "Consider pacing and story beats' locations according to their proportional occurrence within the story")
+            "Consider pacing and where the beats occur in the story")
 
         self._toggle.setChecked(self.structure.display_type == StoryStructureDisplayType.Proportional_timeline)
 
