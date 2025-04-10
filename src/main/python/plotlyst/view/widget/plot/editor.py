@@ -359,11 +359,11 @@ class PlotElementSelectorPopup(PopupDialog):
         self.frame.layout().addWidget(self.stack)
         self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.setMinimumSize(self._adjustedSize(0.8, 0.8, 450, 350))
+        self.setMinimumSize(self._adjustedSize(0.6, 0.8, 450, 350))
 
     @overrides
     def sizeHint(self) -> QSize:
-        return self._adjustedSize(0.8, 0.8, 450, 350)
+        return self._adjustedSize(0.6, 0.8, 450, 350)
 
     def display(self):
         self.exec()
