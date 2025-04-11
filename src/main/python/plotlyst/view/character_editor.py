@@ -31,7 +31,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.client import json_client
-from plotlyst.core.domain import Novel, Character, Document, FEMALE, SelectionItem
+from plotlyst.core.domain import Novel, Character, Document, FEMALE, SelectionItem, BACKSTORY_PREVIEW
 from plotlyst.core.template import protagonist_role
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event
@@ -39,7 +39,6 @@ from plotlyst.event.handler import event_dispatchers, global_event_dispatcher
 from plotlyst.events import NovelAboutToSyncEvent
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.service.preview import BACKSTORY_PREVIEW
 from plotlyst.service.tour import TourService
 from plotlyst.view.common import set_tab_icon, ButtonPressResizeEventFilter, set_tab_visible, action, scroll_to_bottom
 from plotlyst.view.generated.character_editor_ui import Ui_CharacterEditor

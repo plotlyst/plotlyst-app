@@ -25,7 +25,8 @@ from qthandy import decr_icon
 
 from plotlyst.common import DEFAULT_PREMIUM_LINK
 from plotlyst.core.domain import Novel, Diagram, DiagramData, Character, CharacterPreferences, AvatarPreferences, Scene, \
-    Plot, PlotType, ScenePlotReference
+    Plot, PlotType, ScenePlotReference, MINDMAP_PREVIEW, NETWORK_PREVIEW, BACKSTORY_PREVIEW, STORY_GRID_PREVIEW, \
+    STORY_MAP_PREVIEW, WORLD_BUILDING_PREVIEW
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import push_btn, open_url, label, scroll_area, rows
 from plotlyst.view.icons import IconRegistry
@@ -38,12 +39,7 @@ from plotlyst.view.widget.graphics import NetworkScene
 from plotlyst.view.widget.scene.story_grid import ScenesGridWidget
 from plotlyst.view.widget.scene.story_map import StoryMap
 from plotlyst.view.widget.story_map import EventsMindMapView, EventsMindMapScene
-
-MINDMAP_PREVIEW = 'mindmap'
-NETWORK_PREVIEW = 'network'
-BACKSTORY_PREVIEW = 'backstory'
-STORY_GRID_PREVIEW = 'story_grid'
-STORY_MAP_PREVIEW = 'story_map'
+from plotlyst.view.world_building_view import WorldBuildingView
 
 
 def preview_novel() -> Novel:
@@ -202,6 +198,13 @@ class StoryMapPreviewPopup(PreviewPopup):
         self.frame.layout().insertWidget(0, self.editor)
 
 
+class WorldBuildingPreviewPopup(PreviewPopup):
+    def __init__(self, parent=None):
+        super().__init__(heightPerc=0.9, parent=parent)
+        self.editor = WorldBuildingView(preview_novel())
+        self.frame.layout().insertWidget(0, self.editor.widget)
+
+
 def launch_preview(preview: str):
     if preview == MINDMAP_PREVIEW:
         MindmapPreviewPopup.popup()
@@ -213,6 +216,8 @@ def launch_preview(preview: str):
         StoryGridPreviewPopup.popup()
     elif preview == STORY_MAP_PREVIEW:
         StoryMapPreviewPopup.popup()
+    elif preview == WORLD_BUILDING_PREVIEW:
+        WorldBuildingPreviewPopup.popup()
     else:
         if asked("To try this feature out, please upgrade to the latest version of Plotlyst.", 'Old Plotlyst version',
                  btnConfirmText='Understood', btnCancelText='Close'):

@@ -30,7 +30,7 @@ from qthandy.filter import InstantTooltipEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Novel, Character, CardSizeRatio, NovelSetting, NovelDescriptor
+from plotlyst.core.domain import Novel, Character, CardSizeRatio, NovelSetting, NovelDescriptor, NETWORK_PREVIEW
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers, global_event_dispatcher
@@ -40,7 +40,6 @@ from plotlyst.model.common import proxy
 from plotlyst.resources import resource_registry
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import delete_character
-from plotlyst.service.preview import NETWORK_PREVIEW
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.character_editor import CharacterEditor
 from plotlyst.view.common import link_buttons_to_pages, ButtonPressResizeEventFilter, \

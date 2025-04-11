@@ -34,7 +34,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Scene, Novel, Chapter, SceneStage, Event, ScenePurposeType, \
-    StoryStructure, NovelSetting, CardSizeRatio, Character, StoryBeat
+    StoryStructure, NovelSetting, CardSizeRatio, Character, StoryBeat, STORY_GRID_PREVIEW, STORY_MAP_PREVIEW
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -49,7 +49,6 @@ from plotlyst.model.novel import NovelStagesModel
 from plotlyst.model.scenes_model import ScenesTableModel, ScenesFilterProxyModel, ScenesStageTableModel
 from plotlyst.service.cache import acts_registry
 from plotlyst.service.persistence import delete_scene
-from plotlyst.service.preview import STORY_GRID_PREVIEW, STORY_MAP_PREVIEW
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import ButtonPressResizeEventFilter, action, restyle, insert_after
 from plotlyst.view.delegates import ScenesViewDelegate

@@ -185,7 +185,7 @@ class WorldBuildingView(AbstractNovelView):
 
         self._update_style()
 
-        if not app_env.profile().get('world-building', False):
+        if not app_env.profile().get('world-building', False) and not self.novel.tutorial:
             PremiumOverlayWidget.worldbuildingOverlay(self.ui.wdgMilieuCenterEditor)
             PremiumOverlayWidget.worldbuildingOverlay(self.ui.wdgCenterEditor)
             PremiumOverlayWidget.worldbuildingOverlay(self.ui.pageMap)
