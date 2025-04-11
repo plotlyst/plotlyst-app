@@ -100,6 +100,9 @@ def emit_event(novel: Novel, event: Event, delay: int = 0):
     def func():
         event_senders.instance(novel).send.emit(event)
 
+    if novel.tutorial:
+        return
+
     if delay:
         QTimer.singleShot(10, func)
     else:

@@ -133,7 +133,7 @@ class SceneGridCard(SceneCard):
         self.textTitle.setFontPointSize(self.textTitle.font().pointSize() - 1)
 
         self.setFixedWidth(170)
-        self.setDragEnabled(not self.novel.is_readonly())
+        self.setDragEnabled(not self.novel.is_readonly() and not self.novel.tutorial)
 
     @overrides
     def copy(self) -> 'Card':

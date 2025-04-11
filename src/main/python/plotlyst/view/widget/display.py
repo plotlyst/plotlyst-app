@@ -38,6 +38,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, \
     PLOTLYST_SECONDARY_COLOR, PLACEHOLDER_TEXT_COLOR
+from plotlyst.core.domain import WORLD_BUILDING_PREVIEW
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
@@ -651,7 +652,7 @@ class _PremiumMessageWidgetBase(QWidget):
     visitRoadmap = pyqtSignal()
 
     def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
-                 preview: str = '', parent=None):
+                 preview: str = '', connectPreview: bool = False, parent=None):
         super().__init__(parent)
         vbox(self, 0, 8)
         self.btnUpgrade = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
@@ -692,7 +693,7 @@ class _PremiumMessageWidgetBase(QWidget):
         self.layout().addWidget(self.btnLinkToAllFeatures, alignment=Qt.AlignmentFlag.AlignLeft)
 
         if preview:
-            self.btnPreview = preview_button(preview, self, connect=False)
+            self.btnPreview = preview_button(preview, self, connect=connectPreview)
             self.btnPreview.setGeometry(self.sizeHint().width() - self.btnPreview.sizeHint().width() - 5, 0,
                                         self.btnPreview.sizeHint().width(),
                                         self.btnPreview.sizeHint().height())
@@ -700,6 +701,7 @@ class _PremiumMessageWidgetBase(QWidget):
 
 class PremiumMessageWidget(QFrame):
     def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 preview: str = '',
                  parent=None):
         super().__init__(parent)
         vbox(self, 15, 8)
@@ -707,7 +709,7 @@ class PremiumMessageWidget(QFrame):
         self.setProperty('large-rounded', True)
         sp(self).h_max().v_max()
 
-        self.wdg = _PremiumMessageWidgetBase(feature, icon, alt_link, main_link)
+        self.wdg = _PremiumMessageWidgetBase(feature, icon, alt_link, main_link, preview=preview, connectPreview=True)
         self.layout().addWidget(self.wdg)
 
 
@@ -727,7 +729,7 @@ class PremiumMessagePopup(PopupDialog):
         if self._preview:
             wdg.btnPreview.clicked.connect(self.accept)
 
-    def display(self):
+    def display(self) -> str:
         result = self.exec()
         if result == QDialog.DialogCode.Accepted:
             return self._preview
@@ -739,12 +741,13 @@ class PremiumMessagePopup(PopupDialog):
 
 class PremiumOverlayWidget(QFrame):
     def __init__(self, parent, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 preview: str = '',
                  alpha: int = 115):
         super().__init__(parent)
         self.setStyleSheet(f"PremiumOverlayWidget {{background-color: rgba(0, 0, 0, {alpha});}}")
         sp(self).h_exp().v_exp()
         self.parent().installEventFilter(self)
-        self.msg = PremiumMessageWidget(feature, icon, alt_link, main_link)
+        self.msg = PremiumMessageWidget(feature, icon, alt_link, main_link, preview)
         self.msg.wdg.visitRoadmap.connect(lambda: emit_global_event(ShowRoadmapEvent(self)))
         vbox(self)
         self.layout().addWidget(self.msg, alignment=Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
@@ -770,7 +773,8 @@ class PremiumOverlayWidget(QFrame):
     def worldbuildingOverlay(parent: QWidget) -> 'PremiumOverlayWidget':
         return PremiumOverlayWidget(parent, 'World-building',
                                     icon='mdi.globe-model',
-                                    alt_link='https://plotlyst.com/docs/world-building/')
+                                    alt_link='https://plotlyst.com/docs/world-building/',
+                                    preview=WORLD_BUILDING_PREVIEW)
 
 
 class HighQualityPaintedIcon(QWidget):

@@ -687,7 +687,7 @@
            <item>
             <widget class="QStackedWidget" name="stackScenes">
              <property name="currentIndex">
-              <number>3</number>
+              <number>5</number>
              </property>
              <widget class="QWidget" name="pageCards">
               <property name="relaxed-white-bg" stdset="0">
@@ -719,8 +719,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>98</width>
-                    <height>28</height>
+                    <width>506</width>
+                    <height>580</height>
                    </rect>
                   </property>
                   <layout class="QHBoxLayout" name="horizontalLayout_8">
@@ -1119,16 +1119,6 @@
                    <number>0</number>
                   </property>
                   <item>
-                   <widget class="QLabel" name="label">
-                    <property name="text">
-                     <string>Double-click or right-click a scene circle to link storylines</string>
-                    </property>
-                    <property name="description" stdset="0">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
                    <spacer name="horizontalSpacer_7">
                     <property name="orientation">
                      <enum>Qt::Horizontal</enum>
@@ -1228,8 +1218,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>98</width>
-                    <height>28</height>
+                    <width>506</width>
+                    <height>513</height>
                    </rect>
                   </property>
                   <property name="sizePolicy">
@@ -1293,6 +1283,12 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>StoryStructureTimelineWidget</class>
+   <extends>QWidget</extends>
+   <header>plotlyst.view.widget.structure.timeline</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>ScenesTreeView</class>
    <extends>QTreeView</extends>
    <header>plotlyst.view.widget.scene</header>
@@ -1306,12 +1302,6 @@
    <class>CardsView</class>
    <extends>QFrame</extends>
    <header>plotlyst.view.widget.cards</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>StoryStructureTimelineWidget</class>
-   <extends>QWidget</extends>
-   <header>plotlyst.view.widget.structure.timeline</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -1340,7 +1330,7 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="btnGroupStoryMapView"/>
   <buttongroup name="btnGroupViews"/>
+  <buttongroup name="btnGroupStoryMapView"/>
  </buttongroups>
 </ui>

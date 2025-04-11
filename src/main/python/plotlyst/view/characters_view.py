@@ -30,7 +30,7 @@ from qthandy.filter import InstantTooltipEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Novel, Character, CardSizeRatio, NovelSetting, NovelDescriptor
+from plotlyst.core.domain import Novel, Character, CardSizeRatio, NovelSetting, NovelDescriptor, NETWORK_PREVIEW
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers, global_event_dispatcher
@@ -219,7 +219,8 @@ class CharactersView(AbstractNovelView):
         if not app_env.profile().get('network', False):
             self._networkOverlay = PremiumOverlayWidget(self.ui.pageRelationsView, 'Character network',
                                                         icon='ph.share-network-bold',
-                                                        alt_link='https://plotlyst.com/docs/characters/')
+                                                        alt_link='https://plotlyst.com/docs/characters/',
+                                                        preview=NETWORK_PREVIEW)
 
         self.ui.btnGroupViews.buttonToggled.connect(self._switch_view)
         link_buttons_to_pages(self.ui.stackCharacters, [(self.ui.btnCardsView, self.ui.pageCardsView),

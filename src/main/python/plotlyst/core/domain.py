@@ -2546,7 +2546,6 @@ for tag in _tags:
     task_tags[tag.text] = tag
 
 
-
 @dataclass
 class Task(CharacterBased):
     title: str
@@ -4069,6 +4068,14 @@ class NovelPreferences:
 @dataclass
 class ManuscriptGoals:
     target_wc: int = 80000
+
+
+MINDMAP_PREVIEW = 'mindmap'
+NETWORK_PREVIEW = 'network'
+BACKSTORY_PREVIEW = 'backstory'
+STORY_GRID_PREVIEW = 'story_grid'
+STORY_MAP_PREVIEW = 'story_map'
+WORLD_BUILDING_PREVIEW = 'worldbuilding'
 
 
 def default_locations() -> List[Location]:

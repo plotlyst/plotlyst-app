@@ -68,6 +68,8 @@ def upload_image(novel: Novel, crop: bool = False, roundedCroppedPreview: bool =
 
         file_extension = Path(file_path).suffix.lower()
         ref = ImageRef(file_extension)
+        ref.loaded = True
+        ref.data = image
         if not novel.tutorial:
             save_image(novel, image, ref)
         return LoadedImage(ref, image)
@@ -78,4 +80,11 @@ def save_image(novel: Novel, image: QImage, ref: ImageRef):
 
 
 def load_image(novel: Novel, ref: ImageRef) -> Optional[QImage]:
-    return json_client.load_image(novel, ref)
+    if ref.loaded:
+        return ref.data
+
+    image = json_client.load_image(novel, ref)
+    if image:
+        ref.loaded = True
+        ref.data = image
+        return image

@@ -32,7 +32,7 @@ from PyQt6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, 
 from overrides import overrides
 from qthandy import busy, vbox, sp, line, incr_font, flow, incr_icon, bold, vline, \
     margins, decr_font, translucent
-from qthandy.filter import DragEventFilter, OpacityEventFilter
+from qthandy.filter import DragEventFilter, OpacityEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from qtpy import sip
 
@@ -167,6 +167,10 @@ class MarkerItemToolbar(BaseItemToolbar):
 
         self._btnMilieuLink = tool_btn(IconRegistry.world_building_icon(), tooltip='Link to milieu', transparent_=True)
         self._btnMilieuLink.clicked.connect(self._linkToMilieu)
+        if self._novel.tutorial:
+            self._btnMilieuLink.setDisabled(True)
+            self._btnMilieuLink.setToolTip('Milieu link is disabled in preview mode')
+            self._btnMilieuLink.installEventFilter(InstantTooltipEventFilter(self._btnMilieuLink))
 
         self._btnColor = tool_btn(IconRegistry.from_name('fa5s.map-marker', color='black'), 'Change style',
                                   transparent_=True)

@@ -34,7 +34,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Scene, Novel, Chapter, SceneStage, Event, ScenePurposeType, \
-    StoryStructure, NovelSetting, CardSizeRatio, Character, StoryBeat
+    StoryStructure, NovelSetting, CardSizeRatio, Character, StoryBeat, STORY_GRID_PREVIEW, STORY_MAP_PREVIEW
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -326,11 +326,11 @@ class ScenesOutlineView(AbstractNovelView):
         if not app_env.profile().get('storylines', False):
             PremiumOverlayWidget(self.ui.pageStoryGrid, 'Scene-storyline grid',
                                  icon='mdi.timeline',
-                                 alt_link='https://plotlyst.com/docs/scenes/')
+                                 alt_link='https://plotlyst.com/docs/scenes/', preview=STORY_GRID_PREVIEW)
 
             PremiumOverlayWidget(self.ui.pageStorymap, 'Storymap visualization',
                                  icon='mdi.transit-connection-horizontal',
-                                 alt_link='https://plotlyst.com/docs/scenes/')
+                                 alt_link='https://plotlyst.com/docs/scenes/', preview=STORY_MAP_PREVIEW)
 
         if not app_env.profile().get('structure', False):
             self.ui.btnStoryStructure.setHidden(True)

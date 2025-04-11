@@ -53,8 +53,13 @@ class EntityAdditionMenu(MenuWidget):
                               slot=self._entityTriggered,
                               tooltip='Write an article about any physical, human, or abstract entity in the world, e.g., kingdom, magic, religion, etc.'))
         self.addSeparator()
-        self.addAction(action('Link milieu...', IconRegistry.world_building_icon(), slot=self._linkToMilieu,
-                              tooltip="Link a milieu element"))
+        milieuAction = action('Link milieu...', IconRegistry.world_building_icon(), slot=self._linkToMilieu,
+                              tooltip="Link a milieu element")
+        self.addAction(milieuAction)
+        if self._novel.tutorial:
+            milieuAction.setToolTip('Milieu link is disabled in preview mode')
+            milieuAction.setDisabled(True)
+
         self.addAction(
             action('Select topics...', IconRegistry.from_name('mdi.card-text-outline'), slot=self._linkToTopics,
                    tooltip="Link to common worldbuilding topics"))
@@ -97,6 +102,9 @@ class EntityNode(ContainerNode):
     def __init__(self, novel: Novel, entity: WorldBuildingEntity, parent=None, settings: Optional[TreeSettings] = None):
         self._actionLinkMilieu = action('Link milieu', IconRegistry.world_building_icon(), slot=self._linkToMilieu,
                                         tooltip="Link a milieu element")
+        if novel.tutorial:
+            self._actionLinkMilieu.setToolTip('Milieu link is disabled in preview mode')
+            self._actionLinkMilieu.setDisabled(True)
         self._actionUnlinkMilieu = action('Unlink milieu', IconRegistry.from_name('fa5s.unlink'),
                                           slot=self._unlinkMilieu,
                                           tooltip="Unlink from a milieu element")
