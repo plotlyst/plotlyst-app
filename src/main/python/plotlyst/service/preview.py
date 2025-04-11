@@ -25,7 +25,7 @@ from qthandy import decr_icon
 
 from plotlyst.common import DEFAULT_PREMIUM_LINK
 from plotlyst.core.domain import Novel, Diagram, DiagramData, Character, CharacterPreferences, AvatarPreferences, Scene, \
-    Plot, PlotType
+    Plot, PlotType, ScenePlotReference
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import push_btn, open_url, label, scroll_area, rows
 from plotlyst.view.icons import IconRegistry
@@ -56,13 +56,22 @@ def preview_novel() -> Novel:
     novel.characters.append(
         _preview_character('Zsolt', uuid.UUID('66c17718-d4ac-4088-b9c9-0914add0ebb3'), 'mdi.alpha-z-box'))
 
-    novel.scenes.append(Scene(''))
-    novel.scenes.append(Scene(''))
-    novel.scenes.append(Scene(''))
-    novel.scenes.append(Scene(''))
+    for i in range(10):
+        novel.scenes.append(Scene(''))
 
     novel.plots.append(Plot('Character arc', plot_type=PlotType.Internal, icon='mdi.mirror', icon_color='#0FADBB'))
     novel.plots.append(Plot('Subplot', plot_type=PlotType.Subplot, icon='mdi.source-branch', icon_color='#d4a373'))
+
+    novel.scenes[0].plot_values.append(ScenePlotReference(novel.plots[0]))
+    novel.scenes[1].plot_values.append(ScenePlotReference(novel.plots[1]))
+    novel.scenes[2].plot_values.append(ScenePlotReference(novel.plots[0]))
+    novel.scenes[3].plot_values.append(ScenePlotReference(novel.plots[0]))
+    novel.scenes[3].plot_values.append(ScenePlotReference(novel.plots[2]))
+
+    novel.scenes[0].pov = novel.characters[0]
+    novel.scenes[1].pov = novel.characters[0]
+    novel.scenes[2].pov = novel.characters[0]
+    novel.scenes[3].pov = novel.characters[1]
 
     return novel
 
