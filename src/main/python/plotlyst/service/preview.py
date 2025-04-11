@@ -39,7 +39,32 @@ from plotlyst.view.widget.story_map import EventsMindMapView, EventsMindMapScene
 MINDMAP_PREVIEW = 'mindmap'
 NETWORK_PREVIEW = 'network'
 BACKSTORY_PREVIEW = 'backstory'
+STORY_GRID_PREVIEW = 'story_grid'
+STORY_MAP_PREVIEW = 'story_map'
 
+
+def preview_novel() -> Novel:
+    novel = Novel('Preview', tutorial=True)
+    novel.characters.append(
+        _preview_character('Jane Doe', uuid.UUID('dd72a22e-2fff-495b-9e68-abeb0d726462'), 'mdi.alpha-j-circle-outline'))
+    novel.characters.append(
+        _preview_character('Anne', uuid.UUID('a6af7bab-f7c7-4f87-bb83-b5f3db8eb7a7'), 'mdi.flower-poppy'))
+    novel.characters.append(
+        _preview_character('Zsolt', uuid.UUID('66c17718-d4ac-4088-b9c9-0914add0ebb3'), 'mdi.alpha-z-box'))
+
+    return novel
+
+
+def preview_diagram() -> Diagram:
+    diagram = Diagram()
+    diagram.loaded = True
+    diagram.data = DiagramData()
+    return diagram
+
+
+def _preview_character(name: str, id_, icon: str) -> Character:
+    return Character(name, id=id_, prefs=CharacterPreferences(
+        avatar=AvatarPreferences(use_image=False, use_custom_icon=True, icon=icon)))
 
 class PreviewPopup(PopupDialog):
     def __init__(self, widthPerc: float = 0.9, heightPerc: float = 0.8, minWidth: int = 600, minHeight: int = 500,
@@ -66,28 +91,6 @@ class PreviewPopup(PopupDialog):
         self.exec()
 
 
-def preview_novel() -> Novel:
-    novel = Novel('Preview', tutorial=True)
-    novel.characters.append(
-        _preview_character('Jane Doe', uuid.UUID('dd72a22e-2fff-495b-9e68-abeb0d726462'), 'mdi.alpha-j-circle-outline'))
-    novel.characters.append(
-        _preview_character('Anne', uuid.UUID('a6af7bab-f7c7-4f87-bb83-b5f3db8eb7a7'), 'mdi.flower-poppy'))
-    novel.characters.append(
-        _preview_character('Zsolt', uuid.UUID('66c17718-d4ac-4088-b9c9-0914add0ebb3'), 'mdi.alpha-z-box'))
-
-    return novel
-
-
-def preview_diagram() -> Diagram:
-    diagram = Diagram()
-    diagram.loaded = True
-    diagram.data = DiagramData()
-    return diagram
-
-
-def _preview_character(name: str, id_, icon: str) -> Character:
-    return Character(name, id=id_, prefs=CharacterPreferences(
-        avatar=AvatarPreferences(use_image=False, use_custom_icon=True, icon=icon)))
 
 
 class MindmapPreviewPopup(PreviewPopup):
