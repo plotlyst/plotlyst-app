@@ -49,6 +49,7 @@ from plotlyst.model.novel import NovelStagesModel
 from plotlyst.model.scenes_model import ScenesTableModel, ScenesFilterProxyModel, ScenesStageTableModel
 from plotlyst.service.cache import acts_registry
 from plotlyst.service.persistence import delete_scene
+from plotlyst.service.preview import STORY_GRID_PREVIEW, STORY_MAP_PREVIEW
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import ButtonPressResizeEventFilter, action, restyle, insert_after
 from plotlyst.view.delegates import ScenesViewDelegate
@@ -326,11 +327,11 @@ class ScenesOutlineView(AbstractNovelView):
         if not app_env.profile().get('storylines', False):
             PremiumOverlayWidget(self.ui.pageStoryGrid, 'Scene-storyline grid',
                                  icon='mdi.timeline',
-                                 alt_link='https://plotlyst.com/docs/scenes/')
+                                 alt_link='https://plotlyst.com/docs/scenes/', preview=STORY_GRID_PREVIEW)
 
             PremiumOverlayWidget(self.ui.pageStorymap, 'Storymap visualization',
                                  icon='mdi.transit-connection-horizontal',
-                                 alt_link='https://plotlyst.com/docs/scenes/')
+                                 alt_link='https://plotlyst.com/docs/scenes/', preview=STORY_MAP_PREVIEW)
 
         if not app_env.profile().get('structure', False):
             self.ui.btnStoryStructure.setHidden(True)
