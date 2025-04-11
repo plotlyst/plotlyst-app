@@ -39,6 +39,7 @@ from plotlyst.event.handler import event_dispatchers, global_event_dispatcher
 from plotlyst.events import NovelAboutToSyncEvent
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
+from plotlyst.service.preview import BACKSTORY_PREVIEW
 from plotlyst.service.tour import TourService
 from plotlyst.view.common import set_tab_icon, ButtonPressResizeEventFilter, set_tab_visible, action, scroll_to_bottom
 from plotlyst.view.generated.character_editor_ui import Ui_CharacterEditor
@@ -182,7 +183,7 @@ class CharacterEditor(QObject, EventListener):
             apply_bg_image(self.ui.tabBackstoryDummy, resource_registry.cover1)
             PremiumOverlayWidget(self.ui.tabBackstoryDummy, 'Character backstory',
                                  icon='fa5s.archive',
-                                 alt_link='https://plotlyst.com/docs/characters/')
+                                 alt_link='https://plotlyst.com/docs/characters/', preview=BACKSTORY_PREVIEW)
 
         self.ui.btnClose.clicked.connect(self._save)
 

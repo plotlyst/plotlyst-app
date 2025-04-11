@@ -25,8 +25,11 @@ from qthandy import decr_icon
 
 from plotlyst.common import DEFAULT_PREMIUM_LINK
 from plotlyst.core.domain import Novel, Diagram, DiagramData, Character, CharacterPreferences, AvatarPreferences
-from plotlyst.view.common import push_btn, open_url, label
+from plotlyst.resources import resource_registry
+from plotlyst.view.common import push_btn, open_url, label, scroll_area, rows
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.style.base import apply_bg_image
+from plotlyst.view.widget.character.editor import CharacterTimelineWidget
 from plotlyst.view.widget.character.network import CharacterNetworkView, RelationsEditorScene
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import PopupDialog
@@ -35,6 +38,7 @@ from plotlyst.view.widget.story_map import EventsMindMapView, EventsMindMapScene
 
 MINDMAP_PREVIEW = 'mindmap'
 NETWORK_PREVIEW = 'network'
+BACKSTORY_PREVIEW = 'backstory'
 
 
 class PreviewPopup(PopupDialog):
@@ -122,7 +126,7 @@ class NetworkPreviewPopup(PreviewPopup):
 
         self.frame.layout().insertWidget(0, self.editor)
         self.frame.layout().insertWidget(0, label(
-            "This is a preview of the Mindmap feature. Feel free to explore the different mindmap items and connectors, but note that your work won't be saved.",
+            "This is a preview of the Character Network feature. Feel free to explore this feature, but note that your work won't be saved.",
             description=True, wordWrap=True))
 
     class NetworkPreviewScene(RelationsEditorScene):
@@ -142,11 +146,30 @@ class NetworkPreviewPopup(PreviewPopup):
             return NetworkPreviewPopup.NetworkPreviewScene(self._novel)
 
 
+class BackstoryPreviewPopup(PreviewPopup):
+    def __init__(self, parent=None):
+        super().__init__(widthPerc=0.5, minWidth=450, parent=parent)
+
+        scroll = scroll_area()
+        wdgEditor = rows()
+        scroll.setWidget(wdgEditor)
+        wdgEditor.setProperty('bg-image', True)
+        apply_bg_image(wdgEditor, resource_registry.cover1)
+
+        self.editor = CharacterTimelineWidget()
+        self.editor.setCharacter(preview_novel().characters[0])
+        wdgEditor.layout().addWidget(self.editor)
+
+        self.frame.layout().insertWidget(0, scroll)
+
+
 def launch_preview(preview: str):
     if preview == MINDMAP_PREVIEW:
         MindmapPreviewPopup.popup()
     elif preview == NETWORK_PREVIEW:
         NetworkPreviewPopup.popup()
+    elif preview == BACKSTORY_PREVIEW:
+        BackstoryPreviewPopup.popup()
     else:
         if asked("To try this feature out, please upgrade to the latest version of Plotlyst.", 'Old Plotlyst version',
                  btnConfirmText='Understood', btnCancelText='Close'):
