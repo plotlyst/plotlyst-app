@@ -38,6 +38,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, \
     PLOTLYST_SECONDARY_COLOR, PLACEHOLDER_TEXT_COLOR
+from plotlyst.core.domain import WORLD_BUILDING_PREVIEW
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
@@ -772,7 +773,8 @@ class PremiumOverlayWidget(QFrame):
     def worldbuildingOverlay(parent: QWidget) -> 'PremiumOverlayWidget':
         return PremiumOverlayWidget(parent, 'World-building',
                                     icon='mdi.globe-model',
-                                    alt_link='https://plotlyst.com/docs/world-building/')
+                                    alt_link='https://plotlyst.com/docs/world-building/',
+                                    preview=WORLD_BUILDING_PREVIEW)
 
 
 class HighQualityPaintedIcon(QWidget):
