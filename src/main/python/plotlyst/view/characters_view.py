@@ -40,6 +40,7 @@ from plotlyst.model.common import proxy
 from plotlyst.resources import resource_registry
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import delete_character
+from plotlyst.service.preview import NETWORK_PREVIEW
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.character_editor import CharacterEditor
 from plotlyst.view.common import link_buttons_to_pages, ButtonPressResizeEventFilter, \
@@ -219,7 +220,8 @@ class CharactersView(AbstractNovelView):
         if not app_env.profile().get('network', False):
             self._networkOverlay = PremiumOverlayWidget(self.ui.pageRelationsView, 'Character network',
                                                         icon='ph.share-network-bold',
-                                                        alt_link='https://plotlyst.com/docs/characters/')
+                                                        alt_link='https://plotlyst.com/docs/characters/',
+                                                        preview=NETWORK_PREVIEW)
 
         self.ui.btnGroupViews.buttonToggled.connect(self._switch_view)
         link_buttons_to_pages(self.ui.stackCharacters, [(self.ui.btnCardsView, self.ui.pageCardsView),

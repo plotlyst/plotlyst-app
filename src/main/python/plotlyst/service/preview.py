@@ -27,17 +27,24 @@ from plotlyst.common import DEFAULT_PREMIUM_LINK
 from plotlyst.core.domain import Novel, Diagram, DiagramData, Character, CharacterPreferences, AvatarPreferences
 from plotlyst.view.common import push_btn, open_url, label
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.widget.character.network import CharacterNetworkView, RelationsEditorScene
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import PopupDialog
 from plotlyst.view.widget.graphics import NetworkScene
 from plotlyst.view.widget.story_map import EventsMindMapView, EventsMindMapScene
 
 MINDMAP_PREVIEW = 'mindmap'
+NETWORK_PREVIEW = 'network'
 
 
 class PreviewPopup(PopupDialog):
-    def __init__(self, parent=None):
+    def __init__(self, widthPerc: float = 0.9, heightPerc: float = 0.8, minWidth: int = 600, minHeight: int = 500,
+                 parent=None):
         super().__init__(parent)
+        self._widthPerc = widthPerc
+        self._heightPerc = heightPerc
+        self._minWidth = minWidth
+        self._minHeight = minHeight
 
         self.btnClose = push_btn(IconRegistry.from_name('ei.remove'), 'Close', properties=['confirm', 'cancel'])
         self.btnClose.clicked.connect(self.reject)
@@ -45,26 +52,14 @@ class PreviewPopup(PopupDialog):
 
         self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
 
+        self.setMinimumSize(self._adjustedSize(self._widthPerc, self._heightPerc, self._minWidth, self._minHeight))
+
+    @overrides
+    def sizeHint(self) -> QSize:
+        return self._adjustedSize(self._widthPerc, self._heightPerc, self._minWidth, self._minHeight)
+
     def display(self):
         self.exec()
-
-
-class MindmapPreviewScene(EventsMindMapScene):
-
-    @overrides
-    def _load(self):
-        pass
-
-    @overrides
-    def _save(self):
-        pass
-
-
-class MindmapPreview(EventsMindMapView):
-
-    @overrides
-    def _initScene(self) -> NetworkScene:
-        return MindmapPreviewScene(self._novel)
 
 
 def preview_novel() -> Novel:
@@ -79,6 +74,13 @@ def preview_novel() -> Novel:
     return novel
 
 
+def preview_diagram() -> Diagram:
+    diagram = Diagram()
+    diagram.loaded = True
+    diagram.data = DiagramData()
+    return diagram
+
+
 def _preview_character(name: str, id_, icon: str) -> Character:
     return Character(name, id=id_, prefs=CharacterPreferences(
         avatar=AvatarPreferences(use_image=False, use_custom_icon=True, icon=icon)))
@@ -86,31 +88,65 @@ def _preview_character(name: str, id_, icon: str) -> Character:
 
 class MindmapPreviewPopup(PreviewPopup):
     def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.editor = MindmapPreview(preview_novel())
-
-        diagram = Diagram()
-        diagram.loaded = True
-        diagram.data = DiagramData()
-
-        self.editor.setDiagram(diagram)
+        super().__init__(parent=parent)
+        self.editor = self.MindmapPreview(preview_novel())
+        self.editor.setDiagram(preview_diagram())
 
         self.frame.layout().insertWidget(0, self.editor)
         self.frame.layout().insertWidget(0, label(
             "This is a preview of the Mindmap feature. Feel free to explore the different mindmap items and connectors, but note that your work won't be saved.",
             description=True, wordWrap=True))
 
-        self.setMinimumSize(self._adjustedSize(0.9, 0.8, 600, 500))
+    class MindmapPreviewScene(EventsMindMapScene):
 
-    @overrides
-    def sizeHint(self) -> QSize:
-        return self._adjustedSize(0.9, 0.8, 600, 500)
+        @overrides
+        def _load(self):
+            pass
+
+        @overrides
+        def _save(self):
+            pass
+
+    class MindmapPreview(EventsMindMapView):
+
+        @overrides
+        def _initScene(self) -> NetworkScene:
+            return MindmapPreviewPopup.MindmapPreviewScene(self._novel)
+
+
+class NetworkPreviewPopup(PreviewPopup):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.editor = self.NetworkPreview(preview_novel())
+        self.editor.setDiagram(preview_diagram())
+
+        self.frame.layout().insertWidget(0, self.editor)
+        self.frame.layout().insertWidget(0, label(
+            "This is a preview of the Mindmap feature. Feel free to explore the different mindmap items and connectors, but note that your work won't be saved.",
+            description=True, wordWrap=True))
+
+    class NetworkPreviewScene(RelationsEditorScene):
+
+        @overrides
+        def _load(self):
+            pass
+
+        @overrides
+        def _save(self):
+            pass
+
+    class NetworkPreview(CharacterNetworkView):
+
+        @overrides
+        def _initScene(self) -> NetworkScene:
+            return NetworkPreviewPopup.NetworkPreviewScene(self._novel)
 
 
 def launch_preview(preview: str):
     if preview == MINDMAP_PREVIEW:
         MindmapPreviewPopup.popup()
+    elif preview == NETWORK_PREVIEW:
+        NetworkPreviewPopup.popup()
     else:
         if asked("To try this feature out, please upgrade to the latest version of Plotlyst.", 'Old Plotlyst version',
                  btnConfirmText='Understood', btnCancelText='Close'):
