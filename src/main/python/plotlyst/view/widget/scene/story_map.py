@@ -75,8 +75,6 @@ class StoryLinesMapWidget(QWidget):
         self._first_paint_triggered: bool = False
 
         self._menuPlots = MenuWidget()
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(self._context_menu_requested)
 
     def setNovel(self, novel: Novel, animated: bool = True):
         def changed(x: int):
@@ -122,11 +120,8 @@ class StoryLinesMapWidget(QWidget):
         if index < len(scenes):
             self._clicked_scene: Scene = scenes[index]
             self.sceneSelected.emit(self._clicked_scene)
+            self._context_menu_requested(event.pos())
             self.update()
-
-    @overrides
-    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        self._context_menu_requested(event.pos())
 
     @overrides
     def paintEvent(self, event: QPaintEvent) -> None:
