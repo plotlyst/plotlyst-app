@@ -283,7 +283,6 @@ class ManuscriptTextEdit(TextEditBase):
         self._player.setSource(QUrl.fromLocalFile(resource_registry.keystroke))
         self._audio_output.setVolume(0.6)
 
-
     @overrides
     def createEnhancedContextMenu(self, pos: QPoint):
         def show():
@@ -475,7 +474,11 @@ class ManuscriptTextEdit(TextEditBase):
             f'ManuscriptTextEdit {{background-color: {RELAXED_WHITE_COLOR};}}')
 
     def _playTypeWriterSound(self, event: QtGui.QKeyEvent):
-        self._player.play()
+        if self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self._player.setPosition(0)
+        else:
+            self._player.play()
+
 
 class ManuscriptEditor(QWidget, EventListener):
     textChanged = pyqtSignal()
