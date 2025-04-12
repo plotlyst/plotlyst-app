@@ -22,9 +22,10 @@ from functools import partial
 from typing import Optional, List
 
 from PyQt6 import QtGui
-from PyQt6.QtCore import pyqtSignal, QTextBoundaryFinder, Qt, QSize, QTimer, QEvent, QPoint
+from PyQt6.QtCore import pyqtSignal, QTextBoundaryFinder, Qt, QSize, QTimer, QEvent, QPoint, QUrl
 from PyQt6.QtGui import QFont, QResizeEvent, QShowEvent, QTextCursor, QTextCharFormat, QSyntaxHighlighter, QColor, \
     QTextBlock, QFocusEvent, QTextDocumentFragment
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QWidget, QApplication, QTextEdit, QLineEdit, QToolButton, QFrame, QPushButton, \
     QGraphicsColorizeEffect
 from overrides import overrides
@@ -37,7 +38,7 @@ from qttextedit.ops import Heading1Operation, Heading2Operation, Heading3Operati
     AlignLeftOperation, AlignCenterOperation, AlignRightOperation
 
 from plotlyst.common import RELAXED_WHITE_COLOR, DEFAULT_MANUSCRIPT_LINE_SPACE, DEFAULT_MANUSCRIPT_INDENT, \
-    PLACEHOLDER_TEXT_COLOR, PLOTLYST_TERTIARY_COLOR
+    PLACEHOLDER_TEXT_COLOR, PLOTLYST_TERTIARY_COLOR, IGNORE_CAPITALIZATION_PROPERTY
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import DocumentProgress, Novel, Scene, TextStatistics, DocumentStatistics, FontSettings, \
     Chapter
@@ -253,6 +254,7 @@ class ManuscriptTextEdit(TextEditBase):
         self._resizedOnShow: bool = False
         self._menuIsShown = False
         self._minHeight = 40
+        self._typeWriterSounds: bool = True
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setTabChangesFocus(True)
         self._scene: Optional[Scene] = None
@@ -262,6 +264,7 @@ class ManuscriptTextEdit(TextEditBase):
 
         self._sentenceHighlighter: Optional[SentenceHighlighter] = None
 
+        self.setProperty(IGNORE_CAPITALIZATION_PROPERTY, True)
         self.setReadOnly(readOnly)
         if not readOnly:
             toolbar = ManuscriptPopupTextEditorToolbar()
@@ -273,6 +276,13 @@ class ManuscriptTextEdit(TextEditBase):
                                    InsertNumberedListOperation])
 
         self.textChanged.connect(self.resizeToContent)
+
+        self._player = QMediaPlayer()
+        self._audio_output = QAudioOutput()
+        self._player.setAudioOutput(self._audio_output)
+        self._player.setSource(QUrl.fromLocalFile(resource_registry.keystroke))
+        self._audio_output.setVolume(0.6)
+
 
     @overrides
     def createEnhancedContextMenu(self, pos: QPoint):
@@ -304,6 +314,8 @@ class ManuscriptTextEdit(TextEditBase):
 
     @overrides
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if self._typeWriterSounds:
+            self._playTypeWriterSound(event)
         cursor: QTextCursor = self.textCursor()
         move_up = cursor.block().blockNumber() == 0 and event.key() == Qt.Key.Key_Up
         move_down = cursor.block().blockNumber() == self.document().blockCount() - 1 and event.key() == Qt.Key.Key_Down
@@ -462,6 +474,8 @@ class ManuscriptTextEdit(TextEditBase):
         self.setStyleSheet(
             f'ManuscriptTextEdit {{background-color: {RELAXED_WHITE_COLOR};}}')
 
+    def _playTypeWriterSound(self, event: QtGui.QKeyEvent):
+        self._player.play()
 
 class ManuscriptEditor(QWidget, EventListener):
     textChanged = pyqtSignal()
