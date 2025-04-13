@@ -58,6 +58,9 @@ class ResourceRegistry:
         self._signature = None
         self._manuscript_template = None
         self._keystroke1 = None
+        self._keystroke_return = None
+        self._keystroke_space = None
+        self._keystroke_backspace = None
 
     def set_up(self, context: Optional[ApplicationContext] = None):
         self._cork = self.__get_resource('cork.wav', context)
@@ -78,6 +81,9 @@ class ResourceRegistry:
         self._signature = self.__get_resource('profile.sig', context)
         self._manuscript_template = self.__get_resource('manuscript.tex', context)
         self._keystroke1 = self.__get_resource('keystroke.wav', context)
+        self._keystroke_return = self.__get_resource('keystroke_return.wav', context)
+        self._keystroke_space = self.__get_resource('keystroke_space.wav', context)
+        self._keystroke_backspace = self.__get_resource('keystroke_backspace.wav', context)
 
     def __get_resource(self, name: str, context: Optional[ApplicationContext] = None):
         if context:
@@ -164,6 +170,18 @@ class ResourceRegistry:
     @property
     def keystroke(self) -> str:
         return self._keystroke1
+
+    @property
+    def keystroke_return(self) -> str:
+        return self._keystroke_return
+
+    @property
+    def keystroke_space(self) -> str:
+        return self._keystroke_space
+
+    @property
+    def keystroke_backspace(self) -> str:
+        return self._keystroke_backspace
 
 
 resource_registry = ResourceRegistry()

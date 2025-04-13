@@ -22,10 +22,9 @@ from functools import partial
 from typing import Optional, List
 
 from PyQt6 import QtGui
-from PyQt6.QtCore import pyqtSignal, QTextBoundaryFinder, Qt, QSize, QTimer, QEvent, QPoint, QUrl
+from PyQt6.QtCore import pyqtSignal, QTextBoundaryFinder, Qt, QSize, QTimer, QEvent, QPoint
 from PyQt6.QtGui import QFont, QResizeEvent, QShowEvent, QTextCursor, QTextCharFormat, QSyntaxHighlighter, QColor, \
     QTextBlock, QFocusEvent, QTextDocumentFragment
-from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QWidget, QApplication, QTextEdit, QLineEdit, QToolButton, QFrame, QPushButton, \
     QGraphicsColorizeEffect
 from overrides import overrides
@@ -49,7 +48,7 @@ from plotlyst.events import SceneDeletedEvent, SceneChangedEvent, ScenesOrganiza
 from plotlyst.resources import resource_registry
 from plotlyst.service.manuscript import daily_progress, daily_overall_progress
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import tool_btn, fade_in, fade, frame, restyle
+from plotlyst.view.common import tool_btn, fade_in, fade, frame, restyle, media_player
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.text import apply_text_color
 from plotlyst.view.style.theme import BG_DARK_COLOR
@@ -277,11 +276,10 @@ class ManuscriptTextEdit(TextEditBase):
 
         self.textChanged.connect(self.resizeToContent)
 
-        self._player = QMediaPlayer()
-        self._audio_output = QAudioOutput()
-        self._player.setAudioOutput(self._audio_output)
-        self._player.setSource(QUrl.fromLocalFile(resource_registry.keystroke))
-        self._audio_output.setVolume(0.6)
+        self._keystrokePlayer = media_player(resource_registry.keystroke)
+        self._spaceKeystrokePlayer = media_player(resource_registry.keystroke_space)
+        self._returnKeystrokePlayer = media_player(resource_registry.keystroke_return)
+        self._backspaceKeystrokePlayer = media_player(resource_registry.keystroke_backspace)
 
     @overrides
     def createEnhancedContextMenu(self, pos: QPoint):
@@ -474,10 +472,28 @@ class ManuscriptTextEdit(TextEditBase):
             f'ManuscriptTextEdit {{background-color: {RELAXED_WHITE_COLOR};}}')
 
     def _playTypeWriterSound(self, event: QtGui.QKeyEvent):
-        if self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
-            self._player.setPosition(0)
+        if event.modifiers() & (
+                Qt.KeyboardModifier.ControlModifier
+                | Qt.KeyboardModifier.AltModifier
+                | Qt.KeyboardModifier.MetaModifier
+        ):
+            return
+
+        key = event.key()
+
+        if key == Qt.Key.Key_Space:
+            player = self._spaceKeystrokePlayer
+        elif key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            player = self._returnKeystrokePlayer
+        elif key == Qt.Key.Key_Backspace:
+            player = self._backspaceKeystrokePlayer
         else:
-            self._player.play()
+            player = self._keystrokePlayer
+
+        if player.playbackState() == player.PlaybackState.PlayingState:
+            player.setPosition(0)
+        else:
+            player.play()
 
 
 class ManuscriptEditor(QWidget, EventListener):
