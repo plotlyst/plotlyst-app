@@ -277,11 +277,12 @@ class NovelCustomizationWizard(QWidget):
 
         self.pageScenes.layout().addWidget(label('Scene and Chapter Settings', h3=True),
                                            alignment=Qt.AlignmentFlag.AlignCenter)
-        self.pageScenes.layout().addWidget(label(
-            "Would you like to write scenes and arrange them inside chapters, or work with chapters only? (can be changed later)",
-            description=True, wordWrap=True))
-        self.pageScenes.layout().addWidget(line())
-        self._addNovelSetting(NovelSetting.Scenes_organization, self.pageScenes)
+        if self._novel.import_origin is None or not self._novel.import_origin.sync:
+            self.pageScenes.layout().addWidget(label(
+                "Would you like to write scenes and arrange them inside chapters, or work with chapters only? (can be changed later)",
+                description=True, wordWrap=True))
+            self.pageScenes.layout().addWidget(line())
+            self._addNovelSetting(NovelSetting.Scenes_organization, self.pageScenes)
         self._addNovelSetting(NovelSetting.Track_pov, self.pageScenes)
         self.pageScenes.layout().addWidget(vspacer())
 
