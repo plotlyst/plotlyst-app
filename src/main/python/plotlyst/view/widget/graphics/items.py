@@ -28,7 +28,7 @@ from PyQt6.QtGui import QPainter, QPen, QPainterPath, QColor, QIcon, QPolygonF, 
     QTextDocument, QUndoStack
 from PyQt6.QtWidgets import QAbstractGraphicsShapeItem, QGraphicsItem, QGraphicsPathItem, QGraphicsSceneMouseEvent, \
     QStyleOptionGraphicsItem, QWidget, \
-    QGraphicsSceneHoverEvent, QGraphicsPolygonItem, QApplication, QGraphicsOpacityEffect, QGraphicsTextItem
+    QGraphicsSceneHoverEvent, QGraphicsPolygonItem, QApplication, QGraphicsTextItem, QGraphicsOpacityEffect
 from overrides import overrides
 from qthandy import pointy
 
@@ -1103,8 +1103,15 @@ class CharacterItem(CircleShapedNodeItem):
             effect = QGraphicsOpacityEffect()
             effect.setOpacity(0.3)
             self._label.setGraphicsEffect(effect)
+            self._label.setAcceptHoverEvents(False)
         else:
             self._label.setGraphicsEffect(None)
+            self._label.setAcceptHoverEvents(True)
+
+    @overrides
+    def _setConnectionEnabled(self, enabled: bool):
+        super()._setConnectionEnabled(enabled)
+        self._label.setAcceptHoverEvents(not enabled)
 
 
 class IconItem(CircleShapedNodeItem):
