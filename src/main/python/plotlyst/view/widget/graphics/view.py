@@ -22,7 +22,7 @@ from functools import partial
 from typing import Optional
 
 import qtanim
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QWheelEvent, QMouseEvent, QColor, QIcon, QResizeEvent, QNativeGestureEvent, QFont, \
     QUndoStack, QKeySequence
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsItem, QFrame, \
@@ -267,9 +267,6 @@ class NetworkGraphicsView(BaseGraphicsView):
                 btn.setChecked(False)
         QApplication.restoreOverrideCursor()
         self.setToolTip('')
-
-        if item is not None and isinstance(item, CharacterItem):
-            QTimer.singleShot(100, lambda: self._editCharacterItem(item))
 
     def _arrangeSideBars(self):
         self._wdgZoomBar.setGeometry(10, self.height() - self._wdgZoomBar.sizeHint().height() - 10,
