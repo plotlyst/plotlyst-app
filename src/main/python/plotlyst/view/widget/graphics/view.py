@@ -197,6 +197,7 @@ class NetworkGraphicsView(BaseGraphicsView):
         self._scene.cancelItemAddition.connect(self._endAddition)
         self._scene.selectionChanged.connect(self._selectionChanged)
         self._scene.editItem.connect(self._editItem)
+        # self._scene.contextMenu.connect(self._showContextMenu)
         self._scene.itemMoved.connect(self._itemMoved)
         self._scene.hideItemEditor.connect(self._hideItemToolbar)
 
@@ -302,6 +303,12 @@ class NetworkGraphicsView(BaseGraphicsView):
             self._editNoteItem(item)
         elif isinstance(item, IconItem):
             self._editIconItem(item)
+
+    # def _showContextMenu(self, item: NodeItem):
+    #     popup = MenuWidget()
+    #     popup.addAction(action('Delete', IconRegistry.trash_can_icon()))
+    #     view_pos = self.mapFromScene(item.sceneBoundingRect().center())
+    #     popup.exec(self.mapToGlobal(view_pos))
 
     def _showItemToolbar(self, item: NodeItem):
         if isinstance(item, ConnectorItem):

@@ -896,6 +896,10 @@ class NodeItem(QAbstractGraphicsShapeItem):
             self._onSelection(value)
         return super(NodeItem, self).itemChange(change, value)
 
+    # @overrides
+    # def contextMenuEvent(self, event: QContextMenuEvent):
+    #     self.networkScene().showContextMenu(self)
+
     @abstractmethod
     def socket(self, angle: float) -> AbstractSocketItem:
         pass

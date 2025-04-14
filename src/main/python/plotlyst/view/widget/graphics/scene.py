@@ -62,6 +62,7 @@ class NetworkScene(QGraphicsScene):
     editItem = pyqtSignal(NodeItem)
     itemMoved = pyqtSignal(NodeItem)
     hideItemEditor = pyqtSignal()
+    contextMenu = pyqtSignal(NodeItem)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -179,6 +180,9 @@ class NetworkScene(QGraphicsScene):
 
     def editItemEvent(self, item: Node):
         self.editItem.emit(item)
+
+    # def showContextMenu(self, item: Node):
+    #     self.contextMenu.emit(item)
 
     @overrides
     def keyPressEvent(self, event: QKeyEvent) -> None:
