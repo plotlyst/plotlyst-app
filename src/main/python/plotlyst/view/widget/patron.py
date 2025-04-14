@@ -211,7 +211,7 @@ class SurveyResultsWidget(QWidget):
             desc_text,
             description=True, incr_font_diff=1, wordWrap=True)
 
-        btnTiers = push_btn(IconRegistry.from_name('fa5b.patreon'), 'See Patreon tiers', transparent_=True)
+        btnTiers = push_btn(IconRegistry.from_name('fa5s.hand-holding-heart'), 'See support', transparent_=True)
         btnTiers.installEventFilter(OpacityEventFilter(btnTiers, leaveOpacity=0.7))
         btnTiers.clicked.connect(self.showTiers)
 
@@ -385,7 +385,7 @@ class PatreonTierSection(QWidget):
             vbox(wdgRecognition, 10, 10)
 
             wdgRecognition.layout().addWidget(
-                label('Recognition preview, displayed under Patrons and Knowledge Base panels:',
+                label('Recognition preview, displayed under Community and Knowledge Base panels:',
                       description=True),
                 alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -429,7 +429,7 @@ class PatreonTiersWidget(QWidget):
     def setPatreon(self, patreon: Patreon):
         clear_layout(self.centerWdg)
 
-        title = label('Patreon Tiers', h2=True)
+        title = label('Become a patron', h2=True)
         desc = label(
             'Plotlyst is an indie project created by a solo developer with a passion for writing and storytelling.',
             description=True, incr_font_diff=1, wordWrap=True)
@@ -451,7 +451,8 @@ class PatreonTiersWidget(QWidget):
         self.centerWdg.layout().addWidget(vspacer())
 
     def _joinButton(self) -> QPushButton:
-        btnPatreon = push_btn(IconRegistry.from_name('fa5b.patreon', RELAXED_WHITE_COLOR), text='Join Patreon',
+        btnPatreon = push_btn(IconRegistry.from_name('fa5s.hand-holding-heart', RELAXED_WHITE_COLOR),
+                              text='Become a patron',
                               properties=['positive', 'confirm'])
         btnPatreon.clicked.connect(lambda: open_url(
             'https://patreon.com/user?u=24283978&utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink'))
@@ -748,7 +749,7 @@ class PatronsWidget(QWidget):
         self.wdgTopHeader.layout().addWidget(spacer())
 
         self.btnVisitPatreon = push_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'), transparent_=True,
-                                        text='Visit Patreon')
+                                        text='Become a supporter')
         self.btnVisitPatreon.clicked.connect(lambda: open_url(
             'https://patreon.com/user?u=24283978&utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink'))
         self.btnVisitPatreon.installEventFilter(OpacityEventFilter(self.btnVisitPatreon, enterOpacity=0.7))
@@ -1086,7 +1087,7 @@ class PatronRecognitionBuilderPopup(PopupDialog):
         self.tabExport.layout().addWidget(group(self.lblCopied, self.btnCopy, margin=0),
                                           alignment=Qt.AlignmentFlag.AlignRight)
         self.tabExport.layout().addWidget(
-            label("Copy this text to the form you've received on Patreon", description=True, decr_font_diff=1))
+            label("Copy this text to the form you've received as a patron", description=True, decr_font_diff=1))
         self.tabExport.layout().addWidget(self.textJson)
 
         self.btnArtist = SmallToggleButton()
@@ -1326,12 +1327,13 @@ class PlotlystPlusWidget(QWidget):
         self.tabPatrons = QWidget()
         vbox(self.tabPatrons, 10, 5)
 
-        self.tabWidget.addTab(self.tabPatreon, IconRegistry.from_name('fa5b.patreon', color_on=PLOTLYST_MAIN_COLOR),
-                              'Patreon')
+        self.tabWidget.addTab(self.tabPatrons, IconRegistry.from_name('msc.organization', color_on=PLOTLYST_MAIN_COLOR),
+                              'Supporters')
         self.tabWidget.addTab(self.tabReport, IconRegistry.from_name('mdi.crystal-ball', color_on=PLOTLYST_MAIN_COLOR),
                               'Vision')
-        self.tabWidget.addTab(self.tabPatrons, IconRegistry.from_name('msc.organization', color_on=PLOTLYST_MAIN_COLOR),
-                              'Patrons')
+        self.tabWidget.addTab(self.tabPatreon,
+                              IconRegistry.from_name('fa5s.hand-holding-heart', color_on=PLOTLYST_MAIN_COLOR),
+                              'Support')
 
         self.layout().addWidget(self.tabWidget)
 
