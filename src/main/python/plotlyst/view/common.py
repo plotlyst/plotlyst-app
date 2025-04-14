@@ -30,7 +30,7 @@ from PyQt6.QtCharts import QChart, QChartView
 from PyQt6.QtCore import QRectF, QModelIndex, QRect, QPoint, QBuffer, QIODevice, QSize, QObject, QEvent, Qt, QTimer, \
     QUrl
 from PyQt6.QtGui import QPixmap, QPainterPath, QPainter, QFont, QColor, QIcon, QAction, QDesktopServices
-from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PyQt6.QtMultimedia import QSoundEffect
 from PyQt6.QtWidgets import QWidget, QSizePolicy, QColorDialog, QAbstractItemView, \
     QMenu, QAbstractButton, \
     QStackedWidget, QAbstractScrollArea, QLineEdit, QHeaderView, QScrollArea, QFrame, QTabWidget, \
@@ -739,10 +739,9 @@ def _splitter(wdg1: QWidget, wdg2: QWidget, sizes: List[int]) -> QSplitter:
     return splitter
 
 
-def media_player(source: str, volume: float = 0.6) -> QMediaPlayer:
-    player = QMediaPlayer()
-    audio_output = QAudioOutput()
-    player.setAudioOutput(audio_output)
-    player.setSource(QUrl.fromLocalFile(source))
-    audio_output.setVolume(0.6)
-    return player
+def sound_effect(source: str, volume: float = 0.6) -> QSoundEffect:
+    effect = QSoundEffect()
+    effect.setSource(QUrl.fromLocalFile(source))
+    effect.setVolume(volume)
+
+    return effect

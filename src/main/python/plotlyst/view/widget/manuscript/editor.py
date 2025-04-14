@@ -48,7 +48,7 @@ from plotlyst.events import SceneDeletedEvent, SceneChangedEvent, ScenesOrganiza
 from plotlyst.resources import resource_registry
 from plotlyst.service.manuscript import daily_progress, daily_overall_progress
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import tool_btn, fade_in, fade, frame, restyle, media_player
+from plotlyst.view.common import tool_btn, fade_in, fade, frame, restyle, sound_effect
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.text import apply_text_color
 from plotlyst.view.style.theme import BG_DARK_COLOR
@@ -276,10 +276,10 @@ class ManuscriptTextEdit(TextEditBase):
 
         self.textChanged.connect(self.resizeToContent)
 
-        self._keystrokePlayer = media_player(resource_registry.keystroke)
-        self._spaceKeystrokePlayer = media_player(resource_registry.keystroke_space)
-        self._returnKeystrokePlayer = media_player(resource_registry.keystroke_return)
-        self._backspaceKeystrokePlayer = media_player(resource_registry.keystroke_backspace)
+        self._keystrokePlayer = sound_effect(resource_registry.keystroke)
+        self._spaceKeystrokePlayer = sound_effect(resource_registry.keystroke_space)
+        self._returnKeystrokePlayer = sound_effect(resource_registry.keystroke_return)
+        self._backspaceKeystrokePlayer = sound_effect(resource_registry.keystroke_backspace)
 
     @overrides
     def createEnhancedContextMenu(self, pos: QPoint):
@@ -343,31 +343,6 @@ class ManuscriptTextEdit(TextEditBase):
                     return
         super(ManuscriptTextEdit, self).keyPressEvent(event)
 
-    # @overrides
-    # def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
-    #     anchor = self.anchorAt(event.pos())
-    #     if anchor and anchor.startswith(SceneSeparatorTextFormatPrefix):
-    #         if QApplication.overrideCursor() is None:
-    #             QApplication.setOverrideCursor(Qt.CursorShape.PointingHandCursor)
-    #         synopsis = self._sceneTextObject.sceneSynopsis(anchor.replace(SceneSeparatorTextFormatPrefix, ''))
-    #         self.setToolTip(synopsis)
-    #         return
-    #     else:
-    #         QApplication.restoreOverrideCursor()
-    #         self.setToolTip('')
-    #     super(ManuscriptTextEdit, self).mouseMoveEvent(event)
-
-    # @overrides
-    # def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
-    #     anchor = self.anchorAt(event.pos())
-    #     if anchor and anchor.startswith(SceneSeparatorTextFormatPrefix):
-    #         scene = self._sceneTextObject.scene(anchor.replace(SceneSeparatorTextFormatPrefix, ''))
-    #         if scene:
-    #             self.sceneSeparatorClicked.emit(scene)
-    #         return
-    #
-    #     super(ManuscriptTextEdit, self).mouseReleaseEvent(event)
-
     def setGrammarCheckEnabled(self, enabled: bool):
         self.highlighter.setCheckEnabled(enabled)
 
@@ -401,40 +376,11 @@ class ManuscriptTextEdit(TextEditBase):
         return self._scene
 
     def setScene(self, scene: Scene):
-        # self._sceneTextObject.setScenes([scene])
         self._scene = scene
         self._addScene(scene)
         self.setUneditableBlocksEnabled(False)
         self.document().clearUndoRedoStacks()
         self.resizeToContent()
-
-    # def setScenes(self, scenes: List[Scene]):
-    #     def sceneCharFormat(scene: Scene) -> QTextCharFormat:
-    #         sceneSepCharFormat = QTextCharFormat()
-    #         sceneSepCharFormat.setObjectType(SceneSeparatorTextFormat)
-    #         sceneSepCharFormat.setToolTip(scene.synopsis)
-    #         sceneSepCharFormat.setAnchor(True)
-    #         sceneSepCharFormat.setAnchorHref(f'{SceneSeparatorTextFormatPrefix}{scene.id}')
-    #
-    #         return sceneSepCharFormat
-    #
-    #     self.setUneditableBlocksEnabled(True)
-    #     self._sceneTextObject.setScenes(scenes)
-    #
-    #     for i, scene in enumerate(scenes):
-    #         self.textCursor().insertBlock(self._sceneSepBlockFormat)
-    #         self.textCursor().insertText(f'{OBJECT_REPLACEMENT_CHARACTER}', sceneCharFormat(scene))
-    #         self.textCursor().block().setUserState(TextBlockState.UNEDITABLE.value)
-    #         self.insertNewBlock()
-    #         self._addScene(scene)
-    #
-    #     self._deleteBlock(0, force=True)
-    #
-    #     self.document().clearUndoRedoStacks()
-    #     self.resizeToContent()
-
-    # def insertNewBlock(self):
-    #     self.textCursor().insertBlock(self._defaultBlockFormat, QTextCharFormat())
 
     @overrides
     def showEvent(self, event: QShowEvent) -> None:
@@ -478,7 +424,19 @@ class ManuscriptTextEdit(TextEditBase):
                 | Qt.KeyboardModifier.MetaModifier
         ):
             return
-
+        if event.key() in (
+                Qt.Key.Key_Left,
+                Qt.Key.Key_Right,
+                Qt.Key.Key_Up,
+                Qt.Key.Key_Down,
+                Qt.Key.Key_Home,
+                Qt.Key.Key_End,
+                Qt.Key.Key_PageUp,
+                Qt.Key.Key_PageDown,
+                Qt.Key.Key_Tab,
+                Qt.Key.Key_Escape
+        ):
+            return
         key = event.key()
 
         if key == Qt.Key.Key_Space:
@@ -490,10 +448,7 @@ class ManuscriptTextEdit(TextEditBase):
         else:
             player = self._keystrokePlayer
 
-        if player.playbackState() == player.PlaybackState.PlayingState:
-            player.setPosition(0)
-        else:
-            player.play()
+        player.play()
 
 
 class ManuscriptEditor(QWidget, EventListener):
