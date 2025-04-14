@@ -369,7 +369,8 @@ class NovelPanelSettingsWidget(QWidget):
 
         self._addSetting(NovelSetting.Storylines, 1, 0, enabled=app_env.profile().get('storylines', False),
                          link='https://plotlyst.com/docs/storylines/')
-        self._addSetting(NovelSetting.Structure, 1, 2)
+        self._addSetting(NovelSetting.Structure, 1, 2, enabled=app_env.profile().get('structure', False),
+                         link='https://plotlyst.com/docs/structure/')
 
         self._addSetting(NovelSetting.Documents, 2, 0)
         self._addSetting(NovelSetting.World_building, 2, 1, enabled=app_env.profile().get('world-building', False),
