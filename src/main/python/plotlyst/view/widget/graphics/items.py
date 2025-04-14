@@ -486,7 +486,21 @@ class ConnectorItem(QGraphicsPathItem):
         self._label = LabelItem(self)
         self._label.setVisible(False)
 
+        self.setAcceptHoverEvents(True)
         self.rearrange()
+
+    @overrides
+    def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
+        super().hoverEnterEvent(event)
+        if not self.networkScene().linkMode():
+            effect = QGraphicsOpacityEffect()
+            effect.setOpacity(0.5)
+            self.setGraphicsEffect(effect)
+
+    @overrides
+    def hoverLeaveEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
+        super().hoverLeaveEvent(event)
+        self.setGraphicsEffect(None)
 
     def networkScene(self) -> 'NetworkScene':
         return self.scene()
