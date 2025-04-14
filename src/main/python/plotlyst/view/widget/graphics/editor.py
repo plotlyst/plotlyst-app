@@ -26,9 +26,9 @@ from PyQt6.QtCore import Qt, pyqtSignal, QRect
 from PyQt6.QtGui import QPainter, QPen, QColor, QIcon, QPaintEvent, QKeySequence, QShowEvent, QFont, QUndoStack
 from PyQt6.QtWidgets import QFrame, \
     QToolButton, QWidget, \
-    QAbstractButton, QSlider, QButtonGroup, QPushButton, QLabel, QLineEdit
+    QAbstractButton, QSlider, QButtonGroup, QPushButton, QLineEdit
 from overrides import overrides
-from qthandy import hbox, margins, sp, vbox, grid, pointy, vline, decr_icon, transparent
+from qthandy import hbox, margins, sp, vbox, grid, pointy, vline, decr_icon, transparent, spacer, incr_icon
 from qtmenu import MenuWidget
 from qttextedit.ops import Heading2Operation, Heading3Operation, Heading1Operation
 
@@ -239,7 +239,7 @@ class TextNoteEditorPopup(MenuWidget):
 class EventSelectorWidget(SecondarySelectorWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._grid.addWidget(QLabel('Events'), 0, 0, 1, 3)
+        # self._grid.addWidget(QLabel('Events'), 0, 0, 1, 3)
 
         self._btnGeneral = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                   IconRegistry.from_name('mdi.square-rounded-outline'),
@@ -255,7 +255,7 @@ class EventSelectorWidget(SecondarySelectorWidget):
                                                       'Inciting incident', 2,
                                                       0, subType=NODE_SUBTYPE_DISTURBANCE)
 
-        self._grid.addWidget(QLabel('Internal'), 3, 0, 1, 3)
+        # self._grid.addWidget(QLabel('Internal'), 3, 0, 1, 3)
         self._btnInternalConflict = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                            IconRegistry.conflict_self_icon('black', 'black'),
                                                            'Internal conflict', 4, 0,
@@ -544,17 +544,25 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._btnType = tool_btn(IconRegistry.from_name('mdi.square-rounded-outline'), 'Change type', transparent_=True)
         self._sbFont = FontSizeSpinBox()
         self._sbFont.fontChanged.connect(self._fontChanged)
-        self._btnBold = tool_btn(IconRegistry.from_name('fa5s.bold'), 'Bold', checkable=True, icon_resize=False,
+
+        self._btnText = tool_btn(IconRegistry.from_name('mdi.format-text'), 'Change displayed text', transparent_=True)
+        incr_icon(self._btnText)
+
+        self._btnBold = tool_btn(IconRegistry.from_name('fa5s.bold', 'grey', color_on=PLOTLYST_SECONDARY_COLOR), 'Bold',
+                                 checkable=True,
                                  properties=['transparent-rounded-bg-on-hover', 'top-selector'])
-        decr_icon(self._btnBold, 3 if app_env.is_mac() else 1)
-        self._btnItalic = tool_btn(IconRegistry.from_name('fa5s.italic'), 'Italic',
-                                   checkable=True, icon_resize=False,
+        decr_icon(self._btnBold, 3 if app_env.is_mac() else 2)
+        self._btnItalic = tool_btn(IconRegistry.from_name('fa5s.italic', 'grey', color_on=PLOTLYST_SECONDARY_COLOR),
+                                   'Italic',
+                                   checkable=True,
                                    properties=['transparent-rounded-bg-on-hover', 'top-selector'])
-        decr_icon(self._btnItalic, 3 if app_env.is_mac() else 1)
-        self._btnUnderline = tool_btn(IconRegistry.from_name('fa5s.underline'), 'Underline',
-                                      checkable=True, icon_resize=False,
-                                      properties=['transparent-rounded-bg-on-hover', 'top-selector'])
-        decr_icon(self._btnUnderline, 3 if app_env.is_mac() else 1)
+        decr_icon(self._btnItalic, 3 if app_env.is_mac() else 2)
+        self._btnUnderline = tool_btn(
+            IconRegistry.from_name('fa5s.underline', 'grey', color_on=PLOTLYST_SECONDARY_COLOR),
+            'Underline',
+            checkable=True,
+            properties=['transparent-rounded-bg-on-hover', 'top-selector'])
+        decr_icon(self._btnUnderline, 3 if app_env.is_mac() else 2)
         self._btnBold.clicked.connect(self._boldChanged)
         self._btnItalic.clicked.connect(self._italicChanged)
         self._btnUnderline.clicked.connect(self._underlineChanged)
@@ -563,14 +571,23 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self.addSecondaryWidget(self._btnType, self._eventSelector)
         self._eventSelector.selected.connect(self._typeChanged)
 
+        self._menuText = MenuWidget(self._btnText)
+        self._textLineEdit = QLineEdit()
+        self._textLineEdit.setPlaceholderText('New event...')
+        self._textLineEdit.setClearButtonEnabled(True)
+        self._textLineEdit.textEdited.connect(self._textEdited)
+        self._menuText.addWidget(
+            group(spacer(), self._btnBold, self._btnItalic, self._btnUnderline, margin=0, spacing=2))
+        self._menuText.addWidget(self._textLineEdit)
+        self._menuText.aboutToShow.connect(self._textLineEdit.setFocus)
+
         self._toolbar.layout().addWidget(self._btnType)
         self._toolbar.layout().addWidget(vline())
         self._toolbar.layout().addWidget(self._btnColor)
         self._toolbar.layout().addWidget(self._btnIcon)
+        self._toolbar.layout().addWidget(self._btnText)
         self._toolbar.layout().addWidget(vline())
         self._toolbar.layout().addWidget(self._sbFont)
-        self._toolbar.layout().addWidget(vline())
-        self._toolbar.layout().addWidget(group(self._btnBold, self._btnItalic, self._btnUnderline, margin=0, spacing=2))
 
     @overrides
     def setItem(self, item: EventItem):
@@ -581,6 +598,7 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._btnBold.setChecked(item.bold())
         self._btnItalic.setChecked(item.italic())
         self._btnUnderline.setChecked(item.underline())
+        self._textLineEdit.setText(item.text())
 
         self._item = item
 
@@ -610,6 +628,10 @@ class EventItemToolbar(PaintedItemBasedToolbar):
             oldType = node.type
             oldSubtype = node.subtype
             self.undoStack.push(EventTypeCommand(self._item, oldType, oldSubtype, itemType, subtype))
+
+    def _textEdited(self):
+        if self._item:
+            self.undoStack.push(TextEditingCommand(self._item, self._textLineEdit.text()))
 
 
 class PenStyleSelector(QAbstractButton):

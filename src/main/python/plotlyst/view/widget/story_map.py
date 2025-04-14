@@ -34,9 +34,8 @@ from plotlyst.service.image import LoadedImage, upload_image, load_image
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
-from plotlyst.view.widget.graphics import NetworkGraphicsView, NetworkScene, EventItem, \
-    NodeItem
-from plotlyst.view.widget.graphics.editor import EventSelectorWidget, EventItemToolbar, ConnectorToolbar, \
+from plotlyst.view.widget.graphics import NetworkGraphicsView, NetworkScene, EventItem
+from plotlyst.view.widget.graphics.editor import EventItemToolbar, ConnectorToolbar, \
     SecondarySelectorWidget, CharacterToolbar, NoteToolbar, IconItemToolbar
 
 
@@ -97,12 +96,12 @@ class EventsMindMapView(NetworkGraphicsView):
         # self._btnAddSticker.setDisabled(True)
         # self._btnAddSticker.setToolTip('Feature is not yet available')
 
-        self._wdgSecondaryEventSelector = EventSelectorWidget(self)
-        self._wdgSecondaryEventSelector.setVisible(False)
-        self._wdgSecondaryEventSelector.selected.connect(self._startAddition)
-        self._wdgSecondaryStickerSelector = StickerSelectorWidget(self)
-        self._wdgSecondaryStickerSelector.setVisible(False)
-        self._wdgSecondaryStickerSelector.selected.connect(self._startAddition)
+        # self._wdgSecondaryEventSelector = EventSelectorWidget(self)
+        # self._wdgSecondaryEventSelector.setVisible(False)
+        # self._wdgSecondaryEventSelector.selected.connect(self._startAddition)
+        # self._wdgSecondaryStickerSelector = StickerSelectorWidget(self)
+        # self._wdgSecondaryStickerSelector.setVisible(False)
+        # self._wdgSecondaryStickerSelector.selected.connect(self._startAddition)
 
         # self._stickerEditor = StickerEditor(self)
         # self._stickerEditor.setVisible(False)
@@ -126,28 +125,28 @@ class EventsMindMapView(NetworkGraphicsView):
     def _initScene(self) -> NetworkScene:
         return EventsMindMapScene(self._novel)
 
-    @overrides
-    def _startAddition(self, itemType: GraphicsItemType, subType: str = ''):
-        super()._startAddition(itemType, subType)
+    # @overrides
+    # def _startAddition(self, itemType: GraphicsItemType, subType: str = ''):
+    #     super()._startAddition(itemType, subType)
+    #
+    #     if itemType == GraphicsItemType.EVENT:
+    #         self._wdgSecondaryEventSelector.setVisible(True)
+    #         self._wdgSecondaryStickerSelector.setHidden(True)
+    #     elif itemType == GraphicsItemType.COMMENT:
+    #         self._wdgSecondaryStickerSelector.setVisible(True)
+    #         self._wdgSecondaryEventSelector.setHidden(True)
+    #     elif itemType == GraphicsItemType.CHARACTER:
+    #         self._wdgSecondaryStickerSelector.setHidden(True)
+    #         self._wdgSecondaryEventSelector.setHidden(True)
+    #     elif itemType == GraphicsItemType.ICON:
+    #         self._wdgSecondaryStickerSelector.setHidden(True)
+    #         self._wdgSecondaryEventSelector.setHidden(True)
 
-        if itemType == GraphicsItemType.EVENT:
-            self._wdgSecondaryEventSelector.setVisible(True)
-            self._wdgSecondaryStickerSelector.setHidden(True)
-        elif itemType == GraphicsItemType.COMMENT:
-            self._wdgSecondaryStickerSelector.setVisible(True)
-            self._wdgSecondaryEventSelector.setHidden(True)
-        elif itemType == GraphicsItemType.CHARACTER:
-            self._wdgSecondaryStickerSelector.setHidden(True)
-            self._wdgSecondaryEventSelector.setHidden(True)
-        elif itemType == GraphicsItemType.ICON:
-            self._wdgSecondaryStickerSelector.setHidden(True)
-            self._wdgSecondaryEventSelector.setHidden(True)
-
-    @overrides
-    def _endAddition(self, itemType: Optional[GraphicsItemType] = None, item: Optional[NodeItem] = None):
-        super()._endAddition(itemType, item)
-        self._wdgSecondaryEventSelector.setHidden(True)
-        self._wdgSecondaryStickerSelector.setHidden(True)
+    # @overrides
+    # def _endAddition(self, itemType: Optional[GraphicsItemType] = None, item: Optional[NodeItem] = None):
+    #     super()._endAddition(itemType, item)
+    #     self._wdgSecondaryEventSelector.setHidden(True)
+    #     self._wdgSecondaryStickerSelector.setHidden(True)
 
     @overrides
     def _characterSelectorMenu(self) -> CharacterSelectorMenu:
@@ -159,9 +158,9 @@ class EventsMindMapView(NetworkGraphicsView):
 
         secondary_x = self._controlsNavBar.pos().x() + self._controlsNavBar.sizeHint().width() + 5
         secondary_y = self._controlsNavBar.pos().y() + self._btnAddEvent.pos().y()
-        self._wdgSecondaryEventSelector.setGeometry(secondary_x, secondary_y,
-                                                    self._wdgSecondaryEventSelector.sizeHint().width(),
-                                                    self._wdgSecondaryEventSelector.sizeHint().height())
+        # self._wdgSecondaryEventSelector.setGeometry(secondary_x, secondary_y,
+        #                                             self._wdgSecondaryEventSelector.sizeHint().width(),
+        #                                             self._wdgSecondaryEventSelector.sizeHint().height())
 
         # secondary_x = self._controlsNavBar.pos().x() + self._controlsNavBar.sizeHint().width() + 5
         # secondary_y = self._controlsNavBar.pos().y() + self._btnAddSticker.pos().y()
