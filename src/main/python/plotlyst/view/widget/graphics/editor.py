@@ -587,7 +587,6 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._textSettings.btnBold.clicked.connect(self._boldChanged)
         self._textSettings.btnItalic.clicked.connect(self._italicChanged)
         self._textSettings.btnUnderline.clicked.connect(self._underlineChanged)
-        self._textSettings.textLineEdit.setPlaceholderText('New event...')
         self._textSettings.textLineEdit.textEdited.connect(self._textEdited)
 
         self._btnTransparent = tool_btn(IconRegistry.transparent_background(), 'Toggle transparent background',
@@ -613,6 +612,11 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._textSettings.btnBold.setChecked(item.bold())
         self._textSettings.btnItalic.setChecked(item.italic())
         self._textSettings.btnUnderline.setChecked(item.underline())
+        if item.node().type == GraphicsItemType.EVENT:
+            self._textSettings.textLineEdit.setPlaceholderText('New event...')
+        else:
+            self._textSettings.textLineEdit.setPlaceholderText('Text...')
+
         self._textSettings.textLineEdit.setText(item.text())
         self._btnTransparent.setChecked(item.node().transparent)
 

@@ -1187,7 +1187,7 @@ class EventItem(NodeItem):
 
     def __init__(self, node: Node, parent=None):
         super().__init__(node, parent)
-        self._placeholderText: str = 'New event'
+        self._placeholderText: str = 'New event' if node.type == GraphicsItemType.EVENT else 'Text'
         self._text: str = self._node.text if self._node.text else ''
         self._setTooltip()
 

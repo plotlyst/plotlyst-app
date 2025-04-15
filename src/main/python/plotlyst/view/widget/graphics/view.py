@@ -336,7 +336,8 @@ class NetworkGraphicsView(BaseGraphicsView):
         def setText(text: str):
             self.undoStack.push(TextEditingCommand(item, text))
 
-        popup = TextLineEditorPopup(item.text(), item.textRect(), parent=self)
+        placeholder = 'New event' if item.node().type == GraphicsItemType.EVENT else 'Text'
+        popup = TextLineEditorPopup(item.text(), item.textRect(), parent=self, placeholder=placeholder)
         font = QFont(item.font())
         font.setPointSize(max(int(item.fontSize() * self._scaledFactor), font.pointSize()))
         popup.setFont(font)

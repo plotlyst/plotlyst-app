@@ -2179,6 +2179,7 @@ class GraphicsItemType(Enum):
     CHARACTER = 'character'
     STICKER = 'sticker'
     EVENT = 'event'
+    TEXT = 'text'
     COMMENT = 'comment'
     SETUP = 'setup'
     NOTE = 'note'
@@ -3861,10 +3862,13 @@ class Node(CharacterBased):
 
 def to_node(x: float, y: float, type: GraphicsItemType, subtype: str = '', default_size: int = 12) -> Node:
     node = Node(x, y, type=type, subtype=subtype)
-    if type == GraphicsItemType.EVENT:
+    if type == GraphicsItemType.EVENT or type == GraphicsItemType.TEXT:
         node.size = max(16, default_size)
         if subtype in [NODE_SUBTYPE_BACKSTORY, NODE_SUBTYPE_INTERNAL_CONFLICT]:
             node.size = max(14, default_size - 1)
+
+    if type == GraphicsItemType.TEXT:
+        node.transparent = True
 
     if subtype == NODE_SUBTYPE_GOAL:
         node.icon = 'mdi.target'

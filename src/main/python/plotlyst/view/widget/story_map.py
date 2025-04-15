@@ -78,6 +78,8 @@ class EventsMindMapView(NetworkGraphicsView):
         super().__init__(parent)
         self._btnAddEvent = self._newControlButton(
             IconRegistry.from_name('mdi6.shape-square-rounded-plus'), 'Add new event', GraphicsItemType.EVENT)
+        self._btnAddText = self._newControlButton(
+            IconRegistry.from_name('mdi6.format-text'), 'Add new text', GraphicsItemType.TEXT)
         self._btnAddNote = self._newControlButton(
             IconRegistry.from_name('msc.note'), 'Add new note', GraphicsItemType.NOTE)
         self._btnAddCharacter = self._newControlButton(
