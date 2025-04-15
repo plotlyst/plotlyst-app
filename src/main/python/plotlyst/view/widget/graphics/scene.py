@@ -316,10 +316,12 @@ class NetworkScene(QGraphicsScene):
             connectorItem.target().addConnector(connectorItem)
             self._diagram.data.connectors.append(connectorItem.connector())
             self.addItem(connectorItem)
+            connectorItem.setVisible(True)
 
         if isinstance(item, NodeItem):
             self._diagram.data.nodes.append(item.node())
             self.addItem(item)
+            item.setVisible(True)
             if connectors:
                 for connector in connectors:
                     addConnectorItem(connector)
@@ -329,9 +331,6 @@ class NetworkScene(QGraphicsScene):
 
     def removeNetworkItem(self, item: Union[NodeItem, ConnectorItem]):
         self._removeItem(item)
-
-    def removeConnectorItem(self, connector: ConnectorItem):
-        self._removeItem(connector)
 
     @staticmethod
     def toCharacterNode(scenePos: QPointF) -> Node:
@@ -388,6 +387,7 @@ class NetworkScene(QGraphicsScene):
             for connectorItem in item.connectors():
                 try:
                     self._clearUpConnectorItem(connectorItem)
+                    connectorItem.setVisible(False)
                     self.removeItem(connectorItem)
                 except ValueError:
                     pass  # connector might have been already removed if a node was deleted first
@@ -398,8 +398,8 @@ class NetworkScene(QGraphicsScene):
             self._clearUpConnectorItem(item)
 
         if item.scene():
+            item.setVisible(False)
             self.removeItem(item)
-            item.update()
         self._save()
 
     def _clearUpConnectorItem(self, item: ConnectorItem):

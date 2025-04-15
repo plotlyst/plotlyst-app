@@ -498,7 +498,7 @@ class ConnectorItem(QGraphicsPathItem):
     @overrides
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         super().hoverEnterEvent(event)
-        if not self.networkScene().linkMode():
+        if self.networkScene() and not self.networkScene().linkMode():
             effect = QGraphicsOpacityEffect()
             effect.setOpacity(0.5)
             self.setGraphicsEffect(effect)
