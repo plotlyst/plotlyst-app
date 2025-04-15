@@ -590,6 +590,10 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._textSettings.textLineEdit.setPlaceholderText('New event...')
         self._textSettings.textLineEdit.textEdited.connect(self._textEdited)
 
+        self._btnTransparent = tool_btn(IconRegistry.transparent_background(), 'Toggle transparent background',
+                                        transparent_=True, checkable=True)
+        self._btnTransparent.clicked.connect(self._transparentClicked)
+
         self._toolbar.layout().addWidget(self._btnType)
         self._toolbar.layout().addWidget(vline())
         self._toolbar.layout().addWidget(self._btnColor)
@@ -597,6 +601,8 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._toolbar.layout().addWidget(self._btnText)
         self._toolbar.layout().addWidget(vline())
         self._toolbar.layout().addWidget(self._sbFont)
+        self._toolbar.layout().addWidget(vline())
+        self._toolbar.layout().addWidget(self._btnTransparent)
 
     @overrides
     def setItem(self, item: EventItem):
@@ -638,6 +644,12 @@ class EventItemToolbar(PaintedItemBasedToolbar):
     def _textEdited(self):
         if self._item:
             self.undoStack.push(TextEditingCommand(self._item, self._textSettings.textLineEdit.text()))
+
+    def _transparentClicked(self, toggled: bool):
+        if self._item:
+            command = GraphicsItemCommand(self._item, self._item.setTransparent,
+                                          self._item.transparent(), toggled)
+            self.undoStack.push(command)
 
 
 class PenStyleSelector(QAbstractButton):

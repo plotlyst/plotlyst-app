@@ -845,6 +845,18 @@ class NodeItem(QAbstractGraphicsShapeItem):
     def color(self) -> QColor:
         return QColor(self._node.color)
 
+    def transparent(self) -> bool:
+        return self._node.transparent
+
+    def setTransparent(self, transparent: bool):
+        self._node.transparent = transparent
+        self.networkScene().nodeChangedEvent(self._node)
+        self.update()
+        if transparent:
+            self.setGraphicsEffect(None)
+        else:
+            self.activate()
+
     def networkScene(self) -> 'NetworkScene':
         return self.scene()
 
@@ -1340,7 +1352,8 @@ class EventItem(NodeItem):
 
     @overrides
     def activate(self):
-        shadow(self)
+        if not self._node.transparent:
+            shadow(self)
 
     @overrides
     def boundingRect(self) -> QRectF:
@@ -1353,8 +1366,9 @@ class EventItem(NodeItem):
             painter.drawRoundedRect(self.Margin, self.Margin, self._nestedRectWidth, self._nestedRectHeight, 2, 2)
 
         painter.setPen(QPen(QColor(self._node.color), 1))
-        painter.setBrush(QColor(WHITE_COLOR))
-        painter.drawRoundedRect(self.Margin, self.Margin, self._nestedRectWidth, self._nestedRectHeight, 16, 16)
+        if not self._node.transparent:
+            painter.setBrush(QColor(WHITE_COLOR))
+            painter.drawRoundedRect(self.Margin, self.Margin, self._nestedRectWidth, self._nestedRectHeight, 16, 16)
         painter.setFont(self._font)
         painter.drawText(self._textRect, Qt.AlignmentFlag.AlignCenter,
                          self._text if self._text else self._placeholderText)
@@ -1466,6 +1480,10 @@ class NoteItem(NodeItem):
 
         self._recalculateRect()
         self._resizeItem.setVisible(False)
+        self.activate()
+
+    @overrides
+    def activate(self):
         if not self._node.transparent:
             shadow(self)
 
@@ -1485,18 +1503,6 @@ class NoteItem(NodeItem):
 
         self.networkScene().nodeChangedEvent(self._node)
         self._refresh()
-
-    def transparent(self) -> bool:
-        return self._node.transparent
-
-    def setTransparent(self, transparent: bool):
-        self._node.transparent = transparent
-        self.networkScene().nodeChangedEvent(self._node)
-        self.update()
-        if transparent:
-            self.setGraphicsEffect(None)
-        else:
-            shadow(self)
 
     @overrides
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
