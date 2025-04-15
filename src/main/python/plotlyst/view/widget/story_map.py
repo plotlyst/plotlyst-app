@@ -55,6 +55,10 @@ class EventsMindMapScene(NetworkScene):
     #             self.editItem.emit(item)
 
     @overrides
+    def isSnapToGrid(self) -> bool:
+        return True
+
+    @overrides
     def _load(self):
         json_client.load_diagram(self._novel, self._diagram)
 
