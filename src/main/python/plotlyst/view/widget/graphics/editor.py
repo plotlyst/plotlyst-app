@@ -26,20 +26,20 @@ from PyQt6.QtCore import Qt, pyqtSignal, QRect
 from PyQt6.QtGui import QPainter, QPen, QColor, QIcon, QPaintEvent, QKeySequence, QShowEvent, QFont, QUndoStack
 from PyQt6.QtWidgets import QFrame, \
     QToolButton, QWidget, \
-    QAbstractButton, QSlider, QButtonGroup, QPushButton, QLabel, QLineEdit
+    QAbstractButton, QSlider, QButtonGroup, QPushButton, QLineEdit
 from overrides import overrides
-from qthandy import hbox, margins, sp, vbox, grid, pointy, vline, decr_icon, transparent
+from qthandy import hbox, margins, vbox, grid, pointy, vline, decr_icon, transparent, incr_icon, sp, line
 from qtmenu import MenuWidget
 from qttextedit.ops import Heading2Operation, Heading3Operation, Heading1Operation
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_DISTURBANCE, NODE_SUBTYPE_CONFLICT, \
     NODE_SUBTYPE_GOAL, NODE_SUBTYPE_BACKSTORY, \
-    NODE_SUBTYPE_INTERNAL_CONFLICT, Node
-from plotlyst.env import app_env
+    NODE_SUBTYPE_INTERNAL_CONFLICT, Node, NODE_SUBTYPE_TURN, NODE_SUBTYPE_TWIST, NODE_SUBTYPE_DANGER, \
+    NODE_SUBTYPE_PROGRESS, NODE_SUBTYPE_SETBACK, NODE_SUBTYPE_REALIZATION, NODE_SUBTYPE_REACTION, \
+    NODE_SUBTYPE_REFLECTION, NODE_SUBTYPE_REPERCUSSION, NODE_SUBTYPE_RESONANCE
 from plotlyst.view.common import shadow, tool_btn, ExclusiveOptionalButtonGroup
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.layout import group
 from plotlyst.view.widget.graphics.commands import GraphicsItemCommand, TextEditingCommand, SizeEditingCommand, \
     NoteEditorCommand, EventTypeCommand, FontChangedCommand
 from plotlyst.view.widget.graphics.items import EventItem, ConnectorItem, NoteItem, CharacterItem, IconItem
@@ -157,7 +157,7 @@ class BaseItemToolbar(QWidget):
 
         secondary.setVisible(not secondary.isVisible())
         if secondary.isVisible():
-            self.setFixedHeight(self._toolbar.sizeHint().height() + secondary.sizeHint().height())
+            self.setFixedHeight(self._toolbar.sizeHint().height() + secondary.sizeHint().height() + 5)
         else:
             self.setFixedHeight(self._toolbar.sizeHint().height())
 
@@ -239,30 +239,74 @@ class TextNoteEditorPopup(MenuWidget):
 class EventSelectorWidget(SecondarySelectorWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._grid.addWidget(QLabel('Events'), 0, 0, 1, 3)
-
         self._btnGeneral = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                   IconRegistry.from_name('mdi.square-rounded-outline'),
-                                                  'General event', 1, 0)
+                                                  'General event', 0, 0)
+        self._grid.addWidget(line(), 1, 0, 1, 3)
+
         self._btnGoal = self.addItemTypeButton(GraphicsItemType.EVENT, IconRegistry.goal_icon('black', 'black'),
                                                'Goal or action',
-                                               1, 1, subType=NODE_SUBTYPE_GOAL)
-        self._btnConflict = self.addItemTypeButton(GraphicsItemType.EVENT,
-                                                   IconRegistry.conflict_icon('black', 'black'),
-                                                   'Conflict', 1, 2, subType=NODE_SUBTYPE_CONFLICT)
+                                               2, 0, subType=NODE_SUBTYPE_GOAL)
         self._btnDisturbance = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                       IconRegistry.inciting_incident_icon('black'),
                                                       'Inciting incident', 2,
-                                                      0, subType=NODE_SUBTYPE_DISTURBANCE)
+                                                      1, subType=NODE_SUBTYPE_DISTURBANCE)
+        self._btnConflict = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                   IconRegistry.conflict_icon('black', 'black'),
+                                                   'Conflict', 2, 2, subType=NODE_SUBTYPE_CONFLICT)
 
-        self._grid.addWidget(QLabel('Internal'), 3, 0, 1, 3)
+        self._btnTurn = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                               IconRegistry.from_name('mdi.sign-direction', 'black', 'black'),
+                                               'Turning point',
+                                               3, 0, subType=NODE_SUBTYPE_TURN)
+        self._btnTwist = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                IconRegistry.from_name('ph.shuffle-bold', 'black', 'black'),
+                                                'Twst',
+                                                3, 1, subType=NODE_SUBTYPE_TWIST)
+        self._btnDanger = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                 IconRegistry.from_name('ei.fire', 'black', 'black'),
+                                                 'Danger',
+                                                 3, 2, subType=NODE_SUBTYPE_DANGER)
+
+        self._btnProgress = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                   IconRegistry.from_name('mdi.chevron-double-up', 'black', 'black'),
+                                                   'Progress',
+                                                   4, 0, subType=NODE_SUBTYPE_PROGRESS)
+        self._btnSetback = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                  IconRegistry.from_name('mdi.chevron-double-down', 'black', 'black'),
+                                                  'Setback',
+                                                  4, 1, subType=NODE_SUBTYPE_SETBACK)
+        self._btnRealization = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                      IconRegistry.from_name('fa5.lightbulb', 'black', 'black'),
+                                                      'Realization',
+                                                      5, 0, subType=NODE_SUBTYPE_REALIZATION)
+        self._btnReaction = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                   IconRegistry.from_name('fa5s.heartbeat', 'black', 'black'),
+                                                   'Reaction',
+                                                   5, 1, subType=NODE_SUBTYPE_REACTION)
+        self._btnReflection = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                     IconRegistry.from_name('mdi.thought-bubble-outline', 'black',
+                                                                            'black'),
+                                                     'Reflection',
+                                                     5, 2, subType=NODE_SUBTYPE_REFLECTION)
+        self._btnRepercussion = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                       IconRegistry.from_name('fa5s.radiation', 'black',
+                                                                              'black'),
+                                                       'Repercussion',
+                                                       6, 0, subType=NODE_SUBTYPE_REPERCUSSION)
+        self._btnResonance = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                    IconRegistry.from_name('mdi.butterfly-outline', 'black',
+                                                                           'black'),
+                                                    'Resonance',
+                                                    6, 1, subType=NODE_SUBTYPE_RESONANCE)
+
         self._btnInternalConflict = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                            IconRegistry.conflict_self_icon('black', 'black'),
-                                                           'Internal conflict', 4, 0,
+                                                           'Internal conflict', 7, 0,
                                                            subType=NODE_SUBTYPE_INTERNAL_CONFLICT)
         self._btnBackstory = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                     IconRegistry.backstory_icon('black', 'black'),
-                                                    'Backstory', 4, 1, subType=NODE_SUBTYPE_BACKSTORY)
+                                                    'Backstory', 7, 1, subType=NODE_SUBTYPE_BACKSTORY)
 
         # self._grid.addWidget(QLabel('Narrative'), 5, 0, 1, 3)
         # self._btnQuestion = self.addItemTypeButton(DiagramNodeType.SETUP, IconRegistry.from_name('ei.question-sign'),
@@ -280,6 +324,38 @@ class EventSelectorWidget(SecondarySelectorWidget):
     @overrides
     def showEvent(self, event: QShowEvent) -> None:
         self._btnGeneral.setChecked(True)
+
+
+class TextSettingsWidget(SecondarySelectorWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        margins(self, bottom=5)
+
+        self.btnBold = tool_btn(IconRegistry.from_name('fa5s.bold', 'grey', color_on=PLOTLYST_SECONDARY_COLOR), 'Bold',
+                                checkable=True,
+                                properties=['transparent-rounded-bg-on-hover', 'top-selector'])
+        decr_icon(self.btnBold, 4)
+        self.btnItalic = tool_btn(IconRegistry.from_name('fa5s.italic', 'grey', color_on=PLOTLYST_SECONDARY_COLOR),
+                                  'Italic',
+                                  checkable=True,
+                                  properties=['transparent-rounded-bg-on-hover', 'top-selector'])
+        decr_icon(self.btnItalic, 4)
+        self.btnUnderline = tool_btn(
+            IconRegistry.from_name('fa5s.underline', 'grey', color_on=PLOTLYST_SECONDARY_COLOR),
+            'Underline',
+            checkable=True,
+            properties=['transparent-rounded-bg-on-hover', 'top-selector'])
+        decr_icon(self.btnUnderline, 4)
+
+        self.textLineEdit = QLineEdit()
+        self.textLineEdit.setProperty('white-bg', True)
+        self.textLineEdit.setProperty('rounded', True)
+        self.textLineEdit.setClearButtonEnabled(True)
+
+        self._grid.addWidget(self.btnBold, 0, 2)
+        self._grid.addWidget(self.btnItalic, 0, 3)
+        self._grid.addWidget(self.btnUnderline, 0, 4)
+        self._grid.addWidget(self.textLineEdit, 1, 0, 1, 5)
 
 
 class CharacterToolbar(BaseItemToolbar):
@@ -544,33 +620,34 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._btnType = tool_btn(IconRegistry.from_name('mdi.square-rounded-outline'), 'Change type', transparent_=True)
         self._sbFont = FontSizeSpinBox()
         self._sbFont.fontChanged.connect(self._fontChanged)
-        self._btnBold = tool_btn(IconRegistry.from_name('fa5s.bold'), 'Bold', checkable=True, icon_resize=False,
-                                 properties=['transparent-rounded-bg-on-hover', 'top-selector'])
-        decr_icon(self._btnBold, 3 if app_env.is_mac() else 1)
-        self._btnItalic = tool_btn(IconRegistry.from_name('fa5s.italic'), 'Italic',
-                                   checkable=True, icon_resize=False,
-                                   properties=['transparent-rounded-bg-on-hover', 'top-selector'])
-        decr_icon(self._btnItalic, 3 if app_env.is_mac() else 1)
-        self._btnUnderline = tool_btn(IconRegistry.from_name('fa5s.underline'), 'Underline',
-                                      checkable=True, icon_resize=False,
-                                      properties=['transparent-rounded-bg-on-hover', 'top-selector'])
-        decr_icon(self._btnUnderline, 3 if app_env.is_mac() else 1)
-        self._btnBold.clicked.connect(self._boldChanged)
-        self._btnItalic.clicked.connect(self._italicChanged)
-        self._btnUnderline.clicked.connect(self._underlineChanged)
+
+        self._btnText = tool_btn(IconRegistry.from_name('mdi.format-text'), 'Change displayed text', transparent_=True)
+        incr_icon(self._btnText)
 
         self._eventSelector = EventSelectorWidget(self)
         self.addSecondaryWidget(self._btnType, self._eventSelector)
         self._eventSelector.selected.connect(self._typeChanged)
 
+        self._textSettings = TextSettingsWidget()
+        self.addSecondaryWidget(self._btnText, self._textSettings)
+        self._textSettings.btnBold.clicked.connect(self._boldChanged)
+        self._textSettings.btnItalic.clicked.connect(self._italicChanged)
+        self._textSettings.btnUnderline.clicked.connect(self._underlineChanged)
+        self._textSettings.textLineEdit.textEdited.connect(self._textEdited)
+
+        self._btnTransparent = tool_btn(IconRegistry.transparent_background(), 'Toggle transparent background',
+                                        transparent_=True, checkable=True)
+        self._btnTransparent.clicked.connect(self._transparentClicked)
+
         self._toolbar.layout().addWidget(self._btnType)
         self._toolbar.layout().addWidget(vline())
         self._toolbar.layout().addWidget(self._btnColor)
         self._toolbar.layout().addWidget(self._btnIcon)
+        self._toolbar.layout().addWidget(self._btnText)
         self._toolbar.layout().addWidget(vline())
         self._toolbar.layout().addWidget(self._sbFont)
         self._toolbar.layout().addWidget(vline())
-        self._toolbar.layout().addWidget(group(self._btnBold, self._btnItalic, self._btnUnderline, margin=0, spacing=2))
+        self._toolbar.layout().addWidget(self._btnTransparent)
 
     @overrides
     def setItem(self, item: EventItem):
@@ -578,9 +655,16 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._item = None
 
         self._sbFont.setValue(item.fontSize())
-        self._btnBold.setChecked(item.bold())
-        self._btnItalic.setChecked(item.italic())
-        self._btnUnderline.setChecked(item.underline())
+        self._textSettings.btnBold.setChecked(item.bold())
+        self._textSettings.btnItalic.setChecked(item.italic())
+        self._textSettings.btnUnderline.setChecked(item.underline())
+        if item.node().type == GraphicsItemType.EVENT:
+            self._textSettings.textLineEdit.setPlaceholderText('New event...')
+        else:
+            self._textSettings.textLineEdit.setPlaceholderText('Text...')
+
+        self._textSettings.textLineEdit.setText(item.text())
+        self._btnTransparent.setChecked(item.node().transparent)
 
         self._item = item
 
@@ -590,19 +674,16 @@ class EventItemToolbar(PaintedItemBasedToolbar):
             self.undoStack.push(FontChangedCommand(self._item, oldSize=self._item.fontSize(), size=size))
 
     def _boldChanged(self):
-        self._hideSecondarySelectors()
         if self._item:
-            self.undoStack.push(FontChangedCommand(self._item, bold=self._btnBold.isChecked()))
+            self.undoStack.push(FontChangedCommand(self._item, bold=self._textSettings.btnBold.isChecked()))
 
     def _italicChanged(self):
-        self._hideSecondarySelectors()
         if self._item:
-            self.undoStack.push(FontChangedCommand(self._item, italic=self._btnItalic.isChecked()))
+            self.undoStack.push(FontChangedCommand(self._item, italic=self._textSettings.btnItalic.isChecked()))
 
     def _underlineChanged(self):
-        self._hideSecondarySelectors()
         if self._item:
-            self.undoStack.push(FontChangedCommand(self._item, underline=self._btnUnderline.isChecked()))
+            self.undoStack.push(FontChangedCommand(self._item, underline=self._textSettings.btnUnderline.isChecked()))
 
     def _typeChanged(self, itemType: GraphicsItemType, subtype: str):
         if self._item:
@@ -610,6 +691,16 @@ class EventItemToolbar(PaintedItemBasedToolbar):
             oldType = node.type
             oldSubtype = node.subtype
             self.undoStack.push(EventTypeCommand(self._item, oldType, oldSubtype, itemType, subtype))
+
+    def _textEdited(self):
+        if self._item:
+            self.undoStack.push(TextEditingCommand(self._item, self._textSettings.textLineEdit.text()))
+
+    def _transparentClicked(self, toggled: bool):
+        if self._item:
+            command = GraphicsItemCommand(self._item, self._item.setTransparent,
+                                          self._item.transparent(), toggled)
+            self.undoStack.push(command)
 
 
 class PenStyleSelector(QAbstractButton):

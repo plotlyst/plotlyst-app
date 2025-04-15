@@ -62,6 +62,7 @@ class NetworkScene(QGraphicsScene):
     editItem = pyqtSignal(NodeItem)
     itemMoved = pyqtSignal(NodeItem)
     hideItemEditor = pyqtSignal()
+    contextMenu = pyqtSignal(NodeItem)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -179,6 +180,9 @@ class NetworkScene(QGraphicsScene):
 
     def editItemEvent(self, item: Node):
         self.editItem.emit(item)
+
+    # def showContextMenu(self, item: Node):
+    #     self.contextMenu.emit(item)
 
     @overrides
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -424,6 +428,7 @@ class NetworkScene(QGraphicsScene):
             self._copyDescriptor.bold = item.bold()
             self._copyDescriptor.italic = item.italic()
             self._copyDescriptor.underline = item.underline()
+            self._copyDescriptor.transparent = item.transparent()
         elif isinstance(item, NoteItem):
             self._copyDescriptor.text = item.text()
             self._copyDescriptor.height = item.height()
@@ -454,6 +459,7 @@ class NetworkScene(QGraphicsScene):
         if isinstance(item, EventItem):
             item.setFontSettings(self._copyDescriptor.font_size, self._copyDescriptor.bold, self._copyDescriptor.italic,
                                  self._copyDescriptor.underline)
+            item.setTransparent(self._copyDescriptor.transparent)
 
     def _cursorScenePos(self) -> Optional[QPointF]:
         view = self.views()[0]

@@ -22,7 +22,7 @@ from functools import partial
 from typing import Optional
 
 import qtanim
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QWheelEvent, QMouseEvent, QColor, QIcon, QResizeEvent, QNativeGestureEvent, QFont, \
     QUndoStack, QKeySequence
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsItem, QFrame, \
@@ -197,6 +197,7 @@ class NetworkGraphicsView(BaseGraphicsView):
         self._scene.cancelItemAddition.connect(self._endAddition)
         self._scene.selectionChanged.connect(self._selectionChanged)
         self._scene.editItem.connect(self._editItem)
+        # self._scene.contextMenu.connect(self._showContextMenu)
         self._scene.itemMoved.connect(self._itemMoved)
         self._scene.hideItemEditor.connect(self._hideItemToolbar)
 
@@ -268,9 +269,6 @@ class NetworkGraphicsView(BaseGraphicsView):
         QApplication.restoreOverrideCursor()
         self.setToolTip('')
 
-        if item is not None and isinstance(item, CharacterItem):
-            QTimer.singleShot(100, lambda: self._editCharacterItem(item))
-
     def _arrangeSideBars(self):
         self._wdgZoomBar.setGeometry(10, self.height() - self._wdgZoomBar.sizeHint().height() - 10,
                                      self._wdgZoomBar.sizeHint().width(),
@@ -306,6 +304,12 @@ class NetworkGraphicsView(BaseGraphicsView):
         elif isinstance(item, IconItem):
             self._editIconItem(item)
 
+    # def _showContextMenu(self, item: NodeItem):
+    #     popup = MenuWidget()
+    #     popup.addAction(action('Delete', IconRegistry.trash_can_icon()))
+    #     view_pos = self.mapFromScene(item.sceneBoundingRect().center())
+    #     popup.exec(self.mapToGlobal(view_pos))
+
     def _showItemToolbar(self, item: NodeItem):
         if isinstance(item, ConnectorItem):
             self._showConnectorToolbar(item)
@@ -332,7 +336,8 @@ class NetworkGraphicsView(BaseGraphicsView):
         def setText(text: str):
             self.undoStack.push(TextEditingCommand(item, text))
 
-        popup = TextLineEditorPopup(item.text(), item.textRect(), parent=self)
+        placeholder = 'New event' if item.node().type == GraphicsItemType.EVENT else 'Text'
+        popup = TextLineEditorPopup(item.text(), item.textRect(), parent=self, placeholder=placeholder)
         font = QFont(item.font())
         font.setPointSize(max(int(item.fontSize() * self._scaledFactor), font.pointSize()))
         popup.setFont(font)
