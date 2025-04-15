@@ -614,6 +614,7 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._textSettings.btnItalic.setChecked(item.italic())
         self._textSettings.btnUnderline.setChecked(item.underline())
         self._textSettings.textLineEdit.setText(item.text())
+        self._btnTransparent.setChecked(item.node().transparent)
 
         self._item = item
 
