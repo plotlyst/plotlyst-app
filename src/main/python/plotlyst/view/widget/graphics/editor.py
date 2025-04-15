@@ -28,14 +28,16 @@ from PyQt6.QtWidgets import QFrame, \
     QToolButton, QWidget, \
     QAbstractButton, QSlider, QButtonGroup, QPushButton, QLineEdit
 from overrides import overrides
-from qthandy import hbox, margins, vbox, grid, pointy, vline, decr_icon, transparent, incr_icon, sp
+from qthandy import hbox, margins, vbox, grid, pointy, vline, decr_icon, transparent, incr_icon, sp, line
 from qtmenu import MenuWidget
 from qttextedit.ops import Heading2Operation, Heading3Operation, Heading1Operation
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_DISTURBANCE, NODE_SUBTYPE_CONFLICT, \
     NODE_SUBTYPE_GOAL, NODE_SUBTYPE_BACKSTORY, \
-    NODE_SUBTYPE_INTERNAL_CONFLICT, Node
+    NODE_SUBTYPE_INTERNAL_CONFLICT, Node, NODE_SUBTYPE_TURN, NODE_SUBTYPE_TWIST, NODE_SUBTYPE_DANGER, \
+    NODE_SUBTYPE_PROGRESS, NODE_SUBTYPE_SETBACK, NODE_SUBTYPE_REALIZATION, NODE_SUBTYPE_REACTION, \
+    NODE_SUBTYPE_REFLECTION, NODE_SUBTYPE_REPERCUSSION, NODE_SUBTYPE_RESONANCE
 from plotlyst.view.common import shadow, tool_btn, ExclusiveOptionalButtonGroup
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.graphics.commands import GraphicsItemCommand, TextEditingCommand, SizeEditingCommand, \
@@ -237,30 +239,74 @@ class TextNoteEditorPopup(MenuWidget):
 class EventSelectorWidget(SecondarySelectorWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        # self._grid.addWidget(QLabel('Events'), 0, 0, 1, 3)
-
         self._btnGeneral = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                   IconRegistry.from_name('mdi.square-rounded-outline'),
-                                                  'General event', 1, 0)
+                                                  'General event', 0, 0)
+        self._grid.addWidget(line(), 1, 0, 1, 3)
+
         self._btnGoal = self.addItemTypeButton(GraphicsItemType.EVENT, IconRegistry.goal_icon('black', 'black'),
                                                'Goal or action',
-                                               1, 1, subType=NODE_SUBTYPE_GOAL)
-        self._btnConflict = self.addItemTypeButton(GraphicsItemType.EVENT,
-                                                   IconRegistry.conflict_icon('black', 'black'),
-                                                   'Conflict', 1, 2, subType=NODE_SUBTYPE_CONFLICT)
+                                               2, 0, subType=NODE_SUBTYPE_GOAL)
         self._btnDisturbance = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                       IconRegistry.inciting_incident_icon('black'),
                                                       'Inciting incident', 2,
-                                                      0, subType=NODE_SUBTYPE_DISTURBANCE)
+                                                      1, subType=NODE_SUBTYPE_DISTURBANCE)
+        self._btnConflict = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                   IconRegistry.conflict_icon('black', 'black'),
+                                                   'Conflict', 2, 2, subType=NODE_SUBTYPE_CONFLICT)
 
-        # self._grid.addWidget(QLabel('Internal'), 3, 0, 1, 3)
+        self._btnTurn = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                               IconRegistry.from_name('mdi.sign-direction', 'black', 'black'),
+                                               'Turning point',
+                                               3, 0, subType=NODE_SUBTYPE_TURN)
+        self._btnTwist = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                IconRegistry.from_name('ph.shuffle-bold', 'black', 'black'),
+                                                'Twst',
+                                                3, 1, subType=NODE_SUBTYPE_TWIST)
+        self._btnDanger = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                 IconRegistry.from_name('ei.fire', 'black', 'black'),
+                                                 'Danger',
+                                                 3, 2, subType=NODE_SUBTYPE_DANGER)
+
+        self._btnProgress = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                   IconRegistry.from_name('mdi.chevron-double-up', 'black', 'black'),
+                                                   'Progress',
+                                                   4, 0, subType=NODE_SUBTYPE_PROGRESS)
+        self._btnSetback = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                  IconRegistry.from_name('mdi.chevron-double-down', 'black', 'black'),
+                                                  'Setback',
+                                                  4, 1, subType=NODE_SUBTYPE_SETBACK)
+        self._btnRealization = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                      IconRegistry.from_name('fa5.lightbulb', 'black', 'black'),
+                                                      'Realization',
+                                                      5, 0, subType=NODE_SUBTYPE_REALIZATION)
+        self._btnReaction = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                   IconRegistry.from_name('fa5s.heartbeat', 'black', 'black'),
+                                                   'Reaction',
+                                                   5, 1, subType=NODE_SUBTYPE_REACTION)
+        self._btnReflection = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                     IconRegistry.from_name('mdi.thought-bubble-outline', 'black',
+                                                                            'black'),
+                                                     'Reflection',
+                                                     5, 2, subType=NODE_SUBTYPE_REFLECTION)
+        self._btnRepercussion = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                       IconRegistry.from_name('fa5s.radiation', 'black',
+                                                                              'black'),
+                                                       'Repercussion',
+                                                       6, 0, subType=NODE_SUBTYPE_REPERCUSSION)
+        self._btnResonance = self.addItemTypeButton(GraphicsItemType.EVENT,
+                                                    IconRegistry.from_name('mdi.butterfly-outline', 'black',
+                                                                           'black'),
+                                                    'Resonance',
+                                                    6, 1, subType=NODE_SUBTYPE_RESONANCE)
+
         self._btnInternalConflict = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                            IconRegistry.conflict_self_icon('black', 'black'),
-                                                           'Internal conflict', 4, 0,
+                                                           'Internal conflict', 7, 0,
                                                            subType=NODE_SUBTYPE_INTERNAL_CONFLICT)
         self._btnBackstory = self.addItemTypeButton(GraphicsItemType.EVENT,
                                                     IconRegistry.backstory_icon('black', 'black'),
-                                                    'Backstory', 4, 1, subType=NODE_SUBTYPE_BACKSTORY)
+                                                    'Backstory', 7, 1, subType=NODE_SUBTYPE_BACKSTORY)
 
         # self._grid.addWidget(QLabel('Narrative'), 5, 0, 1, 3)
         # self._btnQuestion = self.addItemTypeButton(DiagramNodeType.SETUP, IconRegistry.from_name('ei.question-sign'),

@@ -2199,6 +2199,17 @@ NODE_SUBTYPE_CONFLICT = 'conflict'
 NODE_SUBTYPE_DISTURBANCE = 'disturbance'
 NODE_SUBTYPE_BACKSTORY = 'backstory'
 NODE_SUBTYPE_INTERNAL_CONFLICT = 'internal_conflict'
+NODE_SUBTYPE_TURN = 'turn'
+NODE_SUBTYPE_TWIST = 'twist'
+NODE_SUBTYPE_DANGER = 'danger'
+NODE_SUBTYPE_PROGRESS = 'progress'
+NODE_SUBTYPE_SETBACK = 'setback'
+NODE_SUBTYPE_REALIZATION = 'realization'
+NODE_SUBTYPE_REACTION = 'reaction'
+NODE_SUBTYPE_REFLECTION = 'reflection'
+NODE_SUBTYPE_REPERCUSSION = 'repercussion'
+NODE_SUBTYPE_RESONANCE = 'resonance'
+
 NODE_SUBTYPE_QUESTION = 'question'
 NODE_SUBTYPE_FORESHADOWING = 'foreshadowing'
 NODE_SUBTYPE_TOOL = 'tool'
@@ -3885,6 +3896,37 @@ def to_node(x: float, y: float, type: GraphicsItemType, subtype: str = '', defau
     elif subtype == NODE_SUBTYPE_DISTURBANCE:
         node.icon = 'mdi.bell-alert-outline'
         node.color = '#a2ad59'
+    elif subtype == NODE_SUBTYPE_TURN:
+        node.icon = 'mdi.sign-direction'
+        node.color = '#8338ec'
+    elif subtype == NODE_SUBTYPE_TWIST:
+        node.icon = 'ph.shuffle-bold'
+        node.color = '#f20089'
+    elif subtype == NODE_SUBTYPE_DANGER:
+        node.icon = 'ei.fire'
+        node.color = '#f48c06'
+    elif subtype == NODE_SUBTYPE_PROGRESS:
+        node.icon = 'mdi.chevron-double-up'
+        node.color = '#40916c'
+    elif subtype == NODE_SUBTYPE_SETBACK:
+        node.icon = 'mdi.chevron-double-down'
+        node.color = '#d00000'
+    elif subtype == NODE_SUBTYPE_REALIZATION:
+        node.icon = 'fa5.lightbulb'
+        node.color = '#219ebc'
+    elif subtype == NODE_SUBTYPE_REACTION:
+        node.icon = 'fa5s.heartbeat'
+        node.color = '#b81365'
+    elif subtype == NODE_SUBTYPE_REFLECTION:
+        node.icon = 'mdi.thought-bubble-outline'
+        node.color = '#219ebc'
+    elif subtype == NODE_SUBTYPE_REPERCUSSION:
+        node.icon = 'fa5s.radiation'
+        node.color = '#CD533B'
+    elif subtype == NODE_SUBTYPE_RESONANCE:
+        node.icon = 'mdi.butterfly-outline'
+        node.color = '#9d4edd'
+
     elif subtype == NODE_SUBTYPE_QUESTION:
         node.icon = 'ei.question-sign'
     elif subtype == NODE_SUBTYPE_FORESHADOWING:

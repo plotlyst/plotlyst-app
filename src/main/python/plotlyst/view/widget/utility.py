@@ -53,10 +53,10 @@ class ColorButton(QToolButton):
         self.installEventFilter(ButtonPressResizeEventFilter(self))
 
 
-BASE_COLORS = ['darkBlue', '#0077b6', '#00b4d8', '#007200', '#2a9d8f', '#94d2bd', '#ffd000', '#f48c06',
+BASE_COLORS = ['darkBlue', '#0077b6', '#00b4d8', '#007200', '#2a9d8f', '#94d2bd', '#a2ad59', '#f48c06',
                '#e85d04',
                '#dc2f02',
-               '#ffc6ff', '#b5179e', '#7209b7', '#d6ccc2', '#6c757d', '#dda15e', '#bc6c25', 'black']
+               '#ffc6ff', '#b5179e', '#b81365', '#7209b7', '#d6ccc2', '#6c757d', '#dda15e', '#bc6c25', 'black']
 
 
 class ColorPicker(QWidget):
@@ -466,7 +466,6 @@ class ImageCropDialog(PopupDialog):
                 rounded_pixmap(scaled_pixmap))
         else:
             self.lblPreview.setPixmap(scaled_pixmap)
-
 
     class CropFrame(QPushButton):
         cropped = pyqtSignal()
