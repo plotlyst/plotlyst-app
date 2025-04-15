@@ -119,6 +119,16 @@ class NetworkScene(QGraphicsScene):
         if self._connectorPlaceholder is not None:
             return self._connectorPlaceholder.source()
 
+    def setPlaceholderAngle(self, angle: float):
+        if self._placeholder:
+            self._placeholder.setAngle(angle)
+            self._connectorPlaceholder.rearrange()
+
+    def resetPlaceholderAngle(self):
+        if self._placeholder:
+            self._placeholder.setAngle(0)
+            self._connectorPlaceholder.rearrange()
+
     def startLink(self, source: AbstractSocketItem):
         self._linkMode = True
         self._placeholder = PlaceholderSocketItem()

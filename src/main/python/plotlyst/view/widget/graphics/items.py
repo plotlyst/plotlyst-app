@@ -298,6 +298,9 @@ class AbstractSocketItem(QAbstractGraphicsShapeItem):
         self.prepareGeometryChange()
         self.update()
 
+        if self._linkAvailable and self.networkScene() and self.networkScene().linkMode():
+            self.networkScene().setPlaceholderAngle(self.angle())
+
         for connector in self._connectors:
             connector.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
@@ -308,6 +311,9 @@ class AbstractSocketItem(QAbstractGraphicsShapeItem):
         self.setToolTip('Connect')
         self.prepareGeometryChange()
         self.update()
+
+        if self.networkScene() and self.networkScene().linkMode():
+            self.networkScene().resetPlaceholderAngle()
 
         for connector in self._connectors:
             connector.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
