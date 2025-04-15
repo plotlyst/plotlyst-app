@@ -143,7 +143,7 @@ class BaseItemToolbar(QWidget):
 
     def addSecondaryWidget(self, btn: QAbstractButton, widget: QWidget, alignment=Qt.AlignmentFlag.AlignLeft):
         self._secondaryWidgets.append(widget)
-        sp(widget).h_max().v_max()
+        sp(widget).h_max()
         self.layout().addWidget(widget, alignment)
         btn.clicked.connect(partial(self._toggleSecondarySelector, widget))
         widget.setVisible(False)
