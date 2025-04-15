@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import QFrame, \
     QToolButton, QWidget, \
     QAbstractButton, QSlider, QButtonGroup, QPushButton, QLineEdit
 from overrides import overrides
-from qthandy import hbox, margins, sp, vbox, grid, pointy, vline, decr_icon, transparent, spacer, incr_icon
+from qthandy import hbox, margins, vbox, grid, pointy, vline, decr_icon, transparent, incr_icon, sp
 from qtmenu import MenuWidget
 from qttextedit.ops import Heading2Operation, Heading3Operation, Heading1Operation
 
@@ -36,10 +36,8 @@ from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_DISTURBANCE, NODE_SUBTYPE_CONFLICT, \
     NODE_SUBTYPE_GOAL, NODE_SUBTYPE_BACKSTORY, \
     NODE_SUBTYPE_INTERNAL_CONFLICT, Node
-from plotlyst.env import app_env
 from plotlyst.view.common import shadow, tool_btn, ExclusiveOptionalButtonGroup
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.layout import group
 from plotlyst.view.widget.graphics.commands import GraphicsItemCommand, TextEditingCommand, SizeEditingCommand, \
     NoteEditorCommand, EventTypeCommand, FontChangedCommand
 from plotlyst.view.widget.graphics.items import EventItem, ConnectorItem, NoteItem, CharacterItem, IconItem
@@ -145,7 +143,7 @@ class BaseItemToolbar(QWidget):
 
     def addSecondaryWidget(self, btn: QAbstractButton, widget: QWidget, alignment=Qt.AlignmentFlag.AlignLeft):
         self._secondaryWidgets.append(widget)
-        sp(widget).h_max()
+        sp(widget).h_max().v_max()
         self.layout().addWidget(widget, alignment)
         btn.clicked.connect(partial(self._toggleSecondarySelector, widget))
         widget.setVisible(False)
@@ -157,7 +155,7 @@ class BaseItemToolbar(QWidget):
 
         secondary.setVisible(not secondary.isVisible())
         if secondary.isVisible():
-            self.setFixedHeight(self._toolbar.sizeHint().height() + secondary.sizeHint().height())
+            self.setFixedHeight(self._toolbar.sizeHint().height() + secondary.sizeHint().height() + 5)
         else:
             self.setFixedHeight(self._toolbar.sizeHint().height())
 
@@ -280,6 +278,38 @@ class EventSelectorWidget(SecondarySelectorWidget):
     @overrides
     def showEvent(self, event: QShowEvent) -> None:
         self._btnGeneral.setChecked(True)
+
+
+class TextSettingsWidget(SecondarySelectorWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        margins(self, bottom=5)
+
+        self.btnBold = tool_btn(IconRegistry.from_name('fa5s.bold', 'grey', color_on=PLOTLYST_SECONDARY_COLOR), 'Bold',
+                                checkable=True,
+                                properties=['transparent-rounded-bg-on-hover', 'top-selector'])
+        decr_icon(self.btnBold, 4)
+        self.btnItalic = tool_btn(IconRegistry.from_name('fa5s.italic', 'grey', color_on=PLOTLYST_SECONDARY_COLOR),
+                                  'Italic',
+                                  checkable=True,
+                                  properties=['transparent-rounded-bg-on-hover', 'top-selector'])
+        decr_icon(self.btnItalic, 4)
+        self.btnUnderline = tool_btn(
+            IconRegistry.from_name('fa5s.underline', 'grey', color_on=PLOTLYST_SECONDARY_COLOR),
+            'Underline',
+            checkable=True,
+            properties=['transparent-rounded-bg-on-hover', 'top-selector'])
+        decr_icon(self.btnUnderline, 4)
+
+        self.textLineEdit = QLineEdit()
+        self.textLineEdit.setProperty('white-bg', True)
+        self.textLineEdit.setProperty('rounded', True)
+        self.textLineEdit.setClearButtonEnabled(True)
+
+        self._grid.addWidget(self.btnBold, 0, 2)
+        self._grid.addWidget(self.btnItalic, 0, 3)
+        self._grid.addWidget(self.btnUnderline, 0, 4)
+        self._grid.addWidget(self.textLineEdit, 1, 0, 1, 5)
 
 
 class CharacterToolbar(BaseItemToolbar):
@@ -548,38 +578,17 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._btnText = tool_btn(IconRegistry.from_name('mdi.format-text'), 'Change displayed text', transparent_=True)
         incr_icon(self._btnText)
 
-        self._btnBold = tool_btn(IconRegistry.from_name('fa5s.bold', 'grey', color_on=PLOTLYST_SECONDARY_COLOR), 'Bold',
-                                 checkable=True,
-                                 properties=['transparent-rounded-bg-on-hover', 'top-selector'])
-        decr_icon(self._btnBold, 3 if app_env.is_mac() else 2)
-        self._btnItalic = tool_btn(IconRegistry.from_name('fa5s.italic', 'grey', color_on=PLOTLYST_SECONDARY_COLOR),
-                                   'Italic',
-                                   checkable=True,
-                                   properties=['transparent-rounded-bg-on-hover', 'top-selector'])
-        decr_icon(self._btnItalic, 3 if app_env.is_mac() else 2)
-        self._btnUnderline = tool_btn(
-            IconRegistry.from_name('fa5s.underline', 'grey', color_on=PLOTLYST_SECONDARY_COLOR),
-            'Underline',
-            checkable=True,
-            properties=['transparent-rounded-bg-on-hover', 'top-selector'])
-        decr_icon(self._btnUnderline, 3 if app_env.is_mac() else 2)
-        self._btnBold.clicked.connect(self._boldChanged)
-        self._btnItalic.clicked.connect(self._italicChanged)
-        self._btnUnderline.clicked.connect(self._underlineChanged)
-
         self._eventSelector = EventSelectorWidget(self)
         self.addSecondaryWidget(self._btnType, self._eventSelector)
         self._eventSelector.selected.connect(self._typeChanged)
 
-        self._menuText = MenuWidget(self._btnText)
-        self._textLineEdit = QLineEdit()
-        self._textLineEdit.setPlaceholderText('New event...')
-        self._textLineEdit.setClearButtonEnabled(True)
-        self._textLineEdit.textEdited.connect(self._textEdited)
-        self._menuText.addWidget(
-            group(spacer(), self._btnBold, self._btnItalic, self._btnUnderline, margin=0, spacing=2))
-        self._menuText.addWidget(self._textLineEdit)
-        self._menuText.aboutToShow.connect(self._textLineEdit.setFocus)
+        self._textSettings = TextSettingsWidget()
+        self.addSecondaryWidget(self._btnText, self._textSettings)
+        self._textSettings.btnBold.clicked.connect(self._boldChanged)
+        self._textSettings.btnItalic.clicked.connect(self._italicChanged)
+        self._textSettings.btnUnderline.clicked.connect(self._underlineChanged)
+        self._textSettings.textLineEdit.setPlaceholderText('New event...')
+        self._textSettings.textLineEdit.textEdited.connect(self._textEdited)
 
         self._toolbar.layout().addWidget(self._btnType)
         self._toolbar.layout().addWidget(vline())
@@ -595,10 +604,10 @@ class EventItemToolbar(PaintedItemBasedToolbar):
         self._item = None
 
         self._sbFont.setValue(item.fontSize())
-        self._btnBold.setChecked(item.bold())
-        self._btnItalic.setChecked(item.italic())
-        self._btnUnderline.setChecked(item.underline())
-        self._textLineEdit.setText(item.text())
+        self._textSettings.btnBold.setChecked(item.bold())
+        self._textSettings.btnItalic.setChecked(item.italic())
+        self._textSettings.btnUnderline.setChecked(item.underline())
+        self._textSettings.textLineEdit.setText(item.text())
 
         self._item = item
 
@@ -608,19 +617,16 @@ class EventItemToolbar(PaintedItemBasedToolbar):
             self.undoStack.push(FontChangedCommand(self._item, oldSize=self._item.fontSize(), size=size))
 
     def _boldChanged(self):
-        self._hideSecondarySelectors()
         if self._item:
-            self.undoStack.push(FontChangedCommand(self._item, bold=self._btnBold.isChecked()))
+            self.undoStack.push(FontChangedCommand(self._item, bold=self._textSettings.btnBold.isChecked()))
 
     def _italicChanged(self):
-        self._hideSecondarySelectors()
         if self._item:
-            self.undoStack.push(FontChangedCommand(self._item, italic=self._btnItalic.isChecked()))
+            self.undoStack.push(FontChangedCommand(self._item, italic=self._textSettings.btnItalic.isChecked()))
 
     def _underlineChanged(self):
-        self._hideSecondarySelectors()
         if self._item:
-            self.undoStack.push(FontChangedCommand(self._item, underline=self._btnUnderline.isChecked()))
+            self.undoStack.push(FontChangedCommand(self._item, underline=self._textSettings.btnUnderline.isChecked()))
 
     def _typeChanged(self, itemType: GraphicsItemType, subtype: str):
         if self._item:
@@ -631,7 +637,7 @@ class EventItemToolbar(PaintedItemBasedToolbar):
 
     def _textEdited(self):
         if self._item:
-            self.undoStack.push(TextEditingCommand(self._item, self._textLineEdit.text()))
+            self.undoStack.push(TextEditingCommand(self._item, self._textSettings.textLineEdit.text()))
 
 
 class PenStyleSelector(QAbstractButton):

@@ -1225,7 +1225,6 @@ class EventItem(NodeItem):
         self._text = text
         self._node.text = text
         self._setTooltip()
-        self.setSelected(False)
         self._refresh()
         self.networkScene().nodeChangedEvent(self._node)
 
