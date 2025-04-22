@@ -42,7 +42,7 @@ from plotlyst.events import NovelAboutToSyncEvent, SceneStoryBeatChangedEvent, \
 from plotlyst.model.characters_model import CharactersSceneAssociationTableModel
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import emoji_font, set_tab_icon, \
-    push_btn, fade_out_and_gc, set_tab_visible, scroll_to_bottom, link_buttons_to_pages
+    push_btn, fade_out_and_gc, set_tab_visible, link_buttons_to_pages
 from plotlyst.view.generated.scene_editor_ui import Ui_SceneEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
@@ -183,7 +183,7 @@ class SceneEditor(QObject, EventListener):
 
         self._agencyEditor = SceneAgencyEditor(self.novel)
         self._agencyEditor.setUnsetCharacterSlot(self._character_not_selected_notification)
-        self._agencyEditor.agencyAdded.connect(lambda: scroll_to_bottom(self.ui.scrollArea_2))
+        self._agencyEditor.agencyAdded.connect(lambda x: self.ui.scrollArea_2.ensureWidgetVisible(x, 10, 0))
         self.ui.scrollAgency.layout().addWidget(self._agencyEditor)
 
         self._informationEditor = ReaderInformationEditor(self.novel)

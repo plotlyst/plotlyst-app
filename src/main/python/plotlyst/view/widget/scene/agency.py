@@ -637,7 +637,7 @@ class CharacterChangeBubble(TextEditBubbleWidget):
         self.setProperty('relaxed-white-bg', True)
         # self._textedit.setProperty('rounded', False)
         # self._textedit.setProperty('transparent', True)
-        self.setMaximumSize(170, 130)
+        self.setMaximumSize(170, 135)
         transparent(self._textedit)
 
         self._title.setIcon(IconRegistry.from_name(self.element.type.icon(), PLOTLYST_SECONDARY_COLOR))
@@ -695,14 +695,16 @@ class CharacterChangeRow(QFrame):
                 arrow.setState(1)
                 self.layout().addWidget(arrow, row, self.Header3Col - 1)
 
-            dotsBtn = DotsMenuButton()
-            dotsBtn.installEventFilter(OpacityEventFilter(dotsBtn))
-            self.layout().addWidget(dotsBtn, row, self.Header3Col + 1,
-                                    alignment=Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-            menu = MenuWidget(dotsBtn)
-            # menu.addAction(action('Remove character changes', IconRegistry.trash_can_icon(),
-            #                       slot=partial(self._removeChange, change, row)))
-            row += 1
+        dotsBtn = DotsMenuButton()
+        dotsBtn.installEventFilter(OpacityEventFilter(dotsBtn))
+        self.layout().addWidget(dotsBtn, row, self.Header3Col + 1,
+                                alignment=Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        menu = MenuWidget(dotsBtn)
+        # menu.addAction(action('Remove character changes', IconRegistry.trash_can_icon(),
+        #                       slot=partial(self._removeChange, change, row)))
+        # row += 1
+
+        self.installEventFilter(VisibilityToggleEventFilter(dotsBtn, self))
 
     def _addElement(self, element: StoryElement, row: int, col: int):
         wdg = CharacterChangeBubble(element)
@@ -720,50 +722,30 @@ class CharacterChangeRow(QFrame):
         pass
 
 
-class CharacterChangesEditor(QFrame):
-
-    def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
-        super().__init__(parent)
-        self.novel = novel
-        self.scene = scene
-        self.agenda = agenda
-
-        # header1 = HeaderColumn('Initial')
-        # header1.setFixedWidth(170)
-        # header2 = HeaderColumn('Transition')
-        # header3 = HeaderColumn('Final')
-        # header3.setFixedWidth(170)
-
-        vbox(self)
-        # self.layout().addWidget(group(header1, header2, header3))
-
-        if self.agenda.changes:
-            self._addElements(self.agenda.changes)
-
-    def addNewElements(self, changes: List[CharacterAgencyChanges]):
-        self.agenda.changes.extend(changes)
-        self._addElements(changes)
-
-    def _addElements(self, changes: List[CharacterAgencyChanges]):
-        for change in changes:
-            wdg = CharacterChangeRow(self.novel, self.scene, self.agenda, change)
-            self.layout().addWidget(wdg)
-
-    def _removeChange(self, change: CharacterAgencyChanges, row: int):
-        def removeItem(col: int):
-            item = self._layout.itemAtPosition(row, col)
-            if item:
-                fade_out_and_gc(self, item.widget())
-
-        if change.final and change.final.type == StoryElementType.Motivation:
-            self.agenda.motivations.clear()
-
-        for i in range(self.Header3Col + 2):
-            removeItem(i)
-        self.agenda.changes.remove(change)
-
-    def _motivationChanged(self, motivation: Motivation, value: int):
-        self.agenda.motivations[motivation.value] = value
+# class CharacterChangesEditor(QFrame):
+#
+#     def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
+#         super().__init__(parent)
+#         self.novel = novel
+#         self.scene = scene
+#         self.agenda = agenda
+#
+#
+#     def _removeChange(self, change: CharacterAgencyChanges, row: int):
+#         def removeItem(col: int):
+#             item = self._layout.itemAtPosition(row, col)
+#             if item:
+#                 fade_out_and_gc(self, item.widget())
+#
+#         if change.final and change.final.type == StoryElementType.Motivation:
+#             self.agenda.motivations.clear()
+#
+#         for i in range(self.Header3Col + 2):
+#             removeItem(i)
+#         self.agenda.changes.remove(change)
+#
+#     def _motivationChanged(self, motivation: Motivation, value: int):
+#         self.agenda.motivations[motivation.value] = value
 
 
 class CharacterAgencyEditor(QWidget):
@@ -774,7 +756,8 @@ class CharacterAgencyEditor(QWidget):
         self.novel = novel
         self.scene = scene
         self.agenda = agenda
-        vbox(self)
+        vbox(self, spacing=0)
+        margins(self, left=15)
         self._charDisplay = tool_btn(IconRegistry.character_icon(), transparent_=True)
         self._charDisplay.setIconSize(QSize(36, 36))
         self._menu = MenuWidget()
@@ -792,8 +775,8 @@ class CharacterAgencyEditor(QWidget):
         header3 = label('Final', centered=True, description=True, incr_font_diff=1)
         header3.setFixedWidth(170)
 
-        self._changesEditor = CharacterChangesEditor(self.novel, self.scene, self.agenda)
-        margins(self._changesEditor, left=15)
+        # self._changesEditor = CharacterChangesEditor(self.novel, self.scene, self.agenda)
+        # margins(self._changesEditor, left=15)
 
         self._btnDots = DotsMenuButton()
         self._btnDots.clicked.connect(lambda: self._menu.exec(QCursor.pos()))
@@ -810,7 +793,6 @@ class CharacterAgencyEditor(QWidget):
         self.layout().addWidget(self._wdgHeader)
         # self.layout().addWidget(group(header1, self._charDisplay, self.btnAdd, header3))
         self.layout().addWidget(SeparatorLineWithShadow())
-        self.layout().addWidget(self._changesEditor)
         self.installEventFilter(VisibilityToggleEventFilter(self._btnDots, self))
 
         if self.agenda.character_id:
@@ -818,10 +800,22 @@ class CharacterAgencyEditor(QWidget):
             if character:
                 self._charDisplay.setIcon(avatars.avatar(character))
 
+        if self.agenda.changes:
+            self._addElements(self.agenda.changes)
+
+    def addNewElements(self, changes: List[CharacterAgencyChanges]):
+        self.agenda.changes.extend(changes)
+        self._addElements(changes)
+
+    def _addElements(self, changes: List[CharacterAgencyChanges]):
+        for change in changes:
+            wdg = CharacterChangeRow(self.novel, self.scene, self.agenda, change)
+            self.layout().addWidget(wdg)
+
     def _openSelector(self):
         agency = CharacterChangesSelectorPopup.popup(self.agenda)
         if agency:
-            self._changesEditor.addNewElements([agency])
+            self.addNewElements([agency])
 
     def _emotionChanged(self, emotion: int):
         self.agenda.emotion = emotion
@@ -834,7 +828,7 @@ class CharacterAgencyEditor(QWidget):
 
 
 class SceneAgencyEditor(QWidget, EventListener):
-    agencyAdded = pyqtSignal()
+    agencyAdded = pyqtSignal(CharacterAgencyEditor)
 
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -901,7 +895,7 @@ class SceneAgencyEditor(QWidget, EventListener):
         self._scene.agency.append(agency)
         wdg = self.__initAgencyWidget(agency)
         qtanim.fade_in(wdg, teardown=finish)
-        QTimer.singleShot(20, self.agencyAdded)
+        QTimer.singleShot(20, lambda: self.agencyAdded.emit(wdg))
 
     def _agencyRemoved(self, wdg: CharacterAgencyEditor):
         agency = wdg.agenda
