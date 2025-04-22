@@ -632,13 +632,13 @@ class CharacterChangeBubble(TextEditBubbleWidget):
         super().__init__(parent)
         margins(self, left=1, right=1)
         self.element = element
-        self._textedit.setMinimumSize(165, 100)
-        self._textedit.setMaximumSize(190, 110)
+        # self._textedit.setMinimumSize(165, 100)
+        # self._textedit.setMaximumSize(190, 110)
         # self.setProperty('rounded', True)
         # self.setProperty('white-bg', True)
         self._textedit.setProperty('rounded', False)
         self._textedit.setProperty('transparent', True)
-        self.setMaximumWidth(200)
+        self.setMaximumSize(170, 130)
 
         self._title.setIcon(IconRegistry.from_name(self.element.type.icon(), PLOTLYST_SECONDARY_COLOR))
         self._title.setText(self.element.type.displayed_name())
@@ -728,10 +728,10 @@ class CharacterChangesEditor(QFrame):
         self.btnAdd.clicked.connect(self._openSelector)
 
         header1 = HeaderColumn('Initial')
-        header1.setFixedWidth(200)
+        header1.setFixedWidth(170)
         header2 = HeaderColumn('Transition')
         header3 = HeaderColumn('Final')
-        header3.setFixedWidth(200)
+        header3.setFixedWidth(170)
 
         vbox(self)
         self.layout().addWidget(group(header1, header2, header3))
