@@ -32,6 +32,7 @@ from plotlyst.event.handler import global_event_dispatcher, event_dispatchers
 from plotlyst.events import CharacterDeletedEvent, NovelSyncEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.service.tour import TourService
+from plotlyst.view.dialog.novel import DetachedWindow
 
 
 class AbstractView(QObject, EventListener):
@@ -57,6 +58,7 @@ class AbstractView(QObject, EventListener):
         self._navigable_button_group = group
         for i, btn in enumerate(self._navigable_button_group.buttons()):
             self._navigable_button_group.setId(btn, i)
+            btn.setShortcut(f"{i + 1}")
 
     @overrides
     def event_received(self, event: Event):
@@ -113,8 +115,27 @@ class AbstractNovelView(AbstractView):
         super().__init__(global_event_types)
 
         self.novel = novel
+        self._detached: bool = False
+        self._old_parent: Optional[QWidget] = None
         self._dispatcher = event_dispatchers.instance(self.novel)
         self._dispatcher.register(self, *events)
+
+    def isDetached(self) -> bool:
+        return self._detached
+
+    def detach(self) -> Optional[DetachedWindow]:
+        if self._detached:
+            return None
+
+        self._old_parent = self.widget.parent()
+        self._old_parent.layout().removeWidget(self.widget)
+        window = DetachedWindow(self.widget)
+        self._detached = True
+        return window
+
+    def restore(self):
+        self._old_parent.layout().addWidget(self.widget)
+        self._detached = False
 
     @busy
     @abstractmethod

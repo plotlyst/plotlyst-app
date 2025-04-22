@@ -21,58 +21,30 @@ from functools import partial
 from typing import Dict, List, Union
 
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
-from PyQt6.QtWidgets import QWidget, QTextEdit, QGridLayout, QToolButton, QDialog
-from qthandy import vbox, bold, line, margins, spacer, grid, hbox, clear_layout, flow, pointy, incr_icon, \
-    incr_font, transparent, vspacer, sp
+from PyQt6.QtWidgets import QWidget, QTextEdit, QGridLayout, QDialog
+from qthandy import vbox, bold, line, margins, spacer, grid, hbox, clear_layout, flow, transparent, vspacer, sp
 from qthandy.filter import VisibilityToggleEventFilter
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Topic, TopicType, TopicElement, TopicElementBlock
-from plotlyst.env import app_env
-from plotlyst.view.common import push_btn, fade_out_and_gc, ButtonPressResizeEventFilter, label, \
+from plotlyst.view.common import push_btn, fade_out_and_gc, label, \
     scrolled
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
-from plotlyst.view.widget.button import CollapseButton
+from plotlyst.view.widget.button import CollapseButton, SelectorToggleButton
 from plotlyst.view.widget.display import PopupDialog
 from plotlyst.view.widget.input import AutoAdjustableTextEdit, RemovalButton, SearchField
 
 
-class TopicSelectorButton(QToolButton):
+class TopicSelectorButton(SelectorToggleButton):
     def __init__(self, topic: Topic, group: bool = False):
-        super().__init__()
+        button_style = Qt.ToolButtonStyle.ToolButtonTextBesideIcon if group else Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+        super().__init__(button_style)
         self.topic = topic
 
-        self.setMinimumWidth(100)
-        self.installEventFilter(ButtonPressResizeEventFilter(self))
         self.setText(topic.text)
         self.setIcon(IconRegistry.from_name(topic.icon))
         self.setToolTip(topic.description)
-        self.setCheckable(True)
-        pointy(self)
-        incr_icon(self, 4)
-        if not group and app_env.is_mac():
-            incr_font(self)
-        if group:
-            self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        else:
-            self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-
-        radius = 6 if group else 10
-        padding = 6 if group else 2
-        self.setStyleSheet(f'''
-                    QToolButton {{
-                        border: 1px hidden lightgrey;
-                        border-radius: {radius}px;
-                        padding: {padding}px;
-                    }}
-                    QToolButton:hover:!checked {{
-                        background: #FCF5FE;
-                    }}
-                    QToolButton:checked {{
-                        background: #D4B8E0;
-                    }}
-                    ''')
 
 
 class TopicGroupSelector(QWidget):
@@ -154,7 +126,6 @@ class TopicSelectionDialog(PopupDialog):
         self._scrollarea.setProperty('transparent', True)
         transparent(self._wdgCenter)
         vbox(self._wdgCenter, 10)
-        # self._wdgCenter.setStyleSheet('QWidget {background: #ede0d4;}')
         self.setMinimumWidth(550)
 
         self._sections: Dict[str, TopicGroupSelector] = {}

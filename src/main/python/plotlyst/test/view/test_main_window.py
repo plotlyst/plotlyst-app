@@ -1,6 +1,4 @@
 from plotlyst.core.client import client
-from plotlyst.test.common import go_to_home, create_novel
-from plotlyst.view.home_view import HomeView
 from plotlyst.view.main_window import MainWindow
 
 

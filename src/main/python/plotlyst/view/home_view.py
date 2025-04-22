@@ -19,42 +19,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import List, Optional
 
-from PyQt6.QtCore import pyqtSignal, QSize, Qt, QTimer
+from PyQt6.QtCore import pyqtSignal, QSize, Qt, QEvent, QObject
 from PyQt6.QtGui import QPixmap, QColor
 from overrides import overrides
-from qthandy import transparent, incr_font, italic, busy, retain_when_hidden, incr_icon
-from qthandy.filter import VisibilityToggleEventFilter, InstantTooltipEventFilter, OpacityEventFilter
+from qthandy import busy, vspacer, margins, pointy, retain_when_hidden
+from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import NAV_BAR_BUTTON_DEFAULT_COLOR, \
-    NAV_BAR_BUTTON_CHECKED_COLOR, RELAXED_WHITE_COLOR
+    NAV_BAR_BUTTON_CHECKED_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK
 from plotlyst.core.client import client
-from plotlyst.core.domain import NovelDescriptor
-from plotlyst.core.help import home_page_welcome_text
+from plotlyst.core.domain import NovelDescriptor, StoryType, Novel, WELCOME_DOC_ID
+from plotlyst.core.help import home_page_welcome_text, WELCOME_DOC_CONTENT
+from plotlyst.env import app_env
 from plotlyst.event.core import emit_global_event, Event
 from plotlyst.event.handler import global_event_dispatcher
 from plotlyst.events import NovelDeletedEvent, NovelUpdatedEvent
 from plotlyst.resources import resource_registry
+from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import flush_or_fail
 from plotlyst.service.tour import TourService
 from plotlyst.view._view import AbstractView
 from plotlyst.view.common import link_buttons_to_pages, ButtonPressResizeEventFilter, action, \
     TooltipPositionEventFilter, open_url, push_btn, wrap
-from plotlyst.view.dialog.home import StoryCreationDialog
 from plotlyst.view.generated.home_view_ui import Ui_HomeView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.roadmap_view import RoadmapView
-from plotlyst.view.style.base import apply_border_image
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.confirm import confirmed
-from plotlyst.view.widget.library import ShelvesTreeView
-from plotlyst.view.widget.tour import Tutorial
-from plotlyst.view.widget.tour.content import tutorial_titles, tutorial_descriptions
+from plotlyst.view.widget.kb.browser import KnowledgeBaseWidget
+from plotlyst.view.widget.library import ShelvesTreeView, StoryCreationDialog, NovelDisplayCard, SeriesDisplayCard, \
+    NovelSelectorPopup
+from plotlyst.view.widget.patron import PlotlystPlusWidget
 from plotlyst.view.widget.tour.core import LibraryTourEvent, NewStoryButtonTourEvent, \
     NewStoryDialogOpenTourEvent, TutorialNovelSelectTourEvent, NovelDisplayTourEvent, tutorial_novel, \
     NovelOpenButtonTourEvent, TutorialNovelCloseTourEvent
 from plotlyst.view.widget.tree import TreeSettings
-from plotlyst.view.widget.utility import IconSelectorButton
 
 
 class HomeView(AbstractView):
@@ -70,145 +70,141 @@ class HomeView(AbstractView):
         self._novels: List[NovelDescriptor] = []
         self._tour_service = TourService.instance()
 
-        self.ui.lblBanner.setPixmap(QPixmap(resource_registry.banner))
+        self.ui.lblBanner.setPixmap(
+            QPixmap(resource_registry.banner).scaled(180, 60, Qt.AspectRatioMode.KeepAspectRatio,
+                                                     Qt.TransformationMode.SmoothTransformation))
+        self.ui.btnPurchase.setIcon(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR))
         self.ui.btnJoinDiscord.setIcon(IconRegistry.from_name('fa5b.discord', RELAXED_WHITE_COLOR))
         self.ui.btnTwitter.setIcon(IconRegistry.from_name('fa5b.twitter', RELAXED_WHITE_COLOR))
         self.ui.btnInstagram.setIcon(IconRegistry.from_name('fa5b.instagram', RELAXED_WHITE_COLOR))
+        self.ui.btnThreads.setIcon(IconRegistry.from_name('mdi.at', RELAXED_WHITE_COLOR))
+        self.ui.btnPatreon.setIcon(IconRegistry.from_name('fa5b.patreon', RELAXED_WHITE_COLOR))
         self.ui.btnFacebook.setIcon(IconRegistry.from_name('fa5b.facebook', RELAXED_WHITE_COLOR))
         self.ui.btnYoutube.setIcon(IconRegistry.from_name('fa5b.youtube', RELAXED_WHITE_COLOR))
         self.ui.btnPinterest.setIcon(IconRegistry.from_name('fa5b.pinterest', RELAXED_WHITE_COLOR))
+        self.ui.btnPurchase.installEventFilter(OpacityEventFilter(self.ui.btnPurchase, leaveOpacity=0.8))
         self.ui.btnJoinDiscord.installEventFilter(OpacityEventFilter(self.ui.btnJoinDiscord, leaveOpacity=0.8))
         self.ui.btnTwitter.installEventFilter(OpacityEventFilter(self.ui.btnTwitter, leaveOpacity=0.8))
         self.ui.btnInstagram.installEventFilter(OpacityEventFilter(self.ui.btnInstagram, leaveOpacity=0.8))
+        self.ui.btnThreads.installEventFilter(OpacityEventFilter(self.ui.btnThreads, leaveOpacity=0.8))
+        self.ui.btnPatreon.installEventFilter(OpacityEventFilter(self.ui.btnPatreon, leaveOpacity=0.8))
         self.ui.btnFacebook.installEventFilter(OpacityEventFilter(self.ui.btnFacebook, leaveOpacity=0.8))
         self.ui.btnYoutube.installEventFilter(OpacityEventFilter(self.ui.btnYoutube, leaveOpacity=0.8))
         self.ui.btnPinterest.installEventFilter(OpacityEventFilter(self.ui.btnPinterest, leaveOpacity=0.8))
+        self.ui.btnPurchase.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnPurchase))
         self.ui.btnJoinDiscord.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnJoinDiscord))
         self.ui.btnTwitter.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnTwitter))
         self.ui.btnInstagram.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnInstagram))
+        self.ui.btnThreads.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnThreads))
+        self.ui.btnPatreon.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnPatreon))
         self.ui.btnFacebook.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnFacebook))
         self.ui.btnYoutube.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnYoutube))
         self.ui.btnPinterest.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnPinterest))
         self.ui.btnJoinDiscord.clicked.connect(lambda: open_url('https://discord.com/invite/9HZWnvNzM6'))
+        self.ui.btnPurchase.clicked.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
         self.ui.btnTwitter.clicked.connect(lambda: open_url('https://twitter.com/plotlyst'))
         self.ui.btnInstagram.clicked.connect(lambda: open_url('https://www.instagram.com/plotlyst'))
+        self.ui.btnThreads.clicked.connect(lambda: open_url('https://threads.net/@plotlyst'))
+        self.ui.btnPatreon.clicked.connect(lambda: open_url('https://patreon.com/user?u=24283978'))
         self.ui.btnFacebook.clicked.connect(
             lambda: open_url('https://www.facebook.com/people/Plotlyst/61557773998679/'))
         self.ui.btnYoutube.clicked.connect(lambda: open_url('https://www.youtube.com/@Plotlyst'))
         self.ui.btnPinterest.clicked.connect(lambda: open_url('https://pinterest.com/Plotlyst'))
 
+        self.ui.btnPurchase.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
+        retain_when_hidden(self.ui.btnPurchase)
+
+        self.ui.btnYoutube.setHidden(True)
+        self.ui.btnPinterest.setHidden(True)
+
+        self.ui.btnPurchase.setStyleSheet(f'color: {RELAXED_WHITE_COLOR}; border: 1px hidden black;')
         apply_button_palette_color(self.ui.btnJoinDiscord, RELAXED_WHITE_COLOR)
-        apply_button_palette_color(self.ui.btnWebsite, RELAXED_WHITE_COLOR)
-        italic(self.ui.btnWebsite)
-        self.ui.btnWebsite.installEventFilter(OpacityEventFilter(self.ui.btnWebsite, leaveOpacity=0.8))
-        self.ui.btnWebsite.clicked.connect(lambda: open_url('https://www.plotlyst.com'))
+        pointy(self.ui.lblBanner)
+        self.ui.lblBanner.installEventFilter(OpacityEventFilter(self.ui.lblBanner, leaveOpacity=1.0, enterOpacity=0.8))
+        self.ui.lblBanner.installEventFilter(self)
 
         self.ui.btnLibrary.setIcon(
             IconRegistry.from_name('mdi.bookshelf', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
-        self.ui.btnTutorials.setIcon(
-            IconRegistry.from_name('mdi6.school-outline', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
-        self.ui.btnProgress.setIcon(
-            IconRegistry.from_name('fa5s.chart-line', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.ui.btnRoadmap.setIcon(
             IconRegistry.from_name('fa5s.road', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
+        self.ui.btnPatrons.setIcon(
+            IconRegistry.from_name('msc.organization', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
+        self.ui.btnKnowledgeBase.setIcon(
+            IconRegistry.from_name('fa5s.graduation-cap', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
 
         for btn in self.ui.buttonGroup.buttons():
             btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.7, ignoreCheckedButton=True))
             btn.installEventFilter(TooltipPositionEventFilter(btn))
 
-        self.ui.btnTutorials.setHidden(True)
-        self.ui.btnProgress.setHidden(True)
-
         self.ui.lblWelcomeMain.setText(home_page_welcome_text)
 
-        self.ui.btnFirstStory.setIcon(IconRegistry.book_icon())
-        self.ui.btnFirstStory.installEventFilter(OpacityEventFilter(self.ui.btnFirstStory, leaveOpacity=0.7))
-        self.ui.btnFirstStory.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnFirstStory))
+        self.ui.btnFullExperienceLink.setIcon(IconRegistry.from_name('ei.shopping-cart'))
+        self.ui.btnFullExperienceLink.installEventFilter(
+            OpacityEventFilter(self.ui.btnFullExperienceLink, leaveOpacity=0.7))
+        self.ui.btnFullExperienceLink.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnFullExperienceLink))
+        self.ui.btnFullExperienceLink.clicked.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
 
-        self.ui.btnActivate.setIcon(IconRegistry.book_icon(color='white', color_on='white'))
-        self.ui.btnActivate.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnActivate))
-        self.ui.btnActivate.setIconSize(QSize(28, 28))
-        self.ui.btnActivate.clicked.connect(lambda: self.loadNovel.emit(self._selected_novel))
+        self.novelDisplayCard = NovelDisplayCard()
+        self.ui.pageNovelDisplay.layout().addWidget(self.novelDisplayCard)
+        self.ui.pageNovelDisplay.layout().addWidget(vspacer())
+        self.novelDisplayCard.btnActivate.clicked.connect(lambda: self.loadNovel.emit(self._selected_novel))
+        self.novelDisplayCard.lineNovelTitle.textEdited.connect(self._title_edited)
+        self.novelDisplayCard.lineSubtitle.textEdited.connect(self._subtitle_edited)
+        self.novelDisplayCard.textSynopsis.textChanged.connect(self._short_synopsis_edited)
+        self.novelDisplayCard.iconSelector.iconSelected.connect(self._icon_changed)
+
+        self.seriesDisplayCard = SeriesDisplayCard()
+        self.ui.scrollAreaSeries.layout().addWidget(self.seriesDisplayCard)
+        self.ui.scrollAreaSeries.layout().addWidget(vspacer())
+        self.seriesDisplayCard.lineNovelTitle.textEdited.connect(self._title_edited)
+        self.seriesDisplayCard.iconSelector.iconSelected.connect(self._icon_changed)
+        self.seriesDisplayCard.attachNovel.connect(self._attach_novel_to_series)
+        self.seriesDisplayCard.detachNovel.connect(self._detach_novel_from_series)
+        self.seriesDisplayCard.orderChanged.connect(self._series_novels_order_changed)
+        self.seriesDisplayCard.openNovel.connect(self.loadNovel)
+
         self.ui.btnAddNewStoryMain.setIcon(IconRegistry.plus_icon(color='white'))
         self.ui.btnAddNewStoryMain.clicked.connect(self._add_new_novel)
         self.ui.btnAddNewStoryMain.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnAddNewStoryMain))
 
-        self.ui.iconImportOrigin.setIcon(IconRegistry.from_name('mdi.alpha-s-circle-outline', color='#410253'))
-        self.ui.iconImportOrigin.setToolTip('Synced from Scrivener')
-        self.ui.iconImportOrigin.installEventFilter(InstantTooltipEventFilter(self.ui.iconImportOrigin))
-        incr_icon(self.ui.iconImportOrigin, 8)
-
-        self.ui.wdgTitle.setFixedHeight(150)
-        apply_border_image(self.ui.wdgTitle, resource_registry.frame1)
-
-        transparent(self.ui.lineNovelTitle)
-        self.ui.lineNovelTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        incr_font(self.ui.lineNovelTitle, 10)
-        self.ui.lineNovelTitle.textEdited.connect(self._title_edited)
-        self.ui.btnNovelSettings.setIcon(IconRegistry.dots_icon(vertical=True))
-        retain_when_hidden(self.ui.btnNovelSettings)
-        self.ui.btnNovelSettings.setHidden(True)
-
-        transparent(self.ui.lineSubtitle)
-        italic(self.ui.lineSubtitle)
-        incr_font(self.ui.lineSubtitle, 2)
-        transparent(self.ui.iconSubtitle)
-        self.ui.lineSubtitle.textEdited.connect(self._subtitle_edited)
-        self.ui.iconSubtitle.setIcon(IconRegistry.from_name('mdi.send'))
-        self._iconSelector = IconSelectorButton()
-        self._iconSelector.iconSelected.connect(self._icon_changed)
-        self.ui.wdgSubtitleParent.layout().insertWidget(0, self._iconSelector)
-
-        menu = MenuWidget(self.ui.btnNovelSettings)
+        menu = MenuWidget(self.novelDisplayCard.btnNovelSettings)
         menu.addAction(action('Delete', IconRegistry.trash_can_icon(), lambda: self._on_delete()))
 
         self._btnAddNew = push_btn(IconRegistry.plus_icon(RELAXED_WHITE_COLOR), tooltip='Add a new story',
                                    properties=['base', 'positive'])
         self._btnAddNew.clicked.connect(self._add_new_novel)
         self._shelvesTreeView = ShelvesTreeView(settings=TreeSettings(font_incr=2))
+        margins(self._shelvesTreeView.centralWidget(), bottom=45)
         self.ui.splitterLibrary.setSizes([150, 500])
         self.ui.wdgShelvesParent.layout().addWidget(wrap(self._btnAddNew, margin_left=10, margin_top=10),
                                                     alignment=Qt.AlignmentFlag.AlignLeft)
         self.ui.wdgShelvesParent.layout().addWidget(self._shelvesTreeView)
         self._shelvesTreeView.novelSelected.connect(self._novel_selected)
-        self._shelvesTreeView.novelChanged.connect(self._novel_changed_in_browser)
+        self._shelvesTreeView.novelChanged.connect(self._novel_changed_in_tree)
         self._shelvesTreeView.novelsShelveSelected.connect(self.reset)
         self._shelvesTreeView.newNovelRequested.connect(self._add_new_novel)
         self._shelvesTreeView.novelDeletionRequested.connect(self._on_delete)
         self._shelvesTreeView.novelOpenRequested.connect(self.loadNovel)
-
-        self.ui.pageNovelDisplay.installEventFilter(
-            VisibilityToggleEventFilter(self.ui.btnNovelSettings, self.ui.pageNovelDisplay))
+        self.seriesDisplayCard.displayNovel.connect(self._shelvesTreeView.selectNovel)
+        self.novelDisplayCard.displaySeries.connect(self._shelvesTreeView.selectNovel)
 
         self.ui.btnAddNewStoryMain.setIconSize(QSize(24, 24))
 
         link_buttons_to_pages(self.ui.stackedWidget,
-                              [(self.ui.btnLibrary, self.ui.pageLibrary), (self.ui.btnTutorials, self.ui.pageTutorials),
-                               (self.ui.btnProgress, self.ui.pageProgress),
-                               (self.ui.btnRoadmap, self.ui.pageRoadmap)])
+                              [(self.ui.btnLibrary, self.ui.pageLibrary),
+                               (self.ui.btnRoadmap, self.ui.pageRoadmap),
+                               (self.ui.btnPatrons, self.ui.pagePatrons),
+                               (self.ui.btnKnowledgeBase, self.ui.pageKnowledgeBase),
+                               ])
 
         self._roadmapView = RoadmapView()
         self.ui.pageRoadmap.layout().addWidget(self._roadmapView)
 
-        # self._tutorialsTreeView = TutorialsTreeView(settings=TreeSettings(font_incr=2))
-        # self._tutorialsTreeView.tutorialSelected.connect(self._tutorial_selected)
-        # self.ui.splitterTutorials.setSizes([150, 500])
-        # self.ui.btnStartTutorial.setIcon(IconRegistry.from_name('fa5s.play-circle', 'white'))
-        # self.ui.btnStartTutorial.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnStartTutorial))
-        # self.ui.btnStartTutorial.clicked.connect(self._start_tutorial)
-        # self.ui.wdgTutorialsParent.layout().addWidget(self._tutorialsTreeView)
-        # self.ui.stackTutorial.setCurrentWidget(self.ui.pageTutorialsEmpty)
+        self._knowledgeBase = KnowledgeBaseWidget()
+        self.ui.pageKnowledgeBase.layout().addWidget(self._knowledgeBase)
 
-        # self.ui.textTutorial.setViewportMargins(20, 20, 20, 20)
-        # document: QTextDocument = self.ui.textTutorial.document()
-        # font = self.ui.textTutorial.font()
-        # font.setPointSize(font.pointSize() + 2)
-        # document.setDefaultFont(font)
-        #
-        # transparent(self.ui.lineTutorialTitle)
-        # self.ui.lineTutorialTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # incr_font(self.ui.lineTutorialTitle, 10)
-        # bold(self.ui.lineTutorialTitle)
+        self._plotlystPlus = PlotlystPlusWidget()
+        self.ui.pagePatrons.layout().addWidget(self._plotlystPlus)
 
         self.ui.btnLibrary.setChecked(True)
         self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageEmpty)
@@ -225,30 +221,32 @@ class HomeView(AbstractView):
         return self._shelvesTreeView
 
     @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.MouseButtonRelease:
+            open_url('https://www.plotlyst.com')
+        return super().eventFilter(watched, event)
+
+    @overrides
     def event_received(self, event: Event):
         if isinstance(event, NovelUpdatedEvent):
             for novel in self._novels:
                 if novel.id == event.novel.id:
                     novel.title = event.novel.title
             if self._selected_novel and self._selected_novel.id == event.novel.id:
-                self.ui.lineNovelTitle.setText(self._selected_novel.title)
+                self.novelDisplayCard.lineNovelTitle.setText(self._selected_novel.title)
             self.refresh()
         elif isinstance(event, LibraryTourEvent):
             self._tour_service.addWidget(self.ui.btnLibrary, event)
         elif isinstance(event, NewStoryButtonTourEvent):
             self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageEmpty)
             self._tour_service.addWidget(self.ui.btnAddNewStoryMain, event)
-        elif isinstance(event, NewStoryDialogOpenTourEvent):
-            dialog = StoryCreationDialog(self.widget.window())
-            dialog.show()
-            QTimer.singleShot(100, self._tour_service.next)
         elif isinstance(event, TutorialNovelSelectTourEvent):
             self._novel_selected(tutorial_novel)
             self._tour_service.next()
         elif isinstance(event, NovelDisplayTourEvent):
             self._tour_service.addWidget(self.ui.pageNovelDisplay, event)
         elif isinstance(event, NovelOpenButtonTourEvent):
-            self._tour_service.addWidget(self.ui.btnActivate, event)
+            self._tour_service.addWidget(self.novelDisplayCard.btnActivate, event)
         elif isinstance(event, TutorialNovelCloseTourEvent):
             self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageEmpty)
         else:
@@ -263,27 +261,54 @@ class HomeView(AbstractView):
     def refresh(self):
         self._shelvesTreeView.setNovels(self._novels)
 
+        series = [x for x in self._novels if x.story_type == StoryType.Series]
+        entities_registry.set_series(series)
+
+    def showKnowledgeBase(self):
+        self.ui.btnKnowledgeBase.setChecked(True)
+
+    def showRoadmap(self):
+        self.ui.btnRoadmap.setChecked(True)
+
+    def selectSeries(self, series: NovelDescriptor):
+        self._shelvesTreeView.selectNovel(series)
+
+    def selectNovel(self, novel: NovelDescriptor):
+        for novel_desc in self._novels:
+            if novel_desc.id == novel.id:
+                self._shelvesTreeView.selectNovel(novel_desc)
+                break
+
+    def seriesNovels(self, series: NovelDescriptor) -> List[NovelDescriptor]:
+        return self._shelvesTreeView.childrenNovels(series)
+
     def _novel_selected(self, novel: NovelDescriptor):
+        self._selected_novel = None
+
+        if novel.story_type == StoryType.Novel:
+            self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageNovelDisplay)
+            self.novelDisplayCard.setNovel(novel)
+            self._selected_novel = novel
+        elif novel.story_type == StoryType.Series:
+            self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageSeriesDisplay)
+            self.seriesDisplayCard.setNovel(novel)
+            self.seriesDisplayCard.setChildren(self._shelvesTreeView.childrenNovels(novel))
+
         self._selected_novel = novel
-
-        self.ui.stackWdgNovels.setCurrentWidget(self.ui.pageNovelDisplay)
-
-        self.ui.lineNovelTitle.setText(novel.title)
-        self.ui.lineSubtitle.setText(novel.subtitle)
-        if novel.icon:
-            self._iconSelector.selectIcon(novel.icon, novel.icon_color)
-        else:
-            self._iconSelector.reset()
-
-        self.ui.iconImportOrigin.setVisible(novel.is_scrivener_sync())
 
     def _add_new_novel(self):
         @busy
         def flush():
             flush_or_fail()
 
-        novel = StoryCreationDialog(self.widget).display()
+        novel: Optional[Novel] = StoryCreationDialog.popup()
         if novel:
+            if not novel.prefs.is_scenes_organization():
+                for scene in novel.scenes:
+                    scene.chapter = None
+                    scene.title = ''
+                novel.chapters.clear()
+
             self.repo.insert_novel(novel)
             self._novels.append(novel)
             flush()
@@ -294,11 +319,16 @@ class HomeView(AbstractView):
                 if scene.manuscript:
                     self.repo.update_doc(novel, scene.manuscript)
 
+            for doc in novel.documents:
+                if doc.id == WELCOME_DOC_ID:
+                    doc.content = WELCOME_DOC_CONTENT
+                    self.repo.update_doc(novel, doc)
+
             flush()
 
             self.refresh()
             self._shelvesTreeView.selectNovel(novel)
-            if len(self._novels) == 1:
+            if len(self._novels) == 1 and self._novels[0].story_type == StoryType.Novel:
                 self.loadNovel.emit(novel)
 
     def _title_edited(self, title: str):
@@ -311,6 +341,12 @@ class HomeView(AbstractView):
     def _subtitle_edited(self, subtitle: str):
         self._selected_novel.subtitle = subtitle
         self.repo.update_project_novel(self._selected_novel)
+        emit_global_event(NovelUpdatedEvent(self, self._selected_novel))
+
+    def _short_synopsis_edited(self):
+        if self._selected_novel:
+            self._selected_novel.short_synopsis = self.novelDisplayCard.textSynopsis.toPlainText()
+            self.repo.update_project_novel(self._selected_novel)
 
     def _icon_changed(self, icon: str, color: QColor):
         self._selected_novel.icon = icon
@@ -320,13 +356,13 @@ class HomeView(AbstractView):
 
         emit_global_event(NovelUpdatedEvent(self, self._selected_novel))
 
-    def _novel_changed_in_browser(self, novel: NovelDescriptor):
+    def _novel_changed_in_tree(self, novel: NovelDescriptor):
         if self._selected_novel and self._selected_novel.id == novel.id:
-            self.ui.lineNovelTitle.setText(self._selected_novel.title)
+            self.novelDisplayCard.lineNovelTitle.setText(self._selected_novel.title)
             if novel.icon:
-                self._iconSelector.selectIcon(novel.icon, novel.icon_color)
+                self.novelDisplayCard.iconSelector.selectIcon(novel.icon, novel.icon_color)
             else:
-                self._iconSelector.reset()
+                self.novelDisplayCard.iconSelector.reset()
         self.repo.update_project_novel(novel)
 
         emit_global_event(NovelUpdatedEvent(self, self._selected_novel))
@@ -334,25 +370,55 @@ class HomeView(AbstractView):
     def _on_delete(self, novel: Optional[NovelDescriptor] = None):
         if novel is None:
             novel = self._selected_novel
-        title = f'Are you sure you want to delete the novel "{novel.title}"?'
-        msg = '<html><ul><li>This action cannot be undone.</li><li>All characters and scenes will be lost.</li>'
+        if novel.story_type == StoryType.Series:
+            title = f'Are you sure you want to delete the series "{novel.title}"?'
+            msg = "<html>The attached novels <b>won't</b> be deleted."
+        else:
+            title = f'Are you sure you want to delete the novel "{novel.title}"?'
+            msg = '<html><ul><li>This action cannot be undone.</li><li>All characters and scenes will be lost.</li>'
+
         if confirmed(msg, title):
+            if novel.story_type == StoryType.Series:
+                series_novels = self._shelvesTreeView.childrenNovels(novel)
+                for sn in series_novels:
+                    sn.parent = None
+                    sn.sequence = 0
+                    self.repo.update_project_novel(sn)
+                    emit_global_event(NovelUpdatedEvent(self, sn))
+
             self.repo.delete_novel(novel)
             self._novels.remove(novel)
             emit_global_event(NovelDeletedEvent(self, novel))
             if self._selected_novel and novel.id == self._selected_novel.id:
-                self._selected_novel = None
                 self.reset()
             self.refresh()
 
-    def _tutorial_selected(self, tutorial: Tutorial):
-        if tutorial.is_container():
-            self.ui.stackTutorial.setCurrentWidget(self.ui.pageTutorialsEmpty)
-        else:
-            self._tour_service.setTutorial(tutorial)
-            self.ui.stackTutorial.setCurrentWidget(self.ui.pageTutorialDisplay)
-            self.ui.lineTutorialTitle.setText(tutorial_titles[tutorial])
-            self.ui.textTutorial.setMarkdown(tutorial_descriptions.get(tutorial, 'Click Start to learn this tutorial.'))
+            if self._selected_novel:
+                self._shelvesTreeView.selectNovel(self._selected_novel)
 
-    def _start_tutorial(self):
-        self._tour_service.start()
+    def _attach_novel_to_series(self):
+        if self._selected_novel and self._selected_novel.story_type == StoryType.Series:
+            novel = NovelSelectorPopup.popup(self._novels)
+            if novel and novel.parent != self._selected_novel.id:
+                novel.parent = self._selected_novel.id
+                novel.sequence = self.seriesDisplayCard.novelCount()
+                self.repo.update_project_novel(novel)
+                self.refresh()
+                self._shelvesTreeView.selectNovel(self._selected_novel)
+
+                emit_global_event(NovelUpdatedEvent(self, novel))
+
+    @busy
+    def _detach_novel_from_series(self, novel: NovelDescriptor):
+        novel.parent = None
+        novel.sequence = 0
+        self.repo.update_project_novel(novel)
+        self.refresh()
+        self._shelvesTreeView.selectNovel(self._selected_novel)
+
+        emit_global_event(NovelUpdatedEvent(self, novel))
+
+    def _series_novels_order_changed(self, novels: List[NovelDescriptor]):
+        for novel in novels:
+            self.repo.update_project_novel(novel)
+        self.refresh()

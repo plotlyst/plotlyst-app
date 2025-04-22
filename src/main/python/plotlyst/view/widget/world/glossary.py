@@ -40,6 +40,7 @@ from plotlyst.view.layout import group
 from plotlyst.view.widget.display import PopupDialog
 from plotlyst.view.widget.input import AbstractTextBlockHighlighter
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
+from plotlyst.view.widget.world.theme import WorldBuildingPalette
 
 
 class GlossaryModel(SelectionItemsModel):
@@ -104,10 +105,14 @@ class GlossaryModel(SelectionItemsModel):
 class GlossaryDelegate(QStyledItemDelegate):
     TopMargin: int = 30
 
+    def __init__(self, palette: WorldBuildingPalette, parent=None):
+        super().__init__(parent)
+        self._palette = palette
+
     @overrides
     def paint(self, painter, option: QStyleOptionViewItem, index):
         if option.state & QStyle.StateFlag.State_Selected:
-            painter.fillRect(option.rect, QBrush(QColor("#dabfa7")))
+            painter.fillRect(option.rect, QBrush(QColor(self._palette.secondary_color)))
 
         if index.column() == 3:
             option.rect = QRect(option.rect.x(), option.rect.y() + self.TopMargin, option.rect.width(),
@@ -151,12 +156,12 @@ class GlossaryTextBlockData(QTextBlockUserData):
 
 class GlossaryTextBlockHighlighter(AbstractTextBlockHighlighter):
 
-    def __init__(self, glossary: Dict[str, GlossaryItem], document: QTextDocument):
+    def __init__(self, glossary: Dict[str, GlossaryItem], document: QTextDocument, palette: WorldBuildingPalette):
         super().__init__(document)
         self._glossary = glossary
         self.underline_format = QTextCharFormat()
         self.underline_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.DashUnderline)
-        self.underline_format.setUnderlineColor(QColor('#510442'))
+        self.underline_format.setUnderlineColor(QColor(palette.primary_color))
 
     @overrides
     def highlightBlock(self, text):
@@ -277,14 +282,15 @@ class GlossaryEditorDialog(PopupDialog):
 
 
 class WorldBuildingGlossaryEditor(QWidget):
-    def __init__(self, novel: Novel, parent=None):
+    def __init__(self, novel: Novel, palette: WorldBuildingPalette, parent=None):
         super().__init__(parent)
         self._shown: bool = False
+        self._palette = palette
 
         self._novel = novel
         vbox(self)
         self.editor = GlossaryItemsEditorWidget()
-        self.editor.setStyleSheet('background: #ede0d4;')
+        self.editor.setStyleSheet(f'background: {self._palette.bg_color};')
         self.editor.btnAdd.clicked.connect(self._addNew)
         self.editor.editRequested.connect(self._edit)
         self.glossaryModel = GlossaryModel(self._novel)
@@ -295,20 +301,20 @@ class WorldBuildingGlossaryEditor(QWidget):
         self.editor.tableView.setColumnWidth(GlossaryModel.ColName, 200)
         self.editor.tableView.setContentsMargins(10, 15, 10, 5)
 
-        self.editor.tableView.setItemDelegate(GlossaryDelegate())
+        self.editor.tableView.setItemDelegate(GlossaryDelegate(self._palette))
 
         self.glossaryModel.modelReset.connect(self.editor.tableView.resizeRowsToContents)
         self.glossaryModel.glossaryRemoved.connect(self._save)
 
-        self.editor.tableView.setStyleSheet('''
-            QTableView::item {
+        self.editor.tableView.setStyleSheet(f'''
+            QTableView::item {{
                 border: 0px;
                 padding: 5px; 
-            }
-            QTableView::item:selected {
-                background: #dabfa7;
+            }}
+            QTableView::item:selected {{
+                background: {self._palette.secondary_color};
                 color: black;
-            }
+            }}
             ''')
         self.editor.tableView.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.editor.tableView.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)

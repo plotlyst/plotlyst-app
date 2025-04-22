@@ -56,55 +56,57 @@
     </spacer>
    </item>
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_7">
-     <item>
-      <widget class="Subtitle" name="widget_3" native="true">
-       <property name="title" stdset="0">
-        <string>Synchronization</string>
-       </property>
-       <property name="description" stdset="0">
-        <string>Allow synchronization from Scrivener, so every new change will be reflected in Plotlyst.</string>
-       </property>
-       <property name="icon" stdset="0">
-        <string>fa5s.sync</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <property name="leftMargin">
-        <number>20</number>
-       </property>
-       <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Keep in sync:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="Toggle" name="toggleSync">
-         <property name="text">
-          <string>CheckBox</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_6">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </item>
-    </layout>
+    <widget class="QWidget" name="wdgScrivenerTop" native="true">
+     <layout class="QVBoxLayout" name="verticalLayout_7">
+      <item>
+       <widget class="Subtitle" name="widget_3" native="true">
+        <property name="title" stdset="0">
+         <string>Synchronization</string>
+        </property>
+        <property name="description" stdset="0">
+         <string>Allow synchronization from Scrivener, so every new change will be reflected in Plotlyst.</string>
+        </property>
+        <property name="icon" stdset="0">
+         <string>fa5s.sync</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <property name="leftMargin">
+         <number>20</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Keep in sync:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Toggle" name="toggleSync">
+          <property name="text">
+           <string>CheckBox</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
    </item>
    <item>
     <widget class="Line" name="line">

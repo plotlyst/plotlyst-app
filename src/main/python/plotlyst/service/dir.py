@@ -45,6 +45,17 @@ def select_new_project_directory() -> Optional[str]:
         return workspace
 
 
+def default_exported_location(filename: str) -> str:
+    try:
+        home = Path.home()
+        if home:
+            return str(home.joinpath(filename))
+        else:
+            return filename
+    except Exception:
+        return filename
+
+
 def default_directory() -> Optional[str]:
     home = Path.home()
     if not home:

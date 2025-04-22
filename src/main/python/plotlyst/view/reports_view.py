@@ -32,7 +32,8 @@ from plotlyst.core.domain import Novel
 from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterChangedEvent, SceneChangedEvent, SceneDeletedEvent, \
-    CharacterDeletedEvent, NovelSyncEvent, StorylineCreatedEvent, StorylineRemovedEvent, NovelStoryStructureUpdated
+    CharacterDeletedEvent, NovelSyncEvent, StorylineCreatedEvent, StorylineRemovedEvent, NovelStoryStructureUpdated, \
+    NovelScenesOrganizationToggleEvent
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.common import link_buttons_to_pages, scrolled
 from plotlyst.view.generated.reports_view_ui import Ui_ReportsView
@@ -42,6 +43,7 @@ from plotlyst.view.report.character import CharacterReport
 from plotlyst.view.report.conflict import ConflictReport
 from plotlyst.view.report.manuscript import ManuscriptReport
 from plotlyst.view.report.plot import ArcReport
+from plotlyst.view.report.productivity import ProductivityReport
 from plotlyst.view.report.scene import SceneReport
 
 
@@ -173,7 +175,7 @@ class ArcReportPage(ReportPage):
 class ManuscriptReportPage(ReportPage):
     def __init__(self, novel: Novel, parent=None):
         super(ManuscriptReportPage, self).__init__(novel, parent)
-        self._dispatcher.register(self, SceneChangedEvent, SceneDeletedEvent)
+        self._dispatcher.register(self, SceneChangedEvent, SceneDeletedEvent, NovelScenesOrganizationToggleEvent)
         self._wc_cache: List[int] = []
 
     @overrides
@@ -204,6 +206,19 @@ class ManuscriptReportPage(ReportPage):
                 self._wc_cache.append(0)
 
 
+class ProductivityReportPage(ReportPage):
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(novel, parent)
+
+    @overrides
+    def _hasFrame(self) -> bool:
+        return True
+
+    @overrides
+    def _initReport(self):
+        return ProductivityReport(self._novel)
+
+
 class ReportsView(AbstractNovelView):
     def __init__(self, novel: Novel):
         super().__init__(novel)
@@ -218,8 +233,9 @@ class ReportsView(AbstractNovelView):
         self.ui.btnConflict.setIcon(IconRegistry.conflict_icon('black', color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnArc.setIcon(IconRegistry.rising_action_icon('black', color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnManuscript.setIcon(IconRegistry.manuscript_icon())
+        self.ui.btnProductivity.setIcon(
+            IconRegistry.from_name('mdi6.progress-star-four-points', color_on=PLOTLYST_SECONDARY_COLOR))
 
-        # self.ui.btnCharacters.setHidden(True)
         self.ui.btnConflict.setHidden(True)
 
         for btn in self.ui.buttonGroup.buttons():
@@ -239,11 +255,16 @@ class ReportsView(AbstractNovelView):
         self._page_manuscript = ManuscriptReportPage(self.novel)
         self.ui.stackedWidget.addWidget(self._page_manuscript)
 
+        self._page_productivty = ProductivityReportPage(self.novel)
+        self.ui.stackedWidget.addWidget(self._page_productivty)
+
         link_buttons_to_pages(self.ui.stackedWidget, [
             (self.ui.btnCharacters, self._page_characters),
             (self.ui.btnScenes, self._page_scenes),
             (self.ui.btnArc, self._page_arc),
-            (self.ui.btnManuscript, self._page_manuscript)])
+            (self.ui.btnManuscript, self._page_manuscript),
+            (self.ui.btnProductivity, self._page_productivty)
+        ])
 
         self.ui.btnCharacters.setChecked(True)
 

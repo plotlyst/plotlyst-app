@@ -48,23 +48,44 @@
        <property name="topMargin">
         <number>5</number>
        </property>
-       <item alignment="Qt::AlignLeft">
-        <widget class="ReturnButton" name="btnClose">
-         <property name="cursor">
-          <cursorShape>PointingHandCursor</cursorShape>
-         </property>
-         <property name="focusPolicy">
-          <enum>Qt::ClickFocus</enum>
-         </property>
-         <property name="text">
-          <string>Back</string>
-         </property>
-         <property name="shortcut">
-          <string>Return</string>
-         </property>
-         <property name="return" stdset="0">
-          <bool>true</bool>
-         </property>
+       <item>
+        <widget class="QWidget" name="wdgToolbar" native="true">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item alignment="Qt::AlignLeft">
+           <widget class="ReturnButton" name="btnClose">
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::ClickFocus</enum>
+            </property>
+            <property name="text">
+             <string>Back</string>
+            </property>
+            <property name="shortcut">
+             <string>Return</string>
+            </property>
+            <property name="return" stdset="0">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>
@@ -163,8 +184,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -191,8 +212,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -238,8 +259,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -266,8 +287,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -294,8 +315,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>22</width>
+                  <height>22</height>
                  </size>
                 </property>
                 <property name="checkable">
@@ -339,8 +360,8 @@
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>26</width>
-                  <height>26</height>
+                  <width>24</width>
+                  <height>24</height>
                  </size>
                 </property>
                </widget>
@@ -534,7 +555,7 @@
          <number>0</number>
         </property>
         <property name="topMargin">
-         <number>15</number>
+         <number>0</number>
         </property>
         <property name="rightMargin">
          <number>0</number>
@@ -543,61 +564,7 @@
          <number>0</number>
         </property>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <property name="spacing">
-           <number>3</number>
-          </property>
-          <property name="leftMargin">
-           <number>10</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>5</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="btnNewBackstory">
-            <property name="cursor">
-             <cursorShape>PointingHandCursor</cursorShape>
-            </property>
-            <property name="focusPolicy">
-             <enum>Qt::ClickFocus</enum>
-            </property>
-            <property name="toolTip">
-             <string>Add new backstory event</string>
-            </property>
-            <property name="text">
-             <string>Add event</string>
-            </property>
-            <property name="base" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="positive" stdset="0">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <widget class="QScrollArea" name="scrollArea">
+         <widget class="QScrollArea" name="scrollAreaBackstory">
           <property name="focusPolicy">
            <enum>Qt::NoFocus</enum>
           </property>
@@ -610,7 +577,7 @@
              <x>0</x>
              <y>0</y>
              <width>327</width>
-             <height>550</height>
+             <height>596</height>
             </rect>
            </property>
            <property name="sizePolicy">
@@ -770,6 +737,31 @@
         <item>
          <widget class="DocumentTextEditor" name="textEdit" native="true"/>
         </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabBackstoryDummy">
+       <property name="bg-image" stdset="0">
+        <bool>true</bool>
+       </property>
+       <attribute name="title">
+        <string>Backstory</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_12">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
        </layout>
       </widget>
      </widget>

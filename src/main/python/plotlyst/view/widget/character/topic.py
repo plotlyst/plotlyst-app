@@ -168,7 +168,7 @@ topics: Dict[TopicType, List[Topic]] = {
               description="The character's nationality"),
         Topic('Hometown', TopicType.Background, uuid.UUID('689b429f-0ff7-4a0d-917c-8a8a0b127892'),
               'ei.home-alt',
-              description="The character's hometown and how it mau have influenced their identity, values, or perspectives"),
+              description="The character's hometown and how it may have influenced their identity, values, or perspectives"),
         Topic('Unique life experiences', TopicType.Background, uuid.UUID('b450d336-375d-4011-80a2-4f84add2cad0'),
               'fa5s.map-signs',
               description="Any exceptional life experience that sets the character apart from others"),

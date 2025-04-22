@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from PyQt6.QtGui import QColor, QPalette
 from PyQt6.QtWidgets import QWidget
 
-from plotlyst.view.style.theme import BG_SECONDARY_COLOR, TEXT_COLOR_ON_DARK_BG
+from plotlyst.view.style.theme import BG_SECONDARY_COLOR, TEXT_COLOR_ON_DARK_BG, BG_MUTED_COLOR, \
+    TEXT_SECONDARY_COLOR_ON_DARK_BG
 
 label_style_description = """
     QLabel[description=true] {
@@ -39,6 +40,10 @@ label_style_error_night_mode = f"""
 
     QLabel[night-mode=true] {{
         color: {TEXT_COLOR_ON_DARK_BG};
+    }}
+    
+    QLabel[night-mode-secondary=true] {{
+        color: {TEXT_SECONDARY_COLOR_ON_DARK_BG};
     }}
 """
 
@@ -93,7 +98,11 @@ line_edit_styles = f"""
     QLineEdit[white-bg=true] {{
         background-color: #FcFcFc;
     }}
-
+    
+    QLineEdit[muted-bg=true] {{
+        background-color: {BG_MUTED_COLOR};
+    }}
+    
     QLineEdit[rounded=true] {{
         border-radius: 6px;
         padding: 4px;
@@ -179,9 +188,6 @@ def apply_texteditor_toolbar_style(widget: QWidget):
                             }}
                             QToolButton:checked {{
                                 background-color: #ced4da;
-                            }}
-                            QToolButton:hover:!checked {{
-                                background-color: #e5e5e5;
                             }}
                         ''')
 

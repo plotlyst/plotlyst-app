@@ -25,20 +25,26 @@ import qtanim
 from PyQt6 import QtGui
 from PyQt6.QtCore import pyqtSignal, QSize, Qt, QEvent, QPoint, QMimeData, QTimer
 from PyQt6.QtGui import QDragEnterEvent, QDragMoveEvent, QColor, QAction, QIcon
-from PyQt6.QtWidgets import QFrame, QApplication, QToolButton
+from PyQt6.QtWidgets import QFrame, QApplication, QToolButton, QTextBrowser, QWidget
 from overrides import overrides
-from qthandy import clear_layout, retain_when_hidden, transparent, flow, translucent, gc
-from qthandy.filter import DragEventFilter, DropEventFilter
+from qthandy import clear_layout, retain_when_hidden, transparent, flow, translucent, gc, incr_icon, vbox, pointy, \
+    incr_font, hbox, margins
+from qthandy.filter import DragEventFilter, DropEventFilter, OpacityEventFilter
+from qtmenu import MenuWidget
 
-from plotlyst.common import act_color, PLOTLYST_TERTIARY_COLOR, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Character, Scene, Novel, NovelSetting, CardSizeRatio
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
+from plotlyst.core.domain import Character, Scene, Novel, NovelSetting, CardSizeRatio, NovelDescriptor, LayoutType
 from plotlyst.core.help import enneagram_help, mbti_help
+from plotlyst.env import app_env
 from plotlyst.service.cache import acts_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
+from plotlyst.view.common import fade, fade_in, fade_out, tool_btn, push_btn, action
 from plotlyst.view.generated.character_card_ui import Ui_CharacterCard
 from plotlyst.view.generated.scene_card_ui import Ui_SceneCard
 from plotlyst.view.icons import IconRegistry, set_avatar, avatars
 from plotlyst.view.style.button import apply_button_palette_color
+from plotlyst.view.widget.button import DotsMenuButton
+from plotlyst.view.widget.display import Icon
 from plotlyst.view.widget.labels import CharacterAvatarLabel
 
 
@@ -52,6 +58,7 @@ class Card(QFrame):
     selected = pyqtSignal()
     doubleClicked = pyqtSignal()
     cursorEntered = pyqtSignal()
+    cursorLeft = pyqtSignal()
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -69,8 +76,20 @@ class Card(QFrame):
 
     @overrides
     def enterEvent(self, event: QEvent) -> None:
-        qtanim.glow(self, color=QColor(PLOTLYST_TERTIARY_COLOR))
+        color = QColor(PLOTLYST_SECONDARY_COLOR)
+        color.setAlpha(175)
+        qtanim.glow(self, color=color, radius=12, reverseAnimation=False)
+
         self.cursorEntered.emit()
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        if self.isEnabled() and self.isVisible():  # protect against deletion
+            color = QColor(PLOTLYST_SECONDARY_COLOR)
+            color.setAlpha(175)
+            qtanim.glow(self, color=color, radius=0, startRadius=12, reverseAnimation=False,
+                        teardown=lambda: self.setGraphicsEffect(None))
+            self.cursorLeft.emit()
 
     @overrides
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
@@ -89,7 +108,7 @@ class Card(QFrame):
         self._setStyleSheet()
 
     def refresh(self):
-        pass
+        self.setGraphicsEffect(None)
 
     def quickRefresh(self):
         pass
@@ -111,7 +130,7 @@ class Card(QFrame):
         border_size = self._borderSize(selected)
         background_color = self._bgColor(selected)
         self.setStyleSheet(f'''
-           QFrame[mainFrame=true] {{
+           Card {{
                border: {border_size}px solid {border_color};
                border-radius: 15px;
                background-color: {background_color};
@@ -156,7 +175,8 @@ class CharacterCard(Ui_CharacterCard, Card):
 
     @overrides
     def refresh(self):
-        self.textName.setText(self.character.name)
+        super().refresh()
+        self.textName.setText(self.character.displayed_name())
         self.textName.setAlignment(Qt.AlignmentFlag.AlignCenter)
         set_avatar(self.lblPic, self.character, size=118)
 
@@ -192,19 +212,25 @@ class SceneCard(Ui_SceneCard, Card):
 
         self.btnPov.clicked.connect(self.select)
         self.btnStage.clicked.connect(self.select)
+        self.btnStage.setActiveColor('grey')
 
         self.btnBeat = QToolButton(self)
         self.btnBeat.setIconSize(QSize(28, 28))
         transparent(self.btnBeat)
-
-        retain_when_hidden(self.lblType)
 
         self._setStyleSheet()
         self.refresh()
 
         self._stageVisible = self.novel.prefs.toggled(NovelSetting.SCENE_CARD_STAGE)
         self.btnPov.setVisible(self.novel.prefs.toggled(NovelSetting.SCENE_CARD_POV))
-        self.lblType.setVisible(self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PURPOSE))
+        self.lblType.setVisible(
+            self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PURPOSE, default=False) and app_env.profile().get(
+                'scene-purpose', False))
+        self.btnPlotProgress.setVisible(
+            self.novel.prefs.toggled(NovelSetting.SCENE_CARD_PLOT_PROGRESS) and app_env.profile().get(
+                'scene-progression', False))
+
+        incr_icon(self.btnPlotProgress, 4)
 
         self.repo = RepositoryPersistenceManager.instance()
 
@@ -214,18 +240,24 @@ class SceneCard(Ui_SceneCard, Card):
 
     @overrides
     def refresh(self):
+        super().refresh()
         self.quickRefresh()
         self.textSynopsis.setText(self.scene.synopsis)
 
         self.refreshPov()
+        self.wdgCharacters.setEnabled(False)
         self.refreshCharacters()
         self.refreshBeat()
 
-        icon = IconRegistry.scene_type_icon(self.scene)
-        if icon:
-            self.lblType.setPixmap(icon.pixmap(QSize(24, 24)))
+        self.refreshType()
+
+        if self.scene.plot_pos_progress or self.scene.plot_neg_progress:
+            self.btnPlotProgress.setIcon(
+                IconRegistry.plot_charge_icon(self.scene.plot_pos_progress, self.scene.plot_neg_progress))
+        elif self.scene.progress:
+            self.btnPlotProgress.setIcon(IconRegistry.charge_icon(self.scene.progress))
         else:
-            self.lblType.clear()
+            self.btnPlotProgress.setIcon(QIcon())
 
         self.btnStage.setScene(self.scene, self.novel)
 
@@ -244,12 +276,18 @@ class SceneCard(Ui_SceneCard, Card):
         beat = self.scene.beat(self.novel)
         if beat:
             icon = beat.icon if beat.icon else f'ri.number-{beat.seq}'
-            self.btnBeat.setIcon(IconRegistry.scene_beat_badge_icon(icon, beat.icon_color, act_color(beat.act,
-                                                                                                     self.novel.active_story_structure.acts)))
+            self.btnBeat.setIcon(IconRegistry.scene_beat_badge_icon(icon, beat.icon_color, beat.icon_color))
             self.btnBeat.setToolTip(beat.text)
             self.btnBeat.setVisible(True)
         else:
             self.btnBeat.setHidden(True)
+
+    def refreshType(self):
+        icon = IconRegistry.scene_type_icon(self.scene)
+        if icon:
+            self.lblType.setPixmap(icon.pixmap(QSize(24, 24)))
+        else:
+            self.lblType.clear()
 
     @overrides
     def quickRefresh(self):
@@ -266,27 +304,29 @@ class SceneCard(Ui_SceneCard, Card):
 
     def setSetting(self, setting: NovelSetting, value: Any):
         if setting == NovelSetting.SCENE_CARD_POV:
-            self.btnPov.setVisible(value)
+            # self.btnPov.setVisible(value)
+            fade(self.btnPov, value)
         elif setting == NovelSetting.SCENE_CARD_PURPOSE:
-            self.lblType.setVisible(value)
+            fade(self.lblType, value)
+        elif setting == NovelSetting.SCENE_CARD_PLOT_PROGRESS:
+            fade(self.btnPlotProgress, value)
         elif setting == NovelSetting.SCENE_CARD_STAGE:
             self._stageVisible = value
             if self._stageVisible:
                 if self.btnStage.stageOk():
-                    self.btnStage.setVisible(True)
+                    fade_in(self.btnStage)
             else:
-                self.btnStage.setHidden(True)
+                fade_out(self.btnStage)
 
     @overrides
     def enterEvent(self, event: QEvent) -> None:
         super(SceneCard, self).enterEvent(event)
-        self.wdgCharacters.setEnabled(True)
         if self._stageVisible:
             self.btnStage.setVisible(True)
 
     @overrides
     def leaveEvent(self, event: QEvent) -> None:
-        self.wdgCharacters.setEnabled(False)
+        super().leaveEvent(event)
         if not self._stageVisible:
             self.btnStage.setHidden(True)
         elif not self.btnStage.stageOk() and not self.btnStage.menu().isVisible():
@@ -316,6 +356,129 @@ class SceneCard(Ui_SceneCard, Card):
 
         self.btnBeat.setGeometry(w - self.btnBeat.sizeHint().width(), 0, self.btnBeat.sizeHint().width(),
                                  self.btnBeat.sizeHint().height() + 5)
+
+
+class NovelCard(Card):
+    detach = pyqtSignal()
+
+    def __init__(self, novel: NovelDescriptor, parent=None):
+        super().__init__(parent)
+        self.novel = novel
+
+        self.btnSettings = DotsMenuButton(self)
+        self.btnSettings.setGeometry(135, 5, 20, 20)
+
+        menu = MenuWidget(self.btnSettings)
+        menu.addAction(action('Detach novel from series', IconRegistry.from_name('fa5s.unlink'), slot=self.detach))
+
+        self.textTitle = QTextBrowser()
+        transparent(self.textTitle)
+        incr_font(self.textTitle, 4)
+        self.textTitle.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textTitle.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textTitle.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        self.textTitle.setContentsMargins(0, 0, 0, 0)
+        self.textTitle.document().setDocumentMargin(0)
+
+        self.icon = Icon()
+        self.icon.setIconSize(QSize(32, 32))
+        translucent(self.icon, 0.8)
+
+        self.btnOpen = push_btn(IconRegistry.book_icon(RELAXED_WHITE_COLOR, RELAXED_WHITE_COLOR), 'Open',
+                                properties=['positive', 'confirm'])
+
+        vbox(self, margin=5)
+        # self.layout().addWidget(self.btnSettings, alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout().addWidget(self.icon, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.textTitle)
+        self.layout().addWidget(self.btnOpen, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.btnSettings.setHidden(True)
+        self.btnOpen.setHidden(True)
+
+        self._setStyleSheet()
+        self.refresh()
+
+    @overrides
+    def enterEvent(self, event: QEvent) -> None:
+        super().enterEvent(event)
+        fade_in(self.btnSettings)
+        fade_in(self.btnOpen)
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        super().leaveEvent(event)
+        self.btnSettings.setHidden(True)
+        self.btnOpen.setHidden(True)
+
+    @overrides
+    def mimeType(self) -> str:
+        return 'application/novel-card'
+
+    @overrides
+    def data(self) -> Any:
+        return self.novel
+
+    @overrides
+    def copy(self) -> 'Card':
+        return NovelCard(self.novel)
+
+    @overrides
+    def refresh(self):
+        super().refresh()
+        self.textTitle.setText(self.novel.title)
+        self.textTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if self.novel.icon:
+            self.icon.setIcon(IconRegistry.from_name(self.novel.icon))
+        else:
+            self.icon.setIcon(IconRegistry.book_icon())
+
+
+class PlaceholderCard(Card):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(False)
+        self._dragEnabled = False
+        vbox(self)
+        pointy(self)
+
+        self.btnPlus = tool_btn(IconRegistry.plus_icon('lightgrey'), transparent_=True)
+        self.btnPlus.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.btnPlus.setIconSize(QSize(124, 124))
+        self.btnPlus.clicked.connect(self.selected)
+
+        self.layout().addWidget(self.btnPlus, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.5, enterOpacity=0.6))
+
+        self._setStyleSheet()
+
+    @overrides
+    def enterEvent(self, event: QEvent) -> None:
+        pass
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        pass
+
+    @overrides
+    def mimeType(self) -> str:
+        pass
+
+    @overrides
+    def data(self) -> Any:
+        pass
+
+    @overrides
+    def copy(self) -> 'Card':
+        pass
+
+    @overrides
+    def _setStyleSheet(self, selected: bool = False):
+        self.setStyleSheet('''
+                   Card {
+                       border: 2px dotted grey;
+                       border-radius: 15px;
+                   }''')
 
 
 class CardFilter:
@@ -355,15 +518,26 @@ class SceneCardFilter(CardFilter):
 class CardsView(QFrame):
     cardSelected = pyqtSignal(Card)
     cardEntered = pyqtSignal(Card)
+    cardLeft = pyqtSignal(Card)
     cardDoubleClicked = pyqtSignal(Card)
     cardCustomContextMenuRequested = pyqtSignal(Card, QPoint)
     orderChanged = pyqtSignal(list, Card)  # dropped Card
     selectionCleared = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, layoutType: LayoutType = LayoutType.FLOW, margin: int = 9, spacing: int = 15):
         super().__init__(parent)
         self._cards: Dict[Any, Card] = {}
-        self._layout = flow(self, 9, 15)
+        self._margin = margin
+        self._spacing = spacing
+        self._layoutType = layoutType
+        if layoutType == LayoutType.FLOW:
+            self._layout = flow(self, self._margin, self._spacing)
+            margins(self, left=15, top=15)
+        elif layoutType == LayoutType.VERTICAL:
+            self._layout = vbox(self, self._margin, self._spacing)
+        elif layoutType == LayoutType.HORIZONTAL:
+            self._layout = hbox(self, self._margin, self._spacing)
+
         self.setAcceptDrops(True)
         self._droppedTo: Optional[Card] = None
         self._selected: Optional[Card] = None
@@ -397,9 +571,12 @@ class CardsView(QFrame):
         self._cards.clear()
         clear_layout(self._layout)
 
-    def addCard(self, card: Card):
+    def addCard(self, card: Card, alignment=None):
         self._initCardWidget(card)
-        self._layout.addWidget(card)
+        if alignment:
+            self._layout.addWidget(card, alignment=alignment)
+        else:
+            self._layout.addWidget(card)
 
     def insertAfter(self, ref: Card, card: Card):
         self._initCardWidget(card)
@@ -456,6 +633,29 @@ class CardsView(QFrame):
         self._cardsRatio = ratio
         self._resizeAllCards()
 
+    def swapLayout(self, layoutType: LayoutType, alignment=None):
+        cards = []
+        for i in range(self._layout.count()):
+            item = self._layout.itemAt(i)
+            if item and item.widget() and isinstance(item.widget(), Card):
+                cards.append(item.widget())
+        clear_layout(self._layout, auto_delete=False)
+        QWidget().setLayout(self.layout())
+
+        self._layoutType = layoutType
+        if layoutType == LayoutType.FLOW:
+            self._layout = flow(self, self._margin, self._spacing)
+        elif layoutType == LayoutType.VERTICAL:
+            self._layout = vbox(self, self._margin, self._spacing)
+        elif layoutType == LayoutType.HORIZONTAL:
+            self._layout = hbox(self, self._margin, self._spacing)
+
+        for card in cards:
+            if alignment:
+                self._layout.addWidget(card, alignment=alignment)
+            else:
+                self._layout.addWidget(card)
+
     def setSetting(self, setting: NovelSetting, value: Any):
         for card in self._cards.values():
             card.setSetting(setting, value)
@@ -473,8 +673,10 @@ class CardsView(QFrame):
         card.selected.connect(lambda: self._cardSelected(card))
         card.doubleClicked.connect(lambda: self.cardDoubleClicked.emit(card))
         card.cursorEntered.connect(lambda: self.cardEntered.emit(card))
+        card.cursorLeft.connect(lambda: self.cardLeft.emit(card))
         card.customContextMenuRequested.connect(partial(self.cardCustomContextMenuRequested.emit, card))
-        card.installEventFilter(DropEventFilter(card, [card.mimeType()], motionDetection=Qt.Orientation.Horizontal,
+        detectionOrientation = Qt.Orientation.Vertical if self._layoutType == LayoutType.VERTICAL else Qt.Orientation.Horizontal
+        card.installEventFilter(DropEventFilter(card, [card.mimeType()], motionDetection=detectionOrientation,
                                                 motionSlot=partial(self._dragMoved, card),
                                                 droppedSlot=self._dropped))
         self._cards[card.data()] = card
@@ -492,7 +694,8 @@ class CardsView(QFrame):
         card.setFixedSize(self._cardsWidth, int(height))
 
     def _cardSelected(self, card: Card):
-        self._selected = card
+        if not isinstance(card, PlaceholderCard):
+            self._selected = card
         self.cardSelected.emit(card)
 
     def _dragStarted(self, card: Card):
@@ -509,7 +712,7 @@ class CardsView(QFrame):
 
     def _dragMoved(self, card: Card, edge: Qt.Edge, _: QPoint):
         i = self._layout.indexOf(card)
-        if edge == Qt.Edge.LeftEdge:
+        if edge == Qt.Edge.LeftEdge or edge == Qt.Edge.TopEdge:
             self._layout.insertWidget(i, self._dragPlaceholder)
         else:
             self._layout.insertWidget(i + 1, self._dragPlaceholder)
@@ -527,6 +730,8 @@ class CardsView(QFrame):
         for i in range(self._layout.count()):
             card: Card = self._layout.itemAt(i).widget()
             if card is self._dragPlaceholder or card is self._dragged:
+                continue
+            if isinstance(card, PlaceholderCard):
                 continue
             data.append(card.data())
 

@@ -29,13 +29,18 @@ from qthandy.filter import DragEventFilter, DropEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 from plotlyst.common import recursive
-from plotlyst.core.domain import Document, Novel, DocumentType, Character, PremiseBuilder
+from plotlyst.core.domain import Document, Novel, DocumentType, Character, PremiseBuilder, Diagram, DiagramData, \
+    MINDMAP_PREVIEW
+from plotlyst.env import app_env
+from plotlyst.event.core import emit_global_event
+from plotlyst.events import PreviewFeatureEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import fade_out_and_gc, action
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
+from plotlyst.view.widget.display import PremiumMessagePopup
 from plotlyst.view.widget.tree import TreeView, ContainerNode, TreeSettings
 
 
@@ -46,9 +51,10 @@ class DocumentAdditionMenu(MenuWidget):
         super(DocumentAdditionMenu, self).__init__(parent)
         self._novel = novel
 
-        self.addAction(action('Document', IconRegistry.document_edition_icon(), lambda: self._documentSelected()))
+        self.addAction(action('Document', IconRegistry.document_edition_icon(), self._documentSelected))
+        self.addAction(action('Mind map', IconRegistry.from_name('ri.mind-map'), self._mindmapSelected))
+        self.addSeparator()
         self.addAction(action('Link PDF', IconRegistry.from_name('fa5.file-pdf'), self._openPdf))
-
         self.addSeparator()
 
         self._character_menu = CharacterSelectorMenu(self._novel)
@@ -56,16 +62,17 @@ class DocumentAdditionMenu(MenuWidget):
         self._character_menu.setTitle('Characters')
         self._character_menu.setIcon(IconRegistry.character_icon())
         self.addMenu(self._character_menu)
-        self.addSeparator()
 
-        self._otherMenu = MenuWidget()
-        self._otherMenu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
-        self._otherMenu.setTitle('Other')
-        self._otherMenu.addAction(action('Premise builder', IconRegistry.from_name('fa5s.scroll', '#0077b6'),
-                                         lambda: self._premiseSelected(),
-                                         tooltip="Turn ideas into concepts, and develop a final premise"))
+        if app_env.profile().get('extra-docs', False):
+            self.addSeparator()
+            self._otherMenu = MenuWidget()
+            self._otherMenu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
+            self._otherMenu.setTitle('Other')
+            self._otherMenu.addAction(action('Premise builder', IconRegistry.from_name('mdi.flower'),
+                                             lambda: self._premiseSelected(),
+                                             tooltip="Turn ideas into concepts, and develop a final premise"))
 
-        self.addMenu(self._otherMenu)
+            self.addMenu(self._otherMenu)
 
         apply_white_menu(self)
 
@@ -73,8 +80,8 @@ class DocumentAdditionMenu(MenuWidget):
         self._documentSelected(character=character)
         self._character_menu.close()
 
-    def _documentSelected(self, docType=DocumentType.DOCUMENT, character: Optional[Character] = None):
-        doc = Document('', type=docType, icon='mdi.file-document')
+    def _documentSelected(self, character: Optional[Character] = None):
+        doc = Document('', type=DocumentType.DOCUMENT, icon='mdi.file-document')
         if character:
             doc.title = ''
             doc.character_id = character.id
@@ -82,8 +89,20 @@ class DocumentAdditionMenu(MenuWidget):
 
         self.documentTriggered.emit(doc)
 
+    def _mindmapSelected(self):
+        if app_env.profile().get('mindmap', False):
+            doc = Document('Mindmap', type=DocumentType.MIND_MAP, icon='ri.mind-map', diagram=Diagram(''))
+            doc.diagram.data = DiagramData()
+            doc.diagram.loaded = True
+            self.documentTriggered.emit(doc)
+        else:
+            preview = PremiumMessagePopup.popup('Mindmap', 'ri.mind-map', 'https://plotlyst.com/docs/characters/',
+                                                preview=MINDMAP_PREVIEW)
+            if preview:
+                QTimer.singleShot(50, lambda: emit_global_event(PreviewFeatureEvent(self, MINDMAP_PREVIEW)))
+
     def _premiseSelected(self):
-        doc = Document('Premise', type=DocumentType.PREMISE, icon='fa5s.scroll', icon_color='#0077b6')
+        doc = Document('Premise', type=DocumentType.PREMISE, icon='mdi.flower')
         doc.data = PremiseBuilder()
         doc.data_id = doc.data.id
         doc.loaded = True
@@ -113,6 +132,9 @@ class DocumentNode(ContainerNode):
         menu = DocumentAdditionMenu(self._novel, self._btnAdd)
         menu.documentTriggered.connect(self.added)
         self.refresh()
+
+        if doc.type == DocumentType.MIND_MAP and not app_env.profile().get('mindmap'):
+            self.setDisabled(True)
 
     def doc(self) -> Document:
         return self._doc

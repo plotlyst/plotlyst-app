@@ -22,7 +22,7 @@ from functools import partial
 from typing import Optional
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, QObject, QTimer
+from PyQt6.QtCore import pyqtSignal, QObject, QTimer, Qt
 from PyQt6.QtWidgets import QWidget, QAbstractButton, QLineEdit, QCompleter
 from overrides import overrides
 from qthandy import translucent, bold, italic, incr_font
@@ -31,24 +31,26 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.client import json_client
-from plotlyst.core.domain import Novel, Character, Document, FEMALE, SelectionItem
+from plotlyst.core.domain import Novel, Character, Document, FEMALE, SelectionItem, BACKSTORY_PREVIEW
 from plotlyst.core.template import protagonist_role
+from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers, global_event_dispatcher
 from plotlyst.events import NovelAboutToSyncEvent
 from plotlyst.resources import resource_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.service.tour import TourService
-from plotlyst.view.common import emoji_font, set_tab_icon, ButtonPressResizeEventFilter, set_tab_visible
+from plotlyst.view.common import set_tab_icon, ButtonPressResizeEventFilter, set_tab_visible, action, scroll_to_bottom
 from plotlyst.view.generated.character_editor_ui import Ui_CharacterEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_bg_image, apply_white_menu
-from plotlyst.view.widget.button import FadeOutButtonGroup
+from plotlyst.view.widget.button import FadeOutButtonGroup, DotsMenuButton
 from plotlyst.view.widget.character.editor import CharacterAgeEditor
 from plotlyst.view.widget.character.editor import CharacterRoleSelector
-from plotlyst.view.widget.character.profile import CharacterProfileEditor
+from plotlyst.view.widget.character.profile import CharacterProfileEditor, CharacterNameEditorPopup
 from plotlyst.view.widget.character.topic import CharacterTopicsEditor
 from plotlyst.view.widget.confirm import asked
+from plotlyst.view.widget.display import PremiumOverlayWidget
 from plotlyst.view.widget.tour.core import CharacterEditorTourEvent, \
     CharacterEditorNameLineEditTourEvent, TourEvent, CharacterEditorNameFilledTourEvent, \
     CharacterEditorAvatarDisplayTourEvent, CharacterEditorAvatarMenuTourEvent, CharacterEditorBackButtonTourEvent, \
@@ -66,13 +68,25 @@ class CharacterEditor(QObject, EventListener):
         self.novel = novel
         self.character: Optional[Character] = None
 
-        self._emoji_font = emoji_font()
-        self.ui.btnNewBackstory.setIcon(IconRegistry.plus_icon('white'))
-        self.ui.btnNewBackstory.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnNewBackstory))
-        self.ui.btnNewBackstory.clicked.connect(lambda: self.ui.wdgBackstory.add())
-        self.ui.tabAttributes.currentChanged.connect(self._tab_changed)
+        self._btnMenu = DotsMenuButton()
+        self._btnMenu.installEventFilter(OpacityEventFilter(self._btnMenu))
+        menu = MenuWidget(self._btnMenu)
+        menu.addAction(action('Edit displayed name', IconRegistry.from_name('mdi.badge-account-outline'),
+                              self._edit_displayed_name))
+        self.ui.wdgToolbar.layout().addWidget(self._btnMenu, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.ui.wdgBackstory.addedToTheEnd.connect(lambda: scroll_to_bottom(self.ui.scrollAreaBackstory))
+        set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
+        set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, app_env.profile().get('origin', False))
+        set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))
+
         self.ui.textEdit.setTitleVisible(False)
+        self.ui.textEdit.setToolbarVisible(False)
         self.ui.textEdit.setWidthPercentage(95)
+        self.ui.textEdit.textEdit.setDocumentMargin(20)
+        self.ui.textEdit.textEdit.setBlockPlaceholderEnabled(True)
+
+        self.ui.tabAttributes.currentChanged.connect(self._tab_changed)
 
         self.ui.btnMale.setIcon(IconRegistry.male_gender_icon())
         self.ui.btnMale.installEventFilter(OpacityEventFilter(parent=self.ui.btnMale, ignoreCheckedButton=True))
@@ -132,10 +146,12 @@ class CharacterEditor(QObject, EventListener):
         menu.aboutToShow.connect(self._lineOccupation.setFocus)
         self._lineOccupation.editingFinished.connect(menu.hide)
 
-        incr_font(self.ui.btnAge, 2)
-        incr_font(self.ui.btnOccupation, 2)
+        incr_font(self.ui.btnAge)
+        incr_font(self.ui.btnOccupation)
 
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBackstory,
+                     IconRegistry.backstory_icon('black', PLOTLYST_SECONDARY_COLOR))
+        set_tab_icon(self.ui.tabAttributes, self.ui.tabBackstoryDummy,
                      IconRegistry.backstory_icon('black', PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabTopics,
                      IconRegistry.topics_icon(color_on=PLOTLYST_SECONDARY_COLOR))
@@ -143,7 +159,6 @@ class CharacterEditor(QObject, EventListener):
         set_tab_icon(self.ui.tabAttributes, self.ui.tabNotes, IconRegistry.document_edition_icon())
         set_tab_icon(self.ui.tabAttributes, self.ui.tabGoals, IconRegistry.goal_icon('black', PLOTLYST_SECONDARY_COLOR))
 
-        # set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, False)
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBigFive, False)
         set_tab_visible(self.ui.tabAttributes, self.ui.tabGoals, False)
 
@@ -163,10 +178,20 @@ class CharacterEditor(QObject, EventListener):
         self.ui.wdgProfile.layout().addWidget(self.profile)
 
         apply_bg_image(self.ui.scrollAreaBackstoryContents, resource_registry.cover1)
+        if not app_env.profile().get('backstory', False):
+            apply_bg_image(self.ui.tabBackstoryDummy, resource_registry.cover1)
+            PremiumOverlayWidget(self.ui.tabBackstoryDummy, 'Character backstory',
+                                 icon='fa5s.archive',
+                                 alt_link='https://plotlyst.com/docs/characters/', preview=BACKSTORY_PREVIEW)
 
         self.ui.btnClose.clicked.connect(self._save)
 
-        self.ui.tabAttributes.setCurrentWidget(self.ui.tabBackstory)
+        if self.ui.tabBackstory.isVisible():
+            self.ui.tabAttributes.setCurrentWidget(self.ui.tabBackstory)
+        elif self.ui.tabTopics.isVisible():
+            self.ui.tabAttributes.setCurrentWidget(self.ui.tabTopics)
+        else:
+            self.ui.tabAttributes.setCurrentWidget(self.ui.tabNotes)
 
         self.repo = RepositoryPersistenceManager.instance()
         dispatcher = event_dispatchers.instance(self.novel)
@@ -248,7 +273,7 @@ class CharacterEditor(QObject, EventListener):
             self.ui.wdgAvatar.updateAvatar()
 
     def _tab_changed(self):
-        if self.ui.tabAttributes.currentWidget() is self.ui.tabNotes:
+        if self.ui.tabAttributes.currentWidget() is self.ui.tabNotes and self.character:
             if self.character.document and not self.character.document.loaded:
                 json_client.load_document(self.novel, self.character.document)
                 self.ui.textEdit.setText(self.character.document.content, self.character.name, title_read_only=True)
@@ -371,9 +396,14 @@ class CharacterEditor(QObject, EventListener):
         self.ui.btnMoreGender.setText('«' if toggled else '»')
 
     def _avatar_updated(self):
-        self.ui.wdgBackstory.refreshCharacter()
         if self.character.prefs.avatar.use_role and self.character.role is None:
             qtanim.shake(self.ui.btnRole)
+
+    def _edit_displayed_name(self):
+        CharacterNameEditorPopup.popup(self.character)
+        self.ui.lineName.setText(self.character.name)
+        if self.character.prefs.avatar.use_initial:
+            self.ui.wdgAvatar.updateAvatar()
 
     def _save(self):
         if self.character.role and self.character.role.text == protagonist_role.text:

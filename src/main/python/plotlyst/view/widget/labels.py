@@ -22,18 +22,19 @@ from typing import Union, List, Iterable, Set
 
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QMouseEvent
-from PyQt6.QtWidgets import QWidget, QLabel, QFrame, QToolButton, QSizePolicy
+from PyQt6.QtWidgets import QWidget, QLabel, QFrame, QToolButton, QSizePolicy, QPushButton
 from overrides import overrides
-from qthandy import hbox, vline, vbox, clear_layout, transparent, flow, incr_font
+from qthandy import hbox, vbox, clear_layout, transparent, flow, incr_font, translucent, italic
 from qthandy.filter import VisibilityToggleEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import truncate_string, RELAXED_WHITE_COLOR, RED_COLOR, PLOTLYST_TERTIARY_COLOR
+from plotlyst.common import truncate_string, RELAXED_WHITE_COLOR, RED_COLOR, PLOTLYST_SECONDARY_COLOR, \
+    PLOTLYST_MAIN_COLOR
 from plotlyst.core.domain import Character, Conflict, SelectionItem, Novel, ScenePlotReference, \
-    CharacterGoal, PlotValue, Scene, GoalReference
+    CharacterGoal, PlotValue, Scene, GoalReference, NovelDescriptor
 from plotlyst.env import app_env
 from plotlyst.model.common import SelectionItemsModel
-from plotlyst.view.common import text_color_with_bg_color, tool_btn
+from plotlyst.view.common import text_color_with_bg_color, tool_btn, ButtonPressResizeEventFilter
 from plotlyst.view.icons import set_avatar, IconRegistry, avatars
 from plotlyst.view.widget.display import Icon
 from plotlyst.view.widget.input import RemovalButton
@@ -52,7 +53,7 @@ class Label(QFrame):
         self.clicked.emit()
 
 
-class LabelsWidget(QWidget):
+class LabelsWidget(QFrame):
 
     def __init__(self, parent=None):
         super(LabelsWidget, self).__init__(parent)
@@ -85,24 +86,24 @@ class CharacterLabel(Label):
         self.btnAvatar.setIconSize(QSize(24, 24))
         self.btnAvatar.clicked.connect(self.clicked.emit)
         self.layout().addWidget(self.btnAvatar)
-        self.layout().addWidget(QLabel(truncate_string(character.name)))
+        self.layout().addWidget(QLabel(truncate_string(character.displayed_name())))
 
-        role = self.character.role
-        if role:
-            if not self.character.prefs.avatar.use_role:
-                self.lblRole = QLabel()
-                self.lblRole.setPixmap(IconRegistry.from_name(role.icon, role.icon_color).pixmap(QSize(24, 24)))
-                self.layout().addWidget(vline())
-                self.layout().addWidget(self.lblRole)
-            border_color = role.icon_color
-        else:
-            border_color = PLOTLYST_TERTIARY_COLOR
+        # role = self.character.role
+        # if role:
+        #     if not self.character.prefs.avatar.use_role:
+        #         self.lblRole = QLabel()
+        #         self.lblRole.setPixmap(IconRegistry.from_name(role.icon, role.icon_color).pixmap(QSize(24, 24)))
+        #         self.layout().addWidget(vline())
+        #         self.layout().addWidget(self.lblRole)
+        #     border_color = role.icon_color
+        # else:
+        #     border_color = PLOTLYST_TERTIARY_COLOR
 
-        self.setStyleSheet(f'''
-        CharacterLabel {{
-            border: 2px solid {border_color}; 
-            border-radius: 8px; padding-left: 3px; padding-right: 3px;}}
-        ''')
+        # self.setStyleSheet(f'''
+        # CharacterLabel {{
+        #     border: 2px solid {border_color};
+        #     border-radius: 8px; padding-left: 3px; padding-right: 3px;}}
+        # ''')
 
 
 class CharacterAvatarLabel(QToolButton):
@@ -110,6 +111,7 @@ class CharacterAvatarLabel(QToolButton):
         super(CharacterAvatarLabel, self).__init__(parent)
         transparent(self)
         self.setIcon(avatars.avatar(character))
+        self.setToolTip(character.name)
         self.setIconSize(QSize(size, size))
 
 
@@ -300,6 +302,31 @@ class SceneLabel(Label):
         self.lblTitle.setText(scene.title_or_index(app_env.novel))
 
 
+class SeriesLabel(QPushButton):
+    def __init__(self, parent=None, transparent: bool = False):
+        super().__init__(parent)
+        border_type = 'hidden' if transparent else 'solid'
+        self.setStyleSheet(f'''SeriesLabel {{
+                    border: 1px {border_type} {PLOTLYST_MAIN_COLOR};
+                    border-radius: 14px;
+                    padding-left: 8px;
+                    padding-right: 8px;
+                    padding-top: 4px;
+                    padding-bottom: 4px;
+                    color: {PLOTLYST_MAIN_COLOR};
+                }}''')
+        translucent(self, 0.7)
+        italic(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+
+    def setSeries(self, series: NovelDescriptor):
+        self.setText(series.title)
+        if series.icon:
+            self.setIcon(IconRegistry.from_name(series.icon, PLOTLYST_SECONDARY_COLOR))
+        else:
+            self.setIcon(IconRegistry.series_icon(PLOTLYST_SECONDARY_COLOR))
+
+
 class EmotionLabel(Label):
     def __init__(self, parent=None):
         super(EmotionLabel, self).__init__(parent)
@@ -353,7 +380,6 @@ class LabelsEditorWidget(QFrame):
         self.layout().addWidget(self.btnEdit, alignment=Qt.AlignmentFlag.AlignTop)
 
         self._wdgLabels = LabelsWidget()
-        self._wdgLabels.setStyleSheet('LabelsWidget {border: 1px solid black;}')
         self._wdgLabels.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.layout().addWidget(self._wdgLabels)
 

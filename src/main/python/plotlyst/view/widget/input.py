@@ -41,9 +41,11 @@ from qtmenu import MenuWidget
 from qttextedit import EnhancedTextEdit, RichTextEditor, DashInsertionMode, remove_font
 from qttextedit.api import AutoCapitalizationMode, PopupBase, TextEditorToolbar
 from qttextedit.ops import BoldOperation, ItalicOperation, UnderlineOperation, StrikethroughOperation, \
-    AlignLeftOperation, AlignCenterOperation, AlignRightOperation, InsertListOperation, InsertNumberedListOperation
+    AlignLeftOperation, AlignCenterOperation, AlignRightOperation, InsertListOperation, InsertNumberedListOperation, \
+    FormatOperation, ColorOperation, InsertLinkOperation, TextEditingSettingsOperation
 
-from plotlyst.common import IGNORE_CAPITALIZATION_PROPERTY, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, RED_COLOR
+from plotlyst.common import IGNORE_CAPITALIZATION_PROPERTY, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR, RED_COLOR, \
+    PLOTLYST_TERTIARY_COLOR, TRANS_PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import TextStatistics, Character, Label
 from plotlyst.core.text import wc
 from plotlyst.env import app_env
@@ -54,14 +56,15 @@ from plotlyst.model.characters_model import CharactersTableModel
 from plotlyst.model.common import proxy
 from plotlyst.service.grammar import language_tool_proxy, dictionary
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import action, label, push_btn, tool_btn, insert_before, fade_out_and_gc, shadow, emoji_font
+from plotlyst.view.common import action, label, push_btn, tool_btn, insert_before, fade_out_and_gc, shadow, emoji_font, \
+    fade_in, ButtonPressResizeEventFilter
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_color
 from plotlyst.view.style.text import apply_texteditor_toolbar_style
 from plotlyst.view.widget._toggle import AnimatedToggle
 from plotlyst.view.widget.button import DotsMenuButton
-from plotlyst.view.widget.display import PopupDialog
+from plotlyst.view.widget.display import PopupDialog, Icon
 from plotlyst.view.widget.utility import IconSelectorDialog
 
 
@@ -130,7 +133,7 @@ class AutoAdjustableLineEdit(QLineEdit):
             width = max(text_width + self._padding, self._defaultWidth)
             if self._maxWidth:
                 width = min(width, self._maxWidth)
-            self.setMaximumWidth(width)
+            self.setFixedWidth(width)
         else:
             self.setFixedWidth(self._defaultWidth)
 
@@ -184,6 +187,10 @@ class GrammarHighlighter(AbstractTextBlockHighlighter, EventListener):
                  highlightStyle: GrammarHighlightStyle = GrammarHighlightStyle.UNDERLINE):
         super(GrammarHighlighter, self).__init__(document)
         self._checkEnabled: bool = checkEnabled
+        self._highlights_index = {}
+
+        self._highlight_format = QTextCharFormat()
+        self._highlight_format.setBackground(QColor(PLOTLYST_TERTIARY_COLOR))
 
         self._misspelling_format = QTextCharFormat()
         self._misspelling_format.setUnderlineColor(QColor('#d90429'))
@@ -224,6 +231,21 @@ class GrammarHighlighter(AbstractTextBlockHighlighter, EventListener):
         if not enabled:
             self._asyncTimer.stop()
 
+    def setHighlights(self, highlights: list):
+        self._highlights_index.clear()
+
+        for result in highlights:
+            block_num = result["block"]
+            if block_num not in self._highlights_index:
+                self._highlights_index[block_num] = []
+            self._highlights_index[block_num].append(result)
+
+        self.rehighlight()
+
+    def clearHighlights(self):
+        self._highlights_index.clear()
+        self.rehighlight()
+
     @overrides
     def setDocument(self, doc: Optional[QTextDocument]) -> None:
         self._asyncTimer.stop()
@@ -248,6 +270,13 @@ class GrammarHighlighter(AbstractTextBlockHighlighter, EventListener):
                                self._formats_per_issue.get(m.ruleIssueType, self._grammar_format))
                 misspellings.append((m.offset, m.errorLength, m.replacements, m.message, m.ruleIssueType))
             data.misspellings = misspellings
+        elif self._highlights_index:
+            block_number = self.currentBlock().blockNumber()
+            matches = self._highlights_index.get(block_number, [])
+
+            for match in matches:
+                self.setFormat(match["pos_in_block"][0], match["pos_in_block"][1] - match["pos_in_block"][0],
+                               self._highlight_format)
         else:
             data.misspellings.clear()
 
@@ -330,9 +359,9 @@ class GrammarPopup(PopupBase):
         if app_env.is_mac():
             margins(self.wdgReplacements, bottom=10)
         self.btnClose = RemovalButton()
-        self.lblMessage = label(description=True, wordWrap=True)
-        self.lblMessage.setMinimumWidth(200)
-        self.lblMessage.setMaximumWidth(300)
+        self.lblMessage = AutoAdjustableTextEdit(height=75)
+        translucent(self.lblMessage, 0.6)
+        transparent(self.lblMessage)
         decr_font(self.lblMessage)
 
         self.wdgTop = QWidget()
@@ -399,9 +428,22 @@ class ReplacementInfo:
 class BasePopupTextEditorToolbar(TextEditorToolbar, PopupBase):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._frozen = False
         self.setProperty('rounded', True)
         self.setProperty('relaxed-white-bg', True)
         margins(self, 5, 5, 5, 5)
+
+    @overrides
+    def freeze(self):
+        self._frozen = True
+
+    @overrides
+    def unfreeze(self):
+        self._frozen = False
+
+    @overrides
+    def isFrozen(self):
+        return self._frozen
 
     @overrides
     def beforeShown(self):
@@ -434,10 +476,18 @@ class HtmlPopupTextEditorToolbar(BasePopupTextEditorToolbar):
         self.setProperty('rounded', True)
         self.setProperty('relaxed-white-bg', True)
         margins(self, 5, 5, 5, 5)
+        btn = self.addTextEditorOperation(FormatOperation)
+        btn.menu().aboutToShow.connect(self.freeze)
+        btn.menu().aboutToHide.connect(self.unfreeze)
+        self.addSeparator()
         self.addTextEditorOperation(BoldOperation)
         self.addTextEditorOperation(ItalicOperation)
         self.addTextEditorOperation(UnderlineOperation)
         self.addTextEditorOperation(StrikethroughOperation)
+        self.addSeparator()
+        btn = self.addTextEditorOperation(ColorOperation)
+        btn.menu().aboutToShow.connect(self.freeze)
+        btn.menu().aboutToHide.connect(self.unfreeze)
         self.addSeparator()
         self.addTextEditorOperation(AlignLeftOperation)
         self.addTextEditorOperation(AlignCenterOperation)
@@ -445,6 +495,8 @@ class HtmlPopupTextEditorToolbar(BasePopupTextEditorToolbar):
         self.addSeparator()
         self.addTextEditorOperation(InsertListOperation)
         self.addTextEditorOperation(InsertNumberedListOperation)
+        self.addSeparator()
+        self.addTextEditorOperation(InsertLinkOperation)
 
 
 class TextEditBase(EnhancedTextEdit):
@@ -556,7 +608,7 @@ class TextEditBase(EnhancedTextEdit):
         cursor.beginEditBlock()
         cursor.select(QTextCursor.SelectionType.WordUnderCursor)
         cursor.removeSelectedText()
-        cursor.insertText(character.name)
+        cursor.insertText(character.displayed_name())
         cursor.endEditBlock()
 
 
@@ -642,6 +694,14 @@ class CapitalizationEventFilter(QObject):
         return False
 
 
+class DocumentTextEditorToolbar(TextEditorToolbar):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.addSpacer()
+        btn = self.addTextEditorOperation(TextEditingSettingsOperation)
+        btn.installEventFilter(OpacityEventFilter(btn))
+
+
 class DocumentTextEditor(TextEditorBase):
     titleChanged = pyqtSignal(str)
     iconChanged = pyqtSignal(str, str)
@@ -677,14 +737,17 @@ class DocumentTextEditor(TextEditorBase):
 
         self.textEdit.setViewportMargins(5, 5, 5, 5)
 
+        toolbar = HtmlPopupTextEditorToolbar()
+        toolbar.activate(self.textEdit)
+        self.textEdit.setPopupWidget(toolbar)
+
         self.highlighter = self._initHighlighter()
 
         self.textEdit.setFont(QFont(app_env.sans_serif_font(), 16))
         self.textEdit.setProperty('transparent', True)
-        self.textEdit.zoomIn(int(self.textEdit.font().pointSize() * 0.25))
         self.textEdit.setBlockFormat(lineSpacing=110, margin_bottom=10, margin_top=10)
         self.textEdit.setAutoFormatting(QTextEdit.AutoFormattingFlag.AutoAll)
-        self.textEdit.setPlaceholderText("Begin writing, or press '/' for commands...")
+        self.textEdit.setBlockPlaceholderEnabled(True)
 
         self.setWidthPercentage(90)
 
@@ -695,6 +758,10 @@ class DocumentTextEditor(TextEditorBase):
     @property
     def textTitle(self):
         return self._textTitle
+
+    @overrides
+    def _initToolbar(self) -> TextEditorToolbar:
+        return DocumentTextEditorToolbar(self)
 
     @overrides
     def _initTextEdit(self) -> EnhancedTextEdit:
@@ -975,11 +1042,10 @@ class RemovalButton(QToolButton):
         self.setIcon(IconRegistry.close_icon(self._colorOff))
         pointy(self)
         self.installEventFilter(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
         self.setIconSize(QSize(12, 12))
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         transparent(self)
-
-        self.pressed.connect(lambda: self.setIcon(IconRegistry.close_icon(colorOn)))
-        self.released.connect(lambda: self.setIcon(IconRegistry.close_icon(colorOff)))
 
     @overrides
     def eventFilter(self, watched: 'QObject', event: 'QEvent') -> bool:
@@ -1063,7 +1129,6 @@ class TextInputDialog(PopupDialog):
         self.btnConfirm.setDisabled(True)
         self.btnConfirm.installEventFilter(
             DisabledClickEventFilter(self.btnConfirm, lambda: qtanim.shake(self.lineKey)))
-        self.lineKey.editingFinished.connect(self.btnConfirm.click)
 
         self.btnCancel = push_btn(text='Cancel', properties=['confirm', 'cancel'])
         self.btnCancel.clicked.connect(self.reject)
@@ -1089,6 +1154,64 @@ class TextInputDialog(PopupDialog):
 
     def _textChanged(self, key: str):
         self.btnConfirm.setEnabled(len(key) > 0)
+
+
+class SpinBoxDialog(PopupDialog):
+    def __init__(self, title: str, value: int = 0, min_value: int = 0, max_value: int = 100, step: int = 1,
+                 description: str = '',
+                 parent=None):
+        super().__init__(parent)
+
+        self.title = label(title, h4=True)
+        sp(self.title).v_max()
+        self.wdgTitle = QWidget()
+        hbox(self.wdgTitle, spacing=5)
+        self.wdgTitle.layout().addWidget(self.title, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgTitle.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.lblDescription = label(description, description=True, wordWrap=True)
+        self.lblDescription.setMinimumWidth(450)
+
+        self.spinBox = DecoratedSpinBox()
+        self.spinBox.setMinimum(min_value)
+        self.spinBox.setMaximum(max_value)
+        self.spinBox.setSingleStep(step)
+        self.spinBox.setValue(value)
+        incr_font(self.spinBox.spinBox, 4)
+        # self.spinBox.setProperty('white-bg', True)
+        # self.spinBox.setProperty('rounded', True)
+        self.spinBox.valueChanged.connect(self._valueChanged)
+
+        self.btnConfirm = push_btn(text='Confirm', properties=['confirm', 'positive'])
+        self.btnConfirm.setShortcut(Qt.Key.Key_Return)
+        sp(self.btnConfirm).h_exp()
+        self.btnConfirm.clicked.connect(self.accept)
+
+        self.btnCancel = push_btn(text='Cancel', properties=['confirm', 'cancel'])
+        self.btnCancel.clicked.connect(self.reject)
+
+        self.frame.layout().addWidget(self.wdgTitle)
+        self.frame.layout().addWidget(self.lblDescription)
+        if not description:
+            self.lblDescription.setHidden(True)
+        self.frame.layout().addWidget(self.spinBox, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm), alignment=Qt.AlignmentFlag.AlignRight)
+
+    def display(self) -> Optional[int]:
+        result = self.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            return self.spinBox.value()
+
+        return None
+
+    @classmethod
+    def edit(cls, title: str = 'Edit value', value: int = 0, min_value: int = 0, max_value: int = 100, step: int = 1,
+             description: str = ''):
+        return cls.popup(title, value, min_value, max_value, step, description)
+
+    def _valueChanged(self, value: int):
+        self.btnConfirm.setEnabled(True)
 
 
 class TextAreaInputDialog(PopupDialog):
@@ -1184,6 +1307,8 @@ class LabelWidget(QFrame):
         decr_icon(self.btnMenu, 2)
         hbox(self, 5)
         margins(self, left=7)
+        if not app_env.is_linux():
+            incr_font(self.lblWidget, 2)
         self.layout().addWidget(self.lblWidget)
         self.layout().addWidget(self.btnMenu)
         self.btnMenu.setHidden(True)
@@ -1272,6 +1397,8 @@ class LabelsEditor(QFrame):
             self.lblTitle.setHidden(True)
 
         self.linePlaceholder = QLineEdit()
+        if not app_env.is_linux():
+            incr_font(self.linePlaceholder, 2)
         self.linePlaceholder.setObjectName('labelPlaceholder')
         self.linePlaceholder.setProperty('transparent', True)
         self.linePlaceholder.setProperty(IGNORE_CAPITALIZATION_PROPERTY, True)
@@ -1333,8 +1460,12 @@ class LabelsEditor(QFrame):
 class DecoratedLineEdit(QWidget):
     iconChanged = pyqtSignal(str, str)
 
-    def __init__(self, parent=None, maxWidth: Optional[int] = None, iconEditable: bool = False):
+    def __init__(self, parent=None, maxWidth: Optional[int] = None, iconEditable: bool = False,
+                 autoAdjustable: bool = True, pickIconColor: bool = True):
         super().__init__(parent)
+        self._pickIconColor = pickIconColor
+        self._pickerMenu: Optional[MenuWidget] = None
+
         hbox(self, 0, 0)
         self.icon = QToolButton()
         transparent(self.icon)
@@ -1342,7 +1473,12 @@ class DecoratedLineEdit(QWidget):
             pointy(self.icon)
             self.icon.installEventFilter(OpacityEventFilter(self.icon, leaveOpacity=1.0, enterOpacity=0.7))
             self.icon.clicked.connect(self._changeIcon)
-        self.lineEdit = AutoAdjustableLineEdit(defaultWidth=50, maxWidth=maxWidth)
+        if autoAdjustable:
+            self.lineEdit = AutoAdjustableLineEdit(defaultWidth=50, maxWidth=maxWidth)
+        else:
+            self.lineEdit = QLineEdit()
+            if maxWidth:
+                self.lineEdit.setMaximumWidth(maxWidth)
         transparent(self.lineEdit)
 
         self.layout().addWidget(self.icon)
@@ -1354,18 +1490,24 @@ class DecoratedLineEdit(QWidget):
     def setText(self, text: str):
         self.lineEdit.setText(text)
 
+    def setIconPickerMenu(self, menu: MenuWidget):
+        self._pickerMenu = menu
+
     def _changeIcon(self):
-        result = IconSelectorDialog.popup()
-        if result:
-            self.icon.setIcon(IconRegistry.from_name(result[0], result[1].name()))
-            self.iconChanged.emit(result[0], result[1].name())
+        if self._pickerMenu:
+            self._pickerMenu.exec()
+        else:
+            result = IconSelectorDialog.popup(pickColor=self._pickIconColor)
+            if result:
+                self.icon.setIcon(IconRegistry.from_name(result[0], result[1].name()))
+                self.iconChanged.emit(result[0], result[1].name())
 
 
 class TextEditBubbleWidget(QFrame):
     removed = pyqtSignal()
 
     def __init__(self, parent=None, titleEditable: bool = False, titleMaxWidth: Optional[int] = None,
-                 iconEditable: bool = False):
+                 iconEditable: bool = False, whiteBg: bool = False):
         super().__init__(parent)
         self._removalEnabled: bool = False
 
@@ -1380,8 +1522,13 @@ class TextEditBubbleWidget(QFrame):
             self._title.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self._textedit = QTextEdit(self)
-        self._textedit.setProperty('white-bg', True)
-        self._textedit.setProperty('rounded', True)
+        if whiteBg:
+            self.setProperty('white-bg', True)
+            self.setProperty('rounded', True)
+            self._textedit.setProperty('transparent', True)
+        else:
+            self._textedit.setProperty('white-bg', True)
+            self._textedit.setProperty('rounded', True)
         self._textedit.setTabChangesFocus(True)
         if app_env.is_mac():
             incr_font(self._textedit)
@@ -1403,7 +1550,7 @@ class TextEditBubbleWidget(QFrame):
     @overrides
     def enterEvent(self, event: QtGui.QEnterEvent) -> None:
         if self._removalEnabled:
-            self._btnRemove.setVisible(True)
+            fade_in(self._btnRemove)
             self._btnRemove.raise_()
 
     @overrides
@@ -1414,12 +1561,15 @@ class TextEditBubbleWidget(QFrame):
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self._btnRemove.setGeometry(self.width() - 20, 5, 20, 20)
 
+    def setRemovalEnabled(self, enabled: bool):
+        self._removalEnabled = enabled
+
     def _textChanged(self):
         pass
 
 
 class SearchField(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, ignoreCapitalization: bool = False):
         super().__init__(parent)
         hbox(self, 0, 0)
         self.btnIcon = tool_btn(IconRegistry.from_name('mdi.magnify'), transparent_=True, pointy_=False)
@@ -1428,6 +1578,8 @@ class SearchField(QWidget):
         self.lineSearch.setClearButtonEnabled(True)
         self.lineSearch.setProperty('rounded', True)
         self.lineSearch.setProperty('white-bg', True)
+        if ignoreCapitalization:
+            self.lineSearch.setProperty(IGNORE_CAPITALIZATION_PROPERTY, True)
 
         self.btnIcon.clicked.connect(self.lineSearch.setFocus)
 
@@ -1480,3 +1632,109 @@ class DecoratedTextEdit(AutoAdjustableTextEdit):
             self._indent(0)
             self._updateStylesheet()
             self._has_text = False
+
+
+class DecoratedSpinBox(QWidget):
+    valueChanged = pyqtSignal(int)
+
+    def __init__(self, parent=None, icon: Optional[QIcon] = None):
+        super().__init__(parent)
+        hbox(self, spacing=0)
+
+        self.icon = Icon()
+        if icon:
+            self.icon.setIcon(icon)
+
+        self.spinBox = QSpinBox()
+        self.spinBox.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.btnPlus = tool_btn(IconRegistry.from_name('mdi.chevron-up'), transparent_=True)
+        self.btnPlus.installEventFilter(OpacityEventFilter(self.btnPlus, 1.0, 0.7))
+        decr_icon(self.btnPlus, 5)
+        self.btnPlus.clicked.connect(self.spinBox.stepUp)
+
+        self.btnMinus = tool_btn(IconRegistry.from_name('mdi.chevron-down'), transparent_=True)
+        self.btnMinus.installEventFilter(OpacityEventFilter(self.btnMinus, 1.0, 0.7))
+        decr_icon(self.btnMinus, 5)
+        self.btnMinus.clicked.connect(self.spinBox.stepDown)
+        self.layout().addWidget(self.icon)
+        self.layout().addWidget(self.spinBox)
+        self.layout().addWidget(group(self.btnPlus, self.btnMinus, vertical=False, margin=0, spacing=0))
+
+        self.timerPlus = QTimer(self)
+        self.timerPlus.setInterval(100)
+        self.timerPlus.timeout.connect(self.spinBox.stepUp)
+
+        self.timerMinus = QTimer(self)
+        self.timerMinus.setInterval(100)
+        self.timerMinus.timeout.connect(self.spinBox.stepDown)
+
+        self.btnPlus.pressed.connect(self._startIncrementing)
+        self.btnPlus.released.connect(self.timerPlus.stop)
+
+        self.btnMinus.pressed.connect(self._startDecrementing)
+        self.btnMinus.released.connect(self.timerMinus.stop)
+
+        self.setStyleSheet(f"""
+            QSpinBox {{
+                border: 1px solid lightgrey;
+                border-radius: 6px;
+                background-color: {RELAXED_WHITE_COLOR};
+                padding: 4px 6px;
+                min-height: 24px;
+                selection-background-color: {TRANS_PLOTLYST_SECONDARY_COLOR};
+            }}
+
+            QSpinBox:focus {{
+                border-color: {PLOTLYST_TERTIARY_COLOR};
+                background-color: #F6F0F8;
+            }}
+        """)
+
+        self.spinBox.valueChanged.connect(self.valueChanged)
+
+    def setPrefix(self, prefix: str):
+        if prefix and not prefix.endswith(" "):
+            prefix += " "
+        self.spinBox.setPrefix(prefix)
+
+    def setSuffix(self, suffix: str):
+        if suffix and not suffix.startswith(" "):
+            suffix = " " + suffix
+        self.spinBox.setSuffix(suffix)
+
+    def setRange(self, min_value: int, max_value: int):
+        self.spinBox.setRange(min_value, max_value)
+
+    def minimum(self) -> int:
+        return self.spinBox.minimum()
+
+    def setMinimum(self, min_value: int):
+        self.spinBox.setMinimum(min_value)
+
+    def maximum(self) -> int:
+        return self.spinBox.maximum()
+
+    def setMaximum(self, max_value: int):
+        self.spinBox.setMaximum(max_value)
+
+    @overrides
+    def setFocus(self) -> None:
+        self.spinBox.setFocus()
+
+    def setSingleStep(self, step: int):
+        self.spinBox.setSingleStep(step)
+
+    def setValue(self, value: int):
+        self.spinBox.setValue(value)
+
+    def value(self) -> int:
+        return self.spinBox.value()
+
+    def text(self) -> str:
+        return self.spinBox.text()
+
+    def _startIncrementing(self):
+        self.timerPlus.start()
+
+    def _startDecrementing(self):
+        self.timerMinus.start()

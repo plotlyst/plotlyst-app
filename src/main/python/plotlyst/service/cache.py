@@ -23,7 +23,8 @@ from uuid import UUID
 from overrides import overrides
 
 from plotlyst.common import recursive
-from plotlyst.core.domain import Novel, Scene, StoryBeat, Character, Location
+from plotlyst.core.domain import Novel, Scene, StoryBeat, Character, Location, NovelDescriptor
+from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneChangedEvent, SceneDeletedEvent, SceneStoryBeatChangedEvent, \
@@ -94,6 +95,7 @@ class EntitiesRegistry(EventListener):
         self._characters: Dict[str, Character] = {}
         self._locations: Dict[str, Location] = {}
         self._references: Dict[str, List[Any]] = {}
+        self._series: Dict[str, NovelDescriptor] = {}
 
     def set_novel(self, novel: Novel):
         self.novel = novel
@@ -102,6 +104,16 @@ class EntitiesRegistry(EventListener):
                             LocationDeletedEvent, WorldEntityAddedEvent, WorldEntityDeletedEvent, ItemLinkedEvent,
                             ItemUnlinkedEvent)
         self.refresh()
+
+    def set_series(self, series: List[NovelDescriptor]):
+        self._series.clear()
+
+        for ser in series:
+            self._series[str(ser.id)] = ser
+
+    def series(self, novel: NovelDescriptor) -> Optional[NovelDescriptor]:
+        if app_env.profile().get('series') and novel.parent:
+            return self._series.get(str(novel.parent))
 
     def character(self, s_id: str) -> Optional[Character]:
         return self._characters.get(s_id, None)

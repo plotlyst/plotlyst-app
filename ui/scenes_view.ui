@@ -117,9 +117,6 @@
             <property name="text">
              <string/>
             </property>
-            <property name="shortcut">
-             <string>1</string>
-            </property>
             <property name="checkable">
              <bool>true</bool>
             </property>
@@ -145,8 +142,30 @@
             <property name="text">
              <string/>
             </property>
-            <property name="shortcut">
-             <string>2</string>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <property name="base" stdset="0">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">btnGroupViews</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="btnTimelineView">
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="toolTip">
+             <string>Story grid view</string>
+            </property>
+            <property name="text">
+             <string/>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -173,9 +192,6 @@
             <property name="text">
              <string/>
             </property>
-            <property name="shortcut">
-             <string>3</string>
-            </property>
             <property name="checkable">
              <bool>true</bool>
             </property>
@@ -196,13 +212,10 @@
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="toolTip">
-             <string>Character-scene distribution view</string>
+             <string>Distribution view</string>
             </property>
             <property name="text">
              <string/>
-            </property>
-            <property name="shortcut">
-             <string>4</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -232,9 +245,6 @@
             </property>
             <property name="text">
              <string/>
-            </property>
-            <property name="shortcut">
-             <string>5</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -354,7 +364,7 @@
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="toolTip">
-             <string>Add new scene</string>
+             <string>Add new scene or chapter</string>
             </property>
             <property name="text">
              <string/>
@@ -493,7 +503,7 @@
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Customize view&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Customize view</string>
             </property>
             <property name="text">
              <string/>
@@ -677,7 +687,7 @@
            <item>
             <widget class="QStackedWidget" name="stackScenes">
              <property name="currentIndex">
-              <number>1</number>
+              <number>5</number>
              </property>
              <widget class="QWidget" name="pageCards">
               <property name="relaxed-white-bg" stdset="0">
@@ -709,8 +719,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>98</width>
-                    <height>28</height>
+                    <width>506</width>
+                    <height>580</height>
                    </rect>
                   </property>
                   <layout class="QHBoxLayout" name="horizontalLayout_8">
@@ -941,6 +951,25 @@
                </item>
               </layout>
              </widget>
+             <widget class="QWidget" name="pageStoryGrid">
+              <layout class="QVBoxLayout" name="verticalLayout_11">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+              </layout>
+             </widget>
              <widget class="QWidget" name="pageCharactersDistribution">
               <layout class="QVBoxLayout" name="verticalLayout_8">
                <property name="spacing">
@@ -1089,16 +1118,6 @@
                   <property name="bottomMargin">
                    <number>0</number>
                   </property>
-                  <item>
-                   <widget class="QLabel" name="label">
-                    <property name="text">
-                     <string>Double-click or right-click a scene circle to link storylines</string>
-                    </property>
-                    <property name="description" stdset="0">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
                   <item>
                    <spacer name="horizontalSpacer_7">
                     <property name="orientation">
@@ -1264,9 +1283,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Toggle</class>
-   <extends>QCheckBox</extends>
-   <header>plotlyst.view.widget.input</header>
+   <class>StoryStructureTimelineWidget</class>
+   <extends>QWidget</extends>
+   <header>plotlyst.view.widget.structure.timeline</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>ScenesTreeView</class>
@@ -1274,10 +1294,9 @@
    <header>plotlyst.view.widget.scene</header>
   </customwidget>
   <customwidget>
-   <class>StoryStructureTimelineWidget</class>
-   <extends>QWidget</extends>
-   <header>plotlyst.view.widget.structure.timeline</header>
-   <container>1</container>
+   <class>Toggle</class>
+   <extends>QCheckBox</extends>
+   <header>plotlyst.view.widget.input</header>
   </customwidget>
   <customwidget>
    <class>CardsView</class>
@@ -1293,38 +1312,6 @@
  </customwidgets>
  <resources/>
  <connections>
-  <connection>
-   <sender>btnChaptersToggle</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>btnNew</receiver>
-   <slot>setHidden(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>67</x>
-     <y>45</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>119</x>
-     <y>48</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>btnChaptersToggle</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>btnNewWithMenu</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>81</x>
-     <y>51</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>174</x>
-     <y>54</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>

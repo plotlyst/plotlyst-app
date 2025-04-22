@@ -15,7 +15,7 @@ def test_delete_novel(qtbot, filled_window: MainWindow, monkeypatch):
     assert view.ui.stackWdgNovels.currentWidget() == view.ui.pageNovelDisplay
 
     patch_confirmed(monkeypatch)
-    view.ui.btnNovelSettings.menu().actions()[0].trigger()
+    view.novelDisplayCard.btnNovelSettings.menu().actions()[0].trigger()
 
     assert len(shelves.novels()) == 0
 
@@ -29,11 +29,11 @@ def test_edit_novel(qtbot, filled_window: MainWindow):
     shelves.novelSelected.emit(novel)
     assert view.ui.stackWdgNovels.currentWidget() == view.ui.pageNovelDisplay
 
-    assert view.ui.lineNovelTitle.text() == novel.title
+    assert view.novelDisplayCard.lineNovelTitle.text() == novel.title
     new_title = 'New title'
-    view.ui.lineNovelTitle.clear()
-    type_text(qtbot, view.ui.lineNovelTitle, new_title)
+    view.novelDisplayCard.lineNovelTitle.clear()
+    type_text(qtbot, view.novelDisplayCard.lineNovelTitle, new_title)
     assert client.novels()[0].title == new_title
 
     novel_view: NovelView = go_to_novel(filled_window)
-    assert novel_view.ui.lblTitle.text() == new_title
+    assert novel_view.wdgDescriptors.lineNovelTitle.text() == new_title

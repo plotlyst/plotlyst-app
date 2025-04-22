@@ -22,11 +22,10 @@ from typing import Optional
 
 import qtanim
 from PyQt6.QtGui import QFont
-from PyQt6.QtPdf import QPdfDocument
-from PyQt6.QtPdfWidgets import QPdfView
 from overrides import overrides
 from qthandy import clear_layout, margins, bold, italic
-from qttextedit.ops import TextEditorSettingsSection, FontSectionSettingWidget
+from qttextedit.ops import TextEditorSettingsSection, FontSectionSettingWidget, FontSizeSectionSettingWidget, \
+    TextWidthSectionSettingWidget
 
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Document, DocumentType, FontSettings
@@ -41,6 +40,8 @@ from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.widget.doc.browser import DocumentAdditionMenu
 from plotlyst.view.widget.doc.premise import PremiseBuilderWidget
 from plotlyst.view.widget.input import DocumentTextEditor
+from plotlyst.view.widget.pdf import PdfView
+from plotlyst.view.widget.story_map import EventsMindMapView
 from plotlyst.view.widget.tree import TreeSettings
 
 
@@ -66,6 +67,9 @@ class DocumentsView(AbstractNovelView):
         self.ui.btnTreeToggle.clicked.connect(self._hide_sidebar)
         self.ui.btnTreeToggleSecondary.clicked.connect(self._show_sidebar)
 
+        self._mindmapView = EventsMindMapView(self.novel)
+        self.ui.mindmapPage.layout().addWidget(self._mindmapView)
+
         self.ui.splitter.setSizes([150, 500])
 
         self.ui.treeDocuments.setSettings(TreeSettings(font_incr=2))
@@ -76,10 +80,8 @@ class DocumentsView(AbstractNovelView):
         self.ui.treeDocuments.documentTitleChanged.connect(self._title_changed)
 
         self.textEditor: Optional[DocumentTextEditor] = None
-        self.pdfEditor = QPdfView(self.ui.pdfPage)
-        self.pdfDoc = QPdfDocument(self.pdfEditor)
-        self.pdfEditor.setDocument(self.pdfDoc)
-        self.ui.pdfPage.layout().addWidget(self.pdfEditor)
+        self.pdfView = PdfView(self.ui.pdfPage)
+        self.ui.pdfPage.layout().addWidget(self.pdfView)
 
         self.ui.btnAdd.setIcon(IconRegistry.plus_icon('white'))
         self.ui.btnAdd.installEventFilter(ButtonPressResizeEventFilter(self.ui.btnAdd))
@@ -127,27 +129,51 @@ class DocumentsView(AbstractNovelView):
 
     def _init_text_editor(self):
         def settings_ready():
-            section: FontSectionSettingWidget = self.textEditor.settingsWidget().section(TextEditorSettingsSection.FONT)
-            section.fontSelected.connect(self._fontChanged)
+            self.textEditor.settingsWidget().setSectionVisible(TextEditorSettingsSection.TEXT_WIDTH, True)
+            self.textEditor.settingsWidget().setSectionVisible(TextEditorSettingsSection.PAGE_WIDTH, False)
+            fontSection: FontSectionSettingWidget = self.textEditor.settingsWidget().section(
+                TextEditorSettingsSection.FONT)
+            fontSection.fontSelected.connect(self._fontChanged)
+
+            sizeSection: FontSizeSectionSettingWidget = self.textEditor.settingsWidget().section(
+                TextEditorSettingsSection.FONT_SIZE)
+            sizeSection.sizeChanged.connect(self._fontSizeChanged)
+
+            widthSection: TextWidthSectionSettingWidget = self.textEditor.settingsWidget().section(
+                TextEditorSettingsSection.TEXT_WIDTH)
+            widthSection.widthChanged.connect(self._textWidthChanged)
 
         self._clear_text_editor()
 
         self.textEditor = DocumentTextEditor(self.ui.docEditorPage)
+        self.textEditor.textEdit.setBlockPlaceholderEnabled(True)
         margins(self.textEditor, top=50, right=10)
         self.ui.docEditorPage.layout().addWidget(self.textEditor)
 
-        if self.novel.prefs.docs.font.get(app_env.platform(), ''):
+        if app_env.platform() in self.novel.prefs.docs.font.keys():
             font_: QFont = self.textEditor.textEdit.font()
-            font_.setFamily(self.novel.prefs.docs.font[app_env.platform()].family)
+            fontSettings = self._getFontSettings()
+            if fontSettings.family:
+                font_.setFamily(fontSettings.family)
+            if fontSettings.font_size:
+                font_.setPointSize(fontSettings.font_size)
+            if fontSettings.text_width:
+                self.textEditor.setCharacterWidth(fontSettings.text_width)
+            else:
+                self.textEditor.setCharacterWidth(70)
             self.textEditor.textEdit.setFont(font_)
-            self.textEditor.textTitle.setPlaceholderText('Untitled')
+
+        else:
+            self.textEditor.setCharacterWidth(70)
+
+        self.textEditor.textTitle.setPlaceholderText('Untitled')
         self.textEditor.textEdit.textChanged.connect(self._save)
         self.textEditor.titleChanged.connect(self._title_changed_in_editor)
         self.textEditor.iconChanged.connect(self._icon_changed_in_editor)
         self.textEditor.settingsAttached.connect(settings_ready)
 
     def _clear_text_editor(self):
-        self.pdfDoc.close()
+        self.pdfView.closeDocument()
         clear_layout(self.ui.docEditorPage.layout())
         self.ui.stackedEditor.setCurrentWidget(self.ui.emptyPage)
 
@@ -156,16 +182,12 @@ class DocumentsView(AbstractNovelView):
 
         if self._current_doc.type in [DocumentType.DOCUMENT, DocumentType.STORY_STRUCTURE]:
             self._edit_document()
-        else:
-            # self.ui.stackedEditor.setCurrentWidget(self.ui.customEditorPage)
-            # clear_layout(self.ui.customEditorPage)
-            # if self._current_doc.type == DocumentType.MICE:
-            #     widget = MiceQuotientDoc(self._current_doc, self._current_doc.data)
-            #     widget.changed.connect(self._save)
-            if self._current_doc.type == DocumentType.PDF:
-                self._edit_pdf()
-            elif self._current_doc.type == DocumentType.PREMISE:
-                self._edit_premise()
+        elif self._current_doc.type == DocumentType.MIND_MAP:
+            self._edit_mindmap()
+        elif self._current_doc.type == DocumentType.PDF:
+            self._edit_pdf()
+        elif self._current_doc.type == DocumentType.PREMISE:
+            self._edit_premise()
 
     def _edit_document(self):
         self._init_text_editor()
@@ -190,9 +212,9 @@ class DocumentsView(AbstractNovelView):
             self.textEditor.asyncCheckGrammar()
 
     def _edit_pdf(self):
-        self.pdfDoc.close()
+        self.pdfView.closeDocument()
         if os.path.exists(self._current_doc.file):
-            self.pdfDoc.load(self._current_doc.file)
+            self.pdfView.load(self._current_doc.file)
             self.ui.stackedEditor.setCurrentWidget(self.ui.pdfPage)
         else:
             self.ui.lblMissingFileReference.setText(self._current_doc.file)
@@ -210,8 +232,16 @@ class DocumentsView(AbstractNovelView):
 
         self.ui.stackedEditor.setCurrentWidget(self.ui.customEditorPage)
 
+    def _edit_mindmap(self):
+        clear_layout(self.ui.customEditorPage)
+
+        self._mindmapView.resetZoom()
+        self._mindmapView.setDiagram(self._current_doc.diagram)
+
+        self.ui.stackedEditor.setCurrentWidget(self.ui.mindmapPage)
+
     def _icon_changed(self, doc: Document):
-        if doc is self._current_doc:
+        if doc is self._current_doc and self._current_doc.type == DocumentType.DOCUMENT:
             self.textEditor.setTitleIcon(IconRegistry.from_name(doc.icon, doc.icon_color))
 
     def _icon_changed_in_editor(self, name: str, color: str):
@@ -229,7 +259,7 @@ class DocumentsView(AbstractNovelView):
         self.repo.update_doc(self.novel, self._current_doc)
 
     def _title_changed(self, doc: Document):
-        if doc is self._current_doc:
+        if doc is self._current_doc and doc.type == DocumentType.DOCUMENT:
             self.textEditor.setTitle(doc.title)
 
     def _title_changed_in_editor(self, title: str):
@@ -240,11 +270,24 @@ class DocumentsView(AbstractNovelView):
                 self.repo.update_novel(self.novel)
 
     def _fontChanged(self, family: str):
-        if app_env.platform() not in self.novel.prefs.docs.font.keys():
-            self.novel.prefs.docs.font[app_env.platform()] = FontSettings()
-        fontSettings = self.novel.prefs.docs.font[app_env.platform()]
+        fontSettings = self._getFontSettings()
         fontSettings.family = family
         self.repo.update_novel(self.novel)
+
+    def _fontSizeChanged(self, size: int):
+        fontSettings = self._getFontSettings()
+        fontSettings.font_size = size
+        self.repo.update_novel(self.novel)
+
+    def _textWidthChanged(self, width: int):
+        fontSettings = self._getFontSettings()
+        fontSettings.text_width = width
+        self.repo.update_novel(self.novel)
+
+    def _getFontSettings(self) -> FontSettings:
+        if app_env.platform() not in self.novel.prefs.docs.font.keys():
+            self.novel.prefs.docs.font[app_env.platform()] = FontSettings()
+        return self.novel.prefs.docs.font[app_env.platform()]
 
     def _hide_sidebar(self):
         qtanim.toggle_expansion(self.ui.wdgDocs, False, teardown=lambda: qtanim.fade_in(self.ui.btnTreeToggleSecondary))

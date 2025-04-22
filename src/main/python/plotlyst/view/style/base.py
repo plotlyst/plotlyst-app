@@ -24,7 +24,8 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget
 from qtmenu import MenuWidget
 
-from plotlyst.view.style.theme import BG_PRIMARY_COLOR, BG_SECONDARY_COLOR, BG_MUTED_COLOR
+from plotlyst.env import app_env
+from plotlyst.view.style.theme import BG_PRIMARY_COLOR, BG_SECONDARY_COLOR, BG_MUTED_COLOR, BG_ALT_COLOR
 
 style = f'''
 * {{
@@ -50,12 +51,16 @@ QWidget[bg=true] {{
     background-color: {BG_PRIMARY_COLOR};
 }}
 
+QWidget[muted-bg=true] {{
+    background-color: {BG_MUTED_COLOR};
+}}
+
 QWidget[darker-bg=true] {{
     background-color: {BG_MUTED_COLOR};
 }}
 
 QWidget[white-bg=true] {{
-    background-color: #f8f9fa;
+    background-color: #FcFcFc;
 }}
 
 QWidget[relaxed-white-bg=true] {{
@@ -64,6 +69,11 @@ QWidget[relaxed-white-bg=true] {{
 
 QWidget[banner-bg=true] {{
     background-color: #2B0548;
+}}
+
+QWidget[large-rounded-on-top=true] {{
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
 }}
 
 QWidget[transparent=true] {{
@@ -75,6 +85,11 @@ QWidget[navbar=true] {{
     background-color: #622675;
 }}
 
+QWidget[rounded=true] {{
+    border: 1px solid lightgrey;
+    border-radius: 6px;
+}}
+
 QFrame[bottom-bar=true] {{
     background-color: {BG_PRIMARY_COLOR};
 }}
@@ -83,13 +98,37 @@ QFrame[relaxed-white-bg=true] {{
     background-color: {BG_SECONDARY_COLOR};
 }}
 
+QFrame[muted-bg=true] {{
+    background-color: {BG_MUTED_COLOR};
+}}
+
+QFrame[alt-bg=true] {{
+    background-color: {BG_ALT_COLOR};
+}}
+
+QFrame[highlighted-bg=true] {{
+    background-color: rgba(75, 7, 99, 25);
+}}
+
 QFrame[white-bg=true] {{
-    background-color: #f8f9fa;
+    background-color: #FcFcFc;
 }}
 
 QFrame[rounded=true] {{
     border: 1px solid lightgrey;
     border-radius: 6px;
+}}
+
+QFrame[banner-bg=true] {{
+    background-color: #2B0548;
+}}
+
+QFrame[rounded-on-top=true] {{
+    border: 1px solid lightgrey;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
 }}
 
 QFrame[revision-badge=true] {{
@@ -184,10 +223,10 @@ def apply_border_image(wdg: QWidget, resource_url: str):
 def apply_white_menu(menu: MenuWidget):
     menu.setStyleSheet(f'''
                         MenuWidget {{
-                            background-color: {{RELAXED_WHITE_COLOR}};
+                            background-color: {BG_SECONDARY_COLOR};
                         }}
                         .QFrame {{
-                            background-color: {{RELAXED_WHITE_COLOR}};
+                            background-color: {BG_SECONDARY_COLOR};
                             padding-left: 2px;
                             padding-right: 2px;
                             border-radius: 5px;
@@ -205,3 +244,13 @@ def apply_white_menu(menu: MenuWidget):
                             background-color: #DCDCDC;
                         }}
                         ''')
+
+
+def transparent_menu(menu: MenuWidget):
+    menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+    if app_env.is_windows():
+        menu.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint)
+    menu.setStyleSheet('''
+            MenuWidget {
+                    background-color: rgba(0, 0, 0, 0);
+                    }''')

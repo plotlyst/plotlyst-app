@@ -208,7 +208,7 @@ class JsonDownloadWorker(QRunnable):
     @overrides
     def run(self) -> None:
         try:
-            response = requests.get(self._url)
+            response = requests.get(self._url, timeout=10)
             response.raise_for_status()
 
             self._result.emit_success(response.json())

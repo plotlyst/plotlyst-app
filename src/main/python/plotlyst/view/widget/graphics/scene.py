@@ -17,7 +17,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Dict, Set, Union
@@ -25,13 +24,14 @@ from typing import Optional, Dict, Set, Union
 import qtanim
 from PyQt6.QtCore import Qt, pyqtSignal, QPointF, QPoint, QObject
 from PyQt6.QtGui import QTransform, \
-    QKeyEvent, QKeySequence, QCursor, QImage, QUndoStack
+    QKeyEvent, QKeySequence, QCursor, QImage, QUndoStack, QColor
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsSceneMouseEvent, QApplication, \
     QGraphicsSceneDragDropEvent
 from overrides import overrides
 
 from plotlyst.core.domain import Node, Diagram, GraphicsItemType, Connector, PlaceholderCharacter, \
-    Character, to_node
+    to_node, Character
+from plotlyst.service.cache import entities_registry
 from plotlyst.service.image import LoadedImage
 from plotlyst.view.widget.graphics import NodeItem, CharacterItem, PlaceholderSocketItem, ConnectorItem, \
     AbstractSocketItem, EventItem
@@ -43,6 +43,17 @@ from plotlyst.view.widget.graphics.items import NoteItem, ImageItem, IconItem, C
 class ItemDescriptor:
     mode: GraphicsItemType
     subType: str = ''
+    icon: str = ''
+    color: Optional[QColor] = None
+    size: int = 0
+    font_size: int = 0
+    height: int = 0
+    text: str = ''
+    character: Optional[Character] = None
+    bold: bool = False
+    italic: bool = False
+    underline: bool = False
+    transparent: bool = False
 
 
 class NetworkScene(QGraphicsScene):
@@ -51,6 +62,7 @@ class NetworkScene(QGraphicsScene):
     editItem = pyqtSignal(NodeItem)
     itemMoved = pyqtSignal(NodeItem)
     hideItemEditor = pyqtSignal()
+    contextMenu = pyqtSignal(NodeItem)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -107,6 +119,16 @@ class NetworkScene(QGraphicsScene):
         if self._connectorPlaceholder is not None:
             return self._connectorPlaceholder.source()
 
+    def setPlaceholderAngle(self, angle: float):
+        if self._placeholder:
+            self._placeholder.setAngle(angle)
+            self._connectorPlaceholder.rearrange()
+
+    def resetPlaceholderAngle(self):
+        if self._placeholder:
+            self._placeholder.setAngle(0)
+            self._connectorPlaceholder.rearrange()
+
     def startLink(self, source: AbstractSocketItem):
         self._linkMode = True
         self._placeholder = PlaceholderSocketItem()
@@ -143,6 +165,14 @@ class NetworkScene(QGraphicsScene):
             self._connectorPlaceholder.source().angle(), target.angle(),
             pen=connectorItem.penStyle(), width=connectorItem.size()
         )
+
+        if 45 <= connectorItem.sourceAngle() <= 135 and 45 <= connectorItem.targetAngle() <= 135:
+            connector.cp_controlled = True
+        elif -135 <= connectorItem.sourceAngle() <= -45 and -135 <= connectorItem.targetAngle() <= -45:
+            connector.cp_controlled = True
+        else:
+            connector.cp_controlled = False
+
         if connectorItem.icon():
             connector.icon = connectorItem.icon()
         connectorItem.setConnector(connector)
@@ -160,6 +190,9 @@ class NetworkScene(QGraphicsScene):
 
     def editItemEvent(self, item: Node):
         self.editItem.emit(item)
+
+    # def showContextMenu(self, item: Node):
+    #     self.contextMenu.emit(item)
 
     @overrides
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -283,10 +316,12 @@ class NetworkScene(QGraphicsScene):
             connectorItem.target().addConnector(connectorItem)
             self._diagram.data.connectors.append(connectorItem.connector())
             self.addItem(connectorItem)
+            connectorItem.setVisible(True)
 
         if isinstance(item, NodeItem):
             self._diagram.data.nodes.append(item.node())
             self.addItem(item)
+            item.setVisible(True)
             if connectors:
                 for connector in connectors:
                     addConnectorItem(connector)
@@ -296,9 +331,6 @@ class NetworkScene(QGraphicsScene):
 
     def removeNetworkItem(self, item: Union[NodeItem, ConnectorItem]):
         self._removeItem(item)
-
-    def removeConnectorItem(self, connector: ConnectorItem):
-        self._removeItem(connector)
 
     @staticmethod
     def toCharacterNode(scenePos: QPointF) -> Node:
@@ -355,6 +387,7 @@ class NetworkScene(QGraphicsScene):
             for connectorItem in item.connectors():
                 try:
                     self._clearUpConnectorItem(connectorItem)
+                    connectorItem.setVisible(False)
                     self.removeItem(connectorItem)
                 except ValueError:
                     pass  # connector might have been already removed if a node was deleted first
@@ -365,6 +398,7 @@ class NetworkScene(QGraphicsScene):
             self._clearUpConnectorItem(item)
 
         if item.scene():
+            item.setVisible(False)
             self.removeItem(item)
         self._save()
 
@@ -391,12 +425,51 @@ class NetworkScene(QGraphicsScene):
 
     def _copy(self, item: NodeItem):
         self._copyDescriptor = ItemDescriptor(item.node().type, item.node().subtype)
+        self._copyDescriptor.icon = item.icon()
+        self._copyDescriptor.color = item.color()
+        if isinstance(item, IconItem):
+            self._copyDescriptor.size = item.size()
+        elif isinstance(item, CharacterItem):
+            self._copyDescriptor.size = item.size()
+            self._copyDescriptor.character = item.character()
+        elif isinstance(item, EventItem):
+            self._copyDescriptor.text = item.text()
+            self._copyDescriptor.font_size = item.fontSize()
+            self._copyDescriptor.bold = item.bold()
+            self._copyDescriptor.italic = item.italic()
+            self._copyDescriptor.underline = item.underline()
+            self._copyDescriptor.transparent = item.transparent()
+        elif isinstance(item, NoteItem):
+            self._copyDescriptor.text = item.text()
+            self._copyDescriptor.height = item.height()
+            self._copyDescriptor.transparent = item.transparent()
 
     def _paste(self):
-        if self._copyDescriptor:
-            pos = self._cursorScenePos()
-            if pos:
-                self._addNewItem(pos, self._copyDescriptor.mode, self._copyDescriptor.subType)
+        if not self._copyDescriptor:
+            return
+        pos = self._cursorScenePos()
+        if not pos:
+            return
+
+        item = self._addNewItem(pos, self._copyDescriptor.mode, self._copyDescriptor.subType)
+        if self._copyDescriptor.icon:
+            item.setIcon(self._copyDescriptor.icon)
+        if self._copyDescriptor.color:
+            item.setColor(self._copyDescriptor.color)
+        if self._copyDescriptor.size:
+            item.setSize(self._copyDescriptor.size)
+        if self._copyDescriptor.character:
+            item.setCharacter(self._copyDescriptor.character)
+        if self._copyDescriptor.text:
+            if isinstance(item, NoteItem):
+                item.setText(self._copyDescriptor.text, self._copyDescriptor.height)
+                item.setTransparent(self._copyDescriptor.transparent)
+            else:
+                item.setText(self._copyDescriptor.text)
+        if isinstance(item, EventItem):
+            item.setFontSettings(self._copyDescriptor.font_size, self._copyDescriptor.bold, self._copyDescriptor.italic,
+                                 self._copyDescriptor.underline)
+            item.setTransparent(self._copyDescriptor.transparent)
 
     def _cursorScenePos(self) -> Optional[QPointF]:
         view = self.views()[0]
@@ -423,7 +496,7 @@ class NetworkScene(QGraphicsScene):
             item = EventItem(self.toEventNode(scenePos, itemType, subType))
 
         self.addItem(item)
-        anim = qtanim.fade_in(item)
+        anim = qtanim.fade_in(item, teardown=item.activate)
         anim.setParent(self._animParent)
         self.itemAdded.emit(itemType, item)
         self.endAdditionMode()
@@ -437,7 +510,7 @@ class NetworkScene(QGraphicsScene):
 
     def _addNode(self, node: Node) -> NodeItem:
         if node.type == GraphicsItemType.CHARACTER:
-            character = self._character(node)
+            character = entities_registry.character(str(node.character_id)) if node.character_id else None
             if character is None:
                 character = PlaceholderCharacter('Character')
             item = CharacterItem(character, node)
@@ -459,10 +532,6 @@ class NetworkScene(QGraphicsScene):
 
     @abstractmethod
     def _save(self):
-        pass
-
-    @abstractmethod
-    def _character(self, node: Node) -> Optional[Character]:
         pass
 
     def _uploadImage(self) -> Optional[LoadedImage]:

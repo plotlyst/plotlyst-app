@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from distutils.cmd import Command
 
 from setuptools import setup
 
@@ -46,6 +47,23 @@ def generate_json_file(version):
         json.dump(settings, json_file, indent=4)
 
 
+class GenerateJsonFileCommand(Command):
+    description = "Generate JSON file with app settings."
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        version = get_base_version()
+        check_versions(version)
+        generate_json_file(version)
+        print(f"JSON settings file generated with version {version}.")
+
+
 version = get_base_version()
 check_versions(version)
 
@@ -53,4 +71,7 @@ generate_json_file(version)
 
 setup(
     version=version,
+    cmdclass={
+        'generate_json': GenerateJsonFileCommand,
+    },
 )

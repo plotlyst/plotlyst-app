@@ -20,13 +20,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from functools import partial
 from typing import Optional, Dict
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QSize
 from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import QPushButton, QWidget, QToolButton
+from PyQt6.QtWidgets import QPushButton, QWidget, QToolButton, QFrame
 from overrides import overrides
 from qthandy import translucent, pointy, incr_icon, incr_font, clear_layout, hbox
 from qthandy.filter import OpacityEventFilter
-from qtmenu import MenuWidget, ActionTooltipDisplayMode
+from qtmenu import MenuWidget, ActionTooltipDisplayMode, ScrollableMenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR, RED_COLOR, truncate_string, act_color
 from plotlyst.core.domain import Novel, StoryBeat, \
@@ -40,7 +40,7 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 
 
-class StructureBeatSelectorMenu(MenuWidget):
+class StructureBeatSelectorMenu(ScrollableMenuWidget):
     selected = pyqtSignal(StoryBeat)
 
     def __init__(self, novel: Novel, parent=None):
@@ -50,10 +50,30 @@ class StructureBeatSelectorMenu(MenuWidget):
         apply_white_menu(self)
         self.aboutToShow.connect(self._fillUp)
 
+    @overrides
+    def sizeHint(self) -> QSize:
+        hint: QSize = super().sizeHint()
+
+        structure = self.novel.active_story_structure
+
+        has_beats = len(structure.beats) > 0
+        if has_beats:
+            hint.setHeight(20)
+        for i in range(self._frame.layout().count()):
+            widget: QWidget = self._frame.layout().itemAt(i).widget()
+            if not isinstance(widget, QFrame):
+                hint = hint.expandedTo(QSize(widget.sizeHint().width(), hint.height()))
+
+            if has_beats and i < 11 + max(structure.acts, 4):
+                hint = hint.expandedTo(QSize(hint.width(), hint.height() + widget.sizeHint().height()))
+
+        return hint
+
     def _fillUp(self):
         self.clear()
 
-        self.addSection('Associate this scene to a story structure beat')
+        unit = 'scene' if self.novel.prefs.is_scenes_organization() else 'chapter'
+        self.addSection(f'Associate this {unit} to a story structure beat')
         self.addSeparator()
 
         act = 1

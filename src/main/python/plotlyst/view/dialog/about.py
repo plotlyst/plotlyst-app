@@ -43,7 +43,7 @@ class AboutDialog(PopupDialog):
 
         self.frame.layout().addWidget(self.wdgBanner)
         self.frame.layout().addWidget(label("Plotlyst is an indie software developed by Zsolt Kovari", h4=True))
-        self.frame.layout().addWidget(label('Copyright (C) 2021-2024  Zsolt Kovari', description=True))
+        self.frame.layout().addWidget(label('Copyright (C) 2021-2025  Zsolt Kovari', description=True))
         self.frame.layout().addWidget(label(f'Version: {version}', description=True))
         self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
 

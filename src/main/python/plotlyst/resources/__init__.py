@@ -45,10 +45,18 @@ class ResourceRegistry:
         self._paper_bg1 = None
         self._vintage_pocket_banner = None
         self._divider1 = None
+        self._top_frame1 = None
+        self._top_frame2 = None
         self._banner = None
         self._circular_frame1 = None
+        self._stamp_frame = None
         self._manuscript_docx_template = None
         self._plotlyst_icon = None
+        self._confetti_anim = None
+        self._profile = None
+        self._public_key = None
+        self._signature = None
+        self._manuscript_template = None
 
     def set_up(self, context: Optional[ApplicationContext] = None):
         self._cork = self.__get_resource('cork.wav', context)
@@ -56,10 +64,18 @@ class ResourceRegistry:
         self._cover1 = self.__get_resource('cover_1.jpg', context)
         self._paper_bg1 = self.__get_resource('paper_bg.jpg', context)
         self._divider1 = self.__get_resource('divider_1.svg', context)
+        self._top_frame1 = self.__get_resource('top_frame1.svg', context)
+        self._top_frame2 = self.__get_resource('top_frame2.svg', context)
         self._banner = self.__get_resource('plotlyst_banner.png', context)
         self._circular_frame1 = self.__get_resource('circular_frame1.png', context)
+        self._stamp_frame = self.__get_resource('stamp_frame.svg', context)
         self._manuscript_docx_template = self.__get_resource('manuscript-template.docx', context)
         self._plotlyst_icon = self.__get_resource('Icon.ico', context)
+        self._confetti_anim = self.__get_resource('confetti.gif', context)
+        self._profile = self.__get_resource('profile.cbor', context)
+        self._public_key = self.__get_resource('public.pem', context)
+        self._signature = self.__get_resource('profile.sig', context)
+        self._manuscript_template = self.__get_resource('manuscript.tex', context)
 
     def __get_resource(self, name: str, context: Optional[ApplicationContext] = None):
         if context:
@@ -92,6 +108,14 @@ class ResourceRegistry:
         return self._divider1
 
     @property
+    def top_frame1(self) -> str:
+        return self._top_frame1
+
+    @property
+    def top_frame2(self) -> str:
+        return self._top_frame2
+
+    @property
     def paper_bg(self) -> str:
         return self._paper_bg1
 
@@ -104,12 +128,36 @@ class ResourceRegistry:
         return self._circular_frame1
 
     @property
+    def stamp_frame(self) -> str:
+        return self._stamp_frame
+
+    @property
     def manuscript_docx_template(self) -> str:
         return self._manuscript_docx_template
 
     @property
     def plotlyst_icon(self) -> str:
         return self._plotlyst_icon
+
+    @property
+    def confetti_anim(self) -> str:
+        return self._confetti_anim
+
+    @property
+    def profile(self) -> str:
+        return self._profile
+
+    @property
+    def public_key(self) -> str:
+        return self._public_key
+
+    @property
+    def signature(self) -> str:
+        return self._signature
+
+    @property
+    def manuscript_template(self) -> str:
+        return self._manuscript_template
 
 
 resource_registry = ResourceRegistry()

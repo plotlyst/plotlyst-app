@@ -32,7 +32,7 @@ from PyQt6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, 
 from overrides import overrides
 from qthandy import busy, vbox, sp, line, incr_font, flow, incr_icon, bold, vline, \
     margins, decr_font, translucent
-from qthandy.filter import DragEventFilter, OpacityEventFilter
+from qthandy.filter import DragEventFilter, OpacityEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from qtpy import sip
 
@@ -48,6 +48,7 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.graphics import BaseGraphicsView
 from plotlyst.view.widget.graphics.editor import ZoomBar, BaseItemToolbar, \
     SecondarySelectorWidget
+from plotlyst.view.widget.graphics.items import IconBadge
 from plotlyst.view.widget.input import AutoAdjustableTextEdit
 from plotlyst.view.widget.utility import IconSelectorDialog
 from plotlyst.view.widget.world.editor import MilieuSelectorPopup
@@ -166,6 +167,10 @@ class MarkerItemToolbar(BaseItemToolbar):
 
         self._btnMilieuLink = tool_btn(IconRegistry.world_building_icon(), tooltip='Link to milieu', transparent_=True)
         self._btnMilieuLink.clicked.connect(self._linkToMilieu)
+        if self._novel.tutorial:
+            self._btnMilieuLink.setDisabled(True)
+            self._btnMilieuLink.setToolTip('Milieu link is disabled in preview mode')
+            self._btnMilieuLink.installEventFilter(InstantTooltipEventFilter(self._btnMilieuLink))
 
         self._btnColor = tool_btn(IconRegistry.from_name('fa5s.map-marker', color='black'), 'Change style',
                                   transparent_=True)
@@ -185,19 +190,16 @@ class MarkerItemToolbar(BaseItemToolbar):
         self.addSecondaryWidget(self._btnIcon, self._iconSecondaryWidget)
         self._iconPicker.iconSelected.connect(self._iconChanged)
 
-        self._sbSize = QSlider()
-        self._sbSize.setMinimum(30)
-        self._sbSize.setMaximum(90)
-        self._sbSize.setValue(50)
-        self._sbSize.setOrientation(Qt.Orientation.Horizontal)
-        self._sbSize.valueChanged.connect(self._sizeChanged)
+        self._sbRange = QSlider()
+        self._sbRange.setOrientation(Qt.Orientation.Horizontal)
+        self._sbRange.valueChanged.connect(self._sizeChanged)
 
         self._toolbar.layout().addWidget(self._btnMilieuLink)
         self._toolbar.layout().addWidget(vline())
         self._toolbar.layout().addWidget(self._btnColor)
         self._toolbar.layout().addWidget(self._btnIcon)
         self._toolbar.layout().addWidget(vline())
-        self._toolbar.layout().addWidget(self._sbSize)
+        self._toolbar.layout().addWidget(self._sbRange)
 
         self._iconPicker.setFixedWidth(self.sizeHint().width())
 
@@ -212,10 +214,16 @@ class MarkerItemToolbar(BaseItemToolbar):
             self._btnMilieuLink.setIcon(IconRegistry.world_building_icon())
 
         self._btnColor.setIcon(IconRegistry.from_name('fa5s.map-marker', color=marker.color))
-        self._sbSize.setValue(marker.size if marker.size else 50)
 
-        self._btnIcon.setEnabled(marker.type == GraphicsItemType.MAP_MARKER)
-        self._sbSize.setVisible(marker.type == GraphicsItemType.MAP_MARKER)
+        if marker.type == GraphicsItemType.MAP_MARKER:
+            self._sbRange.setMinimum(30)
+            self._sbRange.setMaximum(90)
+            self._sbRange.setValue(50)
+            self._sbRange.setValue(marker.size if marker.size else 50)
+        else:
+            self._sbRange.setMinimum(-70 if marker.ref else -40)
+            self._sbRange.setMaximum(20)
+            self._sbRange.setValue(marker.opacity)
         self._toolbar.updateGeometry()
 
         self._item = item
@@ -242,7 +250,10 @@ class MarkerItemToolbar(BaseItemToolbar):
 
     def _sizeChanged(self, value: int):
         if self._item:
-            self._item.setSize(value)
+            if self._item.marker().type == GraphicsItemType.MAP_MARKER:
+                self._item.setSize(value)
+            else:
+                self._item.setOpacityDiff(value)
 
 
 class BaseMapItem:
@@ -274,12 +285,23 @@ class BaseMapItem:
 
     def setLocation(self, location: Location):
         self._marker.ref = location.id
+        if location.icon:
+            self.setIcon(location.icon)
+        else:
+            self.resetIcon()
         self.mapScene().markerChangedEvent(self)
 
     def setColor(self, color: str):
         self._marker.color = color
         self._marker.color_selected = marker_selected_colors[color]
         self.refresh()
+
+    def setIcon(self, icon: str):
+        self._marker.icon = icon
+        self.refresh()
+
+    def resetIcon(self):
+        pass
 
     def refresh(self):
         self.update()
@@ -337,7 +359,7 @@ class BaseMapItem:
 
     def _effectWithoutRef(self) -> QGraphicsEffect:
         effect = QGraphicsOpacityEffect()
-        effect.setOpacity(0.5)
+        effect.setOpacity(0.5 + self._marker.opacity / 100)
         return effect
 
     def _posChangedOnTimeout(self):
@@ -376,10 +398,6 @@ class MarkerItem(QAbstractGraphicsShapeItem, BaseMapItem):
 
         self._checkRef()
 
-    def setIcon(self, icon: str):
-        self._marker.icon = icon
-        self.refresh()
-
     def setSize(self, size: int):
         self._width = size
         self._height = int(size * (self.DEFAULT_MARKER_HEIGHT / self.DEFAULT_MARKER_WIDTH))
@@ -392,6 +410,12 @@ class MarkerItem(QAbstractGraphicsShapeItem, BaseMapItem):
         self.update()
         self.mapScene().markerChangedEvent(self)
 
+    @overrides
+    def resetIcon(self):
+        self._marker.icon = 'mdi.circle'
+        self.refresh()
+
+    @overrides
     def refresh(self):
         self._iconMarker = IconRegistry.from_name('fa5s.map-marker', self._marker.color)
         self._iconMarkerSelected = IconRegistry.from_name('fa5s.map-marker', self._marker.color_selected)
@@ -440,27 +464,65 @@ class MarkerItem(QAbstractGraphicsShapeItem, BaseMapItem):
 
 
 class BaseMapAreaItem(BaseMapItem):
+
+    def __init__(self):
+        super().__init__()
+        self._iconItem: Optional[IconBadge] = None
+
     def setMarker(self, marker: WorldBuildingMarker):
         self._marker = marker
         self.setPen(QPen(Qt.GlobalColor.black, 1))
         color = QColor(marker.color)
         color.setAlpha(125)
         self.setBrush(color)
+        if self._marker.icon:
+            self._initIconItem()
+            self._iconItem.setIcon(IconRegistry.from_name(self._marker.icon, RELAXED_WHITE_COLOR))
 
         self._checkRef()
+
+    @overrides
+    def setIcon(self, icon: str):
+        self._marker.icon = icon
+        if self._iconItem is None:
+            self._initIconItem()
+
+        self._iconItem.setIcon(IconRegistry.from_name(self._marker.icon, RELAXED_WHITE_COLOR))
+        self._iconItem.setVisible(True)
+        self.refresh()
+
+    @overrides
+    def resetIcon(self):
+        if self._iconItem:
+            self._iconItem.setVisible(False)
+
+    def setOpacityDiff(self, diff: int):
+        self._marker.opacity = diff
+        self._checkRef()
+
+        self.mapScene().markerChangedEvent(self)
 
     @overrides
     def refresh(self):
         color = QColor(self._marker.color)
         color.setAlpha(125)
         self.setBrush(color)
+
+        if self._marker.icon:
+            self._iconItem.setIcon(IconRegistry.from_name(self._marker.icon, RELAXED_WHITE_COLOR))
         super().refresh()
 
     @overrides
     def _effectWithRef(self) -> Optional[QGraphicsEffect]:
         effect = QGraphicsOpacityEffect()
-        effect.setOpacity(0.7)
+        effect.setOpacity(0.7 + self._marker.opacity / 100)
         return effect
+
+    def _initIconItem(self):
+        self._iconItem = IconBadge(self, borderEnabled=False)
+        self._iconItem.setVisible(True)
+        self._iconItem.setPos(self.boundingRect().center().x() - 16,
+                              self.boundingRect().center().y() - 16)
 
 
 class AreaSquareItem(QGraphicsRectItem, BaseMapAreaItem):
@@ -802,7 +864,7 @@ class WorldBuildingMapScene(QGraphicsScene):
     def _addArea(self, pos: QPointF):
         self._area_start_point = pos
         marker = WorldBuildingMarker(self._area_start_point.x(), self._area_start_point.y(),
-                                     type=self._additionDescriptor)
+                                     type=self._additionDescriptor, icon='')
         self._map.markers.append(marker)
         if self._additionDescriptor == GraphicsItemType.MAP_AREA_SQUARE:
             self._current_area_item = AreaSquareItem(marker, QRectF(self._area_start_point, self._area_start_point))
@@ -1064,7 +1126,7 @@ class WorldBuildingMapView(BaseGraphicsView):
 
     def _fillUpEditMenu(self):
         self._menuEdit.clear()
-        addAction = action('Add map', IconRegistry.plus_icon(), tooltip="Upload am image for your map",
+        addAction = action('Add map', IconRegistry.plus_icon(), tooltip="Upload an image for your map",
                            slot=self._addNewMap)
         if self._scene.map() and self._scene.map().ref:
             addAction.setText('Replace map')

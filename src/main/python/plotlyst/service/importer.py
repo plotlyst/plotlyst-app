@@ -20,12 +20,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from abc import abstractmethod
 from pathlib import Path
 from typing import Dict, List
+from uuid import UUID
 
-from PyQt6.QtCore import QObject
+from PyQt6.QtCore import QObject, QRunnable, pyqtSignal
 from PyQt6.QtGui import QIcon
 from overrides import overrides
 from qthandy import busy
 
+from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Character, Chapter, Scene
 from plotlyst.core.scrivener import ScrivenerParser
 from plotlyst.event.core import emit_event
@@ -218,3 +220,27 @@ class ScrivenerSyncImporter(SyncImporter):
         novel.scenes[:] = scenes
 
         return new_scenes, removed_scenes
+
+
+class NovelLoadingResult(QObject):
+    finished = pyqtSignal(object)
+
+    def __init__(self):
+        super().__init__()
+
+    def emit_success(self, novel):
+        self.finished.emit(novel)
+
+
+class NovelLoaderWorker(QRunnable):
+
+    def __init__(self, id: UUID, result: NovelLoadingResult):
+        super().__init__()
+        self._id = id
+        self._result = result
+
+    @overrides
+    def run(self) -> None:
+        novel = json_client.fetch_novel(self._id)
+        if novel:
+            self._result.emit_success(novel)

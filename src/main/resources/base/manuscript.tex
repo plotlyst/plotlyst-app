@@ -1,0 +1,41 @@
+\documentclass[a5paper,{{ font_size }}]{book}
+\usepackage{geometry}
+\usepackage{parskip}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+
+\nofiles
+
+%\geometry{top=1in, bottom=1in, left=1in, right=1in}
+
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0pt}
+
+{% if line_spacing == "double" %}
+\doublespacing
+{% elif line_spacing == "onehalf" %}
+\onehalfspacing
+{% endif %}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+
+\begin{document}
+
+    \begin{titlepage}
+        \centering
+        {\Huge {{ title }}}\\[1cm]
+        {\Large {{ author }}}\\[3cm]
+        \vfill
+        \textit{ {{ subtitle }} }
+        \vfill
+    \end{titlepage}
+
+    \setcounter{page}{3}
+
+    {% for chapter in chapters %}
+    \include{ {{ full_path }}/{{ chapter }} }
+    {% endfor %}
+
+\end{document}

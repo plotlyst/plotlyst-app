@@ -24,35 +24,53 @@ from functools import partial
 from typing import List, Optional, Dict, Union, Set
 
 import qtanim
-from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QObject, QSize
-from PyQt6.QtGui import QColor, QDragEnterEvent, QDropEvent, QResizeEvent, QCursor, QPainter, QPaintEvent, QPen
+from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize
+from PyQt6.QtGui import QColor, QDragEnterEvent, QDropEvent, QResizeEvent, QPainter, QPaintEvent, QPen
 from PyQt6.QtWidgets import QWidget, QToolButton, QSizePolicy, QPushButton, QSplitter, QAbstractButton, QToolTip
 from overrides import overrides
-from qthandy import hbox, transparent, italic, translucent, gc, clear_layout, vbox, margins, decr_font
+from qthandy import hbox, transparent, italic, translucent, gc, clear_layout, vbox, margins, decr_font, pointy
 from qthandy.filter import InstantTooltipEventFilter, DragEventFilter
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, act_color, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import StoryBeat, StoryBeatType, Novel, \
     StoryStructure, Scene, StoryStructureDisplayType, TemplateStoryStructureType
 from plotlyst.service.cache import acts_registry
-from plotlyst.view.common import PopupMenuBuilder, to_rgba_str
+from plotlyst.view.common import to_rgba_str, ButtonPressResizeEventFilter
 from plotlyst.view.icons import IconRegistry
 
 
 class _BeatButtonStyle(Enum):
     Icon = 0
-    Circe = 1
+    Circle = 1
     Text = 2
 
 
 class _BeatButton(QToolButton):
     BeatMimeType = 'application/story-beat'
 
-    def __init__(self, beat: StoryBeat, parent=None):
+    def __init__(self, beat: StoryBeat, structure: StoryStructure, parent=None, selectable: bool = False):
         super(_BeatButton, self).__init__(parent)
         self.beat = beat
-        # self._borderStyle: bool = False
-        self.style = _BeatButtonStyle.Icon
+        self.structure = structure
+        self._selectable = selectable
+        self._style = _BeatButtonStyle.Icon
+
+        self.setCheckable(self._selectable)
+        self.toggled.connect(self._checked)
+
+        color = '#454E56' if self._selectable else beat.icon_color
+
+        if self._selectable:
+            self.installEventFilter(ButtonPressResizeEventFilter(self))
+
+        if beat.icon:
+            self.setIcon(IconRegistry.from_name(beat.icon, color, beat.icon_color))
+        elif beat.seq:
+            if self.structure.template_type == TemplateStoryStructureType.SPINE:
+                icon = f'mdi.numeric-{beat.seq}-box'
+            else:
+                icon = f'mdi.numeric-{beat.seq}'
+            self.setIcon(IconRegistry.from_name(icon, color, beat.icon_color, scale=1.5))
 
         self.installEventFilter(InstantTooltipEventFilter(self))
         transparent(self)
@@ -64,11 +82,8 @@ class _BeatButton(QToolButton):
         return self.beat
 
     def setBorderStyle(self):
-        self.style = _BeatButtonStyle.Circe
-        # if self._borderStyle:
+        self._style = _BeatButtonStyle.Circle
         self._initBorderStyle(125)
-        # else:
-        #     transparent(self)
 
     def setDragEnabled(self, enabled: bool):
         if self._dragEnabled == enabled:
@@ -97,16 +112,39 @@ class _BeatButton(QToolButton):
         return super().event(event)
 
     def setTextStyle(self):
-        self.style = _BeatButtonStyle.Text
+        self._style = _BeatButtonStyle.Text
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         decr_font(self, 2)
         self.setText(self.beat.text)
 
+    @overrides
+    def setChecked(self, checked: bool) -> None:
+        super().setChecked(checked)
+
+    def activateSelection(self, value: bool):
+        if not self._selectable:
+            return
+        if value or self.isChecked():
+            self.setEnabled(True)
+            pointy(self)
+        else:
+            self.setDisabled(True)
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+
+    def _checked(self, toggled: bool):
+        if self._style == _BeatButtonStyle.Circle:
+            self._initBorderStyle(125)
+
+        qtanim.glow(self, color=QColor(self.beat.icon_color if toggled else 'grey'))
+
     def _initBorderStyle(self, opacity: int):
-        color_translucent = to_rgba_str(QColor(self.beat.icon_color), opacity)
+        if self._selectable and not self.isChecked():
+            color_translucent = 'lightgrey'
+        else:
+            color_translucent = to_rgba_str(QColor(self.beat.icon_color), opacity)
         self.setStyleSheet(f'''
                             QToolButton {{
-                                            background-color: {RELAXED_WHITE_COLOR};
+                                            background: {RELAXED_WHITE_COLOR};
                                             border: 2px solid {color_translucent};
                                             border-radius: 17px;
                                             padding: 4px;
@@ -117,7 +155,7 @@ class _BeatButton(QToolButton):
                             ''')
 
     def highlight(self):
-        if self.style == _BeatButtonStyle.Circe:
+        if self._style == _BeatButtonStyle.Circle:
             self._initBorderStyle(255)
         else:
             self.setStyleSheet(
@@ -126,7 +164,7 @@ class _BeatButton(QToolButton):
         qtanim.glow(self, color=QColor(self.beat.icon_color))
 
     def unhighlight(self):
-        if self.style == _BeatButtonStyle.Circe:
+        if self._style == _BeatButtonStyle.Circle:
             self._initBorderStyle(125)
         else:
             transparent(self)
@@ -175,8 +213,7 @@ class _ActButton(QPushButton):
 class StoryStructureTimelineWidget(QWidget):
     BeatMimeType = 'application/story-beat'
 
-    beatSelected = pyqtSignal(StoryBeat)
-    beatRemovalRequested = pyqtSignal(StoryBeat)
+    beatToggled = pyqtSignal(StoryBeat, bool)
     actsResized = pyqtSignal()
     beatMoved = pyqtSignal(StoryBeat)
 
@@ -186,8 +223,8 @@ class StoryStructureTimelineWidget(QWidget):
 
         self._checkOccupiedBeats: bool = True
         self._beatsCheckable: bool = False
+        self._beatSelectionActive: bool = False
         self._beatsMoveable: bool = False
-        self._removalContextMenuEnabled: bool = False
         self._actsClickable: bool = False
         self._actsResizeable: bool = False
 
@@ -219,8 +256,13 @@ class StoryStructureTimelineWidget(QWidget):
     def beatsCheckable(self) -> bool:
         return self._beatsCheckable
 
-    def setBeatsCheckable(self, value: bool):
+    def setBeatsSelectable(self, value: bool):
         self._beatsCheckable = value
+
+    def activateBeatSelection(self, active: bool):
+        self._beatSelectionActive = active
+        for beat in self._beats.values():
+            beat.activateSelection(active)
 
     def setBeatsMoveable(self, enabled: bool):
         self._beatsMoveable = enabled
@@ -247,7 +289,7 @@ class StoryStructureTimelineWidget(QWidget):
                 btn = _ContainerButton(beat, self)
                 self._containers[beat] = btn
             else:
-                btn = _BeatButton(beat, self)
+                btn = _BeatButton(beat, self.structure, parent=self, selectable=self._beatsCheckable)
                 self._beats[beat] = btn
 
             self.__initButton(beat, btn, occupied_beats)
@@ -266,38 +308,31 @@ class StoryStructureTimelineWidget(QWidget):
                 self._wdgLine.layout().addWidget(wdg)
 
     def __initButton(self, beat: StoryBeat, btn: Union[QAbstractButton, _BeatButton], occupied_beats: Set[StoryBeat]):
-        if beat.icon:
-            btn.setIcon(IconRegistry.from_name(beat.icon, beat.icon_color))
-        elif beat.seq:
-            if self.structure.template_type == TemplateStoryStructureType.SPINE:
-                icon = f'mdi.numeric-{beat.seq}-box'
-            else:
-                icon = f'mdi.numeric-{beat.seq}'
-            btn.setIcon(IconRegistry.from_name(icon, beat.icon_color, scale=1.5))
         if beat.type == StoryBeatType.BEAT:
-            btn.toggled.connect(partial(self._beatToggled, btn))
             btn.clicked.connect(partial(self._beatClicked, btn))
-            btn.installEventFilter(self)
+            # btn.installEventFilter(self)
             self._refreshBeatButtonDragStatus(btn)
             if not self.isProportionalDisplay():
                 if self.structure.template_type == TemplateStoryStructureType.SPINE:
                     btn.setTextStyle()
                 else:
                     btn.setBorderStyle()
-            if self._checkOccupiedBeats and beat not in occupied_beats:
-                if self._beatsCheckable:
-                    btn.setCheckable(True)
-                self._beatToggled(btn, False)
+            if self._checkOccupiedBeats:
+                btn.setChecked(beat in occupied_beats)
+                btn.activateSelection(btn.isChecked())
+                # if self._beatsCheckable:
+                #     btn.setSelectable(True)
+                # self._beatToggled(btn, False)
         btn.setVisible(beat.enabled)
 
-    @overrides
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if isinstance(watched, QToolButton) and watched.isCheckable() and not watched.isChecked():
-            if event.type() == QEvent.Type.Enter:
-                translucent(watched)
-            elif event.type() == QEvent.Type.Leave:
-                translucent(watched, 0.2)
-        return super().eventFilter(watched, event)
+    # @overrides
+    # def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+    #     if isinstance(watched, QToolButton) and watched.isCheckable() and not watched.isChecked():
+    #         if event.type() == QEvent.Type.Enter:
+    #             translucent(watched)
+    #         elif event.type() == QEvent.Type.Leave:
+    #             translucent(watched, 0.2)
+    #     return super().eventFilter(watched, event)
 
     @overrides
     def dragEnterEvent(self, event: QDragEnterEvent):
@@ -465,7 +500,7 @@ class StoryStructureTimelineWidget(QWidget):
 
     def insertBeat(self, beat: StoryBeat):
         if beat.type == StoryBeatType.BEAT:
-            btn = _BeatButton(beat, self)
+            btn = _BeatButton(beat, self.structure, parent=self, selectable=self._beatsCheckable)
             self._beats[beat] = btn
             self.__initButton(beat, btn, set())
             self._rearrangeBeats()
@@ -525,16 +560,14 @@ class StoryStructureTimelineWidget(QWidget):
         self.btnCurrentScene.setHidden(True)
 
     def toggleBeat(self, beat: StoryBeat, toggled: bool):
+        if not self._beatsCheckable:
+            return
+
         btn = self._beats.get(beat)
         if btn is None:
             return
-
-        # if toggled:
-        #     btn.setCheckable(False)
-        # else:
-        # pointy(btn)
-        # btn.setCheckable(True)
-        self._beatToggled(btn, toggled)
+        btn.setChecked(toggled)
+        btn.activateSelection(self._beatSelectionActive)
 
     def toggleBeatVisibility(self, beat: StoryBeat):
         btn = self._beats.get(beat)
@@ -557,18 +590,10 @@ class StoryStructureTimelineWidget(QWidget):
     def _actToggled(self, btn: _ActButton, toggled: bool):
         translucent(btn, 1.0 if toggled else 0.2)
 
-    def _beatToggled(self, btn: QToolButton, toggled: bool):
-        translucent(btn, 1.0 if toggled else 0.2)
-
-    def _beatClicked(self, btn: _BeatButton):
-        if btn.isCheckable() and btn.isChecked():
-            self.beatSelected.emit(btn.beat)
-            btn.setCheckable(False)
-        elif not btn.isCheckable() and self._removalContextMenuEnabled:
-            builder = PopupMenuBuilder.from_widget_position(self, self.mapFromGlobal(QCursor.pos()))
-            builder.add_action('Remove', IconRegistry.trash_can_icon(),
-                               lambda: self.beatRemovalRequested.emit(btn.beat))
-            builder.popup()
+    def _beatClicked(self, btn: _BeatButton, toggled: bool):
+        if self._beatsCheckable:
+            self.beatToggled.emit(btn.beat, toggled)
+            btn.activateSelection(self._beatSelectionActive)
 
     def _refreshBeatButtonDragStatus(self, btn: _BeatButton):
         if self._beatsMoveable and not btn.beat.ends_act and self.isProportionalDisplay():

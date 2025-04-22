@@ -117,9 +117,6 @@
             <property name="text">
              <string/>
             </property>
-            <property name="shortcut">
-             <string>1</string>
-            </property>
             <property name="checkable">
              <bool>true</bool>
             </property>
@@ -145,9 +142,6 @@
             <property name="text">
              <string/>
             </property>
-            <property name="shortcut">
-             <string>2</string>
-            </property>
             <property name="checkable">
              <bool>true</bool>
             </property>
@@ -169,9 +163,6 @@
             </property>
             <property name="text">
              <string/>
-            </property>
-            <property name="shortcut">
-             <string>3</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -197,9 +188,6 @@
             </property>
             <property name="text">
              <string/>
-            </property>
-            <property name="shortcut">
-             <string>4</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -229,9 +217,6 @@
             </property>
             <property name="text">
              <string/>
-            </property>
-            <property name="shortcut">
-             <string>5</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -452,7 +437,7 @@
        <item>
         <widget class="QStackedWidget" name="stackCharacters">
          <property name="currentIndex">
-          <number>3</number>
+          <number>4</number>
          </property>
          <widget class="QWidget" name="pageTableView">
           <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -942,7 +927,7 @@
            <item>
             <widget class="QScrollArea" name="scrollArea">
              <property name="frameShape">
-              <enum>QFrame::NoFrame</enum>
+              <enum>QFrame::StyledPanel</enum>
              </property>
              <property name="widgetResizable">
               <bool>true</bool>
@@ -952,8 +937,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>100</width>
-                <height>30</height>
+                <width>877</width>
+                <height>579</height>
                </rect>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -981,7 +966,7 @@
                   </sizepolicy>
                  </property>
                  <property name="frameShape">
-                  <enum>QFrame::Box</enum>
+                  <enum>QFrame::StyledPanel</enum>
                  </property>
                  <property name="frameShadow">
                   <enum>QFrame::Raised</enum>
@@ -1035,8 +1020,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="btnGroupComparison"/>
-  <buttongroup name="btnGroupComparisonView"/>
   <buttongroup name="btnGroupViews"/>
+  <buttongroup name="btnGroupComparison"/>
  </buttongroups>
 </ui>

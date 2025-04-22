@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import logging
-from logging import LogRecord
+from logging import LogRecord, WARNING
 
 from PyQt6.QtCore import Qt, QModelIndex, QTimer
 from PyQt6.QtGui import QClipboard
@@ -82,10 +82,11 @@ class LogsPopup(PopupDialog):
 
     def _logClicked(self, index: QModelIndex):
         record: LogRecord = index.data(LogTableModel.LogRecordRole)
-        if record.exc_info is not None:
-            self.textDisplay.setText(record.exc_text)
-
-        self.wdgErrorDisplay.setVisible(record.exc_info is not None)
+        if record.levelno >= WARNING:
+            self.textDisplay.setText(record.exc_text if record.exc_text else record.msg)
+            self.wdgErrorDisplay.setVisible(True)
+        else:
+            self.wdgErrorDisplay.setVisible(False)
 
     def _copyError(self):
         text = self.textDisplay.toPlainText()

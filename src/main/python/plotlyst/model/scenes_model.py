@@ -27,6 +27,7 @@ from PyQt6.QtGui import QBrush, QColor
 from PyQt6.QtWidgets import QApplication
 from overrides import overrides
 
+from plotlyst.common import ALT_BACKGROUND_COLOR
 from plotlyst.core.domain import Novel, Scene, CharacterArc, Character, \
     SelectionItem, SceneStage, SceneStructureAgenda, ScenePurposeType
 from plotlyst.event.core import emit_event
@@ -62,11 +63,12 @@ class ScenesTableModel(AbstractHorizontalHeaderBasedTableModel, BaseScenesTableM
     ColType = 4
     ColTime = 5
     ColArc = 6
-    ColSynopsis = 7
+    ColProgress = 7
+    ColSynopsis = 8
 
     def __init__(self, novel: Novel, parent=None):
         self.novel = novel
-        _headers = [''] * 8
+        _headers = [''] * 9
         _headers[self.ColTitle] = 'Title'
         _headers[self.ColType] = 'Type'
         _headers[self.ColPov] = 'POV'
@@ -74,9 +76,9 @@ class ScenesTableModel(AbstractHorizontalHeaderBasedTableModel, BaseScenesTableM
         _headers[self.ColCharacters] = 'Characters'
         _headers[self.ColTime] = 'Day'
         _headers[self.ColArc] = 'Arc'
+        _headers[self.ColProgress] = ''
         _headers[self.ColSynopsis] = 'Synopsis'
         super().__init__(_headers, parent)
-        self._relax_colors = False
         self._dragEnabled: bool = True
 
         self._action_icon = IconRegistry.action_scene_icon()
@@ -136,6 +138,11 @@ class ScenesTableModel(AbstractHorizontalHeaderBasedTableModel, BaseScenesTableM
                     return self._character_insight_icon
                 elif scene.purpose == ScenePurposeType.Exposition:
                     return self._exposition_icon
+            elif index.column() == self.ColProgress:
+                if scene.plot_pos_progress or scene.plot_neg_progress:
+                    return IconRegistry.plot_charge_icon(scene.plot_pos_progress, scene.plot_neg_progress)
+                elif scene.progress:
+                    return IconRegistry.charge_icon(scene.progress)
             elif index.column() == self.ColPov:
                 if scene.pov:
                     return avatars.avatar(scene.pov)
@@ -225,8 +232,6 @@ class ScenesTableModel(AbstractHorizontalHeaderBasedTableModel, BaseScenesTableM
         self.orderChanged.emit()
         return True
 
-    def setRelaxColors(self, enabled: bool):
-        self._relax_colors = enabled
 
 
 class ScenesFilterProxyModel(QSortFilterProxyModel):
@@ -315,13 +320,13 @@ class ScenesStageTableModel(QAbstractTableModel, BaseScenesTableModel):
                 return emoji.emojize(':check_mark:')
         if role == Qt.ItemDataRole.BackgroundRole and index.column() > self.ColNoneStage and self._highlighted_stage:
             if self.novel.stages[index.column() - 2] == self._highlighted_stage:
-                return QBrush(QColor('#c1e0f7'))
+                return QBrush(QColor(ALT_BACKGROUND_COLOR))
         if role == Qt.ItemDataRole.DisplayRole and index.column() == self.ColTitle:
             return self._scene(index).title_or_index(self.novel)
 
     @overrides
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
-        if index.column() == self.ColTitle:
+        if index.column() == self.ColTitle or index.column() == self.ColNoneStage:
             return Qt.ItemFlag.ItemIsEnabled
         return super(ScenesStageTableModel, self).flags(index)
 

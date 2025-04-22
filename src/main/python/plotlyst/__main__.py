@@ -17,6 +17,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from plotlyst.service.profile import verify_profile
+
 try:
     import logging
     import argparse
@@ -93,8 +95,17 @@ if __name__ == '__main__':
     settings.init_org()
     if args.clear:
         settings.clear()
-    resource_registry.set_up(appctxt)
+    try:
+        resource_registry.set_up(appctxt)
+    except FileNotFoundError as ex:
+        QMessageBox.critical(None, 'Could not locate resource file', traceback.format_exc())
+
     resource_manager.init()
+
+    if not verify_profile():
+        QMessageBox.critical(None, 'Signature verification failed',
+                             'Plotlyst could not verify the signature. The file may have been tampered with or the distribution is invalid.\nIf you experience this with a fresh installation, contact the developer please.')
+        sys.exit(1)
 
     if app_env.is_windows():
         icon = QIcon(resource_registry.plotlyst_icon)

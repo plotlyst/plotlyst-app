@@ -1,0 +1,8 @@
+If you face problems with the installation on Windows, please visit the following page:
+
+https://plotlyst.featurebase.app/help/articles/8054270-windows-troubleshooting
+
+
+-------
+If you cannot install Plotlyst on Windows because the installer MSI file seemingly doesn’t execute anything,
+make sure your firewall doesn’t block the MSI file. Right-click on the MSI file -> Properties, and check the Security - Unblock option.

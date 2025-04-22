@@ -17,26 +17,34 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from datetime import datetime
 from functools import partial
 from typing import Optional, Set
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt, pyqtProperty, QTimer, QEvent
-from PyQt6.QtGui import QIcon, QMouseEvent, QEnterEvent, QAction
-from PyQt6.QtWidgets import QPushButton, QSizePolicy, QToolButton, QAbstractButton, QLabel, QButtonGroup, QMenu, QWidget
+from PyQt6.QtCore import pyqtSignal, Qt, pyqtProperty, QTimer, QEvent, QSize, QPoint
+from PyQt6.QtGui import QIcon, QMouseEvent, QEnterEvent, QAction, QColor, QPaintEvent, QPainter
+from PyQt6.QtWidgets import QPushButton, QSizePolicy, QToolButton, QAbstractButton, QLabel, QButtonGroup, QMenu, \
+    QWidget
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, translucent, bold, incr_font, transparent, retain_when_hidden, underline, vbox, decr_icon, \
-    incr_icon, italic, pointy
+    incr_icon, italic, pointy, sp, decr_font
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, PLOTLYST_MAIN_COLOR, \
+    LIGHTGREY_IDLE_COLOR, LIGHTGREY_ACTIVE_COLOR
 from plotlyst.core.domain import SelectionItem, Novel, tag_characterization, tag_worldbuilding, \
     tag_brainstorming, tag_research, tag_writing, tag_plotting, tag_theme, tag_outlining, tag_revision, tag_drafting, \
-    tag_editing, tag_collect_feedback, tag_publishing, tag_marketing, tag_book_cover_design, tag_formatting
+    tag_editing, tag_collect_feedback, tag_publishing, tag_marketing, tag_book_cover_design, tag_formatting, \
+    SnapshotType
+from plotlyst.env import app_env
+from plotlyst.event.core import emit_event, emit_global_event
+from plotlyst.events import SocialSnapshotRequested, ShowRoadmapEvent
 from plotlyst.service.importer import SyncImporter
-from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action
+from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action, label, \
+    ButtonIconSwitchEventFilter, push_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 
@@ -85,20 +93,20 @@ class _SecondaryActionButton(QAbstractButton):
         self._iconName: str = ''
         self._iconColor: str = 'black'
         self._checkedColor: str = 'black'
-        self._padding: int = 2
+        self._padding: int = 4
         self.initStyleSheet()
         pointy(self)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Maximum)
-        self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7))
+        self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7, ignoreCheckedButton=True))
 
-    def initStyleSheet(self, border_color: str = 'grey', border_style: str = 'dashed', color: str = 'grey',
+    def initStyleSheet(self, border_color: str = 'grey', border_style: str = 'solid', color: str = 'grey',
                        bg_color: Optional[str] = None, border_radius: int = 6):
         bg_style = ''
         if bg_color:
             bg_style = f'background: {bg_color};'
         self.setStyleSheet(f'''
                 {self.__class__.__name__} {{
-                    border: 2px {border_style} {border_color};
+                    border: 1px {border_style} {border_color};
                     border-radius: {border_radius}px;
                     color: {color};
                     {bg_style}
@@ -607,3 +615,213 @@ class ChargeButton(SecondaryActionToolButton):
             self.setIcon(IconRegistry.minus_icon('grey'))
         decr_icon(self, 4)
         retain_when_hidden(self)
+
+
+class SelectorToggleButton(QToolButton):
+    def __init__(self, button_style: Qt.ToolButtonStyle = Qt.ToolButtonStyle.ToolButtonTextUnderIcon,
+                 minWidth: int = 100, animated: bool = True, parent=None):
+        super().__init__(parent)
+        self._animated = animated
+
+        if minWidth:
+            self.setMinimumWidth(minWidth)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+        self.setCheckable(True)
+        self.setToolButtonStyle(button_style)
+
+        pointy(self)
+        incr_icon(self, 4)
+        if app_env.is_mac() and button_style == Qt.ToolButtonStyle.ToolButtonTextUnderIcon:
+            incr_font(self)
+
+        if button_style == Qt.ToolButtonStyle.ToolButtonTextBesideIcon:
+            radius = 6
+            padding = 6
+        else:
+            radius = 10
+            padding = 2
+
+        self.setStyleSheet(f'''
+                    QToolButton {{
+                        border: 1px hidden lightgrey;
+                        border-radius: {radius}px;
+                        padding: {padding}px;
+                    }}
+                    QToolButton:hover:!checked {{
+                        background: #FCF5FE;
+                    }}
+                    QToolButton:checked {{
+                        background: #D4B8E0;
+                    }}
+                    ''')
+
+        if self._animated:
+            self.toggled.connect(self._toggled)
+
+    def _toggled(self, toggled: bool):
+        if toggled:
+            color = QColor(PLOTLYST_MAIN_COLOR)
+            color.setAlpha(175)
+            qtanim.glow(self, radius=8, color=color, reverseAnimation=False,
+                        teardown=lambda: self.setGraphicsEffect(None))
+        else:
+            qtanim.glow(self, radius=0, startRadius=8, color=QColor('grey'), reverseAnimation=False,
+                        teardown=lambda: self.setGraphicsEffect(None))
+
+
+class _RoleFilterButton(QToolButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        transparent(self)
+        pointy(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+        self.installEventFilter(OpacityEventFilter(self))
+
+
+class MajorRoleFilterButton(_RoleFilterButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setIcon(IconRegistry.major_character_icon())
+        self.setToolTip('Filter for Major characters')
+
+
+class SecondaryRoleFilterButton(_RoleFilterButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setIcon(IconRegistry.secondary_character_icon())
+        self.setToolTip('Filter for Secondary characters')
+
+
+class MinorRoleFilterButton(_RoleFilterButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setIcon(IconRegistry.minor_character_icon())
+        self.setToolTip('Filter for Minor characters')
+
+
+class SmallToggleButton(QToolButton):
+    def __init__(self, parent=None, translucent: bool = True):
+        super().__init__(parent)
+        self.setIcon(IconRegistry.from_name('ph.toggle-left-thin'))
+        self.setCheckable(True)
+        pointy(self)
+        transparent(self)
+        self.setIconSize(QSize(28, 28))
+
+        if translucent:
+            self.installEventFilter(OpacityEventFilter(self, leaveOpacity=0.7, ignoreCheckedButton=True))
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+
+        self.toggled.connect(self._toggled)
+
+    def _toggled(self, toggled: bool):
+        if toggled:
+            self.setIcon(
+                IconRegistry.from_name('ph.toggle-right-fill', PLOTLYST_SECONDARY_COLOR, PLOTLYST_SECONDARY_COLOR))
+        else:
+            self.setIcon(IconRegistry.from_name('ph.toggle-left-thin'))
+
+
+class ToggleAllOnAndOff(QWidget):
+    on = pyqtSignal()
+    off = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        hbox(self, 0, 0)
+
+        sp(self).h_max()
+        self.btnOn = tool_btn(IconRegistry.from_name('mdi6.check-all'), transparent_=True)
+        self.btnOn.installEventFilter(OpacityEventFilter(self.btnOn))
+        self.btnOff = tool_btn(IconRegistry.from_name('ei.remove'), transparent_=True)
+        self.btnOff.installEventFilter(OpacityEventFilter(self.btnOff))
+        decr_icon(self.btnOn, 4)
+        decr_icon(self.btnOff, 4)
+
+        self.btnOn.clicked.connect(self.on)
+        self.btnOff.clicked.connect(self.off)
+
+        self.layout().addWidget(label('Toggle all:', color='grey', decr_font_diff=1))
+        self.layout().addWidget(self.btnOn)
+        self.layout().addWidget(label('/'))
+        self.layout().addWidget(self.btnOff)
+
+
+class TopSelectorButton(QPushButton):
+    def __init__(self, icon: str = '', text: str = '', parent=None):
+        super().__init__(parent)
+        self.setText(text)
+        if icon:
+            self.setIcon(IconRegistry.from_name(icon, color_on=PLOTLYST_SECONDARY_COLOR))
+        self.setCheckable(True)
+        pointy(self)
+        self.setProperty('transparent-rounded-bg-on-hover', True)
+        self.setProperty('secondary-selector', True)
+
+        incr_icon(self, 4)
+        incr_font(self, 2)
+
+
+class SnapshotButton(QPushButton):
+
+    def __init__(self, novel: Novel, snapshotType: SnapshotType, parent=None):
+        super().__init__(parent)
+        self.setToolTip('Take a snapshot for social media')
+        transparent(self)
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+        self.installEventFilter(
+            ButtonIconSwitchEventFilter(self, IconRegistry.from_name('mdi.camera', LIGHTGREY_IDLE_COLOR),
+                                        IconRegistry.from_name('mdi.camera', LIGHTGREY_ACTIVE_COLOR)))
+        pointy(self)
+
+        incr_icon(self, 6)
+        self.clicked.connect(lambda: emit_event(novel, SocialSnapshotRequested(self, snapshotType)))
+
+
+def premium_button_notice_small(parent) -> QPushButton:
+    btn = push_btn(icon=IconRegistry.from_name('mdi.certificate'), text='Plotlyst Premium Feature', transparent_=True,
+                   parent=parent)
+    decr_font(btn)
+    btn.installEventFilter(OpacityEventFilter(btn, leaveOpacity=0.6))
+    btn.clicked.connect(lambda: emit_global_event(ShowRoadmapEvent(parent)))
+
+    return btn
+
+
+class YearSelectorButton(QPushButton):
+    selected = pyqtSignal(int)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        current_year = datetime.today().year
+        self.setText(str(current_year))
+        self.setIcon(IconRegistry.from_name('mdi.calendar-blank'))
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+        pointy(self)
+
+        self._dropDownIcon = IconRegistry.from_name('ri.arrow-down-s-fill')
+        self._dropDownIconSize: int = 15
+        self.setStyleSheet(
+            f'border: 0px; background-color: rgba(0, 0, 0, 0); padding-right: {self._dropDownIconSize}px;')
+
+        self.clicked.connect(self._showSelector)
+
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        self._dropDownIcon.paint(painter, self.width() - self._dropDownIconSize,
+                                 (self.height() - self._dropDownIconSize) // 2,
+                                 self._dropDownIconSize, self._dropDownIconSize)
+
+    def _showSelector(self):
+        menu = MenuWidget()
+        for year in range(datetime.today().year, 2023, -1):
+            menu.addAction(action(str(year), slot=partial(self._selected, year)))
+
+        menu.exec(self.mapToGlobal(QPoint(0, self.sizeHint().height() + 10)))
+
+    def _selected(self, year: int):
+        self.setText(str(year))
+        self.selected.emit(year)

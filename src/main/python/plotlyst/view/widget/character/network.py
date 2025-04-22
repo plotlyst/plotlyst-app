@@ -25,9 +25,10 @@ from overrides import overrides
 from qthandy import vline, line
 from qtmenu import GridMenuWidget
 
+from plotlyst.common import BLACK_COLOR
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Diagram, Relation, Node
-from plotlyst.core.domain import Novel, Character, GraphicsItemType
+from plotlyst.core.domain import Novel, GraphicsItemType
 from plotlyst.service.image import LoadedImage, upload_image, load_image
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import action
@@ -44,10 +45,6 @@ class RelationsEditorScene(NetworkScene):
         self._novel = novel
 
         self.repo = RepositoryPersistenceManager.instance()
-
-    @overrides
-    def _character(self, node: Node) -> Optional[Character]:
-        return node.character(self._novel) if node.character_id else None
 
     @overrides
     def _load(self):
@@ -75,9 +72,11 @@ class CharacterNetworkView(NetworkGraphicsView):
         self._novel = novel
         super(CharacterNetworkView, self).__init__(parent)
 
-        self._btnAddCharacter = self._newControlButton(IconRegistry.character_icon('#040406'), 'Add new character',
+        self._btnAddCharacter = self._newControlButton(IconRegistry.character_icon(BLACK_COLOR), 'Add new character',
                                                        GraphicsItemType.CHARACTER)
         self._controlsNavBar.layout().addWidget(line())
+        self._btnAddText = self._newControlButton(
+            IconRegistry.from_name('mdi6.format-text'), 'Add new text', GraphicsItemType.TEXT)
         self._btnAddNote = self._newControlButton(
             IconRegistry.from_name('msc.note'), 'Add new note', GraphicsItemType.NOTE)
         self._btnAddIcon = self._newControlButton(

@@ -24,7 +24,7 @@ from uuid import UUID
 from language_tool_python import LanguageTool
 
 from plotlyst.core.domain import Character, NovelDescriptor, Scene, SceneStage, Task, NovelSetting, \
-    StoryStructure, Novel, Plot, StoryBeat, Location, WorldBuildingEntity
+    StoryStructure, Novel, Plot, StoryBeat, Location, WorldBuildingEntity, SnapshotType
 from plotlyst.event.core import Event
 
 
@@ -86,6 +86,11 @@ class WorldEntityDeletedEvent(Event):
 
 @dataclass
 class SceneAddedEvent(Event):
+    scene: Scene
+
+
+@dataclass
+class SceneEditRequested(Event):
     scene: Scene
 
 
@@ -180,6 +185,11 @@ class NovelSyncEvent(Event):
 
 
 @dataclass
+class SelectNovelEvent(Event):
+    novel: NovelDescriptor
+
+
+@dataclass
 class CloseNovelEvent(Event):
     novel: NovelDescriptor
 
@@ -188,11 +198,6 @@ class CloseNovelEvent(Event):
 class NovelPanelCustomizationEvent(Event):
     setting: NovelSetting
     toggled: bool
-
-
-@dataclass
-class NovelMindmapToggleEvent(NovelPanelCustomizationEvent):
-    pass
 
 
 @dataclass
@@ -227,6 +232,16 @@ class NovelCharacterWorkStyleToggleEvent(NovelPanelCustomizationEvent):
 
 @dataclass
 class NovelScenesToggleEvent(NovelPanelCustomizationEvent):
+    pass
+
+
+@dataclass
+class NovelScenesOrganizationToggleEvent(NovelPanelCustomizationEvent):
+    pass
+
+
+@dataclass
+class ScenesOrganizationResetEvent(Event):
     pass
 
 
@@ -277,11 +292,16 @@ class NovelWorldBuildingToggleEvent(NovelPanelCustomizationEvent):
 
 @dataclass
 class StorylineCreatedEvent(Event):
-    pass
+    storyline: Plot
 
 
 @dataclass
 class StorylineRemovedEvent(Event):
+    storyline: Plot
+
+
+@dataclass
+class StorylineChangedEvent(Event):
     storyline: Plot
 
 
@@ -323,3 +343,23 @@ class TaskChangedToWip(Event):
 @dataclass
 class TaskChangedFromWip(Event):
     task: Task
+
+
+@dataclass
+class SocialSnapshotRequested(Event):
+    snapshotType: SnapshotType
+
+
+@dataclass
+class ShowRoadmapEvent(Event):
+    pass
+
+
+@dataclass
+class PreviewFeatureEvent(Event):
+    feature: str
+
+
+@dataclass
+class DailyProductivityChanged(Event):
+    pass

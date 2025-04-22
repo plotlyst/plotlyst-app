@@ -30,7 +30,7 @@ from qthandy.filter import InstantTooltipEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Novel, Character, CardSizeRatio, NovelSetting
+from plotlyst.core.domain import Novel, Character, CardSizeRatio, NovelSetting, NovelDescriptor, NETWORK_PREVIEW
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers, global_event_dispatcher
@@ -38,6 +38,7 @@ from plotlyst.events import CharacterChangedEvent, CharacterDeletedEvent, NovelS
 from plotlyst.model.characters_model import CharactersTableModel
 from plotlyst.model.common import proxy
 from plotlyst.resources import resource_registry
+from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import delete_character
 from plotlyst.view._view import AbstractNovelView
 from plotlyst.view.character_editor import CharacterEditor
@@ -53,7 +54,10 @@ from plotlyst.view.widget.character.comp import CharacterComparisonWidget, \
 from plotlyst.view.widget.character.comp import CharactersTreeView
 from plotlyst.view.widget.character.network import CharacterNetworkView
 from plotlyst.view.widget.character.prefs import CharactersPreferencesWidget
+from plotlyst.view.widget.character.profile import CharacterOnboardingPopup, CharacterNameEditorPopup
 from plotlyst.view.widget.characters import CharactersProgressWidget
+from plotlyst.view.widget.display import PremiumOverlayWidget
+from plotlyst.view.widget.importing import ImportCharacterPopup
 from plotlyst.view.widget.tour.core import CharacterNewButtonTourEvent, TourEvent, \
     CharacterCardTourEvent, CharacterPerspectivesTourEvent, CharacterPerspectiveCardsTourEvent, \
     CharacterPerspectiveTableTourEvent, CharacterPerspectiveNetworkTourEvent, CharacterPerspectiveComparisonTourEvent, \
@@ -89,10 +93,11 @@ class CharactersTitle(QWidget, Ui_CharactersTitle, EventListener):
 
 class CharactersView(AbstractNovelView):
 
-    def __init__(self, novel: Novel):
+    def __init__(self, novel: Novel, main_window=None):
         super().__init__(novel)
         self.ui = Ui_CharactersView()
         self.ui.setupUi(self.widget)
+        self.main_window = main_window
         self.editor = CharacterEditor(self.novel)
         self.ui.pageEditor.layout().addWidget(self.editor.widget)
         self.editor.close.connect(self._on_close_editor)
@@ -128,6 +133,11 @@ class CharactersView(AbstractNovelView):
         self.ui.btnRelationsView.setIcon(
             IconRegistry.from_name('ph.share-network-bold', color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnProgressView.setIcon(IconRegistry.progress_check_icon('black'))
+
+        if not app_env.profile().get('character-comparison', False):
+            self.ui.btnComparison.setHidden(True)
+            self.ui.btnGroupViews.removeButton(self.ui.btnComparison)
+
         self.setNavigableButtonGroup(self.ui.btnGroupViews)
 
         self.ui.btnEdit.setIcon(IconRegistry.edit_icon())
@@ -152,6 +162,9 @@ class CharactersView(AbstractNovelView):
                 btn.setDisabled(True)
                 btn.setToolTip('Option disabled in Scrivener synchronization mode')
                 btn.installEventFilter(InstantTooltipEventFilter(btn))
+
+        if self.novel.parent:
+            self.set_series_enabled(True)
 
         self.selected_card: Optional[CharacterCard] = None
         self.ui.cards.selectionCleared.connect(lambda: self._enable_action_buttons(False))
@@ -203,6 +216,12 @@ class CharactersView(AbstractNovelView):
         self._progress.characterClicked.connect(self._edit_character)
         self._progress.refresh()
 
+        if not app_env.profile().get('network', False):
+            self._networkOverlay = PremiumOverlayWidget(self.ui.pageRelationsView, 'Character network',
+                                                        icon='ph.share-network-bold',
+                                                        alt_link='https://plotlyst.com/docs/characters/',
+                                                        preview=NETWORK_PREVIEW)
+
         self.ui.btnGroupViews.buttonToggled.connect(self._switch_view)
         link_buttons_to_pages(self.ui.stackCharacters, [(self.ui.btnCardsView, self.ui.pageCardsView),
                                                         (self.ui.btnTableView, self.ui.pageTableView),
@@ -234,6 +253,19 @@ class CharactersView(AbstractNovelView):
         if self.ui.stackedWidget.currentWidget() == self.ui.pageEditor:
             self.editor.close_event()
 
+    def set_series_enabled(self, enabled: bool):
+        pass
+        # if enabled:
+        #     self._series_menu = MenuWidget()
+        #     self._series_menu.addAction(action('Add new character', IconRegistry.character_icon(), slot=self._on_new))
+        #     self._series_menu.addSeparator()
+        #     self._series_menu.addAction(
+        #         action('Import from series...', IconRegistry.series_icon(), slot=self.import_from_series))
+        # else:
+        #     if self._series_menu:
+        #         gc(self._series_menu)
+        #         self._series_menu = None
+
     @overrides
     def refresh(self):
         self.model.modelReset.emit()
@@ -249,7 +281,9 @@ class CharactersView(AbstractNovelView):
 
     def _show_card_menu(self, card: CharacterCard, pos: QPoint):
         menu = MenuWidget()
-        menu.addAction(action('Edit', IconRegistry.edit_icon(), self._on_edit))
+        menu.addAction(action('Edit profile', IconRegistry.edit_icon(), self._on_edit))
+        menu.addAction(
+            action('Edit displayed name', IconRegistry.from_name('mdi.badge-account-outline'), self._on_edit_name))
         menu.addSeparator()
         action_ = action('Delete', IconRegistry.trash_can_icon(), self.ui.btnDelete.click)
         action_.setDisabled(self.novel.is_readonly())
@@ -318,6 +352,15 @@ class CharactersView(AbstractNovelView):
         if character:
             self._edit_character(character)
 
+    def _on_edit_name(self):
+        character = self.selected_card.character
+        CharacterNameEditorPopup.popup(character)
+        self.repo.update_character(character)
+        self.selected_card.refresh()
+
+        emit_event(self.novel, CharacterChangedEvent(self, character))
+        self.refresh()
+
     @busy
     def _edit_character(self, character: Character):
         self.title.setHidden(True)
@@ -337,16 +380,40 @@ class CharactersView(AbstractNovelView):
         emit_event(self.novel, CharacterChangedEvent(self, character))
         self.refresh()
 
+    def import_from_series(self):
+        series = entities_registry.series(self.novel)
+        if series:
+            novels: List[NovelDescriptor] = self.main_window.seriesNovels(series)
+            novels[:] = [x for x in novels if x.id != self.novel.id]
+            characters = ImportCharacterPopup.popup(series, novels)
+            if characters:
+                for character in characters:
+                    self.novel.characters.append(character)
+                    self.repo.insert_character(self.novel, character)
+                    self.repo.update_doc(self.novel, character.document)
+                    card = self.__init_card_widget(character)
+                    self.ui.cards.addCard(card)
+
+                emit_event(self.novel, CharacterChangedEvent(self, characters[0]))
+                self.refresh()
+
     def _on_new(self):
         character = Character('')
         for personality in [NovelSetting.Character_enneagram, NovelSetting.Character_mbti,
                             NovelSetting.Character_love_style, NovelSetting.Character_work_style]:
             character.prefs.settings[personality.value] = self.novel.prefs.toggled(personality)
+
         self.novel.characters.append(character)
         self.repo.insert_character(self.novel, character)
         card = self.__init_card_widget(character)
         self.ui.cards.addCard(card)
-        self._edit_character(character)
+
+        if CharacterOnboardingPopup.popup(character):
+            self._edit_character(character)
+        else:
+            card.refresh()
+            emit_event(self.novel, CharacterChangedEvent(self, character))
+            self.refresh()
 
     @busy
     def _on_delete(self, checked: bool):

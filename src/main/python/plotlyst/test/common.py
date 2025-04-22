@@ -18,16 +18,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Any, List
+from unittest.mock import patch
 
 from PyQt6 import QtWidgets, QtCore
-from PyQt6.QtCore import Qt, QPoint, QAbstractItemModel, QCoreApplication, QTimer
+from PyQt6.QtCore import Qt, QPoint, QAbstractItemModel, QCoreApplication
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QAbstractItemView, QMenu, QMessageBox, QDialog, QApplication
+from PyQt6.QtWidgets import QAbstractItemView, QMenu, QMessageBox
 from qttextedit import RichTextEditor
 
 from plotlyst.core.domain import PlotType
 from plotlyst.view.characters_view import CharactersView
-from plotlyst.view.dialog.home import StoryCreationDialog
 from plotlyst.view.docs_view import DocumentsView
 from plotlyst.view.home_view import HomeView
 from plotlyst.view.main_window import MainWindow
@@ -161,28 +161,11 @@ def go_to_docs(window: MainWindow) -> DocumentsView:
     return window.notes_view
 
 
-def create_story_dialog(new_title: str):
-    dialog: QDialog = QApplication.instance().activeModalWidget()
-    try:
-        assert isinstance(dialog, StoryCreationDialog)
-        creation_dialog: StoryCreationDialog = dialog
-        creation_dialog.lineTitle.setText(new_title)
-        creation_dialog.toggleWizard.setChecked(False)
-        creation_dialog.btnNext.click()
-    finally:
-        dialog.close()
-
-
-def create_novel(window: MainWindow, title: str):
-    view: HomeView = go_to_home(window)
-    QTimer.singleShot(40, lambda: create_story_dialog(title))
-    view.ui.btnAddNewStoryMain.click()
-
-
 def create_character(qtbot, window: MainWindow, name: str):
     characters: CharactersView = go_to_characters(window)
 
-    characters.ui.btnNew.click()
+    with patch("plotlyst.view.widget.character.profile.CharacterOnboardingPopup.popup", return_value=True):
+        characters.ui.btnNew.click()
     assert characters.editor
 
     type_text(qtbot, characters.editor.ui.lineName, name)

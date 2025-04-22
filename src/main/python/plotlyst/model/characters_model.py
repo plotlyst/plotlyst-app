@@ -96,7 +96,7 @@ class CharactersTableModel(AbstractHorizontalHeaderBasedTableModel):
 
         if index.column() == self.ColName:
             if role == Qt.ItemDataRole.DisplayRole or role == self.SortRole:
-                return character.name or 'Character'
+                return character.displayed_name() or 'Character'
             if role == Qt.ItemDataRole.DecorationRole:
                 return avatars.avatar(character)
             if role == Qt.ItemDataRole.ForegroundRole and not character.name:

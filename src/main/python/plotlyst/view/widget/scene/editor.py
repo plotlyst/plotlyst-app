@@ -27,8 +27,8 @@ from PyQt6.QtGui import QEnterEvent, QIcon, QMouseEvent, QColor, QCursor, QPalet
 from PyQt6.QtWidgets import QWidget, QTextEdit, QPushButton, QLabel, QFrame, QStackedWidget, QGridLayout, \
     QToolButton, QAbstractButton, QScrollArea, QButtonGroup
 from overrides import overrides
-from qthandy import vbox, vspacer, transparent, sp, line, incr_font, hbox, pointy, vline, retain_when_hidden, margins, \
-    spacer, bold, grid, gc, clear_layout, ask_confirmation, decr_icon, italic, translucent
+from qthandy import vbox, vspacer, transparent, sp, line, hbox, pointy, vline, retain_when_hidden, margins, \
+    spacer, grid, gc, clear_layout, ask_confirmation, decr_icon, translucent
 from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter, InstantTooltipEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
 
@@ -38,11 +38,12 @@ from plotlyst.core.domain import Scene, Novel, ScenePurpose, advance_story_scene
     ScenePurposeType, reaction_story_scene_purpose, character_story_scene_purpose, setup_story_scene_purpose, \
     emotion_story_scene_purpose, exposition_story_scene_purpose, scene_purposes, Character, StoryElement, \
     StoryElementType, SceneOutcome, SceneStructureAgenda, Motivation, Plot, NovelSetting
+from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import SceneChangedEvent, NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, NovelPanelCustomizationEvent, \
-    NovelPovTrackingToggleEvent
+    NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import DelayedSignalSlotConnector, action, wrap, label, scrolled, \
     ButtonPressResizeEventFilter, push_btn, tool_btn, insert_before_the_end, fade_out_and_gc
@@ -67,10 +68,8 @@ class SceneMiniEditor(QWidget, EventListener):
         self._currentScene: Optional[Scene] = None
         self._freeze = False
 
-        self._lblScene = QLabel()
-        incr_font(self._lblScene, 2)
+        self._lblScene = label(wordWrap=True)
         self._btnScenes = QPushButton()
-        incr_font(self._btnScenes, 2)
         transparent(self._btnScenes)
         sp(self._btnScenes).h_max()
         sp(self._lblScene).h_max()
@@ -83,18 +82,17 @@ class SceneMiniEditor(QWidget, EventListener):
 
         self._textSynopsis = QTextEdit()
         self._textSynopsis.setProperty('white-bg', True)
-        self._textSynopsis.setProperty('rounded', True)
-        self._textSynopsis.setPlaceholderText('Write a short summary of this scene')
-        self._textSynopsis.setMaximumSize(200, 200)
+        self._textSynopsis.setProperty('large-rounded', True)
+        self._textSynopsis.setMaximumSize(200, 150)
 
         self._layout = vbox(self)
-        self._layout.addWidget(self._charSelector, alignment=Qt.AlignmentFlag.AlignLeft)
-        self._layout.addWidget(self._btnScenes, alignment=Qt.AlignmentFlag.AlignCenter)
-        self._layout.addWidget(self._lblScene, alignment=Qt.AlignmentFlag.AlignCenter)
+        self._layout.addWidget(group(self._charSelector, self._lblScene, self._btnScenes),
+                               alignment=Qt.AlignmentFlag.AlignCenter)
         self._layout.addWidget(line())
-        self._layout.addWidget(label('Synopsis:', underline=True), alignment=Qt.AlignmentFlag.AlignLeft)
         self._layout.addWidget(self._textSynopsis)
         self._layout.addWidget(vspacer())
+
+        self._handle_scenes_organization()
 
         DelayedSignalSlotConnector(self._textSynopsis.textChanged, self._save, parent=self)
 
@@ -102,7 +100,7 @@ class SceneMiniEditor(QWidget, EventListener):
 
         self._repo = RepositoryPersistenceManager.instance()
         dispatcher = event_dispatchers.instance(self._novel)
-        dispatcher.register(self, SceneChangedEvent, NovelPovTrackingToggleEvent)
+        dispatcher.register(self, SceneChangedEvent, NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent)
 
     def setScene(self, scene: Scene):
         self.setScenes([scene])
@@ -155,11 +153,17 @@ class SceneMiniEditor(QWidget, EventListener):
                 self._freeze = False
         elif isinstance(event, NovelPovTrackingToggleEvent):
             self._charSelector.setVisible(event.toggled)
+        elif isinstance(event, NovelScenesOrganizationToggleEvent):
+            self._handle_scenes_organization()
 
     def _povChanged(self, character: Character):
         self._currentScene.pov = character
         self._repo.update_scene(self._currentScene)
         emit_event(self._novel, SceneChangedEvent(self, self._currentScene))
+
+    def _handle_scenes_organization(self):
+        unit = 'scene' if self._novel.prefs.is_scenes_organization() else 'chapter'
+        self._textSynopsis.setPlaceholderText(f'Briefly summarize this {unit}')
 
     def _save(self):
         if self._freeze:
@@ -188,17 +192,16 @@ def purpose_icon(purpose_type: ScenePurposeType) -> QIcon:
 
 
 class ScenePurposeTypeButton(QPushButton):
-    reset = pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self._scene: Optional[Scene] = None
         pointy(self)
+        font = self.font()
+        font.setFamily(app_env.serif_font())
+        font.setPointSize(font.pointSize() + 1)
+        self.setFont(font)
         self._opacityFilter = OpacityEventFilter(self, 0.8, 1.0, ignoreCheckedButton=True)
         self.installEventFilter(self._opacityFilter)
-
-        self._menu = MenuWidget(self)
-        self._menu.addAction(action('Select new purpose', slot=self.reset.emit))
 
         self.refresh()
 
@@ -207,67 +210,50 @@ class ScenePurposeTypeButton(QPushButton):
         self.refresh()
 
     def refresh(self):
-        if self._scene is None or self._scene.purpose is None:
+        if self._scene is None:
             return
-        IconRegistry.action_scene_icon()
+
         if self._scene.purpose == ScenePurposeType.Other:
-            self.setText('Purpose...')
-            self.setToolTip('Scene purpose not selected')
+            self.setText('Type...')
             self.setIcon(QIcon())
         else:
             purpose = scene_purposes.get(self._scene.purpose)
             tip = purpose.display_name.replace('\n', ' ')
             self.setText(tip)
-            self.setToolTip(f'Scene purpose: {tip}')
-
-        if self._scene.purpose == ScenePurposeType.Exposition:
-            self.setIcon(IconRegistry.exposition_scene_icon())
-        elif self._scene.purpose == ScenePurposeType.Setup:
-            self.setIcon(IconRegistry.setup_scene_icon())
-        elif self._scene.purpose == ScenePurposeType.Character:
-            self.setIcon(IconRegistry.character_development_scene_icon())
-        elif self._scene.purpose == ScenePurposeType.Emotion:
-            self.setIcon(IconRegistry.mood_scene_icon())
-
-        if self._scene.purpose == ScenePurposeType.Other:
-            italic(self, True)
-            bold(self, False)
-        else:
-            bold(self, True)
-            italic(self, False)
 
         if self._scene.purpose == ScenePurposeType.Story:
-            bgColor = '#f4978e'
             borderColor = '#fb5607'
             resolution = self._scene.outcome == SceneOutcome.RESOLUTION
             trade_off = self._scene.outcome == SceneOutcome.TRADE_OFF
             motion = self._scene.outcome == SceneOutcome.MOTION
 
-            self.setIcon(IconRegistry.action_scene_icon(resolution, trade_off, motion))
             if resolution:
-                bgColor = '#14CE93'
                 borderColor = '#0b6e4f'
             elif trade_off:
-                bgColor = '#E491C7'
                 borderColor = '#832161'
             elif motion:
-                bgColor = '#E0BD9B'
                 borderColor = '#D7AA7D'
         elif self._scene.purpose == ScenePurposeType.Reaction:
-            bgColor = '#89c2d9'
             borderColor = '#1a759f'
-            self.setIcon(IconRegistry.reaction_scene_icon())
-        elif self._scene.purpose == ScenePurposeType.Other:
-            bgColor = 'lightgrey'
-            borderColor = 'grey'
+        elif self._scene.purpose == ScenePurposeType.Emotion:
+            borderColor = '#9d4edd'
         else:
-            bgColor = 'lightgrey'
             borderColor = 'grey'
+
+        if self._scene.plot_pos_progress or self._scene.plot_neg_progress:
+            if self._scene.plot_pos_progress > abs(self._scene.plot_neg_progress):
+                self.setIcon(IconRegistry.charge_icon(self._scene.plot_pos_progress, borderColor))
+            else:
+                self.setIcon(IconRegistry.charge_icon(self._scene.plot_neg_progress, borderColor))
+        elif self._scene.progress:
+            self.setIcon(IconRegistry.charge_icon(self._scene.progress, borderColor))
+        else:
+            self.setIcon(QIcon())
 
         self.setStyleSheet(f'''
             QPushButton {{
-                background: {bgColor};
-                border: 2px solid {borderColor};
+                color: {borderColor}; 
+                border: 1px solid {borderColor};
                 border-radius: 8px;
                 padding: 5px 10px 5px 10px;
             }}
@@ -1670,22 +1656,16 @@ class SceneProgressEditor(ProgressEditor):
         self._chargeEnabled = True
         self._charge = 0
         self._altCharge = 0
-        posCharge = 0
-        negCharge = 0
-        for ref in self._scene.plot_values:
-            if ref.data.charge:
-                self._chargeEnabled = False
-                if ref.data.charge > 0:
-                    posCharge = max(posCharge, ref.data.charge)
-                else:
-                    negCharge = min(negCharge, ref.data.charge)
+        self._scene.calculate_plot_progress()
+        if self._scene.plot_pos_progress or self._scene.plot_neg_progress:
+            self._chargeEnabled = False
 
-        if abs(negCharge) > posCharge:
-            self._charge = negCharge
-            self._altCharge = posCharge
+        if abs(self._scene.plot_neg_progress) > self._scene.plot_pos_progress:
+            self._charge = self._scene.plot_neg_progress
+            self._altCharge = self._scene.plot_pos_progress
         else:
-            self._charge = posCharge
-            self._altCharge = negCharge
+            self._charge = self._scene.plot_pos_progress
+            self._altCharge = self._scene.plot_neg_progress
 
         super().refresh()
 

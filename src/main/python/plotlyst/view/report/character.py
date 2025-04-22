@@ -21,7 +21,6 @@ from typing import List
 
 from PyQt6.QtCharts import QPolarChart, QCategoryAxis, QLineSeries, QAreaSeries
 from PyQt6.QtCharts import QValueAxis
-from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPen, QColor
 from overrides import overrides
 from qthandy import hbox, vbox, margins, flow
@@ -133,7 +132,7 @@ class AgeChart(PolarBaseChart):
 
         pen = QPen()
         pen.setWidth(2)
-        pen.setColor(Qt.GlobalColor.darkBlue)
+        pen.setColor(QColor(PLOTLYST_SECONDARY_COLOR))
 
         upper_series = QLineSeries()
         upper_series.setPen(pen)

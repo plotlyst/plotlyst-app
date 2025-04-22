@@ -139,6 +139,29 @@ QSlider::add-page:horizontal[emotion_10=true] {
 QSlider::sub-page:horizontal[emotion_10=true] {
     background: #2d6a4f;
 }
+
+QSlider::add-page:horizontal[ally-enemy=true] {
+    background: #9e1946;
+}
+QSlider::sub-page:horizontal[ally-enemy=true] {
+    background: #266dd3;
+}
+QSlider::handle:horizontal[ally-enemy=true] {
+    background: #266dd3;
+    border: 1px solid #266dd3;
+}
+
+QSlider::add-page:horizontal[relationship=true] {
+    background: lightgrey;
+}
+QSlider::sub-page:horizontal[relationship=true] {
+    background: #f25c54;
+}
+QSlider::handle:horizontal[relationship=true] {
+    background: #f25c54;
+    border: 1px solid #f25c54;
+}
+
 '''
 
 
@@ -151,5 +174,9 @@ def apply_slider_color(wdg: QWidget, color: Union[str, QColor, Qt.GlobalColor]):
                 }}
                 QSlider::sub-page:horizontal {{
                     background: {color};
+                }}
+                QSlider::handle:horizontal {{
+                    background: {color};
+                    border: 1px solid {color};
                 }}
             ''')

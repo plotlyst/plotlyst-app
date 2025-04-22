@@ -18,27 +18,39 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from abc import abstractmethod
+from functools import partial
 from typing import Optional, Any, Tuple, List
 
 import emoji
+import qtanim
 from PyQt6.QtCharts import QChartView
-from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal
-from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent
+from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent, QPointF, QObject
+from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent, QIcon, QRadialGradient, \
+    QPen
+from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
-    QApplication
+    QApplication, QTimeEdit, QAbstractSpinBox, QDateTimeEdit
 from overrides import overrides
-from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, pointy, hbox, busy, italic, decr_font
+from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, pointy, hbox, busy, italic, decr_font, \
+    margins, translucent, sp, decr_icon
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_TERTIARY_COLOR
+from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, \
+    PLOTLYST_SECONDARY_COLOR, PLACEHOLDER_TEXT_COLOR
+from plotlyst.core.domain import WORLD_BUILDING_PREVIEW
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
+from plotlyst.env import app_env
+from plotlyst.event.core import emit_global_event
+from plotlyst.events import ShowRoadmapEvent
+from plotlyst.resources import resource_registry
 from plotlyst.view.common import emoji_font, insert_before_the_end, \
-    ButtonPressResizeEventFilter, restyle, label, frame, shadow, tool_btn, push_btn, action, open_url
+    ButtonPressResizeEventFilter, restyle, label, frame, tool_btn, push_btn, action, open_url, fade_in, wrap
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
+from plotlyst.view.widget.preview import preview_button
 
 
 class ChartView(QChartView):
@@ -46,26 +58,34 @@ class ChartView(QChartView):
         super(ChartView, self).__init__(parent)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
+    @overrides
+    def wheelEvent(self, event: 'QGraphicsSceneWheelEvent') -> None:
+        event.ignore()
+
+        return super(ChartView, self).wheelEvent(event)
+
 
 class Subtitle(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, title: str = '', description: str = '', icon: str = '', iconColor: str = 'black'):
         super(Subtitle, self).__init__(parent)
         vbox(self, margin=0, spacing=0)
-        self.lblTitle = QLabel(self)
+        self.lblTitle = QLabel(title, self)
         self.icon = QToolButton(self)
         transparent(self.icon)
-        self.lblDescription = QLabel(self)
+        self.lblDescription = QLabel(description, self)
         bold(self.lblTitle)
         incr_font(self.lblTitle)
         self._btnHint: Optional[HintButton] = None
 
-        self._iconName: str = ''
-        self._iconColor: str = 'black'
+        self._iconName: str = icon
+        self._iconColor: str = iconColor
         self._descSpacer = spacer(20)
 
         self.lblDescription.setProperty('description', True)
         self.lblDescription.setWordWrap(True)
         self.lblDescription.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        if app_env.is_mac():
+            incr_font(self.lblDescription, 2)
         self._top = group(self.icon, self.lblTitle, spacer(), parent=self)
         self.layout().addWidget(self._top)
         self.layout().addWidget(group(self._descSpacer, self.lblDescription, parent=self))
@@ -154,12 +174,12 @@ class WordsDisplay(QLabel):
         self.setWordCount(count)
 
     def setNightModeEnabled(self, enabled: bool):
-        self.setProperty('night-mode', enabled)
+        self.setProperty('night-mode-secondary', enabled)
         restyle(self)
 
     def setWordCount(self, count: int):
         if count:
-            self._text = f'{count} word{"s" if count > 1 else ""}'
+            self._text = f'<html><b>{count:,}</b> word{"s" if count > 1 else ""}'
             self.setText(self._text)
         else:
             self._text = ''
@@ -173,7 +193,7 @@ class WordsDisplay(QLabel):
 
     def setSecondaryWordCount(self, count: int):
         if count:
-            self.setText(f'{count} of {self._text}')
+            self.setText(f'{count:,} of {self._text}')
         else:
             self.setText(self._text)
 
@@ -252,6 +272,7 @@ class Icon(QToolButton, _AbstractIcon):
     def __init__(self, parent=None):
         super(Icon, self).__init__(parent)
         transparent(self)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
     @overrides
     def _setIcon(self):
@@ -264,6 +285,7 @@ class IconText(QPushButton, _AbstractIcon):
         super(IconText, self).__init__(parent)
         transparent(self)
         self.setIconSize(QSize(20, 20))
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
     @overrides
     def _setIcon(self):
@@ -295,6 +317,7 @@ class HintButton(QToolButton):
         if self._menu.isEmpty():
             textedit = QTextBrowser()
             textedit.setText(self._hint)
+            incr_font(textedit, 4)
             self._menu.addWidget(textedit)
 
 
@@ -311,17 +334,34 @@ class IdleWidget(QWidget):
 
 
 class OverlayWidget(QFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, alpha: int = 125):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.setStyleSheet("background-color: rgba(0, 0, 0, 125);")
+        self.setStyleSheet(f"background-color: rgba(0, 0, 0, {alpha});")
         self.setFixedSize(self.parent().size())
 
     @staticmethod
-    def getActiveWindowOverlay() -> 'OverlayWidget':
+    def getActiveWindowOverlay(alpha: int = 125) -> 'OverlayWidget':
         window = QApplication.activeWindow()
-        overlay = OverlayWidget(window)
+        overlay = OverlayWidget(window, alpha)
         return overlay
+
+
+class MenuOverlayEventFilter(QObject):
+    def __init__(self, menu: MenuWidget):
+        super().__init__(menu)
+        self._overlay: Optional[OverlayWidget] = None
+        menu.aboutToShow.connect(self._aboutToShowMenu)
+        menu.aboutToHide.connect(self._aboutToHideMenu)
+
+    def _aboutToShowMenu(self):
+        self._overlay = OverlayWidget.getActiveWindowOverlay(alpha=75)
+        self._overlay.show()
+
+    def _aboutToHideMenu(self):
+        if self._overlay:
+            self._overlay.hide()
+            self._overlay = None
 
 
 class StageRecommendationBadge(QFrame):
@@ -348,10 +388,7 @@ class PopupDialog(QDialog):
         self.frame.setProperty('white-bg', True)
         self.frame.setProperty('large-rounded', True)
         vbox(self.frame, 15, 10)
-        # margins(self.frame, bottom=15)
         self.layout().addWidget(self.frame)
-        self.setMinimumSize(200, 150)
-        shadow(self.frame)
 
         self.btnReset = tool_btn(IconRegistry.close_icon('grey'), tooltip='Cancel', transparent_=True)
         self.btnReset.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -371,6 +408,11 @@ class PopupDialog(QDialog):
             QApplication.restoreOverrideCursor()
         dialog = cls(*args, **kwargs)
         window = QApplication.activeWindow()
+
+        if window and window.size().height() < 768:
+            dialog.frame.layout().setSpacing(3)
+            margins(dialog.frame, bottom=5, top=5)
+
         if window:
             overlay = OverlayWidget(window)
             overlay.show()
@@ -389,8 +431,20 @@ class PopupDialog(QDialog):
             if override_cursor:
                 QApplication.setOverrideCursor(override_cursor)
 
+    def _adjustedSize(self, percentWidth: float, percentHeight: float, minWidth: int, minHeight: int) -> QSize:
+        window = QApplication.activeWindow()
+        if window:
+            size = QSize(int(window.size().width() * percentWidth), int(window.size().height() * percentHeight))
+        else:
+            return QSize(minWidth, minHeight)
 
-class LazyWidget(QWidget):
+        size.setWidth(max(size.width(), minWidth))
+        size.setHeight(max(size.height(), minHeight))
+
+        return size
+
+
+class LazyWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._initialized = False
@@ -526,4 +580,248 @@ class ReferencesButton(QPushButton):
 
     def addRefs(self, refs: List[Tuple[str, str]]):
         for ref in refs:
-            self._menu.addAction(action(ref[0], slot=lambda: open_url(ref[1])))
+            self._menu.addAction(action(ref[0], slot=partial(open_url, ref[1])))
+
+
+class DividerWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.svg_renderer = QSvgRenderer(resource_registry.divider1)
+        self.setMinimumSize(100, 55)
+
+    def setResource(self, resource: str):
+        self.svg_renderer = QSvgRenderer(resource)
+        self.update()
+
+    @overrides
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setOpacity(0.8)
+        rect = QRectF(0, 0, self.width(), self.height())
+        self.svg_renderer.render(painter, rect)
+
+
+class SeparatorLineWithShadow(QWidget):
+    def __init__(self, parent=None, color: str = PLACEHOLDER_TEXT_COLOR):
+        super().__init__(parent)
+        self.setMinimumSize(100, 12)
+        self._margin = 10
+        self._colorRadiant = QColor(color)
+        self._colorRadiant.setAlpha(125)
+
+    def setColor(self, color: str):
+        self._colorRadiant = QColor(color)
+        self._colorRadiant.setAlpha(125)
+        self.update()
+
+    @overrides
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        line_y = self.height() // 2
+
+        shadow_gradient = QRadialGradient(QPointF(self.width() / 2, line_y), self.width() / 3)
+        shadow_gradient.setColorAt(0.0, self._colorRadiant)
+        shadow_gradient.setColorAt(1.0, QColor(0, 0, 0, 5))
+
+        painter.setBrush(QBrush(shadow_gradient))
+        painter.setPen(Qt.PenStyle.NoPen)
+        shadow_rect = QRectF(self._margin, line_y, self.width() - self._margin * 2, 8)
+        painter.drawEllipse(shadow_rect)
+
+        pen = QPen(self._colorRadiant, 2)
+        painter.setPen(pen)
+        painter.drawLine(self._margin, line_y, self.width() - self._margin, line_y)
+
+
+class CopiedTextMessage(QLabel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setText('Copied')
+        self.setHidden(True)
+
+    def trigger(self):
+        def finish():
+            QTimer.singleShot(250, lambda: qtanim.fade_out(self))
+
+        qtanim.fade_in(self, 150, teardown=finish)
+
+
+class _PremiumMessageWidgetBase(QWidget):
+    visitRoadmap = pyqtSignal()
+
+    def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 preview: str = '', connectPreview: bool = False, parent=None):
+        super().__init__(parent)
+        vbox(self, 0, 8)
+        self.btnUpgrade = push_btn(IconRegistry.from_name('ei.shopping-cart', RELAXED_WHITE_COLOR),
+                                   'Purchase',
+                                   tooltip='Upgrade Plotlyst',
+                                   properties=['confirm', 'positive'])
+        self.btnUpgrade.clicked.connect(lambda: open_url(main_link))
+        incr_icon(self.btnUpgrade, 10)
+        incr_font(self.btnUpgrade, 6)
+
+        self.title = label(f'{feature} is a premium feature', h2=True, wordWrap=True)
+        self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if icon:
+            iconWdg = Icon()
+            iconWdg.setIcon(IconRegistry.from_name(icon))
+            iconWdg.setIconSize(QSize(32, 32))
+            self.layout().addWidget(iconWdg, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.layout().addWidget(self.title)
+        self.layout().addWidget(label("To use this feature, please purchase Plotlyst.", incr_font_diff=2),
+                                alignment=Qt.AlignmentFlag.AlignCenter)
+        if alt_link:
+            btnLink = push_btn(IconRegistry.from_name('fa5s.external-link-alt', 'grey'),
+                               'Read more about this feature', transparent_=True)
+            btnLink.installEventFilter(OpacityEventFilter(btnLink, leaveOpacity=0.5))
+            decr_font(btnLink)
+            decr_icon(btnLink, 2)
+            btnLink.clicked.connect(lambda: open_url(alt_link))
+            self.layout().addWidget(btnLink, alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout().addWidget(wrap(self.btnUpgrade, margin_top=10), alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.btnLinkToAllFeatures = push_btn(IconRegistry.from_name('fa5s.road', 'grey'), 'See roadmap',
+                                             transparent_=True)
+        self.btnLinkToAllFeatures.installEventFilter(OpacityEventFilter(self.btnLinkToAllFeatures, leaveOpacity=0.5))
+        self.btnLinkToAllFeatures.clicked.connect(self.visitRoadmap)
+        decr_font(self.btnLinkToAllFeatures, 1)
+        decr_icon(self.btnLinkToAllFeatures, 2)
+        self.layout().addWidget(self.btnLinkToAllFeatures, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        if preview:
+            self.btnPreview = preview_button(preview, self, connect=connectPreview)
+            self.btnPreview.setGeometry(self.sizeHint().width() - self.btnPreview.sizeHint().width() - 5, 0,
+                                        self.btnPreview.sizeHint().width(),
+                                        self.btnPreview.sizeHint().height())
+
+
+class PremiumMessageWidget(QFrame):
+    def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 preview: str = '',
+                 parent=None):
+        super().__init__(parent)
+        vbox(self, 15, 8)
+        self.setProperty('white-bg', True)
+        self.setProperty('large-rounded', True)
+        sp(self).h_max().v_max()
+
+        self.wdg = _PremiumMessageWidgetBase(feature, icon, alt_link, main_link, preview=preview, connectPreview=True)
+        self.layout().addWidget(self.wdg)
+
+
+class PremiumMessagePopup(PopupDialog):
+    def __init__(self, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 preview: str = '',
+                 parent=None):
+        super().__init__(parent)
+
+        self._preview = preview
+
+        self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        wdg = _PremiumMessageWidgetBase(feature, icon, alt_link, main_link, preview=preview)
+        wdg.visitRoadmap.connect(self._visitRoadmap)
+        self.frame.layout().addWidget(wdg)
+
+        if self._preview:
+            wdg.btnPreview.clicked.connect(self.accept)
+
+    def display(self) -> str:
+        result = self.exec()
+        if result == QDialog.DialogCode.Accepted:
+            return self._preview
+
+    def _visitRoadmap(self):
+        emit_global_event(ShowRoadmapEvent(self))
+        self.accept()
+
+
+class PremiumOverlayWidget(QFrame):
+    def __init__(self, parent, feature: str, icon: str = '', alt_link: str = '', main_link: str = DEFAULT_PREMIUM_LINK,
+                 preview: str = '',
+                 alpha: int = 115):
+        super().__init__(parent)
+        self.setStyleSheet(f"PremiumOverlayWidget {{background-color: rgba(0, 0, 0, {alpha});}}")
+        sp(self).h_exp().v_exp()
+        self.parent().installEventFilter(self)
+        self.msg = PremiumMessageWidget(feature, icon, alt_link, main_link, preview)
+        self.msg.wdg.visitRoadmap.connect(lambda: emit_global_event(ShowRoadmapEvent(self)))
+        vbox(self)
+        self.layout().addWidget(self.msg, alignment=Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
+
+    @overrides
+    def eventFilter(self, watched: 'QObject', event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Resize:
+            self.setGeometry(0, 0, self.parent().width(), self.parent().height())
+        return super().eventFilter(watched, event)
+
+    @overrides
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        fade_in(self.msg)
+
+    @staticmethod
+    def storylinesOverlay(parent: QWidget) -> 'PremiumOverlayWidget':
+        return PremiumOverlayWidget(parent, 'Storylines',
+                                    icon='fa5s.theater-masks',
+                                    alt_link='https://plotlyst.com/docs/storylines/')
+
+    @staticmethod
+    def worldbuildingOverlay(parent: QWidget) -> 'PremiumOverlayWidget':
+        return PremiumOverlayWidget(parent, 'World-building',
+                                    icon='mdi.globe-model',
+                                    alt_link='https://plotlyst.com/docs/world-building/',
+                                    preview=WORLD_BUILDING_PREVIEW)
+
+
+class HighQualityPaintedIcon(QWidget):
+    def __init__(self, icon: QIcon, parent=None, size: int = 18):
+        super().__init__(parent)
+        self._icon = icon
+        self.setFixedSize(size, size)
+
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing |
+                               QPainter.RenderHint.TextAntialiasing |
+                               QPainter.RenderHint.SmoothPixmapTransform)
+
+        self._icon.paint(painter, event.rect())
+
+
+class PlotlystFooter(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        hbox(self)
+        icon = HighQualityPaintedIcon(IconRegistry.book_icon(PLOTLYST_SECONDARY_COLOR), size=16)
+        self.layout().addWidget(icon, alignment=Qt.AlignmentFlag.AlignVCenter)
+        footer = label('plotlyst.com', color='grey', decr_font_diff=2)
+        self.layout().addWidget(wrap(footer, margin_bottom=2))
+
+
+def icon_text(icon: str, text: str, icon_color: str = 'black', opacity: Optional[float] = None,
+              icon_v_flip: bool = False, icon_h_flip: bool = False) -> IconText:
+    wdg = IconText()
+    wdg.setText(text)
+    wdg.setIcon(IconRegistry.from_name(icon, icon_color, vflip=icon_v_flip, hflip=icon_h_flip))
+    if opacity:
+        translucent(wdg, opacity)
+
+    return wdg
+
+
+class TimerDisplay(QTimeEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.setWrapping(False)
+        self.setReadOnly(True)
+        self.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.setProperty("showGroupSeparator", False)
+        self.setDisplayFormat("mm:ss")
+        self.setCurrentSection(QDateTimeEdit.Section.MinuteSection)
+        transparent(self)

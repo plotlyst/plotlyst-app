@@ -32,7 +32,6 @@ from plotlyst.common import CONFLICT_CHARACTER_COLOR, \
 from plotlyst.core.domain import Character, ConflictType, \
     Scene, PlotType, MALE, FEMALE, TRANSGENDER, NON_BINARY, GENDERLESS, ScenePurposeType, StoryStructure
 from plotlyst.core.template import SelectionItem
-from plotlyst.settings import CHARACTER_INITIAL_AVATAR_COLOR_CODES
 from plotlyst.view.common import rounded_pixmap
 
 
@@ -108,8 +107,18 @@ class IconRegistry:
         return qtawesome.icon('fa5s.plus', color=color)
 
     @staticmethod
-    def plus_circle_icon(color: str = 'black') -> QIcon:
-        return qtawesome.icon('ei.plus-sign', color=color)
+    def plus_circle_icon(color: str = 'black', background: Optional[str] = None) -> QIcon:
+        if background is None:
+            return qtawesome.icon('ei.plus-sign', color=color)
+        else:
+            return qtawesome.icon('fa5s.circle', 'ei.plus-sign', options=[
+                {'color': background},
+                {'color': color}
+            ])
+
+        # return qtawesome.icon('fa5s.circle', 'fa5s.yin-yang',
+        #                       options=[{'color': 'white', 'scale_factor': 1},
+        #                                {'color': color, 'color_disabled': 'black'}])
 
     @staticmethod
     def minus_icon(color: str = 'red') -> QIcon:
@@ -140,8 +149,8 @@ class IconRegistry:
         return IconRegistry.from_name('mdi.chess-pawn', CHARACTER_MINOR_COLOR)
 
     @staticmethod
-    def location_icon(color: str = 'black') -> QIcon:
-        return qtawesome.icon('fa5s.map-pin', color=color, color_on='darkBlue', options=[{'scale_factor': 1.1}])
+    def location_icon(color: str = 'black', color_on: str = 'black') -> QIcon:
+        return qtawesome.icon('fa5s.map-pin', color=color, color_on=color_on, options=[{'scale_factor': 1.1}])
 
     @staticmethod
     def world_building_icon(color: str = 'black', color_on: str = PLOTLYST_SECONDARY_COLOR) -> QIcon:
@@ -157,7 +166,7 @@ class IconRegistry:
 
     @staticmethod
     def manuscript_icon(color: str = 'black', color_on: str = PLOTLYST_SECONDARY_COLOR) -> QIcon:
-        return IconRegistry.from_name('fa5s.scroll', color=color, color_on=color_on)
+        return IconRegistry.from_name('mdi.typewriter', color=color, color_on=color_on)
 
     @staticmethod
     def chapter_icon(**kwargs) -> QIcon:
@@ -179,7 +188,11 @@ class IconRegistry:
 
     @staticmethod
     def book_icon(color='black', color_on=PLOTLYST_SECONDARY_COLOR) -> QIcon:
-        return qtawesome.icon('fa5s.book-open', color_on=color_on, color=color)
+        return IconRegistry.from_name('fa5s.book-open', color_on=color_on, color=color)
+
+    @staticmethod
+    def series_icon(color='black', color_on=PLOTLYST_SECONDARY_COLOR) -> QIcon:
+        return IconRegistry.from_name('ph.books', color_on=color_on, color=color)
 
     @staticmethod
     def synopsis_icon(**kwargs) -> QIcon:
@@ -282,6 +295,10 @@ class IconRegistry:
     @staticmethod
     def reports_icon(color: str = 'black', color_on: str = PLOTLYST_SECONDARY_COLOR) -> QIcon:
         return IconRegistry.from_name('mdi.chart-arc', color=color, color_on=color_on, scale=1.4)
+
+    @staticmethod
+    def formatting_icon(color: str = 'black', color_on: str = PLOTLYST_SECONDARY_COLOR) -> QIcon:
+        return IconRegistry.from_name('fa5s.paragraph', color=color, color_on=color_on)
 
     @staticmethod
     def document_edition_icon(color: str = 'black', color_on=PLOTLYST_SECONDARY_COLOR) -> QIcon:
@@ -575,11 +592,11 @@ class IconRegistry:
 
     @staticmethod
     def pause_icon(**kwargs) -> QIcon:
-        return IconRegistry.from_name('fa5s.pause', **kwargs)
+        return IconRegistry.from_name('fa5.pause-circle', **kwargs)
 
     @staticmethod
     def play_icon() -> QIcon:
-        return IconRegistry.from_name('fa5s.play', PLOTLYST_SECONDARY_COLOR)
+        return IconRegistry.from_name('fa5.play-circle', PLOTLYST_SECONDARY_COLOR)
 
     @staticmethod
     def context_icon() -> QIcon:
@@ -611,21 +628,31 @@ class IconRegistry:
             return IconRegistry.from_name('mdi.source-branch')
 
     @staticmethod
-    def charge_icon(charge: int = 1) -> QIcon:
+    def charge_icon(charge: int = 1, color: Optional[str] = None) -> QIcon:
         if charge == 0:
-            return IconRegistry.from_name('mdi.wave', 'grey')
+            return IconRegistry.from_name('mdi.wave', color or 'grey')
         elif charge == 1:
-            return IconRegistry.from_name('mdi.chevron-up', '#52b788')
+            return IconRegistry.from_name('mdi.chevron-up', color or '#52b788')
         elif charge == 2:
-            return IconRegistry.from_name('mdi.chevron-double-up', '#40916c')
+            return IconRegistry.from_name('mdi.chevron-double-up', color or '#40916c')
         elif charge >= 3:
-            return IconRegistry.from_name('mdi.chevron-triple-up', '#2d6a4f')
+            return IconRegistry.from_name('mdi.chevron-triple-up', color or '#2d6a4f')
         elif charge == -1:
-            return IconRegistry.from_name('mdi.chevron-down', '#dc2f02')
+            return IconRegistry.from_name('mdi.chevron-down', color or '#dc2f02')
         elif charge == -2:
-            return IconRegistry.from_name('mdi.chevron-double-down', '#d00000')
+            return IconRegistry.from_name('mdi.chevron-double-down', color or '#d00000')
         else:
-            return IconRegistry.from_name('mdi.chevron-triple-down', '#9d0208')
+            return IconRegistry.from_name('mdi.chevron-triple-down', color or '#9d0208')
+
+    @staticmethod
+    def plot_charge_icon(pos_charge: int, neg_charge: int) -> QIcon:
+        if pos_charge and pos_charge == abs(neg_charge):
+            return IconRegistry.trade_off_charge_icon(pos_charge)
+
+        if pos_charge > abs(neg_charge):
+            return IconRegistry.charge_icon(pos_charge)
+        else:
+            return IconRegistry.charge_icon(neg_charge)
 
     @staticmethod
     def trade_off_charge_icon(charge: int = 1) -> QIcon:
@@ -785,12 +812,15 @@ class AvatarsRegistry:
             return True
         return False
 
-    def name_initial_icon(self, character: Character, fallback: bool = True) -> QIcon:
+    def name_initial_icon(self, character: Character, fallback: bool = True, color=None, color_on=None) -> QIcon:
         if not character.name:
             return self._dummy_avatar()
 
-        _uuid_int = character.id.int
-        color = CHARACTER_INITIAL_AVATAR_COLOR_CODES[_uuid_int % len(CHARACTER_INITIAL_AVATAR_COLOR_CODES)]
+        if color is None:
+            color = character.prefs.avatar.icon_color
+
+        if color_on is None:
+            color_on = color
 
         first_char = character.name[0]
         if first_char.isnumeric():
@@ -800,9 +830,9 @@ class AvatarsRegistry:
         elif fallback:
             return self._dummy_avatar()
         else:
-            return None
+            return QIcon()
 
-        return IconRegistry.from_name(icon, color)
+        return IconRegistry.from_name(icon, color, color_on)
 
     def update_image(self, character: Character):
         if character in self._images.keys():

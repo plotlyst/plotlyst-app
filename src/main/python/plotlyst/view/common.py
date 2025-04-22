@@ -22,6 +22,7 @@ import sys
 from collections import Counter
 from functools import partial
 from typing import Optional, Tuple, List, Union
+from uuid import UUID
 
 import qtanim
 import qtawesome
@@ -33,15 +34,15 @@ from PyQt6.QtWidgets import QWidget, QSizePolicy, QColorDialog, QAbstractItemVie
     QMenu, QAbstractButton, \
     QStackedWidget, QAbstractScrollArea, QLineEdit, QHeaderView, QScrollArea, QFrame, QTabWidget, \
     QGraphicsDropShadowEffect, QTableView, QPushButton, QToolButton, QButtonGroup, QToolTip, QApplication, QMainWindow, \
-    QLabel, QGraphicsObject, QTextEdit
+    QLabel, QGraphicsObject, QTextEdit, QSplitter
 from fbs_runtime import platform
 from overrides import overrides
-from qtanim import fade_out
-from qthandy import hbox, vbox, margins, gc, transparent, spacer, sp, pointy, incr_font
+from qthandy import hbox, vbox, margins, gc, transparent, spacer, sp, pointy, incr_font, decr_font
 from qthandy.filter import DisabledClickEventFilter
 
 from plotlyst.common import WHITE_COLOR
 from plotlyst.env import app_env
+from plotlyst.settings import CHARACTER_INITIAL_AVATAR_COLOR_CODES
 from plotlyst.view.stylesheet import APP_STYLESHEET
 
 
@@ -195,6 +196,22 @@ class ButtonPressResizeEventFilter(QObject):
         if self._originalSize is None:
             self._calculateSize(watched)
         watched.setIconSize(self._originalSize)
+
+
+class ButtonIconSwitchEventFilter(QObject):
+    def __init__(self, parent: QAbstractButton, idleIcon: QIcon, activeIcon: QIcon):
+        super().__init__(parent)
+        self._idleIcon = idleIcon
+        self._activeIcon = activeIcon
+        parent.setIcon(self._idleIcon)
+
+    @overrides
+    def eventFilter(self, watched: QAbstractButton, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Enter:
+            watched.setIcon(self._activeIcon)
+        elif event.type() == QEvent.Type.Leave:
+            watched.setIcon(self._idleIcon)
+        return super().eventFilter(watched, event)
 
 
 class MouseEventDelegate(QObject):
@@ -403,7 +420,7 @@ def fade_out_and_gc(parent: QWidget, widget: QWidget, duration: int = 200, teard
             teardown()
 
     widget.setDisabled((True))
-    anim = fade_out(widget, duration)
+    anim = qtanim.fade_out(widget, duration)
     anim.finished.connect(destroy)
 
 
@@ -486,7 +503,8 @@ def frame(parent=None):
 
 def label(text: str = '', bold: Optional[bool] = None, italic: Optional[bool] = None, underline: Optional[bool] = None,
           description: Optional[bool] = None, wordWrap: Optional[bool] = None, h1: Optional[bool] = None,
-          h2: Optional[bool] = None, h3: Optional[bool] = None, h4: Optional[bool] = None, color=None,
+          h2: Optional[bool] = None, h3: Optional[bool] = None, h4: Optional[bool] = None, h5: Optional[bool] = None,
+          color=None, decr_font_diff: int = 0, incr_font_diff: int = 0,
           parent=None) -> QLabel:
     lbl = QLabel(text, parent)
     font = lbl.font()
@@ -508,9 +526,16 @@ def label(text: str = '', bold: Optional[bool] = None, italic: Optional[bool] = 
         lbl.setProperty('h3', h3)
     elif h4:
         lbl.setProperty('h4', h4)
+    elif h5:
+        lbl.setProperty('h5', h5)
 
     if color:
         lbl.setStyleSheet(f'color: {color};')
+
+    if decr_font_diff:
+        decr_font(lbl, decr_font_diff)
+    if incr_font_diff:
+        incr_font(lbl, incr_font_diff)
 
     if wordWrap:
         lbl.setWordWrap(wordWrap)
@@ -529,6 +554,10 @@ class ExclusiveOptionalButtonGroup(QButtonGroup):
     @overrides
     def setExclusive(self, _: bool) -> None:
         super(ExclusiveOptionalButtonGroup, self).setExclusive(False)
+
+    def reset(self):
+        if self.checkedButton():
+            self.checkedButton().setChecked(False)
 
     def _buttonToggled(self, button: QAbstractButton, toggled: bool):
         if toggled and self._checkedButton and self._checkedButton is not button:
@@ -635,6 +664,17 @@ def fade_in(wdg: QWidget):
     qtanim.fade_in(wdg, duration=150, teardown=lambda: wdg.setGraphicsEffect(None))
 
 
+def fade_out(wdg: QWidget):
+    qtanim.fade_out(wdg, duration=150, teardown=lambda: wdg.setGraphicsEffect(None))
+
+
+def fade(wdg: QWidget, visible: bool):
+    if visible:
+        fade_in(wdg)
+    else:
+        fade_out(wdg)
+
+
 def dominant_color(pixmap: QPixmap) -> QColor:
     image = pixmap.toImage()
     resize_factor = 0.5
@@ -651,3 +691,48 @@ def dominant_color(pixmap: QPixmap) -> QColor:
     color_counter = Counter(colors)
     dominant_rgb = color_counter.most_common(1)[0][0]
     return QColor(dominant_rgb)
+
+
+def columns(margin: int = 2, spacing: int = 3) -> QWidget:
+    wdg = QWidget()
+    hbox(wdg, margin, spacing)
+    return wdg
+
+
+def rows(margin: int = 2, spacing: int = 3) -> QWidget:
+    wdg = QWidget()
+    vbox(wdg, margin, spacing)
+    return wdg
+
+
+def exclusive_buttons(parent: QObject, *buttons, optional=False) -> QButtonGroup:
+    btnGroup = ExclusiveOptionalButtonGroup(parent) if optional else QButtonGroup(parent)
+    btnGroup.setExclusive(True)
+    for btn in buttons:
+        btnGroup.addButton(btn)
+    return btnGroup
+
+
+def default_character_color(uuid_: UUID) -> str:
+    return CHARACTER_INITIAL_AVATAR_COLOR_CODES[uuid_.int % len(CHARACTER_INITIAL_AVATAR_COLOR_CODES)]
+
+
+def h_splitter(wdg1: QWidget, wdg2: QWidget, sizes: List[int]) -> QSplitter:
+    return _splitter(wdg1, wdg2, sizes)
+
+
+def v_splitter(wdg1: QWidget, wdg2: QWidget, sizes: List[int]) -> QSplitter:
+    splitter = _splitter(wdg1, wdg2, sizes)
+    splitter.setOrientation(Qt.Orientation.Vertical)
+
+    return splitter
+
+
+def _splitter(wdg1: QWidget, wdg2: QWidget, sizes: List[int]) -> QSplitter:
+    splitter = QSplitter()
+    splitter.setChildrenCollapsible(False)
+    splitter.addWidget(wdg1)
+    splitter.addWidget(wdg2)
+    splitter.setSizes(sizes)
+
+    return splitter

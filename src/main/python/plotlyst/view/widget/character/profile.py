@@ -26,14 +26,14 @@ import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QObject, QEvent, QPoint, QTimer
 from PyQt6.QtGui import QResizeEvent, QWheelEvent, QColor
 from PyQt6.QtWidgets import QWidget, QLabel, QSizePolicy, QSlider, QToolButton, QVBoxLayout, QGridLayout, QApplication, \
-    QFrame
+    QFrame, QLineEdit, QDialog, QCompleter
 from overrides import overrides
-from qthandy import vbox, clear_layout, hbox, bold, underline, spacer, vspacer, margins, pointy, retain_when_hidden, \
-    transparent, sp, gc, decr_font, grid, incr_font, line, busy
+from qthandy import vbox, clear_layout, hbox, bold, spacer, vspacer, margins, pointy, retain_when_hidden, \
+    transparent, sp, gc, decr_font, grid, incr_font, line, busy, decr_icon
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
-from plotlyst.common import PLOTLYST_MAIN_COLOR
+from plotlyst.common import PLOTLYST_MAIN_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Character, CharacterProfileSectionReference, CharacterProfileFieldReference, \
     CharacterProfileFieldType, CharacterMultiAttribute, CharacterProfileSectionType, MultiAttributePrimaryType, \
     MultiAttributeSecondaryType, CharacterSecondaryAttribute, StrengthWeaknessAttribute, CharacterPersonalityAttribute, \
@@ -50,15 +50,16 @@ from plotlyst.core.template import TemplateField, iq_field, eq_field, rationalis
     work_style_choices, void_field, psychological_need_field, interpersonal_need_field
 from plotlyst.env import app_env
 from plotlyst.view.common import tool_btn, wrap, emoji_font, action, insert_before_the_end, push_btn, label, \
-    fade_out_and_gc, shadow, fade_in
+    fade_out_and_gc, shadow, fade_in, frame
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.style.slider import apply_slider_color
-from plotlyst.view.widget.button import CollapseButton, SecondaryActionPushButton, DotsMenuButton
+from plotlyst.view.widget.button import CollapseButton, DotsMenuButton, SelectorToggleButton, \
+    MajorRoleFilterButton, SecondaryRoleFilterButton, MinorRoleFilterButton
 from plotlyst.view.widget.character.editor import StrengthWeaknessEditor, DiscSelector, EnneagramSelector, MbtiSelector, \
     LoveStyleSelector
-from plotlyst.view.widget.display import Icon, Emoji, dash_icon
+from plotlyst.view.widget.display import Icon, Emoji, dash_icon, PopupDialog
 from plotlyst.view.widget.input import AutoAdjustableTextEdit, Toggle, TextInputDialog
 from plotlyst.view.widget.settings import SettingBaseWidget, setting_titles
 from plotlyst.view.widget.template.impl import TraitSelectionWidget, LabelsSelectionWidget
@@ -318,8 +319,7 @@ class ProfileSectionWidget(ProfileFieldWidget):
         vbox(self)
         self.btnHeader = CollapseButton(Qt.Edge.BottomEdge, Qt.Edge.RightEdge)
         self.btnHeader.setIconSize(QSize(16, 16))
-        bold(self.btnHeader)
-        underline(self.btnHeader)
+        incr_font(self.btnHeader, 3)
         self.btnHeader.setText(section.type.name)
         self.btnHeader.setToolTip(section.type.name)
 
@@ -355,14 +355,16 @@ class ProfileSectionWidget(ProfileFieldWidget):
         self.layout().addWidget(self.wdgBottom)
 
         if self.context.has_addition():
-            self._btnPrimary = SecondaryActionPushButton()
-            self._btnPrimary.setText(self.context.primaryButtonText())
-            self._btnPrimary.setIcon(IconRegistry.plus_icon('grey'))
-            decr_font(self._btnPrimary)
+            self._btnPrimary = push_btn(IconRegistry.plus_icon('grey'), self.context.primaryButtonText(),
+                                        properties=['no-menu', 'plain'])
+            if not app_env.is_mac():
+                decr_font(self._btnPrimary)
+            decr_icon(self._btnPrimary, 4)
+            self._btnPrimary.installEventFilter(OpacityEventFilter(self._btnPrimary, leaveOpacity=0.7))
             fields = self.context.primaryFields()
 
             if self.context.has_menu():
-                self._menu = MenuWidget(self._btnPrimary)
+                self._menu = MenuWidget(self._btnPrimary, largeIcons=True)
                 self._menu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
                 apply_white_menu(self._menu)
                 for field in fields:
@@ -373,7 +375,7 @@ class ProfileSectionWidget(ProfileFieldWidget):
             else:
                 self._btnPrimary.clicked.connect(self._initNewPrimaryField)
 
-            self.wdgContainer.layout().addWidget(self._btnPrimary)
+            self.wdgContainer.layout().addWidget(self._btnPrimary, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.children: List[ProfileFieldWidget] = []
         # self.progressStatuses: Dict[ProfileFieldWidget, float] = {}
@@ -443,6 +445,7 @@ class ProfileSectionWidget(ProfileFieldWidget):
 
         fieldWdg = field_widget(field, self.character)
         self.attachWidget(fieldWdg)
+        fade_in(fieldWdg)
 
     def _removePrimaryField(self, wdg: 'MultiAttributesTemplateWidgetBase', fieldRef: CharacterProfileFieldReference):
         self.section.fields.remove(fieldRef)
@@ -845,7 +848,7 @@ class _SecondaryFieldSelectorButton(QToolButton):
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         transparent(self)
         pointy(self)
-        self.setIconSize(QSize(22, 22))
+        decr_icon(self, 2)
         self.setIcon(IconRegistry.plus_edit_icon())
 
         menu = MenuWidget(self)
@@ -955,6 +958,7 @@ class _PrimaryFieldWidget(QWidget):
             icon.setIcon(IconRegistry.from_name('msc.dash', 'grey'))
             wdg.layout().insertWidget(0, icon)
             self._secondaryWdgContainer.layout().replaceWidget(item.widget(), wdg)
+            fade_in(wdg)
         else:
             self._secondaryWdgContainer.layout().replaceWidget(self._secondaryFieldWidgets[secondary], spacer())
             gc(self._secondaryFieldWidgets[secondary])
@@ -1026,6 +1030,13 @@ class FacultiesSectionContext(SectionContext):
 
     @overrides
     def has_white_bg(self) -> bool:
+        return True
+
+
+class PersonalitySectionContext(SectionContext):
+
+    @overrides
+    def has_muted_bg(self) -> bool:
         return True
 
 
@@ -1309,11 +1320,13 @@ class StrengthsWeaknessesFieldWidget(TemplateFieldWidgetBase):
         self._centerlayout.addWidget(group(self.emojiWeakness, self.lblWeakness), 0, 2,
                                      alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self._btnPrimary = SecondaryActionPushButton()
-        self._btnPrimary.setText('Add new attribute')
-        self._btnPrimary.setIcon(IconRegistry.plus_icon('grey'))
+        self._btnPrimary = push_btn(IconRegistry.plus_icon('grey'), 'Add new attribute',
+                                    properties=['no-menu', 'plain'])
+        if not app_env.is_mac():
+            decr_font(self._btnPrimary)
+        decr_icon(self._btnPrimary, 4)
+        self._btnPrimary.installEventFilter(OpacityEventFilter(self._btnPrimary, leaveOpacity=0.7))
         self._btnPrimary.clicked.connect(self._addNewAttribute)
-        decr_font(self._btnPrimary)
 
         self.layout().addWidget(self._center)
         self.layout().addWidget(wrap(self._btnPrimary, margin_left=5), alignment=Qt.AlignmentFlag.AlignLeft)
@@ -1424,11 +1437,11 @@ class EnneagramFieldWidget(TemplateFieldWidgetBase):
         emojiFear = Emoji()
         emojiFear.setText(emoji.emojize(':face_screaming_in_fear:'))
         emojiFear.setToolTip('Core fear')
-        self.lblDesire = label(wordWrap=True)
-        sp(self.lblDesire).h_exp()
+        self.lblDesire = AutoAdjustableTextEdit()
+        transparent(self.lblDesire)
         self.lblDesire.setToolTip('Core desire')
-        self.lblFear = label(wordWrap=True)
-        sp(self.lblFear).h_exp()
+        self.lblFear = AutoAdjustableTextEdit()
+        transparent(self.lblFear)
         self.lblFear.setToolTip('Core fear')
 
         decr_font(emojiDesire, 2)
@@ -1436,11 +1449,13 @@ class EnneagramFieldWidget(TemplateFieldWidgetBase):
         decr_font(emojiFear, 2)
         decr_font(self.lblFear)
 
-        self.wdgAttr = group(
-            group(dash_icon(), emojiDesire, self.lblDesire, spacer()),
-            group(dash_icon(), emojiFear, self.lblFear, spacer()),
-            vertical=False)
+        self.wdgAttr = QWidget()
+        vbox(self.wdgAttr)
         margins(self.wdgAttr, left=10)
+        self.wdgAttr.layout().addWidget(group(dash_icon(), emojiDesire, self.lblDesire),
+                                        alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgAttr.layout().addWidget(group(dash_icon(), emojiFear, self.lblFear),
+                                        alignment=Qt.AlignmentFlag.AlignLeft)
         _layout.addWidget(self.wdgAttr)
         self.wdgAttr.setHidden(True)
 
@@ -1493,7 +1508,8 @@ class MbtiFieldWidget(TemplateFieldWidgetBase):
         _layout = vbox(self)
         _layout.addWidget(self.wdgEditor)
 
-        self.lblKeywords = label(wordWrap=True)
+        self.lblKeywords = AutoAdjustableTextEdit()
+        transparent(self.lblKeywords)
         decr_font(self.lblKeywords)
 
         self.wdgAttr = group(dash_icon(), self.lblKeywords, spacer())
@@ -1548,7 +1564,8 @@ class LoveStyleFieldWidget(TemplateFieldWidgetBase):
         _layout.addWidget(self.wdgEditor, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.emoji = Emoji()
-        self.lblKeywords = label(wordWrap=True)
+        self.lblKeywords = AutoAdjustableTextEdit()
+        transparent(self.lblKeywords)
         decr_font(self.emoji, 2)
         decr_font(self.lblKeywords)
 
@@ -1599,7 +1616,8 @@ class WorkStyleFieldWidget(TemplateFieldWidgetBase):
         _layout.addWidget(self.wdgEditor, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.emoji = Emoji()
-        self.lblKeywords = label(wordWrap=True)
+        self.lblKeywords = AutoAdjustableTextEdit()
+        transparent(self.lblKeywords)
         decr_font(self.emoji, 2)
         decr_font(self.lblKeywords)
 
@@ -1819,6 +1837,7 @@ class CharacterProfileEditor(QWidget):
         self._sections: Dict[CharacterProfileSectionType, ProfileSectionWidget] = {}
 
         vbox(self)
+        margins(self, bottom=75)
 
     def setCharacter(self, character: Character):
         self._character = character
@@ -1849,6 +1868,8 @@ class CharacterProfileEditor(QWidget):
                 sc = StrengthsSectionContext()
             elif section.type == CharacterProfileSectionType.Faculties:
                 sc = FacultiesSectionContext()
+            elif section.type == CharacterProfileSectionType.Personality:
+                sc = PersonalitySectionContext()
             else:
                 sc = SectionContext()
 
@@ -1948,3 +1969,259 @@ class CharacterProfileEditor(QWidget):
 
                 wdgTraits.setValue(traits)
                 wdgTraits.save()
+
+
+class CharacterNameEditorPopup(PopupDialog):
+    def __init__(self, character: Character, parent=None):
+        super().__init__(parent)
+        self._character = character
+
+        self.frame.layout().setSpacing(5)
+        self.frame.layout().setContentsMargins(20, 15, 20, 10)
+
+        self.title = label('Edit character', h4=True)
+
+        self.lineName = QLineEdit()
+        self.lineName.setPlaceholderText('Character name')
+        self.lineName.setProperty('white-bg', True)
+        self.lineName.setProperty('rounded', True)
+        incr_font(self.lineName, 2)
+        self.lineName.textChanged.connect(self._nameEdited)
+
+        self.lineName.installEventFilter(self)
+
+        self.lineDisplayName = QLineEdit()
+        self.lineDisplayName.setProperty('muted-bg', True)
+        self.lineDisplayName.setProperty('rounded', True)
+        incr_font(self.lineDisplayName)
+        if not self._character.alias:
+            self.lineDisplayName.setDisabled(True)
+        self.lineDisplayName.setText(self._character.alias)
+        self.lineDisplayName.textChanged.connect(self._aliasChanged)
+        self.lineDisplayName.installEventFilter(self)
+
+        self.lineName.setText(self._character.name)
+
+        self.nameIcon = Icon()
+        self.nameIcon.setIcon(IconRegistry.character_icon('grey'))
+        self.nameIcon.setIconSize(QSize(28, 28))
+
+        self.displayNameIcon = Icon()
+        self.displayNameIcon.setIcon(IconRegistry.from_name('mdi.badge-account-outline', 'grey'))
+        self.displayNameIcon.setIconSize(QSize(28, 28))
+
+        self.btnConfirm = push_btn(icon=IconRegistry.edit_icon(RELAXED_WHITE_COLOR), text='Edit character profile',
+                                   properties=['confirm', 'positive'])
+        sp(self.btnConfirm).h_exp()
+        self.btnConfirm.clicked.connect(self.accept)
+        self.btnCancel = push_btn(text='Close', properties=['confirm', 'cancel'])
+        self.btnCancel.clicked.connect(self.reject)
+
+        self.frame.layout().addWidget(self.title, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(line(color='lightgrey'))
+        self.frame.layout().addWidget(group(self.nameIcon, self.lineName))
+        self.frame.layout().addWidget(vspacer(20))
+        lblDisplayedName = label('Displayed name', description=True)
+        decr_font(lblDisplayedName, 2)
+        self.frame.layout().addWidget(
+            group(
+                group(self.displayNameIcon, self.lineDisplayName),
+                wrap(lblDisplayedName, margin_left=self.displayNameIcon.sizeHint().width() + 4),
+                vertical=False, margin=0, spacing=0
+            )
+        )
+
+        self.btnConfirm.setHidden(True)
+
+        self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm, margin_top=20),
+                                      alignment=Qt.AlignmentFlag.AlignRight)
+
+    def display(self) -> bool:
+        # self.lineName.setFocus()
+        result = self.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            return True
+        return False
+
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Return:
+            QTimer.singleShot(10, self.btnConfirm.click)
+            return True
+        return super().eventFilter(watched, event)
+
+    def _nameEdited(self, name: str):
+        self.lineDisplayName.setEnabled(True)
+        self.lineDisplayName.setPlaceholderText(name)
+        self._character.name = name
+        if not self._character.prefs.avatar.use_initial:
+            self._character.prefs.avatar.allow_initial()
+
+        completer = QCompleter(name.split(), self.lineDisplayName)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.popup().setFont(QApplication.font())
+        self.lineDisplayName.setCompleter(completer)
+
+    def _aliasChanged(self, alias: str):
+        self._character.alias = alias
+
+
+class CharacterOnboardingPopup(CharacterNameEditorPopup):
+    def __init__(self, character: Character, parent=None):
+        super().__init__(character, parent)
+
+        self.title.setText('Create a new character')
+        insert_before_the_end(self.frame, line(color='lightgrey'))
+        self.btnConfirm.setVisible(True)
+
+        self.personalityFrame = frame()
+        self.personalityFrame.setProperty('large-rounded', True)
+        grid(self.personalityFrame, margin=8)
+
+        self.btnEnneagram = self.__selectorButton('Enneagram', 'mdi.numeric-9-circle', small=True,
+                                                  tooltip='Consider enneagram personality type for this character',
+                                                  personalityType=NovelSetting.Character_enneagram)
+        self.btnMbti = self.__selectorButton('MBTI', 'mdi.head-question-outline', small=True,
+                                             tooltip='Consider MBTI personality type for this character',
+                                             personalityType=NovelSetting.Character_mbti)
+        self.btnLoveStyle = self.__selectorButton('Love style', 'fa5s.heart', small=True,
+                                                  tooltip="Consider the character's preferred love style",
+                                                  personalityType=NovelSetting.Character_love_style)
+        self.btnWorkStyle = self.__selectorButton('Work style', 'fa5s.briefcase', small=True,
+                                                  tooltip="Consider the character's most typical working style",
+                                                  personalityType=NovelSetting.Character_work_style)
+
+        self.btnEnneagram.setChecked(self._character.prefs.toggled(NovelSetting.Character_enneagram))
+        self.btnMbti.setChecked(self._character.prefs.toggled(NovelSetting.Character_mbti))
+        self.btnLoveStyle.setChecked(self._character.prefs.toggled(NovelSetting.Character_love_style))
+        self.btnWorkStyle.setChecked(self._character.prefs.toggled(NovelSetting.Character_work_style))
+
+        self.btnMbti.setMinimumWidth(self.btnEnneagram.sizeHint().width())
+        self.btnLoveStyle.setMinimumWidth(self.btnEnneagram.sizeHint().width())
+        self.btnWorkStyle.setMinimumWidth(self.btnEnneagram.sizeHint().width())
+        self.personalityFrame.layout().addWidget(self.btnEnneagram, 0, 0)
+        self.personalityFrame.layout().addWidget(self.btnMbti, 0, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.personalityFrame.layout().addWidget(self.btnLoveStyle, 1, 0)
+        self.personalityFrame.layout().addWidget(self.btnWorkStyle, 1, 1)
+
+        insert_before_the_end(self.frame, label('Personality', description=True, decr_font_diff=1),
+                              alignment=Qt.AlignmentFlag.AlignCenter)
+        insert_before_the_end(self.frame, self.personalityFrame, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.primarySelectors = frame()
+        self.primarySelectors.setProperty('large-rounded', True)
+        grid(self.primarySelectors, margin=6)
+
+        self.btnFaculties = self.__selectorButton('Faculties', 'mdi6.head-lightbulb',
+                                                  tooltip="IQ, emotional intelligence, rationality, willpower, creativity",
+                                                  sectionType=CharacterProfileSectionType.Faculties)
+        self.btnPhilosophy = self.__selectorButton('Philosophy', 'mdi.infinity',
+                                                   tooltip="Consider the character's values",
+                                                   sectionType=CharacterProfileSectionType.Philosophy)
+        self.btnStrengths = self.__selectorButton('Strengths and Weaknesses', 'mdi.arm-flex',
+                                                  tooltip="Consider the character's strengths and weaknesses",
+                                                  sectionType=CharacterProfileSectionType.Strengths)
+        self.btnFlaws = self.__selectorButton('Flaws', 'fa5s.virus',
+                                              tooltip="Consider the character's significant flaws",
+                                              sectionType=CharacterProfileSectionType.Flaws)
+        self.btnBaggage = self.__selectorButton('Baggage', 'fa5s.heart-broken',
+                                                tooltip="Consider the character's ghosts, wounds, misbeliefs, demons, or fears",
+                                                sectionType=CharacterProfileSectionType.Baggage)
+        self.btnGoal = self.__selectorButton('Goals', 'mdi.target',
+                                             tooltip="Goal, conflict, motivation, stakes, and methods",
+                                             sectionType=CharacterProfileSectionType.Goals)
+        self.btnLack = self.__selectorButton('Lack', 'ri.key-fill',
+                                             tooltip="An emptiness or absence the character feels in their life",
+                                             sectionType=CharacterProfileSectionType.Lack)
+        self.btnFaculties.setMinimumWidth(self.btnPhilosophy.sizeHint().width())
+        self.primarySelectors.layout().addWidget(self.btnFaculties, 0, 0)
+        self.primarySelectors.layout().addWidget(self.btnPhilosophy, 0, 2)
+        self.primarySelectors.layout().addWidget(self.btnStrengths, 1, 0, 1, 3, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.primarySelectors.layout().addWidget(self.btnFlaws, 2, 1)
+        self.primarySelectors.layout().addWidget(self.btnBaggage, 3, 0)
+        self.primarySelectors.layout().addWidget(self.btnGoal, 3, 1)
+        self.primarySelectors.layout().addWidget(self.btnLack, 3, 2)
+
+        filters = QWidget()
+        hbox(filters, margin=0)
+        filters.layout().addWidget(label('Primary attributes', description=True, decr_font_diff=1))
+        btnMajor = MajorRoleFilterButton()
+        btnMajor.clicked.connect(self._toggleMajorAttributes)
+        btnSecondary = SecondaryRoleFilterButton()
+        btnSecondary.clicked.connect(self._toggleSecondaryAttributes)
+        btnMinor = MinorRoleFilterButton()
+        btnMinor.clicked.connect(self._toggleMinorAttributes)
+        filters.layout().addWidget(btnMajor)
+        filters.layout().addWidget(btnSecondary)
+        filters.layout().addWidget(btnMinor)
+        insert_before_the_end(self.frame, filters,
+                              alignment=Qt.AlignmentFlag.AlignCenter)
+        insert_before_the_end(self.frame, self.primarySelectors, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        insert_before_the_end(self.frame, label('You can customize these later', description=True, decr_font_diff=2),
+                              alignment=Qt.AlignmentFlag.AlignRight)
+
+        # self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm, margin_top=20),
+        #                               alignment=Qt.AlignmentFlag.AlignRight)
+
+    def _sectionToggled(self, setting: CharacterProfileSectionType, toggled: bool):
+        for ref in self._character.profile:
+            if ref.type == setting:
+                ref.enabled = toggled
+
+    def _personalityToggled(self, setting: NovelSetting, toggled: bool):
+        self._character.prefs.settings[setting.value] = toggled
+
+    def _toggleMajorAttributes(self):
+        self.btnFaculties.setChecked(True)
+        self.btnStrengths.setChecked(True)
+        self.btnPhilosophy.setChecked(True)
+        self.btnGoal.setChecked(True)
+        self.btnFlaws.setChecked(True)
+        self.btnLack.setChecked(True)
+        self.btnBaggage.setChecked(True)
+
+    def _toggleSecondaryAttributes(self):
+        self.btnFaculties.setChecked(True)
+        self.btnStrengths.setChecked(True)
+        self.btnPhilosophy.setChecked(True)
+        self.btnGoal.setChecked(True)
+
+        self.btnFlaws.setChecked(False)
+        self.btnLack.setChecked(False)
+        self.btnBaggage.setChecked(False)
+
+    def _toggleMinorAttributes(self):
+        self.btnFaculties.setChecked(False)
+        self.btnStrengths.setChecked(False)
+        self.btnPhilosophy.setChecked(False)
+        self.btnGoal.setChecked(False)
+
+        self.btnFlaws.setChecked(False)
+        self.btnLack.setChecked(False)
+        self.btnBaggage.setChecked(False)
+
+    def __selectorButton(self, text: str, icon: str, small: bool = False, tooltip: str = '',
+                         sectionType: Optional[CharacterProfileSectionType] = None,
+                         personalityType: Optional[NovelSetting] = None) -> SelectorToggleButton:
+        btn = SelectorToggleButton()
+        btn.setText(text)
+        btn.setIcon(IconRegistry.from_name(icon))
+        btn.setToolTip(tooltip)
+        btn.setChecked(True)
+
+        if small:
+            btn.setMinimumWidth(50)
+        else:
+            btn.setMinimumWidth(80)
+
+        decr_font(btn, 2)
+        decr_icon(btn, 2)
+
+        if sectionType:
+            btn.toggled.connect(partial(self._sectionToggled, sectionType))
+        elif personalityType:
+            btn.toggled.connect(partial(self._personalityToggled, personalityType))
+
+        return btn

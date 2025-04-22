@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>599</width>
-    <height>563</height>
+    <width>638</width>
+    <height>441</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,13 +21,13 @@
     <number>3</number>
    </property>
    <property name="leftMargin">
-    <number>20</number>
+    <number>40</number>
    </property>
    <property name="topMargin">
     <number>20</number>
    </property>
    <property name="rightMargin">
-    <number>20</number>
+    <number>40</number>
    </property>
    <property name="bottomMargin">
     <number>0</number>
@@ -60,37 +60,6 @@
        </property>
        <property name="toolTip">
         <string>Seed</string>
-       </property>
-       <property name="text">
-        <string>Seed</string>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>28</width>
-         <height>28</height>
-        </size>
-       </property>
-       <property name="checkable">
-        <bool>true</bool>
-       </property>
-       <property name="secondary-selector" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="transparent-rounded-bg-on-hover" stdset="0">
-        <bool>true</bool>
-       </property>
-       <attribute name="buttonGroup">
-        <string notr="true">buttonGroup</string>
-       </attribute>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="btnConcept">
-       <property name="cursor">
-        <cursorShape>PointingHandCursor</cursorShape>
-       </property>
-       <property name="toolTip">
-        <string>Concept</string>
        </property>
        <property name="text">
         <string>Concept</string>
@@ -200,8 +169,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>437</width>
-            <height>61</height>
+            <width>558</width>
+            <height>312</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -229,136 +198,13 @@
            <property name="bottomMargin">
             <number>0</number>
            </property>
-           <item alignment="Qt::AlignLeft">
-            <widget class="QPushButton" name="btnNewIdea">
-             <property name="cursor">
-              <cursorShape>PointingHandCursor</cursorShape>
-             </property>
-             <property name="text">
-              <string>Add a new idea</string>
-             </property>
-             <property name="base" stdset="0">
-              <bool>true</bool>
-             </property>
-             <property name="positive" stdset="0">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
            <item>
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Add, and toggle ideas that you wish to keep for developing your concept</string>
-             </property>
-             <property name="description" stdset="0">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QWidget" name="wdgIdeasEditor" native="true"/>
-           </item>
-           <item>
-            <spacer name="verticalSpacer">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>328</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </widget>
-        </widget>
-       </item>
-       <item alignment="Qt::AlignRight">
-        <widget class="QPushButton" name="btnNextToConcept">
-         <property name="cursor">
-          <cursorShape>PointingHandCursor</cursorShape>
-         </property>
-         <property name="text">
-          <string>Next to concept</string>
-         </property>
-         <property name="base" stdset="0">
-          <bool>true</bool>
-         </property>
-         <property name="positive" stdset="0">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="pageConcept">
-      <layout class="QVBoxLayout" name="verticalLayout_6">
-       <property name="spacing">
-        <number>5</number>
-       </property>
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>20</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>15</number>
-       </property>
-       <item>
-        <widget class="QScrollArea" name="scrollArea_2">
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="widgetResizable">
-          <bool>true</bool>
-         </property>
-         <widget class="QWidget" name="scrollAreaWidgetContents_2">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>559</width>
-            <height>435</height>
-           </rect>
-          </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="relaxed-white-bg" stdset="0">
-           <bool>true</bool>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_3">
-           <property name="spacing">
-            <number>5</number>
-           </property>
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="Subtitle" name="subtitleSeed" native="true">
+            <widget class="Subtitle" name="subtitleIdeas" native="true">
              <property name="title" stdset="0">
-              <string>Seed</string>
+              <string>Ideas</string>
              </property>
              <property name="description" stdset="0">
-              <string>Your selected ideas that you wish to elevate into a concept</string>
+              <string>Throw your ideas onto the board and toggle them on or off to narrow them down, developing your concept.</string>
              </property>
              <property name="icon" stdset="0">
               <string>fa5s.seedling</string>
@@ -366,26 +212,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QListView" name="listSelectedIdeas">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="frameShape">
-              <enum>QFrame::NoFrame</enum>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::NoSelection</enum>
-             </property>
-             <property name="viewMode">
-              <enum>QListView::IconMode</enum>
-             </property>
-             <property name="selectionRectVisible">
-              <bool>false</bool>
-             </property>
-            </widget>
+            <widget class="QWidget" name="wdgIdeasEditor" native="true"/>
            </item>
            <item>
             <widget class="Subtitle" name="subtitleConcept" native="true">
@@ -401,51 +228,17 @@
             </widget>
            </item>
            <item>
-            <widget class="QWidget" name="widget" native="true">
-             <layout class="QHBoxLayout" name="horizontalLayout_2">
-              <property name="leftMargin">
-               <number>20</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
-              <item alignment="Qt::AlignLeft">
-               <widget class="QPushButton" name="btnNewConcept">
-                <property name="cursor">
-                 <cursorShape>PointingHandCursor</cursorShape>
-                </property>
-                <property name="text">
-                 <string>Add a new 'What if' question</string>
-                </property>
-                <property name="base" stdset="0">
-                 <bool>true</bool>
-                </property>
-                <property name="positive" stdset="0">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
             <widget class="QWidget" name="wdgConceptEditor" native="true"/>
            </item>
            <item>
-            <spacer name="verticalSpacer_3">
+            <spacer name="verticalSpacer">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
                <width>20</width>
-               <height>150</height>
+               <height>100</height>
               </size>
              </property>
             </spacer>
@@ -502,8 +295,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>559</width>
-            <height>477</height>
+            <width>558</width>
+            <height>355</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -531,50 +324,6 @@
            <property name="bottomMargin">
             <number>0</number>
            </property>
-           <item>
-            <widget class="Subtitle" name="subtitleConcept2" native="true">
-             <property name="title" stdset="0">
-              <string>Concept</string>
-             </property>
-             <property name="description" stdset="0">
-              <string>Your selected questions that you wish to express in a premise</string>
-             </property>
-             <property name="icon" stdset="0">
-              <string>fa5s.question-circle</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QListView" name="listSelectedQuestions">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>150</height>
-              </size>
-             </property>
-             <property name="frameShape">
-              <enum>QFrame::NoFrame</enum>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::NoSelection</enum>
-             </property>
-             <property name="isWrapping" stdset="0">
-              <bool>false</bool>
-             </property>
-             <property name="viewMode">
-              <enum>QListView::ListMode</enum>
-             </property>
-             <property name="selectionRectVisible">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
            <item>
             <widget class="Subtitle" name="subtitlePremise" native="true">
              <property name="title" stdset="0">
@@ -901,16 +650,6 @@
                     <number>2</number>
                    </property>
                    <item>
-                    <widget class="QLabel" name="lblArchive">
-                     <property name="text">
-                      <string>Archive</string>
-                     </property>
-                     <property name="description" stdset="0">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
                     <spacer name="horizontalSpacer_3">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -928,6 +667,9 @@
                 </item>
                 <item>
                  <widget class="QTableView" name="tblPremiseArchive">
+                  <property name="showGrid">
+                   <bool>false</bool>
+                  </property>
                   <attribute name="horizontalHeaderVisible">
                    <bool>false</bool>
                   </attribute>
@@ -940,19 +682,6 @@
               </item>
              </layout>
             </widget>
-           </item>
-           <item>
-            <spacer name="verticalSpacer_4">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>40</height>
-              </size>
-             </property>
-            </spacer>
            </item>
           </layout>
          </widget>
@@ -980,34 +709,18 @@
  <resources/>
  <connections>
   <connection>
-   <sender>btnNextToConcept</sender>
-   <signal>clicked()</signal>
-   <receiver>btnConcept</receiver>
-   <slot>animateClick()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>501</x>
-     <y>448</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>295</x>
-     <y>42</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>btnNextToPremise</sender>
    <signal>clicked()</signal>
    <receiver>btnPremise</receiver>
-   <slot>animateClick()</slot>
+   <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>489</x>
-     <y>449</y>
+     <x>530</x>
+     <y>415</y>
     </hint>
     <hint type="destinationlabel">
-     <x>387</x>
-     <y>41</y>
+     <x>379</x>
+     <y>45</y>
     </hint>
    </hints>
   </connection>

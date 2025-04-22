@@ -31,6 +31,7 @@ from plotlyst.view.common import fade_in
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.input import TextEditBubbleWidget
 from plotlyst.view.widget.tree import ItemBasedNode, TreeSettings, ItemBasedTreeView, ContainerNode
+from plotlyst.view.widget.world.theme import WorldBuildingPalette
 
 
 class ConceitBubble(TextEditBubbleWidget):
@@ -38,26 +39,27 @@ class ConceitBubble(TextEditBubbleWidget):
     textChanged = pyqtSignal()
     iconChanged = pyqtSignal()
 
-    def __init__(self, conceit: WorldConceit, parent=None):
+    def __init__(self, conceit: WorldConceit, palette: WorldBuildingPalette, parent=None):
         super().__init__(parent, titleEditable=True, titleMaxWidth=150, iconEditable=True)
         self.conceit = conceit
+        self.palette = palette
 
         self._removalEnabled = True
 
         icon = self.conceit.icon if self.conceit.icon else self.conceit.type.icon()
-        color = self.conceit.icon_color if self.conceit.icon_color else '#510442'
+        color = self.conceit.icon_color if self.conceit.icon_color else self.palette.primary_color
         self._title.setIcon(IconRegistry.from_name(icon, color))
         self._title.setText(self.conceit.name)
         self._title.lineEdit.textEdited.connect(self._titleEdited)
         self._title.iconChanged.connect(self._iconChanged)
         self._textedit.setPlaceholderText('An element of wonder that deviates from our world')
-        self._textedit.setStyleSheet('''
-            QTextEdit {
-                border: 1px solid #dabfa7;
+        self._textedit.setStyleSheet(f'''
+            QTextEdit {{
+                border: 1px solid {self.palette.secondary_color};
                 border-radius: 6px;
                 padding: 4px;
-                background-color: #e3d0bd;
-            }
+                background-color: {self.palette.tertiary_color};
+            }}
         ''')
         self._textedit.setText(self.conceit.text)
 
@@ -72,7 +74,7 @@ class ConceitBubble(TextEditBubbleWidget):
     def _iconChanged(self, icon: str, color: str):
         self.conceit.icon = icon
         if color == 'black' or color == '#000000':
-            color = '#510442'
+            color = self.palette.primary_color
             self._title.setIcon(IconRegistry.from_name(icon, color))
         self.conceit.icon_color = color
         self.iconChanged.emit()
@@ -141,16 +143,17 @@ class ConceitsTreeView(ItemBasedTreeView):
     conceitTypeSelected = pyqtSignal(WorldConceitType)
     conceitDeleted = pyqtSignal(WorldConceit)
 
-    def __init__(self, novel: Novel, parent=None):
+    def __init__(self, novel: Novel, palette: WorldBuildingPalette, parent=None):
         super().__init__(parent)
         self._novel = novel
+        self._palette = palette
         self._world: WorldBuilding = novel.world
         self._readOnly = False
-        self._settings = TreeSettings(bg_color='#ede0d4',
-                                      action_buttons_color='#510442',
-                                      selection_bg_color='#DABFA7',
-                                      hover_bg_color='#E3D0BD',
-                                      selection_text_color='#510442')
+        self._settings = TreeSettings(bg_color=self._palette.bg_color,
+                                      action_buttons_color=self._palette.primary_color,
+                                      selection_bg_color=self._palette.secondary_color,
+                                      hover_bg_color=self._palette.tertiary_color,
+                                      selection_text_color=self._palette.primary_color)
         self._centralWidget.setStyleSheet(f'#centralWidget {{background: {self._settings.bg_color};}}')
         self._root = WorldConceit('Conceits', None)
         self._rootNode: Optional[ConceitRootNode] = None

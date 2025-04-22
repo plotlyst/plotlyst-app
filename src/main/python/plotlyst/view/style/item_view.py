@@ -34,6 +34,11 @@ QTableView {{
     alternate-background-color: #F0E6F4;
 }}
 
+QTableView::item:selected {{
+    background: #F0E6F4;
+    color: black;
+}}
+
 QTableView QTableCornerButton::section {{
     background-color: {BG_SECONDARY_COLOR};
 }}
