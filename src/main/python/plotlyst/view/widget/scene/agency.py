@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import QWidget, QSlider, QDialog, QButtonGroup, QFrame
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    line, grid, flow, retain_when_hidden, transparent, incr_icon
+    line, flow, retain_when_hidden, transparent, incr_icon
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
@@ -48,7 +48,8 @@ from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.button import ChargeButton, DotsMenuButton
 from plotlyst.view.widget.character.editor import EmotionEditorSlider
 from plotlyst.view.widget.characters import CharacterSelectorMenu
-from plotlyst.view.widget.display import ArrowButton, PopupDialog, SeparatorLineWithShadow, ConnectorWidget
+from plotlyst.view.widget.display import ArrowButton, PopupDialog, SeparatorLineWithShadow, ConnectorWidget, \
+    DotsDragIcon
 from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget, Toggle
 from plotlyst.view.widget.scene.conflict import ConflictIntensityEditor, CharacterConflictSelector
 
@@ -675,9 +676,6 @@ def character_transition_arrow() -> QWidget:
 
 
 class CharacterChangeRow(QFrame):
-    Header1Col: int = 0
-    Header2Col: int = 2
-    Header3Col: int = 4
 
     def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, changes: CharacterAgencyChanges,
                  parent=None):
@@ -686,43 +684,38 @@ class CharacterChangeRow(QFrame):
         self._scene = scene
         self._agency = agency
         self._changes = changes
-        # self.setProperty('white-bg', True)
-        # self.setProperty('large-rounded', True)
 
-        # self.placeholder = QWidget()
+        hbox(self)
 
-        grid(self)
-        # self.layout().addWidget(self.placeholder, 0, 0, 1, 3)
-
-        row = self.layout().rowCount()
         if self._changes.initial:
-            self._addElement(self._changes.initial, row, self.Header1Col)
+            self._addElement(self._changes.initial)
             if self._changes.transition:
                 arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
                 arrow.setState(arrow.STATE_MAX)
                 incr_icon(arrow, 4)
-                self.layout().addWidget(arrow, row, self.Header2Col - 1)
+                self.layout().addWidget(arrow)
         else:
-            self.layout().addWidget(character_change_placeholder(), row, self.Header1Col)
+            self.layout().addWidget(character_change_placeholder())
 
         if self._changes.transition:
-            self._addElement(self._changes.transition, row, self.Header2Col)
+            self._addElement(self._changes.transition)
         elif self._changes.initial:
-            self.layout().addWidget(character_transition_arrow(), row, self.Header2Col - 1, 1, 3)
+            self.layout().addWidget(character_transition_arrow())
 
         if self._changes.final:
-            self._addElement(self._changes.final, row, self.Header3Col)
             if self._changes.transition:
                 arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
                 arrow.setState(1)
                 incr_icon(arrow, 4)
-                self.layout().addWidget(arrow, row, self.Header3Col - 1)
+                self.layout().addWidget(arrow)
+            self._addElement(self._changes.final)
         else:
-            self.layout().addWidget(character_change_placeholder(), row, self.Header3Col)
+            self.layout().addWidget(character_change_placeholder())
 
-        dotsBtn = DotsMenuButton()
-        dotsBtn.installEventFilter(OpacityEventFilter(dotsBtn))
-        self.layout().addWidget(dotsBtn, row, self.Header3Col + 1,
+        dotsBtn = DotsDragIcon()
+        dotsBtn.installEventFilter(OpacityEventFilter(dotsBtn, leaveOpacity=0.7))
+        retain_when_hidden(dotsBtn)
+        self.layout().addWidget(dotsBtn,
                                 alignment=Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         menu = MenuWidget(dotsBtn)
         # menu.addAction(action('Remove character changes', IconRegistry.trash_can_icon(),
@@ -731,7 +724,7 @@ class CharacterChangeRow(QFrame):
 
         self.installEventFilter(VisibilityToggleEventFilter(dotsBtn, self))
 
-    def _addElement(self, element: StoryElement, row: int, col: int):
+    def _addElement(self, element: StoryElement):
         wdg = CharacterChangeBubble(element)
         if element.type == StoryElementType.Motivation:
             motivationEditor = SceneAgendaMotivationEditor()
@@ -741,7 +734,7 @@ class CharacterChangeRow(QFrame):
             motivationEditor.setAgenda(self._agency)
             wdg.addBottomWidget(motivationEditor)
             # motivationEditor.setVisible(self.novel.prefs.toggled(NovelSetting.Track_motivation))
-        self.layout().addWidget(wdg, row, col, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(wdg)
 
     def _motivationChanged(self, motivation: Motivation, value: int):
         pass
