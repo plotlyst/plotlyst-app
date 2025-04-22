@@ -30,7 +30,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Conflict, ConflictReference, Novel, Scene, ConflictType, \
-    SceneStructureAgenda, Character
+    CharacterAgency, Character
 from plotlyst.event.core import emit_critical
 from plotlyst.model.scenes_model import SceneConflictsModel
 from plotlyst.service.persistence import RepositoryPersistenceManager
@@ -87,7 +87,7 @@ class ConflictIntensityEditor(QWidget):
 class CharacterConflictWidget(QFrame, Ui_CharacterConflictWidget):
     conflictSelectionChanged = pyqtSignal()
 
-    def __init__(self, novel: Novel, scene: Scene, agenda: SceneStructureAgenda, parent=None):
+    def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
         super(CharacterConflictWidget, self).__init__(parent)
         self.novel = novel
         self.scene = scene
@@ -208,7 +208,7 @@ class CharacterConflictWidget(QFrame, Ui_CharacterConflictWidget):
 class CharacterConflictSelector(QWidget):
     conflictSelected = pyqtSignal()
 
-    def __init__(self, novel: Novel, scene: Scene, agenda: SceneStructureAgenda, parent=None):
+    def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
         super().__init__(parent)
         self.novel = novel
         self.scene = scene

@@ -70,7 +70,7 @@ class SceneGoalSelector(QWidget):
 
         self.btnLinkGoal.installEventFilter(OpacityEventFilter(parent=self.btnLinkGoal))
         menu = ScrollableMenuWidget(self.btnLinkGoal)
-        self._goalSelector = CharacterPlansSelectorWidget(self.novel, self.scene.agendas[0].character(self.novel))
+        self._goalSelector = CharacterPlansSelectorWidget(self.novel, self.scene.agency[0].character(self.novel))
         menu.addWidget(self._goalSelector)
         self._goalSelector.setMinimumWidth(600)
 
@@ -88,7 +88,7 @@ class SceneGoalSelector(QWidget):
 
     def _goalSelected(self, characterGoal: CharacterGoal):
         goal_ref = GoalReference(characterGoal.id)
-        self.scene.agendas[0].goal_references.append(goal_ref)
+        self.scene.agency[0].goal_references.append(goal_ref)
 
         self.btnLinkGoal.menu().hide()
         self.setGoal(characterGoal, goal_ref)
@@ -107,6 +107,6 @@ class SceneGoalSelector(QWidget):
             anim.finished.connect(self.__destroy)
 
     def __destroy(self):
-        self.scene.agendas[0].remove_goal(self.characterGoal)
+        self.scene.agency[0].remove_goal(self.characterGoal)
         self.parent().layout().removeWidget(self)
         gc(self)

@@ -37,7 +37,7 @@ from plotlyst.common import raise_unrecognized_arg, CONFLICT_SELF_COLOR, RELAXED
 from plotlyst.core.domain import Scene, Novel, ScenePurpose, advance_story_scene_purpose, \
     ScenePurposeType, reaction_story_scene_purpose, character_story_scene_purpose, setup_story_scene_purpose, \
     emotion_story_scene_purpose, exposition_story_scene_purpose, scene_purposes, Character, StoryElement, \
-    StoryElementType, SceneOutcome, SceneStructureAgenda, Motivation, Plot, NovelSetting
+    StoryElementType, SceneOutcome, CharacterAgency, Motivation, Plot, NovelSetting
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -983,7 +983,7 @@ class EventElementEditor(TextBasedSceneElementWidget):
 class AgencyTextBasedElementEditor(TextBasedSceneElementWidget):
     def __init__(self, novel: Novel, row: int, col: int, parent=None):
         super().__init__(novel, StoryElementType.Agency, row, col, parent)
-        self._agenda: Optional[SceneStructureAgenda] = None
+        self._agenda: Optional[CharacterAgency] = None
         self.setTitle('Agency')
         self.setIcon('msc.debug-stackframe-dot')
 
@@ -1046,7 +1046,7 @@ class AgencyTextBasedElementEditor(TextBasedSceneElementWidget):
         else:
             super().activate()
 
-    def setAgenda(self, agenda: SceneStructureAgenda):
+    def setAgenda(self, agenda: CharacterAgency):
         self._agenda = agenda
         self.setType(StoryElementType.Agency)
         self.reset()
@@ -1397,13 +1397,13 @@ class CharacterTabBar(QScrollArea):
 class SceneAgendaTab(CharacterTab):
     resetAgenda = pyqtSignal()
 
-    def __init__(self, agenda: SceneStructureAgenda, novel: Novel, parent=None):
+    def __init__(self, agenda: CharacterAgency, novel: Novel, parent=None):
         super().__init__(novel, parent)
         self._agenda = agenda
         if self._agenda.character_id:
             self._btnCharacterSelector.setCharacter(self._agenda.character(self._novel))
 
-    def agenda(self) -> SceneStructureAgenda:
+    def agenda(self) -> CharacterAgency:
         return self._agenda
 
     @overrides
@@ -1427,8 +1427,8 @@ class SceneAgendaTab(CharacterTab):
 
 
 class SceneAgendasTabBar(CharacterTabBar):
-    agendaToggled = pyqtSignal(SceneStructureAgenda, bool)
-    resetAgenda = pyqtSignal(SceneStructureAgenda)
+    agendaToggled = pyqtSignal(CharacterAgency, bool)
+    resetAgenda = pyqtSignal(CharacterAgency)
 
     def __init__(self, novel: Novel, parent=None):
         super().__init__(novel, parent)
@@ -1441,7 +1441,7 @@ class SceneAgendasTabBar(CharacterTabBar):
         self._scene = scene
         self.reset()
 
-        for agenda in self._scene.agendas:
+        for agenda in self._scene.agency:
             self.addNewTab(agenda)
 
     def setUnsetCharacterSlot(self, slot):
@@ -1451,8 +1451,8 @@ class SceneAgendasTabBar(CharacterTabBar):
 
     @overrides
     def _addNewClicked(self):
-        agenda = SceneStructureAgenda()
-        self._scene.agendas.append(agenda)
+        agenda = CharacterAgency()
+        self._scene.agency.append(agenda)
         self.addNewTab(agenda)
 
     @overrides
@@ -1469,11 +1469,11 @@ class SceneAgendasTabBar(CharacterTabBar):
         agenda = tab.agenda()
         removed = super()._removeTab(tab)
         if removed:
-            self._scene.agendas.remove(agenda)
+            self._scene.agency.remove(agenda)
 
         return removed
 
-    def _resetAgenda(self, agenda: SceneStructureAgenda):
+    def _resetAgenda(self, agenda: CharacterAgency):
         agenda.emotion = None
         agenda.intensity = 0
         agenda.motivations.clear()
@@ -1487,7 +1487,7 @@ class _SceneAgendaEditor(AbstractSceneElementsEditor, EventListener):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self._novel = novel
-        self._agenda: Optional[SceneStructureAgenda] = None
+        self._agenda: Optional[CharacterAgency] = None
 
         self._characterTabbar = SceneAgendasTabBar(self._novel)
         self._characterTabbar.characterChanged.connect(self._characterSelected)
@@ -1575,11 +1575,11 @@ class _SceneAgendaEditor(AbstractSceneElementsEditor, EventListener):
     def _characterSelected(self, character: Character):
         self._updateElementsVisibility()
 
-    def _agendaReset(self, agenda: SceneStructureAgenda):
+    def _agendaReset(self, agenda: CharacterAgency):
         if self._agenda is agenda:
             self._agendaToggled(agenda, True)
 
-    def _agendaToggled(self, agenda: SceneStructureAgenda, toggled: bool):
+    def _agendaToggled(self, agenda: CharacterAgency, toggled: bool):
         if not toggled:
             return
 

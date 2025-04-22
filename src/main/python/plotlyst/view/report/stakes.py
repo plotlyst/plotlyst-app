@@ -78,9 +78,9 @@ class StakesChart(BaseChart):
         char_goals: Dict[str, Dict[int, int]] = {}
 
         for i, scene in enumerate(self.novel.scenes):
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 if agenda.character_id == character.id:
-                    for goal_ref in scene.agendas[0].goal_references:
+                    for goal_ref in scene.agency[0].goal_references:
                         stakes = goal_ref.stakes
                         if stakes.keys():
                             char_goals[str(goal_ref.character_goal_id)] = stakes

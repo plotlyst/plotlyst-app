@@ -29,7 +29,7 @@ from overrides import overrides
 
 from plotlyst.common import ALT_BACKGROUND_COLOR
 from plotlyst.core.domain import Novel, Scene, CharacterArc, Character, \
-    SelectionItem, SceneStage, SceneStructureAgenda, ScenePurposeType
+    SelectionItem, SceneStage, CharacterAgency, ScenePurposeType
 from plotlyst.event.core import emit_event
 from plotlyst.events import SceneStatusChangedEvent
 from plotlyst.model.common import AbstractHorizontalHeaderBasedTableModel, SelectionItemsModel
@@ -368,7 +368,7 @@ class ScenesStageTableModel(QAbstractTableModel, BaseScenesTableModel):
 
 class SceneConflictsModel(SelectionItemsModel):
 
-    def __init__(self, novel: Novel, scene: Scene, agenda: SceneStructureAgenda, parent=None):
+    def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
         super().__init__(parent)
         self.novel = novel
         self.scene = scene

@@ -1681,18 +1681,11 @@ class CharacterAgencyChanges:
 
 
 @dataclass
-class SceneStructureAgenda(CharacterBased):
+class CharacterAgency:
     character_id: Optional[uuid.UUID] = None
     conflict_references: List[ConflictReference] = field(default_factory=list)
-    goal_references: List[GoalReference] = field(default_factory=list)
-    intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
-    emotion: Optional[int] = None
     motivations: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
-    story_elements: List['StoryElement'] = field(default_factory=list)
-    changes: List[CharacterAgencyChanges] = field(default_factory=list)
-
-    def __post_init__(self):
-        self._character: Optional[Character] = None
+    changes: List[CharacterAgencyChanges] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
 
     def conflicts(self, novel: 'Novel') -> List[Conflict]:
         conflicts_ = []
@@ -2015,7 +2008,7 @@ class Scene:
     synopsis: str = ''
     pov: Optional[Character] = None
     characters: List[Character] = field(default_factory=list)
-    agendas: List[SceneStructureAgenda] = field(default_factory=list)
+    agency: List[CharacterAgency] = field(default_factory=list)
     wip: bool = False
     plot_values: List[ScenePlotReference] = field(default_factory=list)
     day: int = 1
@@ -4182,7 +4175,7 @@ class Novel(NovelDescriptor):
         char_ids = set()
         chars: List[Character] = []
         for scene in self.scenes:
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 if agenda.character_id and str(agenda.character_id) not in char_ids:
                     character: Character = agenda.character(self)
                     if character:
