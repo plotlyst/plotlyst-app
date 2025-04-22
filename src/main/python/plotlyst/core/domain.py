@@ -1904,11 +1904,11 @@ class StoryElementType(Enum):
         elif self == StoryElementType.Character_state_change:
             return "How does the character's external circumstances change?"
         elif self == StoryElementType.Character_internal_state_change:
-            return "How does the character's internal state change, mentally or psychologically?"
+            return "How does the character's internal state change?"
         elif self == StoryElementType.Expectation:
             return "What does the character anticipate to happen?"
         elif self == StoryElementType.Realization:
-            return "What did actually happen in the scene that upended expectations?"
+            return "What did actually happen that upended expectations?"
         elif self == StoryElementType.Catalyst:
             return "What disrupts the character's life and forces them to act?"
         elif self == StoryElementType.Dilemma:

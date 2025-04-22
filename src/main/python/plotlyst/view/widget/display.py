@@ -26,7 +26,7 @@ import qtanim
 from PyQt6.QtCharts import QChartView
 from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent, QPointF, QObject
 from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent, QIcon, QRadialGradient, \
-    QPen
+    QPen, QPolygonF
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
     QApplication, QTimeEdit, QAbstractSpinBox, QDateTimeEdit
@@ -565,6 +565,36 @@ class ArrowButton(QToolButton):
             self.stateReset.emit()
         else:
             self._increaseState()
+
+
+class ConnectorWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self._arrowhead = QPolygonF([
+            QPointF(-4, -6),  # Top point of the arrowhead
+            QPointF(8, 0),  # Far tip of the arrowhead
+            QPointF(-4, 6),  # Bottom point of the arrowhead
+            QPointF(1, 0),  # Inner point for a sharper look
+        ])
+
+        # self.setMinimumSize(170, 80)
+
+    @overrides
+    def sizeHint(self) -> QSize:
+        return QSize(170, 80)
+
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        painter.setPen(QPen(QColor('#6c757d'), 2))
+        painter.drawLine(5, self.height() // 2, self.width(), self.height() // 2)
+
+        painter.setBrush(QBrush(QColor('#6c757d')))
+        _arrowhead = self._arrowhead.translated(self.width() - 10, self.height() // 2)
+        painter.drawConvexPolygon(_arrowhead)
 
 
 class ReferencesButton(QPushButton):

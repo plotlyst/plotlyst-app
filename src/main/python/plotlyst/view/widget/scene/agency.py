@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import QWidget, QSlider, QDialog, QButtonGroup, QFrame
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    line, grid, flow, retain_when_hidden, transparent
+    line, grid, flow, retain_when_hidden, transparent, incr_icon
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter, DisabledClickEventFilter
 from qtmenu import MenuWidget
 
@@ -48,7 +48,7 @@ from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.button import ChargeButton, DotsMenuButton
 from plotlyst.view.widget.character.editor import EmotionEditorSlider
 from plotlyst.view.widget.characters import CharacterSelectorMenu
-from plotlyst.view.widget.display import ArrowButton, PopupDialog, SeparatorLineWithShadow
+from plotlyst.view.widget.display import ArrowButton, PopupDialog, SeparatorLineWithShadow, ConnectorWidget
 from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget, Toggle
 from plotlyst.view.widget.scene.conflict import ConflictIntensityEditor, CharacterConflictSelector
 
@@ -659,6 +659,21 @@ class CharacterChangeBubble(TextEditBubbleWidget):
         self.element.text = self._textedit.toPlainText()
 
 
+def character_change_placeholder() -> QWidget:
+    wdg = QWidget()
+    wdg.setMinimumWidth(170)
+    wdg.setMaximumHeight(135)
+    sp(wdg).h_exp()
+
+    return wdg
+
+
+def character_transition_arrow() -> QWidget:
+    wdg = ConnectorWidget()
+    sp(wdg).h_exp()
+    return wdg
+
+
 class CharacterChangeRow(QFrame):
     Header1Col: int = 0
     Header2Col: int = 2
@@ -674,10 +689,10 @@ class CharacterChangeRow(QFrame):
         # self.setProperty('white-bg', True)
         # self.setProperty('large-rounded', True)
 
-        self.placeholder = QWidget()
+        # self.placeholder = QWidget()
 
         grid(self)
-        self.layout().addWidget(self.placeholder, 0, 0, 1, 3)
+        # self.layout().addWidget(self.placeholder, 0, 0, 1, 3)
 
         row = self.layout().rowCount()
         if self._changes.initial:
@@ -685,15 +700,25 @@ class CharacterChangeRow(QFrame):
             if self._changes.transition:
                 arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
                 arrow.setState(arrow.STATE_MAX)
+                incr_icon(arrow, 4)
                 self.layout().addWidget(arrow, row, self.Header2Col - 1)
+        else:
+            self.layout().addWidget(character_change_placeholder(), row, self.Header1Col)
+
         if self._changes.transition:
             self._addElement(self._changes.transition, row, self.Header2Col)
+        elif self._changes.initial:
+            self.layout().addWidget(character_transition_arrow(), row, self.Header2Col - 1, 1, 3)
+
         if self._changes.final:
             self._addElement(self._changes.final, row, self.Header3Col)
             if self._changes.transition:
                 arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
                 arrow.setState(1)
+                incr_icon(arrow, 4)
                 self.layout().addWidget(arrow, row, self.Header3Col - 1)
+        else:
+            self.layout().addWidget(character_change_placeholder(), row, self.Header3Col)
 
         dotsBtn = DotsMenuButton()
         dotsBtn.installEventFilter(OpacityEventFilter(dotsBtn))
