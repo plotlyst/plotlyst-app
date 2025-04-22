@@ -4219,7 +4219,7 @@ class Novel(NovelDescriptor):
 
     @staticmethod
     def new_scene(title: str = '') -> Scene:
-        return Scene(title, agendas=[SceneStructureAgenda()])
+        return Scene(title)
 
     @staticmethod
     def new_novel(title: str = '') -> 'Novel':

@@ -835,8 +835,13 @@ class SceneAgencyEditor(QWidget, EventListener):
 
         vbox(self)
         margins(self, left=15)
-        self.btnAdd = push_btn(IconRegistry.plus_icon('grey'), 'Add new character agency', transparent_=True)
+
+        self.btnAdd = push_btn(IconRegistry.plus_icon('grey'),
+                               text='Track character goals, conflicts, or changes')
+        self.btnAdd.setStyleSheet('QPushButton{color: grey; border: 0px;}')
         self.btnAdd.installEventFilter(OpacityEventFilter(self.btnAdd, leaveOpacity=0.7))
+        self.btnAdd.setIconSize(QSize(26, 26))
+
         self.wdgAgendas = QWidget()
         flow(self.wdgAgendas, spacing=25)
         self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
