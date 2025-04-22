@@ -74,21 +74,13 @@ class SceneEditor(QObject, EventListener):
 
         set_tab_icon(self.ui.tabWidget, self.ui.tabFunctions,
                      IconRegistry.storylines_icon(color_on=PLOTLYST_SECONDARY_COLOR))
-        set_tab_icon(self.ui.tabWidget, self.ui.tabDrive,
-                     IconRegistry.from_name('mdi.chemical-weapon', color_on=PLOTLYST_SECONDARY_COLOR))
+        set_tab_icon(self.ui.tabWidget, self.ui.tabAgency,
+                     IconRegistry.from_name('ph.user-focus', color_on=PLOTLYST_SECONDARY_COLOR, scale=1.3))
         set_tab_icon(self.ui.tabWidget, self.ui.tabStructure,
                      IconRegistry.from_name('mdi6.timeline-outline', rotated=90, color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabWidget, self.ui.tabNotes, IconRegistry.document_edition_icon())
 
-        set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabAgency, IconRegistry.character_icon())
-        # set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabCuriosity,
-        #              IconRegistry.from_name('ei.question-sign', color_on=PLOTLYST_SECONDARY_COLOR))
-        # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabDramaticFunctions,
-        #              IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
-        # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
-        #              IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
-        # set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
 
         self.ui.btnDramaticFunctions.setIcon(
             IconRegistry.from_name('mdi.yin-yang', 'grey', color_on=PLOTLYST_SECONDARY_COLOR))
@@ -219,7 +211,6 @@ class SceneEditor(QObject, EventListener):
             PremiumOverlayWidget(self._informationEditor, "Reader's information tracking", icon='fa5s.book-reader',
                                  alt_link='https://plotlyst.com/docs/scenes/')
             self.ui.tabWidget.setCurrentWidget(self.ui.tabNotes)
-        self.ui.tabWidgetDrive.setCurrentWidget(self.ui.tabAgency)
         self.ui.tabWidget.currentChanged.connect(self._page_toggled)
 
         self.repo = RepositoryPersistenceManager.instance()
