@@ -23,7 +23,7 @@ from typing import Dict, Optional, List
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer
 from PyQt6.QtGui import QEnterEvent, QMouseEvent, QIcon, QCursor
-from PyQt6.QtWidgets import QWidget, QSlider, QGridLayout, QDialog, QButtonGroup
+from PyQt6.QtWidgets import QWidget, QSlider, QDialog, QButtonGroup, QFrame
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
@@ -32,8 +32,8 @@ from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter, Disa
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Motivation, Novel, Scene, CharacterAgency, Character, NovelSetting, \
-    StoryElementType, CharacterAgencyChanges, StoryElement
+from plotlyst.core.domain import Motivation, Novel, Scene, CharacterAgency, Character, StoryElementType, \
+    CharacterAgencyChanges, StoryElement
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import NovelPanelCustomizationEvent, NovelEmotionTrackingToggleEvent, \
@@ -42,6 +42,7 @@ from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, ExclusiveOptionalButtonGroup
 from plotlyst.view.generated.scene_goal_stakes_ui import Ui_GoalReferenceStakesEditor
 from plotlyst.view.icons import IconRegistry, avatars
+from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.button import ChargeButton, DotsMenuButton
 from plotlyst.view.widget.character.editor import EmotionEditorSlider
@@ -633,8 +634,8 @@ class CharacterChangeBubble(TextEditBubbleWidget):
         self.element = element
         self._textedit.setMinimumSize(165, 100)
         self._textedit.setMaximumSize(190, 110)
-        self.setProperty('rounded', True)
-        self.setProperty('white-bg', True)
+        # self.setProperty('rounded', True)
+        # self.setProperty('white-bg', True)
         self._textedit.setProperty('rounded', False)
         self._textedit.setProperty('transparent', True)
         self.setMaximumWidth(200)
@@ -654,10 +655,68 @@ class CharacterChangeBubble(TextEditBubbleWidget):
         self.element.text = self._textedit.toPlainText()
 
 
-class CharacterChangesEditor(QWidget):
+class CharacterChangeRow(QFrame):
     Header1Col: int = 0
     Header2Col: int = 2
     Header3Col: int = 4
+
+    def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, changes: CharacterAgencyChanges,
+                 parent=None):
+        super().__init__(parent)
+        self._novel = novel
+        self._scene = scene
+        self._agency = agency
+        self._changes = changes
+        self.setProperty('white-bg', True)
+        self.setProperty('large-rounded', True)
+
+        self.placeholder = QWidget()
+
+        grid(self)
+        self.layout().addWidget(self.placeholder, 0, 0, 1, 3)
+
+        row = self.layout().rowCount()
+        if self._changes.initial:
+            self._addElement(self._changes.initial, row, self.Header1Col)
+            if self._changes.transition:
+                arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
+                arrow.setState(arrow.STATE_MAX)
+                self.layout().addWidget(arrow, row, self.Header2Col - 1)
+        if self._changes.transition:
+            self._addElement(self._changes.transition, row, self.Header2Col)
+        if self._changes.final:
+            self._addElement(self._changes.final, row, self.Header3Col)
+            if self._changes.transition:
+                arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
+                arrow.setState(1)
+                self.layout().addWidget(arrow, row, self.Header3Col - 1)
+
+            dotsBtn = DotsMenuButton()
+            dotsBtn.installEventFilter(OpacityEventFilter(dotsBtn))
+            self.layout().addWidget(dotsBtn, row, self.Header3Col + 1,
+                                    alignment=Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+            menu = MenuWidget(dotsBtn)
+            # menu.addAction(action('Remove character changes', IconRegistry.trash_can_icon(),
+            #                       slot=partial(self._removeChange, change, row)))
+            row += 1
+
+    def _addElement(self, element: StoryElement, row: int, col: int):
+        wdg = CharacterChangeBubble(element)
+        if element.type == StoryElementType.Motivation:
+            motivationEditor = SceneAgendaMotivationEditor()
+            motivationEditor.motivationChanged.connect(self._motivationChanged)
+            motivationEditor.setNovel(self._novel)
+            motivationEditor.setScene(self._scene)
+            motivationEditor.setAgenda(self._agency)
+            wdg.addBottomWidget(motivationEditor)
+            # motivationEditor.setVisible(self.novel.prefs.toggled(NovelSetting.Track_motivation))
+        self.layout().addWidget(wdg, row, col, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def _motivationChanged(self, motivation: Motivation, value: int):
+        pass
+
+
+class CharacterChangesEditor(QFrame):
 
     def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
         super().__init__(parent)
@@ -674,12 +733,11 @@ class CharacterChangesEditor(QWidget):
         header3 = HeaderColumn('Final')
         header3.setFixedWidth(200)
 
-        self._layout: QGridLayout = grid(self, h_spacing=0, v_spacing=8)
-        self._layout.addWidget(header1, 0, 0)
-        self._layout.addWidget(header2, 0, 1, 1, 3)
-        self._layout.addWidget(header3, 0, 4)
-        self._layout.addWidget(self.btnAdd, 1, self.Header2Col, alignment=Qt.AlignmentFlag.AlignCenter)
-        self._layout.addWidget(spacer(), 1, 5)
+        vbox(self)
+        self.layout().addWidget(group(header1, header2, header3))
+        # self._layout.addWidget(header2, 0, 1, 1, 3)
+        # self._layout.addWidget(header3, 0, 4)
+        self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignCenter)
 
         if self.agenda.changes:
             self._addElements(self.agenda.changes)
@@ -694,43 +752,47 @@ class CharacterChangesEditor(QWidget):
             self.addNewElements([agency])
 
     def _addElements(self, changes: List[CharacterAgencyChanges]):
-        def _addElement(element: StoryElement, row: int, col: int):
-            wdg = CharacterChangeBubble(element)
-            if element.type == StoryElementType.Motivation:
-                motivationEditor = SceneAgendaMotivationEditor()
-                motivationEditor.motivationChanged.connect(self._motivationChanged)
-                motivationEditor.setNovel(self.novel)
-                motivationEditor.setScene(self.scene)
-                motivationEditor.setAgenda(self.agenda)
-                wdg.addBottomWidget(motivationEditor)
-                motivationEditor.setVisible(self.novel.prefs.toggled(NovelSetting.Track_motivation))
-            self._layout.addWidget(wdg, row, col, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        row = self._layout.rowCount()
         for change in changes:
-            if change.initial:
-                _addElement(change.initial, row, self.Header1Col)
-                if change.transition:
-                    arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
-                    arrow.setState(arrow.STATE_MAX)
-                    self._layout.addWidget(arrow, row, self.Header2Col - 1)
-            if change.transition:
-                _addElement(change.transition, row, self.Header2Col)
-            if change.final:
-                _addElement(change.final, row, self.Header3Col)
-                if change.transition:
-                    arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
-                    arrow.setState(1)
-                    self._layout.addWidget(arrow, row, self.Header3Col - 1)
+            wdg = CharacterChangeRow(self.novel, self.scene, self.agenda, change)
+            self.layout().addWidget(wdg)
 
-            dotsBtn = DotsMenuButton()
-            dotsBtn.installEventFilter(OpacityEventFilter(dotsBtn))
-            self._layout.addWidget(dotsBtn, row, self.Header3Col + 1,
-                                   alignment=Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-            menu = MenuWidget(dotsBtn)
-            menu.addAction(action('Remove character changes', IconRegistry.trash_can_icon(),
-                                  slot=partial(self._removeChange, change, row)))
-            row += 1
+        # def _addElement(element: StoryElement, row: int, col: int):
+        #     wdg = CharacterChangeBubble(element)
+        #     if element.type == StoryElementType.Motivation:
+        #         motivationEditor = SceneAgendaMotivationEditor()
+        #         motivationEditor.motivationChanged.connect(self._motivationChanged)
+        #         motivationEditor.setNovel(self.novel)
+        #         motivationEditor.setScene(self.scene)
+        #         motivationEditor.setAgenda(self.agenda)
+        #         wdg.addBottomWidget(motivationEditor)
+        #         motivationEditor.setVisible(self.novel.prefs.toggled(NovelSetting.Track_motivation))
+        #     self._layout.addWidget(wdg, row, col, alignment=Qt.AlignmentFlag.AlignCenter)
+        #
+        # row = self._layout.rowCount()
+        # for change in changes:
+        #     if change.initial:
+        #         _addElement(change.initial, row, self.Header1Col)
+        #         if change.transition:
+        #             arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
+        #             arrow.setState(arrow.STATE_MAX)
+        #             self._layout.addWidget(arrow, row, self.Header2Col - 1)
+        #     if change.transition:
+        #         _addElement(change.transition, row, self.Header2Col)
+        #     if change.final:
+        #         _addElement(change.final, row, self.Header3Col)
+        #         if change.transition:
+        #             arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
+        #             arrow.setState(1)
+        #             self._layout.addWidget(arrow, row, self.Header3Col - 1)
+        #
+        #     dotsBtn = DotsMenuButton()
+        #     dotsBtn.installEventFilter(OpacityEventFilter(dotsBtn))
+        #     self._layout.addWidget(dotsBtn, row, self.Header3Col + 1,
+        #                            alignment=Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        #     menu = MenuWidget(dotsBtn)
+        #     menu.addAction(action('Remove character changes', IconRegistry.trash_can_icon(),
+        #                           slot=partial(self._removeChange, change, row)))
+        #     row += 1
 
     def _removeChange(self, change: CharacterAgencyChanges, row: int):
         def removeItem(col: int):

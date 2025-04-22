@@ -29,7 +29,7 @@ from overrides import overrides
 from qthandy import clear_layout, vspacer, gc
 
 from plotlyst.common import clamp, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Novel, Plot, Character, Motivation
+from plotlyst.core.domain import Novel, Plot, Character, Motivation, StoryElement
 from plotlyst.env import app_env
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import icon_to_html_img
@@ -383,10 +383,12 @@ class StoryArcChart(BaseChart):
 
         for i, scene in enumerate(self.novel.scenes):
             intensity = 0
-            for agenda in scene.agency:
-                if character and agenda.character_id != character.id:
+            for agency in scene.agency:
+                if character and agency.character_id != character.id:
                     continue
-                intensity = max([intensity, agenda.intensity])
+                for change in agency.changes:
+                    transition: StoryElement = change.transition
+                    intensity = max([intensity, transition.intensity])
             series.append(i + 1, intensity)
 
         return series
