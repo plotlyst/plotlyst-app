@@ -18,12 +18,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from functools import partial
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer
 from PyQt6.QtGui import QEnterEvent, QMouseEvent, QIcon, QCursor
-from PyQt6.QtWidgets import QWidget, QSlider, QFrame, QGridLayout, QButtonGroup
+from PyQt6.QtWidgets import QWidget, QSlider, QFrame, QGridLayout, QButtonGroup, QAbstractButton
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
@@ -31,7 +31,7 @@ from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, mar
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Motivation, Novel, Scene, CharacterAgency, Character, StoryElementType, \
     CharacterAgencyChanges, StoryElement
 from plotlyst.event.core import Event, EventListener
@@ -565,20 +565,24 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset))
         self.btnReset.clicked.connect(self._reset)
 
-        self.wdgEditor = columns(5, 5)
+        self.wdgEditor = columns(5, 20)
 
         self.wdgFrame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
         self.lblDesc = label(self.DEFAULT_DESC, description=True)
         self.wdgFrame.layout().addWidget(self.lblDesc)
         self.wdgFrame.layout().addWidget(self.wdgEditor)
 
-        self.wdgTools = rows()
+        self.wdgTools = rows(0)
+        self.wdgRightSide = rows(0)
+        margins(self.wdgRightSide, top=50)
         self.wdgPreviewParent = frame()
         vbox(self.wdgPreviewParent)
         self.wdgPreviewParent.setProperty('muted-bg', True)
         self.wdgPreviewParent.setProperty('large-rounded', True)
+
+        self.wdgRightSide.layout().addWidget(self.wdgPreviewParent)
         self.wdgEditor.layout().addWidget(self.wdgTools)
-        self.wdgEditor.layout().addWidget(self.wdgPreviewParent)
+        self.wdgEditor.layout().addWidget(self.wdgRightSide)
 
         self.wdgSelectors = QWidget()
         grid(self.wdgSelectors, 0, 7, 7)
@@ -604,22 +608,33 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         self._initPreview()
 
+        self.wdgSelectors.layout().addWidget(label('Initial state', description=True, centered=True), 0, 1)
+        self.wdgSelectors.layout().addWidget(label('Transition', description=True, centered=True), 0, 2)
+        self.wdgSelectors.layout().addWidget(label('Final state', description=True, centered=True), 0, 3)
+        self.wdgSelectors.layout().addWidget(line(color='lightgrey'), 1, 1, 1, 3)
+
         self.selectorGoal, btnQuickAddGoal = self.__initSelector(StoryElementType.Goal, 2, 1, quickAdd=True)
-        btnQuickAddGoal.clicked.connect(self._quickSelectGoal)
 
-        self.__initSelector(StoryElementType.Expectation, 4, 1)
-        self.__initSelector(StoryElementType.Character_internal_state, 5, 1)
-        self.__initSelector(StoryElementType.Character_state, 6, 1)
+        self.selectorExpectation, btnQuickAddExpectation = self.__initSelector(StoryElementType.Expectation, 4, 1,
+                                                                               quickAdd=True)
+        self.selectorInternalState, btnQuickAddInternal = self.__initSelector(StoryElementType.Character_internal_state,
+                                                                              5, 1, quickAdd=True)
+        self.selectorExternalState, btnQuickAddExternal = self.__initSelector(StoryElementType.Character_state, 6, 1,
+                                                                              quickAdd=True)
 
-        self.selectorConflict = self.__initSelector(StoryElementType.Conflict, 2, 2)
+        self.selectorConflict: _CharacterChangeSelectorToggle = self.__initSelector(StoryElementType.Conflict, 2, 2)
         self.__initSelector(StoryElementType.Internal_conflict, 3, 2)
         self.__initSelector(StoryElementType.Catalyst, 7, 2)
         self.__initSelector(StoryElementType.Action, 8, 2)
 
-        self.selectorOutcome = self.__initSelector(StoryElementType.Outcome, 2, 3)
-        self.__initSelector(StoryElementType.Realization, 4, 3)
-        self.__initSelector(StoryElementType.Character_internal_state_change, 5, 3)
-        self.__initSelector(StoryElementType.Character_state_change, 6, 3)
+        self.selectorOutcome: _CharacterChangeSelectorToggle = self.__initSelector(StoryElementType.Outcome, 2, 3)
+
+        self.selectorRealization: _CharacterChangeSelectorToggle = self.__initSelector(StoryElementType.Realization, 4,
+                                                                                       3)
+        self.selectorInternalChange: _CharacterChangeSelectorToggle = self.__initSelector(
+            StoryElementType.Character_internal_state_change, 5, 3)
+        self.selectorExternalChange: _CharacterChangeSelectorToggle = self.__initSelector(
+            StoryElementType.Character_state_change, 6, 3)
         wdgMotivation = self.__initSelector(StoryElementType.Motivation, 9, 3)
 
         # for change in self.agenda.changes:
@@ -627,6 +642,20 @@ class CharacterChangesSelectorPopup(MenuWidget):
         #         wdgMotivation.setDisabled(True)
         #         wdgMotivation.setToolTip('Motivation was already selected for this character')
         #         break
+
+        self.btnAdd = push_btn(IconRegistry.plus_icon(RELAXED_WHITE_COLOR), 'Add agency',
+                               properties=['confirm', 'positive'])
+        self.btnAdd.setDisabled(True)
+        self.wdgRightSide.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignRight)
+
+        btnQuickAddGoal.clicked.connect(
+            lambda: self._quickSelect(self.selectorGoal, self.selectorConflict, self.selectorOutcome))
+        btnQuickAddExpectation.clicked.connect(
+            lambda: self._quickSelect(self.selectorExpectation, self.selectorRealization))
+        btnQuickAddInternal.clicked.connect(
+            lambda: self._quickSelect(self.selectorInternalState, self.selectorInternalChange))
+        btnQuickAddExternal.clicked.connect(
+            lambda: self._quickSelect(self.selectorExternalState, self.selectorExternalChange))
 
         self.addWidget(self.wdgFrame)
 
@@ -655,6 +684,11 @@ class CharacterChangesSelectorPopup(MenuWidget):
                     fade_out_and_gc(self.wdgPreview, item.widget())
                     break
 
+        if self.btnGroup.checkedButton():
+            self.btnAdd.setEnabled(True)
+        else:
+            self.btnAdd.setDisabled(True)
+
     def _typeHovered(self, type_: StoryElementType):
         self.lblDesc.setText(type_.placeholder())
 
@@ -678,30 +712,24 @@ class CharacterChangesSelectorPopup(MenuWidget):
     def _initPreview(self):
         self.wdgPreview.layout().addWidget(label('Initial state', description=True, centered=True), 0, 1,
                                            Qt.AlignmentFlag.AlignCenter)
-        self.wdgPreview.layout().addWidget(label('Transition', description=True, centered=True), 0, 2)
+        connector = ConnectorWidget()
+        translucent(connector, 0.3)
+        # self.wdgPreview.layout().addWidget(label('Transition', description=True, centered=True), 0, 2)
+        self.wdgPreview.layout().addWidget(connector, 0, 2)
         self.wdgPreview.layout().addWidget(label('Final state', description=True, centered=True), 0, 3,
                                            Qt.AlignmentFlag.AlignCenter)
         self.wdgPreview.layout().addWidget(line(color='lightgrey'), 1, 1, 1, 3)
 
-    def _quickSelectGoal(self):
-        self.selectorGoal.setChecked(True)
-        self.selectorConflict.setChecked(True)
-        self.selectorOutcome.setChecked(True)
-
-    def __addPlaceholder(self, col: int):
-        if col == 1:
-            parent = self.wdgInitial
-        elif col == 2:
-            parent = self.wdgTransition
+    def _quickSelect(self, *selectors):
+        if all(x.isChecked() for x in selectors):
+            for btn in selectors:
+                btn.setChecked(False)
         else:
-            parent = self.wdgFinal
-
-        wdg = QWidget()
-        wdg.setFixedHeight(self._emptyPlaceholderHeight)
-        parent.layout().addWidget(wdg)
+            for btn in selectors:
+                btn.setChecked(True)
 
     def __initSelector(self, type_: StoryElementType, row: int, col: int,
-                       quickAdd: bool = False):
+                       quickAdd: bool = False) -> Tuple[_CharacterChangeSelectorToggle, Optional[QAbstractButton]]:
         selector = _CharacterChangeSelectorToggle(type_)
         self.btnGroup.addButton(selector)
 
@@ -715,14 +743,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
             btnQuickAdd = tool_btn(IconRegistry.from_name('mdi.check-all', 'grey'))
             btnQuickAdd.installEventFilter(OpacityEventFilter(btnQuickAdd, leaveOpacity=0.7))
             self.wdgSelectors.layout().addWidget(btnQuickAdd, row, col - 1)
-
-            #     self.wdgSelectors.layout().addWidget(group(btnQuickAdd, selector), alignment=Qt.AlignmentFlag.AlignLeft)
-            #     if not quickAdd:
-            #         btnQuickAdd.setHidden(True)
-            #
             return selector, btnQuickAdd
-        # else:
-        #     parent.layout().addWidget(selector, alignment=Qt.AlignmentFlag.AlignLeft)
 
         return selector
 
