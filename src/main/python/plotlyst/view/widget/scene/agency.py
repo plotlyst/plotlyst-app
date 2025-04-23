@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import QWidget, QSlider, QFrame, QGridLayout, QButtonGroup
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    flow, retain_when_hidden, transparent, incr_icon, line, grid
+    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
@@ -40,7 +40,7 @@ from plotlyst.events import NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, CharacterDeletedEvent
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, shadow, frame, scroll_area, rows, \
-    spawn
+    spawn, columns
 from plotlyst.view.generated.scene_goal_stakes_ui import Ui_GoalReferenceStakesEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
@@ -503,46 +503,51 @@ class _CharacterStateToggle(SmallToggleButton):
 
 
 class _CharacterChangeSelectorToggle(SelectorToggleButton):
+    hovered = pyqtSignal()
+    left = pyqtSignal()
+
     def __init__(self, type_: StoryElementType, parent=None):
         super().__init__(minWidth=80, parent=parent)
-        # hbox(self, 0, 0)
-        # self.toggle = _CharacterStateToggle(type_)
-        # self.label = push_btn(IconRegistry.from_name(type_.icon(), color='grey', color_on=PLOTLYST_SECONDARY_COLOR),
-        #                       text=type_.displayed_name().replace(' ', '\n'), transparent_=True, checkable=True)
-        # self.toggle = SelectorToggleButton(minWidth=80)
         self.setIcon(IconRegistry.from_name(type_.icon()))
         self.setText(type_.displayed_name().replace(' ', '\n'))
-        # decr_icon(self.label, 4)
-        # decr_font(self.label)
-        # tip = type_.placeholder()
-        # self.label.setToolTip(tip)
-        # self.toggle.setToolTip(tip)
-        # self.label.clicked.connect(self.toggle.click)
-        # self.toggle.toggled.connect(self._toggled)
 
-        # self.layout().addWidget(self.toggle, alignment=Qt.AlignmentFlag.AlignVCenter)
-        # self.layout().addWidget(self.label)
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.hovered.emit()
 
-    # def _toggled(self, toggled: bool):
-    #     self.label.setChecked(toggled)
-    #     self.label.clearFocus()
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        self.left.emit()
 
 
 class StoryElementPreviewIcon(Icon):
+    hovered = pyqtSignal()
+    left = pyqtSignal()
+
     def __init__(self, element: StoryElementType, parent=None):
         super().__init__(parent)
         self.element = element
-        # self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 
-        # self.setText(element.displayed_name())
+        self.setText(element.displayed_name().replace(' ', '\n'))
         self.setIcon(IconRegistry.from_name(element.icon()))
         self.setToolTip(element.placeholder())
-        # decr_font(self, 3)
+        decr_font(self, 2)
         # decr_icon(self, 4)
+
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.hovered.emit()
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        self.left.emit()
 
 
 @spawn
 class CharacterChangesSelectorPopup(MenuWidget):
+    DEFAULT_DESC: str = 'Select initial and final states to reflect character changes'
+
     def __init__(self):  # agenda: CharacterAgency
         super().__init__()
         # self.agenda = agenda
@@ -551,10 +556,21 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.btnGroup = QButtonGroup()
         self.btnGroup.setExclusive(False)
 
-        self.wdgEditor = frame()
-        hbox(self.wdgEditor, 10, 5)
-        self.wdgEditor.setProperty('white-bg', True)
-        self.wdgEditor.setProperty('large-rounded', True)
+        self.wdgFrame = frame()
+        vbox(self.wdgFrame, 5)
+        self.wdgFrame.setProperty('white-bg', True)
+        self.wdgFrame.setProperty('large-rounded', True)
+
+        self.btnReset = push_btn(IconRegistry.from_name('ph.x-light'), 'Reset', transparent_=True)
+        self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset))
+        self.btnReset.clicked.connect(self._reset)
+
+        self.wdgEditor = columns(5, 5)
+
+        self.wdgFrame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        self.lblDesc = label(self.DEFAULT_DESC, description=True)
+        self.wdgFrame.layout().addWidget(self.lblDesc)
+        self.wdgFrame.layout().addWidget(self.wdgEditor)
 
         self.wdgTools = rows()
         self.wdgPreviewParent = frame()
@@ -572,11 +588,6 @@ class CharacterChangesSelectorPopup(MenuWidget):
         transparent(self.wdgSelectors)
         scroll.setWidget(self.wdgSelectors)
 
-        self.btnReset = push_btn(IconRegistry.from_name('ph.x-light'), 'Reset', transparent_=True)
-        self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset))
-        self.btnReset.clicked.connect(self._reset)
-
-        self.wdgTools.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
         self.wdgTools.layout().addWidget(scroll)
 
         self.wdgPreview = frame()
@@ -593,10 +604,6 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         self._initPreview()
 
-        # self.wdgInitial = rows(0, 7)
-        # self.wdgInitial.layout().addWidget(label('Initial state', incr_font_diff=1),
-        #                                    alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.wdgInitial.layout().addWidget(line(color='lightgrey'))
         self.selectorGoal, btnQuickAddGoal = self.__initSelector(StoryElementType.Goal, 2, 1, quickAdd=True)
         btnQuickAddGoal.clicked.connect(self._quickSelectGoal)
 
@@ -604,31 +611,16 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.__initSelector(StoryElementType.Character_internal_state, 5, 1)
         self.__initSelector(StoryElementType.Character_state, 6, 1)
 
-        # self.wdgInitial.layout().addWidget(vspacer())
-
-        # self.wdgTransition = rows(0, 7)
-        # self.wdgTransition.layout().addWidget(label('Transition', incr_font_diff=1),
-        #                                       alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.wdgTransition.layout().addWidget(line(color='lightgrey'))
         self.selectorConflict = self.__initSelector(StoryElementType.Conflict, 2, 2)
         self.__initSelector(StoryElementType.Internal_conflict, 3, 2)
         self.__initSelector(StoryElementType.Catalyst, 7, 2)
         self.__initSelector(StoryElementType.Action, 8, 2)
-        # self.wdgTransition.layout().addWidget(vspacer())
 
-        # self.wdgFinal = rows(0, 7)
-        # self.wdgFinal.layout().addWidget(label('Final state', incr_font_diff=1), alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.wdgFinal.layout().addWidget(line(color='lightgrey'))
         self.selectorOutcome = self.__initSelector(StoryElementType.Outcome, 2, 3)
         self.__initSelector(StoryElementType.Realization, 4, 3)
         self.__initSelector(StoryElementType.Character_internal_state_change, 5, 3)
         self.__initSelector(StoryElementType.Character_state_change, 6, 3)
         wdgMotivation = self.__initSelector(StoryElementType.Motivation, 9, 3)
-        # self.wdgFinal.layout().addWidget(vspacer())
-
-        # self.wdgSelectors.layout().addWidget(self.wdgInitial)
-        # self.wdgSelectors.layout().addWidget(self.wdgTransition)
-        # self.wdgSelectors.layout().addWidget(self.wdgFinal)
 
         # for change in self.agenda.changes:
         #     if change.final and change.final.type == StoryElementType.Motivation:
@@ -636,11 +628,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
         #         wdgMotivation.setToolTip('Motivation was already selected for this character')
         #         break
 
-        # self.addWidget(
-        #     label(
-        #         'Select initial, transition, and final states to reflect character agency. Not all states need to be selected at once.',
-        #         description=True))
-        self.addWidget(self.wdgEditor)
+        self.addWidget(self.wdgFrame)
 
         print(self.sizeHint())
 
@@ -653,18 +641,25 @@ class CharacterChangesSelectorPopup(MenuWidget):
                 row += 1
 
             wdg = StoryElementPreviewIcon(type_)
+            wdg.hovered.connect(partial(self._typeHovered, type_))
+            wdg.left.connect(self._typeLeft)
             layout.addWidget(wdg, row, col, Qt.AlignmentFlag.AlignCenter)
             fade_in(wdg)
 
             if col == 3 and self._hasElement(row, 1) and not self._hasElement(row, 2):
                 layout.addWidget(ConnectorWidget(), row, 2)
-
         else:
             for row in range(2, layout.rowCount()):
                 if self._hasElement(row, col, type_):
                     item = layout.itemAtPosition(row, col)
                     fade_out_and_gc(self.wdgPreview, item.widget())
                     break
+
+    def _typeHovered(self, type_: StoryElementType):
+        self.lblDesc.setText(type_.placeholder())
+
+    def _typeLeft(self):
+        self.lblDesc.setText(self.DEFAULT_DESC)
 
     def _hasElement(self, row: int, col: int, type_: Optional[StoryElementType] = None) -> bool:
         item = self.wdgPreview.layout().itemAtPosition(row, col)
@@ -710,14 +705,9 @@ class CharacterChangesSelectorPopup(MenuWidget):
         selector = _CharacterChangeSelectorToggle(type_)
         self.btnGroup.addButton(selector)
 
-        # if col == 1:
-        #     parent = self.wdgInitial
-        # elif col == 2:
-        #     parent = self.wdgTransition
-        # else:
-        #     parent = self.wdgFinal
-
         selector.toggled.connect(partial(self._toggled, type_, col))
+        selector.hovered.connect(partial(self._typeHovered, type_))
+        selector.left.connect(self._typeLeft)
 
         self.wdgSelectors.layout().addWidget(selector, row, col, Qt.AlignmentFlag.AlignLeft)
 
