@@ -23,12 +23,12 @@ from typing import Dict, Optional, List
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer
 from PyQt6.QtGui import QEnterEvent, QMouseEvent, QIcon, QCursor
-from PyQt6.QtWidgets import QWidget, QSlider, QDialog, QButtonGroup, QFrame
+from PyQt6.QtWidgets import QWidget, QSlider, QFrame, QGridLayout
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    line, flow, retain_when_hidden, transparent, incr_icon
-from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter, DisabledClickEventFilter
+    flow, retain_when_hidden, transparent, incr_icon, line, grid
+from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
@@ -39,18 +39,17 @@ from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, CharacterDeletedEvent
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, ExclusiveOptionalButtonGroup, \
-    shadow
+from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, shadow, frame, scroll_area, rows, \
+    columns, spawn
 from plotlyst.view.generated.scene_goal_stakes_ui import Ui_GoalReferenceStakesEditor
 from plotlyst.view.icons import IconRegistry, avatars
-from plotlyst.view.layout import group
-from plotlyst.view.style.base import apply_white_menu
-from plotlyst.view.widget.button import ChargeButton, DotsMenuButton
+from plotlyst.view.style.base import apply_white_menu, transparent_menu
+from plotlyst.view.widget.button import ChargeButton, DotsMenuButton, SmallToggleButton
 from plotlyst.view.widget.character.editor import EmotionEditorSlider
 from plotlyst.view.widget.characters import CharacterSelectorMenu
-from plotlyst.view.widget.display import ArrowButton, PopupDialog, SeparatorLineWithShadow, ConnectorWidget, \
-    DotsDragIcon
-from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget, Toggle
+from plotlyst.view.widget.display import ArrowButton, SeparatorLineWithShadow, ConnectorWidget, \
+    DotsDragIcon, MenuOverlayEventFilter, Icon
+from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget
 from plotlyst.view.widget.scene.conflict import ConflictIntensityEditor, CharacterConflictSelector
 
 
@@ -497,7 +496,7 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
         self._wdgConflicts.layout().addWidget(conflictSelector)
 
 
-class _CharacterStateToggle(Toggle):
+class _CharacterStateToggle(SmallToggleButton):
     def __init__(self, type_: StoryElementType, parent=None):
         super().__init__(parent)
         self.type = type_
@@ -509,10 +508,12 @@ class _CharacterChangeSelectorToggle(QWidget):
         hbox(self, 0, 0)
         self.toggle = _CharacterStateToggle(type_)
         self.label = push_btn(IconRegistry.from_name(type_.icon(), color='grey', color_on=PLOTLYST_SECONDARY_COLOR),
-                              text=type_.displayed_name(), transparent_=True, checkable=True)
-        tip = type_.placeholder()
-        self.label.setToolTip(tip)
-        self.toggle.setToolTip(tip)
+                              text=type_.displayed_name().replace(' ', '\n'), transparent_=True, checkable=True)
+        # decr_icon(self.label, 4)
+        # decr_font(self.label)
+        # tip = type_.placeholder()
+        # self.label.setToolTip(tip)
+        # self.toggle.setToolTip(tip)
         self.label.clicked.connect(self.toggle.click)
         self.toggle.toggled.connect(self._toggled)
 
@@ -520,111 +521,154 @@ class _CharacterChangeSelectorToggle(QWidget):
         self.layout().addWidget(self.label)
 
     def _toggled(self, toggled: bool):
-        bold(self.label, toggled)
         self.label.setChecked(toggled)
         self.label.clearFocus()
 
 
-class CharacterChangesSelectorPopup(PopupDialog):
-    def __init__(self, agenda: CharacterAgency, parent=None):
+class StoryElementPreviewIcon(Icon):
+    def __init__(self, element: StoryElementType, parent=None):
         super().__init__(parent)
-        self.agenda = agenda
+        self.element = element
+        # self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 
-        self.initialBtnGroup = ExclusiveOptionalButtonGroup()
-        self.initialBtnGroup.buttonToggled.connect(self._selectionChanged)
-        self.wdgInitial = QWidget()
-        vbox(self.wdgInitial)
-        self.wdgInitial.layout().addWidget(label('Initial', bold=True), alignment=Qt.AlignmentFlag.AlignCenter)
-        self.wdgInitial.layout().addWidget(line())
-        self.__initSelector(StoryElementType.Goal, self.wdgInitial, self.initialBtnGroup)
-        self.__initSelector(StoryElementType.Character_state, self.wdgInitial, self.initialBtnGroup)
-        self.__initSelector(StoryElementType.Character_internal_state, self.wdgInitial, self.initialBtnGroup)
-        self.__initSelector(StoryElementType.Expectation, self.wdgInitial, self.initialBtnGroup)
+        # self.setText(element.displayed_name())
+        self.setIcon(IconRegistry.from_name(element.icon()))
+        self.setToolTip(element.placeholder())
+        # decr_font(self, 3)
+        # decr_icon(self, 4)
+
+
+@spawn
+class CharacterChangesSelectorPopup(MenuWidget):
+    def __init__(self):  # agenda: CharacterAgency
+        super().__init__()
+        # self.agenda = agenda
+        transparent_menu(self)
+
+        self.wdgEditor = frame()
+        hbox(self.wdgEditor, 10, 5)
+        self.wdgEditor.setProperty('white-bg', True)
+        self.wdgEditor.setProperty('large-rounded', True)
+
+        self.wdgTools = rows()
+        self.wdgPreviewParent = frame()
+        vbox(self.wdgPreviewParent)
+        self.wdgPreviewParent.setProperty('muted-bg', True)
+        self.wdgPreviewParent.setProperty('large-rounded', True)
+        self.wdgEditor.layout().addWidget(self.wdgTools)
+        self.wdgEditor.layout().addWidget(self.wdgPreviewParent)
+
+        self.wdgSelectors = columns(0, 7)
+        scroll = scroll_area(h_on=False, frameless=True)
+        scroll.setMaximumHeight(400)
+        transparent(scroll)
+        transparent(self.wdgSelectors)
+        scroll.setWidget(self.wdgSelectors)
+
+        self.wdgTools.layout().addWidget(scroll)
+
+        self.wdgPreview = frame()
+        sp(self.wdgPreview).v_max()
+        grid(self.wdgPreview, 2, 5, 5)
+        scrollPreview = scroll_area(h_on=False, frameless=True)
+        transparent(scrollPreview)
+        transparent(self.wdgPreview)
+        scrollPreview.setMinimumWidth(200)
+        scrollPreview.setWidget(self.wdgPreview)
+        self.wdgPreviewParent.layout().addWidget(label('Preview', h5=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgPreviewParent.layout().addWidget(scrollPreview)
+
+        self.wdgPreview.layout().addWidget(label('Initial state', description=True, centered=True), 0, 0,
+                                           Qt.AlignmentFlag.AlignCenter)
+        self.wdgPreview.layout().addWidget(label('Transition', description=True, centered=True), 0, 1,
+                                           Qt.AlignmentFlag.AlignCenter)
+        self.wdgPreview.layout().addWidget(label('Final state', description=True, centered=True), 0, 2,
+                                           Qt.AlignmentFlag.AlignCenter)
+        self.wdgPreview.layout().addWidget(line(color='lightgrey'), 1, 0, 1, 3)
+
+        self.wdgInitial = rows(0, 7)
+        self.wdgInitial.layout().addWidget(label('Initial state', incr_font_diff=1),
+                                           alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgInitial.layout().addWidget(line(color='lightgrey'))
+        self.__initSelector(StoryElementType.Goal, 2, 0)
+        self.__initSelector(StoryElementType.Expectation, 4, 0)
+        self.__initSelector(StoryElementType.Character_internal_state, 5, 0)
+        self.__initSelector(StoryElementType.Character_state, 6, 0)
         self.wdgInitial.layout().addWidget(vspacer())
 
-        self.transitionBtnGroup = ExclusiveOptionalButtonGroup()
-        self.transitionBtnGroup.buttonToggled.connect(self._selectionChanged)
-        self.wdgTransition = QWidget()
-        vbox(self.wdgTransition)
-        self.wdgTransition.layout().addWidget(label('Transition', bold=True), alignment=Qt.AlignmentFlag.AlignCenter)
-        self.wdgTransition.layout().addWidget(line())
-        self.__initSelector(StoryElementType.Conflict, self.wdgTransition, self.transitionBtnGroup)
-        self.__initSelector(StoryElementType.Internal_conflict, self.wdgTransition, self.transitionBtnGroup)
-        self.__initSelector(StoryElementType.Dilemma, self.wdgTransition, self.transitionBtnGroup)
-        self.__initSelector(StoryElementType.Choice, self.wdgTransition, self.transitionBtnGroup)
-        self.__initSelector(StoryElementType.Catalyst, self.wdgTransition, self.transitionBtnGroup)
-        self.__initSelector(StoryElementType.Action, self.wdgTransition, self.transitionBtnGroup)
+        self.wdgTransition = rows(0, 7)
+        self.wdgTransition.layout().addWidget(label('Transition', incr_font_diff=1),
+                                              alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgTransition.layout().addWidget(line(color='lightgrey'))
+        self.__initSelector(StoryElementType.Conflict, 2, 1)
+        self.__initSelector(StoryElementType.Internal_conflict, 3, 1)
+        self.__initSelector(StoryElementType.Catalyst, 7, 1)
+        self.__initSelector(StoryElementType.Action, 8, 1)
         self.wdgTransition.layout().addWidget(vspacer())
 
-        self.finalBtnGroup = ExclusiveOptionalButtonGroup()
-        self.finalBtnGroup.buttonToggled.connect(self._selectionChanged)
-        self.wdgFinal = QWidget()
-        vbox(self.wdgFinal)
-        self.wdgFinal.layout().addWidget(label('Final', bold=True), alignment=Qt.AlignmentFlag.AlignCenter)
-        self.wdgFinal.layout().addWidget(line())
-        self.__initSelector(StoryElementType.Outcome, self.wdgFinal, self.finalBtnGroup)
-        self.__initSelector(StoryElementType.Realization, self.wdgFinal, self.finalBtnGroup)
-        self.__initSelector(StoryElementType.Decision, self.wdgFinal, self.finalBtnGroup)
-        self.__initSelector(StoryElementType.Character_state_change, self.wdgFinal, self.finalBtnGroup)
-        self.__initSelector(StoryElementType.Character_internal_state_change, self.wdgFinal, self.finalBtnGroup)
-        wdgMotivation = self.__initSelector(StoryElementType.Motivation, self.wdgFinal, self.finalBtnGroup)
-        for change in self.agenda.changes:
-            if change.final and change.final.type == StoryElementType.Motivation:
-                wdgMotivation.setDisabled(True)
-                wdgMotivation.setToolTip('Motivation was already selected for this character')
-                break
+        self.wdgFinal = rows(0, 7)
+        self.wdgFinal.layout().addWidget(label('Final state', incr_font_diff=1), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgFinal.layout().addWidget(line(color='lightgrey'))
+        self.__initSelector(StoryElementType.Outcome, 2, 2)
+        self.__initSelector(StoryElementType.Realization, 4, 2)
+        self.__initSelector(StoryElementType.Character_internal_state_change, 5, 2)
+        self.__initSelector(StoryElementType.Character_state_change, 6, 2)
+        wdgMotivation = self.__initSelector(StoryElementType.Motivation, 9, 2)
         self.wdgFinal.layout().addWidget(vspacer())
 
-        self.wdgSelectors = QWidget()
-        hbox(self.wdgSelectors, spacing=40)
-        self.wdgSelectors.layout().addWidget(spacer())
         self.wdgSelectors.layout().addWidget(self.wdgInitial)
         self.wdgSelectors.layout().addWidget(self.wdgTransition)
         self.wdgSelectors.layout().addWidget(self.wdgFinal)
-        self.wdgSelectors.layout().addWidget(spacer())
 
-        self.btnConfirm = push_btn(text='Confirm', properties=['confirm', 'positive'])
-        self.btnConfirm.setFixedWidth(250)
-        self.btnConfirm.setShortcut(Qt.Key.Key_Return)
-        sp(self.btnConfirm).h_exp()
-        self.btnConfirm.clicked.connect(self.accept)
-        self.btnConfirm.installEventFilter(
-            DisabledClickEventFilter(self.btnConfirm, lambda: qtanim.shake(self.wdgSelectors)))
+        # for change in self.agenda.changes:
+        #     if change.final and change.final.type == StoryElementType.Motivation:
+        #         wdgMotivation.setDisabled(True)
+        #         wdgMotivation.setToolTip('Motivation was already selected for this character')
+        #         break
 
-        self.frame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
-        self.frame.layout().addWidget(
-            label(
-                'Select initial, transition, and final states to reflect character agency. Not all states need to be selected at once.',
-                description=True))
-        self.frame.layout().addWidget(self.wdgSelectors)
-        self.frame.layout().addWidget(self.btnConfirm, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.addWidget(
+        #     label(
+        #         'Select initial, transition, and final states to reflect character agency. Not all states need to be selected at once.',
+        #         description=True))
+        self.addWidget(self.wdgEditor)
 
-        self.btnConfirm.setEnabled(False)
+        print(self.sizeHint())
 
-    def display(self) -> Optional[CharacterAgencyChanges]:
-        result = self.exec()
-        if result == QDialog.DialogCode.Accepted:
-            agency = CharacterAgencyChanges()
-            if self.initialBtnGroup.checkedButton():
-                agency.initial = StoryElement(self.initialBtnGroup.checkedButton().type)
-            if self.transitionBtnGroup.checkedButton():
-                agency.transition = StoryElement(self.transitionBtnGroup.checkedButton().type)
-            if self.finalBtnGroup.checkedButton():
-                agency.final = StoryElement(self.finalBtnGroup.checkedButton().type)
+    def _toggled(self, type_: StoryElementType, col: int, toggled: bool):
+        layout: QGridLayout = self.wdgPreview.layout()
+        if toggled:
+            row = layout.rowCount() - 1
+            item = layout.itemAtPosition(row, col)
+            if item and item.widget():
+                row += 1
 
-            return agency
-
-    def _selectionChanged(self):
-        if self.initialBtnGroup.checkedButton() or self.transitionBtnGroup.checkedButton() or self.finalBtnGroup.checkedButton():
-            self.btnConfirm.setEnabled(True)
+            wdg = StoryElementPreviewIcon(type_)
+            layout.addWidget(wdg, row, col, Qt.AlignmentFlag.AlignCenter)
+            fade_in(wdg)
         else:
-            self.btnConfirm.setEnabled(False)
+            for i in range(layout.count()):
+                item = layout.itemAt(i)
+                r, c, _, _ = layout.getItemPosition(i)
+                if c == col:
+                    widget = item.widget()
+                    if widget and isinstance(widget, StoryElementPreviewIcon) and widget.element == type_:
+                        fade_out_and_gc(self.wdgPreview, widget)
+                        break
 
-    def __initSelector(self, type_: StoryElementType, widget: QWidget,
-                       group: QButtonGroup) -> _CharacterChangeSelectorToggle:
+    def __initSelector(self, type_: StoryElementType, row: int, col: int) -> _CharacterChangeSelectorToggle:
         selector = _CharacterChangeSelectorToggle(type_)
-        widget.layout().addWidget(selector, alignment=Qt.AlignmentFlag.AlignLeft)
-        group.addButton(selector.toggle)
+
+        if col == 0:
+            parent = self.wdgInitial
+        elif col == 1:
+            parent = self.wdgTransition
+        else:
+            parent = self.wdgFinal
+
+        parent.layout().addWidget(selector, alignment=Qt.AlignmentFlag.AlignLeft)
+        # selector = StoryElementSelectorButton(type_)
+        # self.wdgSelectors.layout().addWidget(selector, row, col, Qt.AlignmentFlag.AlignCenter)
+        selector.toggle.toggled.connect(partial(self._toggled, type_, col))
 
         return selector
 
@@ -831,9 +875,13 @@ class CharacterAgencyEditor(QWidget):
             self.layout().addWidget(wdg)
 
     def _openSelector(self):
-        agency = CharacterChangesSelectorPopup.popup(self.agenda)
-        if agency:
-            self.addNewElements([agency])
+        # agency = CharacterChangesSelectorPopup.popup(self.agenda)
+
+        menu = CharacterChangesSelectorPopup(self.agenda)
+        menu.installEventFilter(MenuOverlayEventFilter(menu))
+        menu.exec()
+        # if agency:
+        #     self.addNewElements([agency])
 
     def _emotionChanged(self, emotion: int):
         self.agenda.emotion = emotion
