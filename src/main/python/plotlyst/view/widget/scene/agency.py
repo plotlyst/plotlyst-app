@@ -645,15 +645,22 @@ class CharacterChangesSelectorPopup(MenuWidget):
             wdg = StoryElementPreviewIcon(type_)
             layout.addWidget(wdg, row, col, Qt.AlignmentFlag.AlignCenter)
             fade_in(wdg)
+
+            if col == 2 and self._hasElement(row, 0) and not self._hasElement(row, 1):
+                layout.addWidget(ConnectorWidget(), row, 1)
+
         else:
-            for i in range(layout.count()):
-                item = layout.itemAt(i)
-                r, c, _, _ = layout.getItemPosition(i)
-                if c == col:
-                    widget = item.widget()
-                    if widget and isinstance(widget, StoryElementPreviewIcon) and widget.element == type_:
-                        fade_out_and_gc(self.wdgPreview, widget)
-                        break
+            for row in range(2, layout.rowCount()):
+                if self._hasElement(row, col, type_):
+                    item = layout.itemAtPosition(row, col)
+                    fade_out_and_gc(self.wdgPreview, item.widget())
+                    break
+
+    def _hasElement(self, row: int, col: int, type_: Optional[StoryElementType] = None) -> bool:
+        item = self.wdgPreview.layout().itemAtPosition(row, col)
+        if item and item.widget() and isinstance(item.widget(), StoryElementPreviewIcon):
+            if not type_ or item.widget().element == type_:
+                return True
 
     def __initSelector(self, type_: StoryElementType, row: int, col: int) -> _CharacterChangeSelectorToggle:
         selector = _CharacterChangeSelectorToggle(type_)
