@@ -48,7 +48,7 @@ from plotlyst.view.widget.button import ChargeButton, DotsMenuButton, SmallToggl
 from plotlyst.view.widget.character.editor import EmotionEditorSlider
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.display import ArrowButton, SeparatorLineWithShadow, ConnectorWidget, \
-    DotsDragIcon, MenuOverlayEventFilter, Icon
+    DotsDragIcon, MenuOverlayEventFilter, Icon, icon_text
 from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget
 from plotlyst.view.widget.scene.conflict import ConflictIntensityEditor, CharacterConflictSelector
 
@@ -547,6 +547,7 @@ class StoryElementPreviewIcon(Icon):
 @spawn
 class CharacterChangesSelectorPopup(MenuWidget):
     DEFAULT_DESC: str = "Reflect a character's change by selecting the initial and final states"
+    DEFAULT_ICON: str = 'ph.user-focus'
     INITIAL_COL: int = 1
     TRANSITION_COL: int = 2
     FINAL_COL: int = 3
@@ -571,8 +572,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.wdgEditor = columns(5, 20)
 
         self.wdgFrame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
-        self.lblDesc = label(self.DEFAULT_DESC)
-        self.wdgFrame.layout().addWidget(self.lblDesc)
+        self.lblDesc = icon_text(self.DEFAULT_ICON, self.DEFAULT_DESC, opacity=0.8)
+        self.wdgFrame.layout().addWidget(self.lblDesc, alignment=Qt.AlignmentFlag.AlignLeft)
         self.wdgFrame.layout().addWidget(self.wdgEditor)
 
         self.wdgTools = rows(0)
@@ -608,14 +609,17 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.wdgPreviewParent.layout().addWidget(label('Preview', h5=True), alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.wdgPreviewParent.layout().addWidget(scrollPreview)
+        retain_when_hidden(self.wdgPreviewParent)
+        self.wdgPreviewParent.setHidden(True)
 
         self._initPreview()
 
-        self.wdgSelectors.layout().addWidget(label('Initial state', description=True, centered=True), 0,
+        self.wdgSelectors.layout().addWidget(label('Initial state', description=True, centered=True, decr_font_diff=1),
+                                             0,
                                              self.INITIAL_COL)
-        self.wdgSelectors.layout().addWidget(label('Transition', description=True, centered=True), 0,
+        self.wdgSelectors.layout().addWidget(label('Transition', description=True, centered=True, decr_font_diff=1), 0,
                                              self.TRANSITION_COL)
-        self.wdgSelectors.layout().addWidget(label('Final state', description=True, centered=True), 0,
+        self.wdgSelectors.layout().addWidget(label('Final state', description=True, centered=True, decr_font_diff=1), 0,
                                              self.FINAL_COL)
         self.wdgSelectors.layout().addWidget(line(color='lightgrey'), 1, self.INITIAL_COL, 1, 3)
 
@@ -705,13 +709,16 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         if self.btnGroup.checkedButton():
             self.btnAdd.setEnabled(True)
+            self.wdgPreviewParent.setVisible(True)
         else:
             self.btnAdd.setDisabled(True)
 
     def _typeHovered(self, type_: StoryElementType):
+        self.lblDesc.setIcon(IconRegistry.from_name(type_.icon(), PLOTLYST_SECONDARY_COLOR))
         self.lblDesc.setText(type_.placeholder())
 
     def _typeLeft(self):
+        self.lblDesc.setIcon(IconRegistry.from_name(self.DEFAULT_ICON))
         self.lblDesc.setText(self.DEFAULT_DESC)
 
     def _hasElement(self, row: int, col: int, type_: Optional[StoryElementType] = None) -> bool:
