@@ -546,7 +546,10 @@ class StoryElementPreviewIcon(Icon):
 
 @spawn
 class CharacterChangesSelectorPopup(MenuWidget):
-    DEFAULT_DESC: str = 'Select initial and final states to reflect character changes'
+    DEFAULT_DESC: str = "Reflect a character's change by selecting the initial and final states"
+    INITIAL_COL: int = 1
+    TRANSITION_COL: int = 2
+    FINAL_COL: int = 3
 
     def __init__(self):  # agenda: CharacterAgency
         super().__init__()
@@ -568,7 +571,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.wdgEditor = columns(5, 20)
 
         self.wdgFrame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
-        self.lblDesc = label(self.DEFAULT_DESC, description=True)
+        self.lblDesc = label(self.DEFAULT_DESC)
         self.wdgFrame.layout().addWidget(self.lblDesc)
         self.wdgFrame.layout().addWidget(self.wdgEditor)
 
@@ -608,34 +611,43 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         self._initPreview()
 
-        self.wdgSelectors.layout().addWidget(label('Initial state', description=True, centered=True), 0, 1)
-        self.wdgSelectors.layout().addWidget(label('Transition', description=True, centered=True), 0, 2)
-        self.wdgSelectors.layout().addWidget(label('Final state', description=True, centered=True), 0, 3)
-        self.wdgSelectors.layout().addWidget(line(color='lightgrey'), 1, 1, 1, 3)
+        self.wdgSelectors.layout().addWidget(label('Initial state', description=True, centered=True), 0,
+                                             self.INITIAL_COL)
+        self.wdgSelectors.layout().addWidget(label('Transition', description=True, centered=True), 0,
+                                             self.TRANSITION_COL)
+        self.wdgSelectors.layout().addWidget(label('Final state', description=True, centered=True), 0,
+                                             self.FINAL_COL)
+        self.wdgSelectors.layout().addWidget(line(color='lightgrey'), 1, self.INITIAL_COL, 1, 3)
 
-        self.selectorGoal, btnQuickAddGoal = self.__initSelector(StoryElementType.Goal, 2, 1, quickAdd=True)
+        self.selectorGoal, btnQuickAddGoal = self.__initSelector(StoryElementType.Goal, 2, self.INITIAL_COL,
+                                                                 quickAdd=True)
 
-        self.selectorExpectation, btnQuickAddExpectation = self.__initSelector(StoryElementType.Expectation, 4, 1,
+        self.selectorExpectation, btnQuickAddExpectation = self.__initSelector(StoryElementType.Expectation, 4,
+                                                                               self.INITIAL_COL,
                                                                                quickAdd=True)
         self.selectorInternalState, btnQuickAddInternal = self.__initSelector(StoryElementType.Character_internal_state,
-                                                                              5, 1, quickAdd=True)
-        self.selectorExternalState, btnQuickAddExternal = self.__initSelector(StoryElementType.Character_state, 6, 1,
+                                                                              5, self.INITIAL_COL, quickAdd=True)
+        self.selectorExternalState, btnQuickAddExternal = self.__initSelector(StoryElementType.Character_state, 6,
+                                                                              self.INITIAL_COL,
                                                                               quickAdd=True)
 
-        self.selectorConflict: _CharacterChangeSelectorToggle = self.__initSelector(StoryElementType.Conflict, 2, 2)
-        self.__initSelector(StoryElementType.Internal_conflict, 3, 2)
-        self.__initSelector(StoryElementType.Catalyst, 7, 2)
-        self.__initSelector(StoryElementType.Action, 8, 2)
+        self.selectorConflict: _CharacterChangeSelectorToggle = self.__initSelector(StoryElementType.Conflict, 2,
+                                                                                    self.TRANSITION_COL)
+        self.selectorInternalConflict: _CharacterChangeSelectorToggle = self.__initSelector(
+            StoryElementType.Internal_conflict, 5, self.TRANSITION_COL)
+        self.__initSelector(StoryElementType.Catalyst, 7, self.TRANSITION_COL)
+        self.__initSelector(StoryElementType.Action, 8, self.TRANSITION_COL)
 
-        self.selectorOutcome: _CharacterChangeSelectorToggle = self.__initSelector(StoryElementType.Outcome, 2, 3)
+        self.selectorOutcome: _CharacterChangeSelectorToggle = self.__initSelector(StoryElementType.Outcome, 2,
+                                                                                   self.FINAL_COL)
 
         self.selectorRealization: _CharacterChangeSelectorToggle = self.__initSelector(StoryElementType.Realization, 4,
-                                                                                       3)
+                                                                                       self.FINAL_COL)
         self.selectorInternalChange: _CharacterChangeSelectorToggle = self.__initSelector(
-            StoryElementType.Character_internal_state_change, 5, 3)
+            StoryElementType.Character_internal_state_change, 5, self.FINAL_COL)
         self.selectorExternalChange: _CharacterChangeSelectorToggle = self.__initSelector(
-            StoryElementType.Character_state_change, 6, 3)
-        wdgMotivation = self.__initSelector(StoryElementType.Motivation, 9, 3)
+            StoryElementType.Character_state_change, 6, self.FINAL_COL)
+        wdgMotivation = self.__initSelector(StoryElementType.Motivation, 9, self.FINAL_COL)
 
         # for change in self.agenda.changes:
         #     if change.final and change.final.type == StoryElementType.Motivation:
@@ -653,7 +665,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
         btnQuickAddExpectation.clicked.connect(
             lambda: self._quickSelect(self.selectorExpectation, self.selectorRealization))
         btnQuickAddInternal.clicked.connect(
-            lambda: self._quickSelect(self.selectorInternalState, self.selectorInternalChange))
+            lambda: self._quickSelect(self.selectorInternalState, self.selectorInternalConflict,
+                                      self.selectorInternalChange))
         btnQuickAddExternal.clicked.connect(
             lambda: self._quickSelect(self.selectorExternalState, self.selectorExternalChange))
 
@@ -675,13 +688,19 @@ class CharacterChangesSelectorPopup(MenuWidget):
             layout.addWidget(wdg, row, col, Qt.AlignmentFlag.AlignCenter)
             fade_in(wdg)
 
-            if col == 3 and self._hasElement(row, 1) and not self._hasElement(row, 2):
-                layout.addWidget(ConnectorWidget(), row, 2)
+            if col == self.FINAL_COL and self._hasElement(row, self.INITIAL_COL) and not self._hasElement(row,
+                                                                                                          self.TRANSITION_COL):
+                layout.addWidget(ConnectorWidget(), row, self.TRANSITION_COL)
         else:
             for row in range(2, layout.rowCount()):
                 if self._hasElement(row, col, type_):
                     item = layout.itemAtPosition(row, col)
                     fade_out_and_gc(self.wdgPreview, item.widget())
+
+                    if col == self.FINAL_COL and self._hasConnector(row, col):
+                        item = layout.itemAtPosition(row, self.TRANSITION_COL)
+                        fade_out_and_gc(self.wdgPreview, item.widget())
+
                     break
 
         if self.btnGroup.checkedButton():
@@ -700,6 +719,11 @@ class CharacterChangesSelectorPopup(MenuWidget):
         if item and item.widget() and isinstance(item.widget(), StoryElementPreviewIcon):
             if not type_ or item.widget().element == type_:
                 return True
+
+    def _hasConnector(self, row: int, col: int) -> bool:
+        item = self.wdgPreview.layout().itemAtPosition(row, col)
+        if item and item.widget() and isinstance(item.widget(), ConnectorWidget):
+            return True
 
     def _reset(self):
         for btn in self.btnGroup.buttons():
