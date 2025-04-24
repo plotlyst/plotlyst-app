@@ -556,6 +556,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
         super().__init__()
         self.agenda = agenda
         transparent_menu(self)
+        self._initialized = False
 
         self.btnGroup = QButtonGroup()
         self.btnGroup.setExclusive(False)
@@ -643,14 +644,47 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.selectorCatalyst = self.__initSelector(StoryElementType.Catalyst, 6, self.TRANSITION_COL)
         self.selectorExternalChange: _CharacterChangeSelectorToggle = self.__initSelector(
             StoryElementType.Character_state_change, 6, self.FINAL_COL)
-        self.__initSelector(StoryElementType.Action, 8, self.TRANSITION_COL)
+        self.selectorAction = self.__initSelector(StoryElementType.Action, 8, self.TRANSITION_COL)
 
         self.selectorMotivation = self.__initSelector(StoryElementType.Motivation, 9, self.FINAL_COL)
 
-        for change in self.agenda.changes:
-            if change.final and change.final.type == StoryElementType.Motivation:
-                self.selectorMotivation.setHidden(True)
-                break
+        if self.agenda.changes:
+            self.wdgPreviewParent.setVisible(True)
+        for i, change in enumerate(self.agenda.changes):
+            if change.initial is not None:
+                self.__initPreviewIcon(change.initial.type, 2 + i, self.INITIAL_COL)
+                if change.initial.type == StoryElementType.Goal:
+                    self.selectorGoal.setChecked(True)
+                elif change.initial.type == StoryElementType.Expectation:
+                    self.selectorExpectation.setChecked(True)
+                elif change.initial.type == StoryElementType.Character_internal_state:
+                    self.selectorInternalState.setChecked(True)
+                elif change.initial.type == StoryElementType.Character_state:
+                    self.selectorExternalState.setChecked(True)
+
+            if change.transition is not None:
+                self.__initPreviewIcon(change.transition.type, 2 + i, self.TRANSITION_COL)
+                if change.transition.type == StoryElementType.Conflict:
+                    self.selectorConflict.setChecked(True)
+                elif change.transition.type == StoryElementType.Internal_conflict:
+                    self.selectorInternalConflict.setChecked(True)
+                elif change.transition.type == StoryElementType.Catalyst:
+                    self.selectorCatalyst.setChecked(True)
+                elif change.transition.type == StoryElementType.Action:
+                    self.selectorAction.setChecked(True)
+
+            if change.final is not None:
+                self.__initPreviewIcon(change.final.type, 2 + i, self.FINAL_COL)
+                if change.final.type == StoryElementType.Outcome:
+                    self.selectorOutcome.setChecked(True)
+                elif change.final.type == StoryElementType.Character_state_change:
+                    self.selectorExternalChange.setChecked(True)
+                elif change.final.type == StoryElementType.Character_internal_state_change:
+                    self.selectorInternalChange.setChecked(True)
+                elif change.final.type == StoryElementType.Realization:
+                    self.selectorRealization.setChecked(True)
+                elif change.final.type == StoryElementType.Motivation:
+                    self.selectorMotivation.setChecked(True)
 
         self.btnAdd = push_btn(IconRegistry.plus_icon(RELAXED_WHITE_COLOR), 'Add agency',
                                properties=['confirm', 'positive'])
@@ -671,8 +705,11 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.addWidget(self.wdgFrame)
 
         print(self.sizeHint())
+        self._initialized = True
 
     def _toggled(self, type_: StoryElementType, col: int, toggled: bool):
+        if not self._initialized:
+            return
         layout: QGridLayout = self.wdgPreview.layout()
         if toggled:
             row = layout.rowCount() - 1
@@ -680,10 +717,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
             if item and item.widget():
                 row += 1
 
-            wdg = StoryElementPreviewIcon(type_)
-            wdg.hovered.connect(partial(self._typeHovered, type_))
-            wdg.left.connect(self._typeLeft)
-            layout.addWidget(wdg, row, col, Qt.AlignmentFlag.AlignCenter)
+            wdg = self.__initPreviewIcon(type_, row, col)
             fade_in(wdg)
 
             if col == self.FINAL_COL and self._hasElement(row, self.INITIAL_COL) and not self._hasElement(row,
@@ -787,6 +821,15 @@ class CharacterChangesSelectorPopup(MenuWidget):
             return selector, btnQuickAdd
 
         return selector
+
+    def __initPreviewIcon(self, type_: StoryElementType, row: int, col: int) -> StoryElementPreviewIcon:
+        wdg = StoryElementPreviewIcon(type_)
+        wdg.hovered.connect(partial(self._typeHovered, type_))
+        wdg.left.connect(self._typeLeft)
+
+        self.wdgPreview.layout().addWidget(wdg, row, col, Qt.AlignmentFlag.AlignCenter)
+
+        return wdg
 
 
 class CharacterChangeBubble(TextEditBubbleWidget):
@@ -1000,13 +1043,14 @@ class CharacterAgencyEditor(QWidget):
 
     def _openSelector(self):
         def added(changes):
-            menu.hide()
+            self._menu.hide()
             self.addNewElements(changes)
+            self._menu = None
 
-        menu = CharacterChangesSelectorPopup(self.agenda)
-        menu.installEventFilter(MenuOverlayEventFilter(menu))
-        menu.added.connect(added)
-        menu.exec(self.btnAdd.mapToGlobal(self.btnAdd.rect().bottomLeft()))
+        self._menu = CharacterChangesSelectorPopup(self.agenda)
+        self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
+        self._menu.added.connect(added)
+        self._menu.exec(self.btnAdd.mapToGlobal(self.btnAdd.rect().bottomLeft()))
 
     def _emotionChanged(self, emotion: int):
         self.agenda.emotion = emotion

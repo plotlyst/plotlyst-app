@@ -1894,7 +1894,7 @@ class StoryElementType(Enum):
         elif self == StoryElementType.Conflict:
             return "What kind of conflict does the character have to face?"
         elif self == StoryElementType.Internal_conflict:
-            return "What internal struggles, dilemmas, doubts does the character have to face?"
+            return "What internal struggles does the character have to face?"
         elif self == StoryElementType.Outcome:
             return "What's the scene's outcome for the character?"
         elif self == StoryElementType.Character_state:
