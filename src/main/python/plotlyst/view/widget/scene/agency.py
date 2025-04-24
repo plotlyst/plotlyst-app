@@ -47,6 +47,7 @@ from plotlyst.view.style.base import apply_white_menu, transparent_menu
 from plotlyst.view.widget.button import ChargeButton, DotsMenuButton, SmallToggleButton, SelectorToggleButton
 from plotlyst.view.widget.character.editor import EmotionEditorSlider
 from plotlyst.view.widget.characters import CharacterSelectorMenu
+from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import ArrowButton, SeparatorLineWithShadow, ConnectorWidget, \
     DotsDragIcon, MenuOverlayEventFilter, Icon, icon_text
 from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget
@@ -835,6 +836,7 @@ def character_transition_arrow() -> QWidget:
 
 
 class CharacterChangeRow(QFrame):
+    removed = pyqtSignal()
 
     def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, changes: CharacterAgencyChanges,
                  parent=None):
@@ -858,7 +860,7 @@ class CharacterChangeRow(QFrame):
 
         if self._changes.transition:
             self._addElement(self._changes.transition)
-        elif self._changes.initial:
+        elif self._changes.initial and self._changes.final:
             self.layout().addWidget(character_transition_arrow())
 
         if self._changes.final:
@@ -877,11 +879,13 @@ class CharacterChangeRow(QFrame):
         self.layout().addWidget(dotsBtn,
                                 alignment=Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         menu = MenuWidget(dotsBtn)
-        # menu.addAction(action('Remove character changes', IconRegistry.trash_can_icon(),
-        #                       slot=partial(self._removeChange, change, row)))
-        # row += 1
+        menu.addAction(action('Remove character changes', IconRegistry.trash_can_icon(),
+                              slot=self.removed))
 
         self.installEventFilter(VisibilityToggleEventFilter(dotsBtn, self))
+
+    def changes(self) -> CharacterAgencyChanges:
+        return self._changes
 
     def _addElement(self, element: StoryElement):
         wdg = CharacterChangeBubble(element)
@@ -987,7 +991,12 @@ class CharacterAgencyEditor(QWidget):
     def _addElements(self, changes: List[CharacterAgencyChanges]):
         for change in changes:
             wdg = CharacterChangeRow(self.novel, self.scene, self.agenda, change)
+            wdg.removed.connect(partial(self._removeChange, wdg))
             self.layout().addWidget(wdg)
+
+    def _removeChange(self, wdg: CharacterChangeRow):
+        self.agenda.changes.remove(wdg.changes())
+        fade_out_and_gc(self, wdg)
 
     def _openSelector(self):
         def added(changes):
@@ -1080,9 +1089,10 @@ class SceneAgencyEditor(QWidget, EventListener):
         QTimer.singleShot(20, lambda: self.agencyAdded.emit(wdg))
 
     def _agencyRemoved(self, wdg: CharacterAgencyEditor):
-        agency = wdg.agenda
-        self._scene.agency.remove(agency)
-        fade_out_and_gc(self.wdgAgendas, wdg)
+        if confirmed(f"Are you sure you want to delete this agency?", 'Delete character agency'):
+            agency = wdg.agenda
+            self._scene.agency.remove(agency)
+            fade_out_and_gc(self.wdgAgendas, wdg)
 
     def __initAgencyWidget(self, agenda: CharacterAgency) -> CharacterAgencyEditor:
         wdg = CharacterAgencyEditor(self._novel, self._scene, agenda)
