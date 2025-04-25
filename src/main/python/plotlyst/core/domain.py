@@ -1818,6 +1818,8 @@ class StoryElementType(Enum):
     Character_state_change = 'character_state_change'
     Character_internal_state_change = 'character_internal_state_change'
 
+    Connector = 'connector'
+
     Expectation = 'expectation'
     Realization = 'realization'
     Goal = 'goal'

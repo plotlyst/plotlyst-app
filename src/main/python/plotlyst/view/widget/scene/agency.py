@@ -526,17 +526,23 @@ class _CharacterChangeSelectorToggle(SelectorToggleButton):
         self.left.emit()
 
 
+class StoryElementConnector(ConnectorWidget):
+    def __init__(self, element: StoryElement, parent=None):
+        super().__init__(parent)
+        self.element = element
+
+
 class StoryElementPreviewIcon(Icon):
     hovered = pyqtSignal()
     left = pyqtSignal()
 
-    def __init__(self, element: StoryElementType, parent=None):
+    def __init__(self, element: StoryElement, parent=None):
         super().__init__(parent)
         self.element = element
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 
-        self.setText(element.displayed_name().replace(' ', '\n'))
-        self.setIcon(IconRegistry.from_name(element.icon()))
+        self.setText(element.type.displayed_name().replace(' ', '\n'))
+        self.setIcon(IconRegistry.from_name(element.type.icon()))
         decr_font(self, 2)
 
     @overrides
@@ -658,8 +664,9 @@ class CharacterChangesSelectorPopup(MenuWidget):
             self.wdgPreviewParent.setVisible(True)
 
         for el in self.agenda.elements:
-            self._selectors[el.type].setChecked(True)
-            self.__initPreviewIcon(el.type, el.row, el.col)
+            if el.type != StoryElementType.Connector:
+                self._selectors[el.type].setChecked(True)
+            self.__initPreviewIcon(el, el.row, el.col)
 
         # for i, change in enumerate(self.agenda.changes):
         #     if change.initial is not None:
@@ -732,12 +739,14 @@ class CharacterChangesSelectorPopup(MenuWidget):
             element = StoryElement(type_, row=row, col=col)
             self.agenda.elements.append(element)
 
-            wdg = self.__initPreviewIcon(type_, row, col)
+            wdg = self.__initPreviewIcon(element, row, col)
             fade_in(wdg)
 
             if col == self.FINAL_COL and self._hasElement(row, self.INITIAL_COL) and not self._hasElement(row,
                                                                                                           self.TRANSITION_COL):
-                layout.addWidget(ConnectorWidget(), row, self.TRANSITION_COL)
+                connector = StoryElement(StoryElementType.Connector, row=row, col=self.TRANSITION_COL)
+                self.agenda.elements.append(connector)
+                self.__initPreviewIcon(connector, row, self.TRANSITION_COL)
         else:
             for el in self.agenda.elements:
                 if el.type == type_:
@@ -746,6 +755,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
                     if col == self.FINAL_COL and self._hasConnector(el.row, self.TRANSITION_COL):
                         item = layout.itemAtPosition(el.row, self.TRANSITION_COL)
+                        self.agenda.elements.remove(item.widget().element)
                         fade_out_and_gc(self.wdgPreview, item.widget())
 
                     self.agenda.elements.remove(el)
@@ -762,11 +772,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
             #
             #         break
 
-        if self.btnGroup.checkedButton():
-            # self.btnAdd.setEnabled(True)
-            self.wdgPreviewParent.setVisible(True)
-        # else:
-        #     self.btnAdd.setDisabled(True)
+        self.wdgPreviewParent.setVisible(True)
 
     def _typeHovered(self, type_: StoryElementType):
         self.lblDesc.setIcon(IconRegistry.from_name(type_.icon(), PLOTLYST_SECONDARY_COLOR))
@@ -789,7 +795,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
     def _hasConnector(self, row: int, col: int) -> bool:
         item = self.wdgPreview.layout().itemAtPosition(row, col)
-        if item and item.widget() and isinstance(item.widget(), ConnectorWidget):
+        if item and item.widget() and isinstance(item.widget(), StoryElementConnector):
             return True
 
     def _reset(self):
@@ -798,6 +804,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
                 btn.setChecked(False)
 
         clear_layout(self.wdgPreview)
+        self.agenda.elements.clear()
         self._initPreview()
 
     def _initPreview(self):
@@ -850,10 +857,13 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         return selector
 
-    def __initPreviewIcon(self, type_: StoryElementType, row: int, col: int) -> StoryElementPreviewIcon:
-        wdg = StoryElementPreviewIcon(type_)
-        wdg.hovered.connect(partial(self._typeHovered, type_))
-        wdg.left.connect(self._typeLeft)
+    def __initPreviewIcon(self, el: StoryElement, row: int, col: int) -> StoryElementPreviewIcon:
+        if el.type == StoryElementType.Connector:
+            wdg = StoryElementConnector(el)
+        else:
+            wdg = StoryElementPreviewIcon(el)
+            wdg.hovered.connect(partial(self._typeHovered, el.type))
+            wdg.left.connect(self._typeLeft)
 
         self.wdgPreview.layout().addWidget(wdg, row, col, Qt.AlignmentFlag.AlignCenter)
 
@@ -955,6 +965,10 @@ class CharacterAgencyEditor(QWidget):
             elif col == 3:
                 col = 5
 
+            if el.type == StoryElementType.Connector:
+                self.wdgElements.layout().addWidget(wdg, el.row, col - 1, 1, 3)
+                continue
+
             self.wdgElements.layout().addWidget(wdg, el.row, col, Qt.AlignmentFlag.AlignCenter)
 
             if col == 3 and self._hasElement(el.row, 1):
@@ -998,14 +1012,17 @@ class CharacterAgencyEditor(QWidget):
             return True
 
     def __initElementWidget(self, element: StoryElement) -> CharacterChangeBubble:
-        wdg = CharacterChangeBubble(element)
-        if element.type == StoryElementType.Motivation:
-            motivationEditor = SceneAgendaMotivationEditor()
-            motivationEditor.motivationChanged.connect(self._motivationChanged)
-            motivationEditor.setNovel(self.novel)
-            motivationEditor.setScene(self.scene)
-            motivationEditor.setAgenda(self.agenda)
-            wdg.addBottomWidget(motivationEditor)
+        if element.type == StoryElementType.Connector:
+            wdg = StoryElementConnector(element)
+        else:
+            wdg = CharacterChangeBubble(element)
+            if element.type == StoryElementType.Motivation:
+                motivationEditor = SceneAgendaMotivationEditor()
+                motivationEditor.motivationChanged.connect(self._motivationChanged)
+                motivationEditor.setNovel(self.novel)
+                motivationEditor.setScene(self.scene)
+                motivationEditor.setAgenda(self.agenda)
+                wdg.addBottomWidget(motivationEditor)
 
         return wdg
 
