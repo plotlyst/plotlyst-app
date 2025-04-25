@@ -27,13 +27,14 @@ from PyQt6.QtWidgets import QWidget, QSlider, QGridLayout, QButtonGroup, QAbstra
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font
+    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Motivation, Novel, Scene, CharacterAgency, Character, StoryElementType, \
     StoryElement
+from plotlyst.env import app_env
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import NovelEmotionTrackingToggleEvent, \
@@ -512,6 +513,9 @@ class _CharacterChangeSelectorToggle(SelectorToggleButton):
         super().__init__(minWidth=80, parent=parent)
         self.setIcon(IconRegistry.from_name(type_.icon()))
         self.setText(type_.displayed_name().replace(' ', '\n'))
+        decr_icon(self, 4)
+        if not app_env.is_mac():
+            decr_font(self)
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
@@ -558,6 +562,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.agenda = agenda
         transparent_menu(self)
         self._initialized = False
+        self._selectors: Dict[StoryElementType, _CharacterChangeSelectorToggle] = {}
 
         self.btnGroup = QButtonGroup()
         self.btnGroup.setExclusive(False)
@@ -653,6 +658,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
             self.wdgPreviewParent.setVisible(True)
 
         for el in self.agenda.elements:
+            self._selectors[el.type].setChecked(True)
             self.__initPreviewIcon(el.type, el.row, el.col)
 
         # for i, change in enumerate(self.agenda.changes):
@@ -827,6 +833,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
     def __initSelector(self, type_: StoryElementType, row: int, col: int,
                        quickAdd: bool = False) -> Tuple[_CharacterChangeSelectorToggle, Optional[QAbstractButton]]:
         selector = _CharacterChangeSelectorToggle(type_)
+        self._selectors[type_] = selector
         self.btnGroup.addButton(selector)
 
         selector.toggled.connect(partial(self._toggled, type_, col))
@@ -884,21 +891,6 @@ class CharacterChangeBubble(TextEditBubbleWidget):
         self.element.text = self._textedit.toPlainText()
 
 
-def character_change_placeholder() -> QWidget:
-    wdg = QWidget()
-    wdg.setMinimumWidth(170)
-    wdg.setMaximumHeight(135)
-    sp(wdg).h_exp()
-
-    return wdg
-
-
-def character_transition_arrow() -> QWidget:
-    wdg = ConnectorWidget()
-    sp(wdg).h_exp()
-    return wdg
-
-
 class CharacterAgencyEditor(QWidget):
     removed = pyqtSignal()
 
@@ -911,7 +903,10 @@ class CharacterAgencyEditor(QWidget):
         margins(self, left=15)
         self._charDisplay = tool_btn(IconRegistry.character_icon(), transparent_=True)
         self._charDisplay.setIconSize(QSize(36, 36))
+        self._menuSelector: Optional[CharacterChangesSelectorPopup] = None
         self._menu = MenuWidget()
+        self._menu.addAction(action('Edit agency', IconRegistry.edit_icon(), slot=self._openSelector))
+        self._menu.addSeparator()
         self._menu.addAction(action('Remove agency', IconRegistry.trash_can_icon(), slot=self.removed))
         self._charDisplay.clicked.connect(lambda: self._menu.exec(QCursor.pos()))
 
@@ -976,20 +971,23 @@ class CharacterAgencyEditor(QWidget):
 
     def _openSelector(self):
         def added():
-            self._menu.hide()
+            self._menuSelector.hide()
             self.refresh()
-            self._menu = None
+            self._menuSelector = None
 
-        self._menu = CharacterChangesSelectorPopup(self.agenda)
-        self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
-        self._menu.aboutToHide.connect(added)
-        self._menu.exec(self.btnAdd.mapToGlobal(self.btnAdd.rect().bottomLeft()))
+        self._menuSelector = CharacterChangesSelectorPopup(self.agenda)
+        self._menuSelector.installEventFilter(MenuOverlayEventFilter(self._menuSelector))
+        self._menuSelector.aboutToHide.connect(added)
+        self._menuSelector.exec(self.btnAdd.mapToGlobal(self.btnAdd.rect().bottomLeft()))
 
     def _emotionChanged(self, emotion: int):
         self.agenda.emotion = emotion
 
     def _emotionReset(self):
         self.agenda.emotion = None
+
+    def _motivationChanged(self, motivation: Motivation, value: int):
+        pass
 
     def _motivationReset(self):
         self.agenda.motivations.clear()
