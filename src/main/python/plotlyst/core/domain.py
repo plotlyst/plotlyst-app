@@ -1686,6 +1686,7 @@ class CharacterAgency:
     conflict_references: List[ConflictReference] = field(default_factory=list)
     motivations: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
     changes: List[CharacterAgencyChanges] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+    elements: List['StoryElement'] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
 
     def conflicts(self, novel: 'Novel') -> List[Conflict]:
         conflicts_ = []
