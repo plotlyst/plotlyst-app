@@ -109,7 +109,7 @@ class MotivationChargeLabel(QPushButton):
 
     def setCharge(self, charge: int):
         if charge == 0:
-            self.setText('')
+            self.setText(' ' * 5)
         else:
             self.setText(f'+{charge}')
 
@@ -132,8 +132,8 @@ class MotivationCharge(QWidget):
         self._negCharge.setHidden(True)
 
         self.layout().addWidget(label(self._motivation.display_name()))
-        self.layout().addWidget(self._label)
         self.layout().addWidget(spacer())
+        self.layout().addWidget(self._label)
         self.layout().addWidget(self._negCharge)
         self.layout().addWidget(self._posCharge)
 
