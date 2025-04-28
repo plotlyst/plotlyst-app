@@ -392,7 +392,7 @@ class _PrimaryFunctionsWidget(QFrame):
         wdg.setFixedHeight(140)
         self.btnPlus = push_btn(IconRegistry.plus_icon(LIGHTGREY_ACTIVE_COLOR))
         self.btnPlus.setIconSize(QSize(36, 36))
-        self.btnPlus.setStyleSheet(f'color: {LIGHTGREY_ACTIVE_COLOR}; border: 0px;')
+        self.btnPlus.setStyleSheet(f'QPushButton{{color: {LIGHTGREY_ACTIVE_COLOR}; border: 0px;}}')
         self.btnPlus.clicked.connect(self._plusClicked)
         wdg.layout().addWidget(self.btnPlus, alignment=Qt.AlignmentFlag.AlignVCenter)
         self.container.layout().addWidget(wdg)

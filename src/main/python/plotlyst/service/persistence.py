@@ -319,7 +319,7 @@ def delete_character(novel: Novel, character: Character, forced: bool = False) -
                     scene.characters.remove(char)
                     update_scene = True
                     break
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 if agenda.character_id == char_id:
                     agenda.conflict_references.clear()
                     agenda.goal_references.clear()

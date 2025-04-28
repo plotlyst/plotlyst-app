@@ -68,7 +68,7 @@ class ConflictReport(AbstractReport, Ui_ConflictReport):
 
         conflicting_characters = []
         for scene in self.novel.scenes:
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 for conflict in agenda.conflicts(self.novel):
                     if conflict.character_id == character.id and conflict.type == ConflictType.CHARACTER:
                         char = conflict.conflicting_character(self.novel)
@@ -93,7 +93,7 @@ class ConflictTypeChart(BaseChart):
             conflicts[type_] = 0
 
         for scene in self.novel.scenes:
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 if agenda.character_id == character.id:
                     for conflict in agenda.conflicts(self.novel):
                         conflicts[conflict.type] = conflicts[conflict.type] + 1
@@ -162,7 +162,7 @@ class ConflictIntensityChart(BaseChart):
         for i, scene in enumerate(self.novel.scenes):
             intensity = 0
             agenda_intensity = 0
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 agenda_intensity = max([x.intensity for x in agenda.conflict_references], default=0)
             intensity = max([intensity, agenda_intensity])
             if intensity > 0:

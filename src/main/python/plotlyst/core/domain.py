@@ -1681,18 +1681,12 @@ class CharacterAgencyChanges:
 
 
 @dataclass
-class SceneStructureAgenda(CharacterBased):
+class CharacterAgency:
     character_id: Optional[uuid.UUID] = None
     conflict_references: List[ConflictReference] = field(default_factory=list)
-    goal_references: List[GoalReference] = field(default_factory=list)
-    intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
-    emotion: Optional[int] = None
     motivations: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
-    story_elements: List['StoryElement'] = field(default_factory=list)
-    changes: List[CharacterAgencyChanges] = field(default_factory=list)
-
-    def __post_init__(self):
-        self._character: Optional[Character] = None
+    changes: List[CharacterAgencyChanges] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+    elements: List['StoryElement'] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
 
     def conflicts(self, novel: 'Novel') -> List[Conflict]:
         conflicts_ = []
@@ -1824,6 +1818,8 @@ class StoryElementType(Enum):
     Character_state_change = 'character_state_change'
     Character_internal_state_change = 'character_internal_state_change'
 
+    Connector = 'connector'
+
     Expectation = 'expectation'
     Realization = 'realization'
     Goal = 'goal'
@@ -1901,7 +1897,7 @@ class StoryElementType(Enum):
         elif self == StoryElementType.Conflict:
             return "What kind of conflict does the character have to face?"
         elif self == StoryElementType.Internal_conflict:
-            return "What internal struggles, dilemmas, doubts does the character have to face?"
+            return "What internal struggles does the character have to face?"
         elif self == StoryElementType.Outcome:
             return "What's the scene's outcome for the character?"
         elif self == StoryElementType.Character_state:
@@ -1911,11 +1907,11 @@ class StoryElementType(Enum):
         elif self == StoryElementType.Character_state_change:
             return "How does the character's external circumstances change?"
         elif self == StoryElementType.Character_internal_state_change:
-            return "How does the character's internal state change, mentally or psychologically?"
+            return "How does the character's internal state change?"
         elif self == StoryElementType.Expectation:
             return "What does the character anticipate to happen?"
         elif self == StoryElementType.Realization:
-            return "What did actually happen in the scene that upended expectations?"
+            return "What did actually happen that upended expectations?"
         elif self == StoryElementType.Catalyst:
             return "What disrupts the character's life and forces them to act?"
         elif self == StoryElementType.Dilemma:
@@ -2015,7 +2011,7 @@ class Scene:
     synopsis: str = ''
     pov: Optional[Character] = None
     characters: List[Character] = field(default_factory=list)
-    agendas: List[SceneStructureAgenda] = field(default_factory=list)
+    agency: List[CharacterAgency] = field(default_factory=list)
     wip: bool = False
     plot_values: List[ScenePlotReference] = field(default_factory=list)
     day: int = 1
@@ -4182,7 +4178,7 @@ class Novel(NovelDescriptor):
         char_ids = set()
         chars: List[Character] = []
         for scene in self.scenes:
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 if agenda.character_id and str(agenda.character_id) not in char_ids:
                     character: Character = agenda.character(self)
                     if character:
@@ -4219,7 +4215,7 @@ class Novel(NovelDescriptor):
 
     @staticmethod
     def new_scene(title: str = '') -> Scene:
-        return Scene(title, agendas=[SceneStructureAgenda()])
+        return Scene(title)
 
     @staticmethod
     def new_novel(title: str = '') -> 'Novel':

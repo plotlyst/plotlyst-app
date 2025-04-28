@@ -39,7 +39,7 @@ from plotlyst.core.domain import Novel, Character, Scene, Chapter, SceneStage, \
     default_stages, StoryStructure, \
     default_story_structures, NovelDescriptor, TemplateValue, \
     Conflict, BackstoryEvent, Comment, Document, default_documents, DocumentType, Causality, \
-    Plot, ScenePlotReference, SceneStructureAgenda, \
+    Plot, ScenePlotReference, CharacterAgency, \
     three_act_structure, SceneStoryBeat, Tag, default_general_tags, TagType, \
     default_tag_types, LanguageSettings, ImportOrigin, NovelPreferences, Goal, CharacterPreferences, TagReference, \
     ScenePlotReferenceData, MiceQuotient, SceneDrive, WorldBuilding, Board, \
@@ -180,7 +180,7 @@ class SceneInfo:
     synopsis: str = ''
     pov: Optional[uuid.UUID] = None
     characters: List[uuid.UUID] = field(default_factory=list)
-    agendas: List[SceneStructureAgenda] = field(default_factory=list)
+    agency: List[CharacterAgency] = field(default_factory=list)
     wip: bool = False
     plots: List[ScenePlotReferenceInfo] = field(default_factory=list)
     day: int = 1
@@ -610,7 +610,7 @@ class JsonClient:
 
                 scene = Scene(title=info.title, id=info.id, synopsis=info.synopsis,
                               wip=info.wip, day=info.day,
-                              plot_values=scene_plots, pov=pov, characters=scene_characters, agendas=info.agendas,
+                              plot_values=scene_plots, pov=pov, characters=scene_characters, agency=info.agency,
                               chapter=chapter, stage=stage, beats=info.beats,
                               comments=info.comments, tag_references=info.tag_references,
                               document=info.document, manuscript=info.manuscript, drive=info.drive,
@@ -749,7 +749,7 @@ class JsonClient:
         info = SceneInfo(id=scene.id, title=scene.title, synopsis=scene.synopsis,
                          wip=scene.wip, day=scene.day,
                          pov=self.__id_or_none(scene.pov), plots=plots, characters=characters,
-                         agendas=scene.agendas,
+                         agency=scene.agency,
                          chapter=self.__id_or_none(scene.chapter),
                          stage=self.__id_or_none(scene.stage),
                          beats=scene.beats, comments=scene.comments,
