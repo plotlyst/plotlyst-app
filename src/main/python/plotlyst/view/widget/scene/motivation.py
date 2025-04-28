@@ -20,14 +20,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from functools import partial
 from typing import Dict, Optional
 
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QWidget, QSlider
+from PyQt6.QtWidgets import QWidget, QSlider, QPushButton
 from overrides import overrides
-from qthandy import vbox, spacer, hbox, bold, decr_icon, translucent
+from qthandy import vbox, spacer, hbox, bold, decr_icon, translucent, decr_font, sp, transparent, italic
 
 from plotlyst.core.domain import Motivation, Scene, Novel, CharacterAgency
-from plotlyst.view.common import label, tool_btn, push_btn
+from plotlyst.view.common import label
 from plotlyst.view.generated.scene_goal_stakes_ui import Ui_GoalReferenceStakesEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.button import ChargeButton
@@ -82,32 +82,25 @@ class MotivationDisplay(QWidget, Ui_GoalReferenceStakesEditor):
                         slider.setValue(slider.value() + v)
 
 
-class MotivationChargeLabel(QWidget):
+class MotivationChargeLabel(QPushButton):
     def __init__(self, motivation: Motivation, simplified: bool = False, parent=None):
         super().__init__(parent)
         self._motivation = motivation
-        hbox(self, margin=0 if simplified else 1, spacing=0)
-        if simplified:
-            self._btn = tool_btn(IconRegistry.from_name(self._motivation.icon(), self._motivation.color()),
-                                 icon_resize=False, transparent_=True)
-        else:
-            self._btn = push_btn(IconRegistry.from_name(self._motivation.icon(), self._motivation.color()),
-                                 text=motivation.display_name(), icon_resize=False,
-                                 transparent_=True)
-        self._btn.setCursor(Qt.CursorShape.ArrowCursor)
-        decr_icon(self._btn, 2)
+        sp(self).h_max()
+        self.setIcon(IconRegistry.from_name(self._motivation.icon(), self._motivation.color()))
 
-        self._lblCharge = label('', description=True, italic=True, decr_font_diff=1)
+        transparent(self)
+        italic(self)
+        decr_icon(self, 2)
+        decr_font(self)
 
-        self.layout().addWidget(self._btn)
-        self.layout().addWidget(self._lblCharge)
+        translucent(self)
 
     def setCharge(self, charge: int):
-        bold(self._btn, charge > 0)
         if charge == 0:
-            self._lblCharge.clear()
+            self.setText('')
         else:
-            self._lblCharge.setText(f'+{charge}')
+            self.setText(f'+{charge}')
 
 
 class MotivationCharge(QWidget):

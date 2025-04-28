@@ -110,15 +110,14 @@ class SceneAgendaMotivationEditor(QWidget):
 
     def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, parent=None):
         super().__init__(parent)
-        hbox(self)
-        sp(self).h_max()
+        hbox(self, 1, 1)
 
         self._motivationDisplay = MotivationDisplay()
         self._motivationEditor = MotivationEditor()
         self._motivationEditor.motivationChanged.connect(self._valueChanged)
 
         self._wdgLabels = QWidget()
-        hbox(self._wdgLabels, 0, 0)
+        flow(self._wdgLabels, 0, 0)
         self._labels: Dict[Motivation, MotivationChargeLabel] = {}
 
         self._icon = push_btn(IconRegistry.from_name('fa5s.fist-raised', 'lightgrey'), transparent_=True)
@@ -129,7 +128,7 @@ class SceneAgendaMotivationEditor(QWidget):
         self._menu.addSeparator()
         self._menu.addWidget(self._motivationEditor)
 
-        self.layout().addWidget(self._icon)
+        self.layout().addWidget(self._icon, alignment=Qt.AlignmentFlag.AlignTop)
         self.layout().addWidget(self._wdgLabels)
 
         self._motivationDisplay.setNovel(novel)
@@ -509,6 +508,9 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
                     self._checkForConnector(el.row, col, added=False)
                     self.agenda.elements.remove(el)
+
+                    if el.type == StoryElementType.Motivation:
+                        self.agenda.motivations.clear()
                     break
 
         self.wdgPreviewParent.setVisible(True)
@@ -675,8 +677,9 @@ class CharacterChangeBubble(TextEditBubbleWidget):
         self.element = element
         self.setProperty('large-rounded', True)
         self.setProperty('relaxed-white-bg', True)
-        self.setMaximumSize(170, 135)
         transparent(self._textedit)
+        self.setMaximumWidth(170)
+        self._textedit.setMaximumSize(165, 105)
 
         self._title.setIcon(IconRegistry.from_name(self.element.type.icon(), PLOTLYST_SECONDARY_COLOR))
         self._title.setText(self.element.type.displayed_name())
@@ -705,6 +708,8 @@ class CharacterMotivationChange(CharacterChangeBubble):
         self.motivationEditor = SceneAgendaMotivationEditor(novel, scene, agency)
         self.motivationEditor.motivationChanged.connect(self._motivationChanged)
         self.addBottomWidget(self.motivationEditor)
+
+        self._textedit.setMaximumSize(165, 95)
 
     def _motivationChanged(self, motivation: Motivation, value: int):
         self._agency.motivations[motivation.value] = value
@@ -780,7 +785,8 @@ class CharacterAgencyEditor(QWidget):
                 self.wdgElements.layout().addWidget(wdg, el.row, col - 1, 1, 3)
                 continue
 
-            self.wdgElements.layout().addWidget(wdg, el.row, col, Qt.AlignmentFlag.AlignCenter)
+            self.wdgElements.layout().addWidget(wdg, el.row, col,
+                                                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop)
 
             if col == 3 and self._hasElement(el.row, 1):
                 arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
