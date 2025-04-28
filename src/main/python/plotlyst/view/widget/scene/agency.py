@@ -730,6 +730,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
             lambda: self._quickSelect(self.selectorExternalState, self.selectorCatalyst, self.selectorExternalChange))
 
         self.addWidget(self.wdgFrame)
+        # test
 
         self._initialized = True
 
