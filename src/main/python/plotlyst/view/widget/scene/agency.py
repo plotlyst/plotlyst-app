@@ -631,13 +631,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.wdgFrame.setProperty('white-bg', True)
         self.wdgFrame.setProperty('large-rounded', True)
 
-        self.btnReset = push_btn(IconRegistry.from_name('ph.x-light'), 'Reset', transparent_=True)
-        self.btnReset.installEventFilter(OpacityEventFilter(self.btnReset))
-        self.btnReset.clicked.connect(self._reset)
-
         self.wdgEditor = columns(5, 20)
 
-        self.wdgFrame.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
         self.lblDesc = icon_text(self.DEFAULT_ICON, self.DEFAULT_DESC, opacity=0.8)
         self.wdgFrame.layout().addWidget(self.lblDesc, alignment=Qt.AlignmentFlag.AlignLeft)
         self.wdgFrame.layout().addWidget(self.wdgEditor)
@@ -797,13 +792,14 @@ class CharacterChangesSelectorPopup(MenuWidget):
             return True
 
     def _reset(self):
-        for btn in self.btnGroup.buttons():
-            if btn.isChecked():
-                btn.setChecked(False)
+        if confirmed(f"Are you sure you want to reset this agency and remove all elements?", 'Reset character agency'):
+            for btn in self.btnGroup.buttons():
+                if btn.isChecked():
+                    btn.setChecked(False)
 
-        clear_layout(self.wdgPreview)
-        self.agenda.elements.clear()
-        self._initPreview()
+            clear_layout(self.wdgPreview)
+            self.agenda.elements.clear()
+            self._initPreview()
 
     def _initPreview(self):
         self.wdgPreview.layout().addWidget(label('Initial state', description=True, centered=True), 0, 1,
@@ -959,6 +955,7 @@ class CharacterChangeBubble(TextEditBubbleWidget):
 
 class CharacterAgencyEditor(QWidget):
     removed = pyqtSignal()
+    reset = pyqtSignal()
 
     def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
         super().__init__(parent)
@@ -973,6 +970,7 @@ class CharacterAgencyEditor(QWidget):
         self._menu = MenuWidget()
         self._menu.addAction(action('Edit agency', IconRegistry.edit_icon(), slot=self._openSelector))
         self._menu.addSeparator()
+        self._menu.addAction(action('Reset agency', IconRegistry.from_name('ph.x-light'), slot=self.reset))
         self._menu.addAction(action('Remove agency', IconRegistry.trash_can_icon(), slot=self.removed))
         self._charDisplay.clicked.connect(lambda: self._menu.exec(QCursor.pos()))
 
@@ -1159,9 +1157,15 @@ class SceneAgencyEditor(QWidget, EventListener):
             self._scene.agency.remove(agency)
             fade_out_and_gc(self.wdgAgendas, wdg)
 
+    def _agencyReset(self, wdg: CharacterAgencyEditor):
+        if confirmed(f"Are you sure you want to reset this agency and remove all elements?", 'Reset character agency'):
+            wdg.agenda.elements.clear()
+            wdg.refresh()
+
     def __initAgencyWidget(self, agenda: CharacterAgency) -> CharacterAgencyEditor:
         wdg = CharacterAgencyEditor(self._novel, self._scene, agenda)
         wdg.removed.connect(partial(self._agencyRemoved, wdg))
+        wdg.reset.connect(partial(self._agencyReset, wdg))
         self.wdgAgendas.layout().addWidget(wdg)
 
         return wdg
