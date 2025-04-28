@@ -118,8 +118,9 @@ class MotivationChargeLabel(QWidget):
                                  text=motivation.display_name(), icon_resize=False,
                                  transparent_=True)
         self._btn.setCursor(Qt.CursorShape.ArrowCursor)
+        decr_icon(self._btn, 2)
 
-        self._lblCharge = label('', description=True, italic=True)
+        self._lblCharge = label('', description=True, italic=True, decr_font_diff=1)
 
         self.layout().addWidget(self._btn)
         self.layout().addWidget(self._lblCharge)
@@ -214,34 +215,33 @@ class AbstractAgencyEditor(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._activated: bool = False
-        self._removalEnabled: bool = True
+        # self._activated: bool = False
+        # self._removalEnabled: bool = True
 
         self._icon = push_btn(QIcon(), transparent_=True)
-        self._icon.setIconSize(QSize(28, 28))
-        self._opacityFilter = OpacityEventFilter(self._icon)
+        # self._icon.setIconSize(QSize(28, 28))
         self._icon.clicked.connect(self._iconClicked)
 
-        self._btnReset = RemovalButton()
-        self._btnReset.clicked.connect(self._resetClicked)
-        retain_when_hidden(self._btnReset)
+        # self._btnReset = RemovalButton()
+        # self._btnReset.clicked.connect(self._resetClicked)
+        # retain_when_hidden(self._btnReset)
 
-    @overrides
-    def enterEvent(self, event: QEnterEvent) -> None:
-        if self._activated and self._removalEnabled:
-            self._btnReset.setVisible(True)
+    # @overrides
+    # def enterEvent(self, event: QEnterEvent) -> None:
+    #     if self._activated and self._removalEnabled:
+    #         self._btnReset.setVisible(True)
+    #
+    # @overrides
+    # def leaveEvent(self, event: QEvent) -> None:
+    #     self._btnReset.setVisible(False)
 
-    @overrides
-    def leaveEvent(self, event: QEvent) -> None:
-        self._btnReset.setVisible(False)
-
-    def reset(self):
-        self._activated = False
-        self._btnReset.setVisible(False)
-
-    def _resetClicked(self):
-        self.deactivated.emit()
-        self.reset()
+    # def reset(self):
+    #     self._activated = False
+    #     self._btnReset.setVisible(False)
+    #
+    # def _resetClicked(self):
+    #     self.deactivated.emit()
+    #     self.reset()
 
     def _iconClicked(self):
         pass
@@ -274,9 +274,8 @@ class SceneAgendaEmotionEditor(AbstractAgencyEditor):
         self._icon.setText('')
         self._icon.removeEventFilter(self._opacityFilter)
 
-    @overrides
     def reset(self):
-        super().reset()
+        # super().reset()
         self._slider.setVisible(False)
         self._icon.setIcon(IconRegistry.from_name('mdi.emoticon-neutral', 'lightgrey'))
         self._icon.setText('Emotion')
@@ -331,7 +330,7 @@ class SceneAgendaMotivationEditor(AbstractAgencyEditor):
 
         self.layout().addWidget(self._icon)
         self.layout().addWidget(self._wdgLabels)
-        self.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignTop)
+        # self.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignTop)
 
         self.reset()
 
@@ -354,18 +353,15 @@ class SceneAgendaMotivationEditor(AbstractAgencyEditor):
         else:
             self.reset()
 
-    def activate(self):
-        self._activated = True
-        if self._removalEnabled:
-            self._btnReset.setVisible(True)
-        self._icon.setText('')
-        self._icon.removeEventFilter(self._opacityFilter)
+    # def activate(self):
+    #     self._activated = True
+    #     if self._removalEnabled:
+    #         self._btnReset.setVisible(True)
+    #     self._icon.setText('')
 
-    @overrides
     def reset(self):
-        super().reset()
-        self._icon.setText('Motivation')
-        self._icon.installEventFilter(self._opacityFilter)
+        # super().reset()
+        # self._icon.setText('Motivation')
 
         self._motivationEditor.reset()
 
@@ -373,9 +369,9 @@ class SceneAgendaMotivationEditor(AbstractAgencyEditor):
         clear_layout(self._wdgLabels)
 
     def setValues(self, motivations: Dict[Motivation, int]):
-        self.activate()
+        # self.activate()
         self._motivationEditor.setMotivations(motivations)
-        self._btnReset.setHidden(True)
+        # self._btnReset.setHidden(True)
 
         self._labels.clear()
         clear_layout(self._wdgLabels)
@@ -390,17 +386,17 @@ class SceneAgendaMotivationEditor(AbstractAgencyEditor):
         if motivation not in self._labels.keys():
             lbl = MotivationChargeLabel(motivation, simplified=True)
             self._labels[motivation] = lbl
-            translucent(lbl, 0.8)
+            # translucent(lbl, 0.8)
             self._wdgLabels.layout().addWidget(lbl)
-            fade_in(lbl, 150)
+            # fade_in(lbl, 150)
         if value:
             self._labels[motivation].setCharge(value)
         else:
             fade_out_and_gc(self._wdgLabels, self._labels.pop(motivation))
-        if self._labels and not self._activated:
-            self.activate()
-        elif not self._labels and self._activated:
-            self.reset()
+        # if self._labels and not self._activated:
+        #     self.activate()
+        # elif not self._labels and self._activated:
+        #     self.reset()
 
 
 class SceneAgendaConflictEditor(AbstractAgencyEditor):
@@ -416,7 +412,7 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
 
         self._icon.setIcon(IconRegistry.conflict_icon('lightgrey'))
         self._icon.setText('Conflict')
-        self._icon.installEventFilter(self._opacityFilter)
+        # self._icon.installEventFilter(self._opacityFilter)
 
         self._sliderIntensity = ConflictIntensityEditor()
         self._sliderIntensity.intensityChanged.connect(self._intensityChanged)
@@ -426,7 +422,7 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
 
         self._wdgSliders = QWidget()
         hbox(self._wdgSliders).addWidget(self._sliderIntensity, alignment=Qt.AlignmentFlag.AlignLeft)
-        self._wdgSliders.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        # self._wdgSliders.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.layout().addWidget(self._icon)
         self.layout().addWidget(self._wdgSliders)
@@ -464,9 +460,8 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
         self._wdgConflicts.setVisible(True)
         self._icon.setHidden(True)
 
-    @overrides
     def reset(self):
-        super().reset()
+        # super().reset()
         self._wdgSliders.setVisible(False)
         self._wdgConflicts.setVisible(False)
         self._icon.setVisible(True)
@@ -483,7 +478,7 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
         if not self._activated:
             self.setValue(1)
             qtanim.fade_in(self._sliderIntensity, 150)
-            self._btnReset.setVisible(True)
+            # self._btnReset.setVisible(True)
 
     def _intensityChanged(self, value: int):
         if self._agenda:
@@ -579,6 +574,7 @@ class StoryElementPreviewIcon(Icon):
         self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 0,
                                     self._btnRemove.sizeHint().width(),
                                     self._btnRemove.sizeHint().height())
+
 
 agency_element_mime_type = 'aplication/agency-element'
 
@@ -730,7 +726,6 @@ class CharacterChangesSelectorPopup(MenuWidget):
             lambda: self._quickSelect(self.selectorExternalState, self.selectorCatalyst, self.selectorExternalChange))
 
         self.addWidget(self.wdgFrame)
-        # test
 
         self._initialized = True
 
@@ -929,8 +924,6 @@ class CharacterChangeBubble(TextEditBubbleWidget):
         self.element = element
         self.setProperty('large-rounded', True)
         self.setProperty('relaxed-white-bg', True)
-        # self._textedit.setProperty('rounded', False)
-        # self._textedit.setProperty('transparent', True)
         self.setMaximumSize(170, 135)
         transparent(self._textedit)
 
@@ -951,6 +944,22 @@ class CharacterChangeBubble(TextEditBubbleWidget):
     @overrides
     def _textChanged(self):
         self.element.text = self._textedit.toPlainText()
+
+
+class CharacterMotivationChange(CharacterChangeBubble):
+    def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, element: StoryElement, parent=None):
+        super().__init__(element, parent)
+        self._agency = agency
+
+        self.motivationEditor = SceneAgendaMotivationEditor()
+        self.motivationEditor.motivationChanged.connect(self._motivationChanged)
+        self.motivationEditor.setNovel(novel)
+        self.motivationEditor.setScene(scene)
+        self.motivationEditor.setAgenda(agency)
+        self.addBottomWidget(self.motivationEditor)
+
+    def _motivationChanged(self, motivation: Motivation, value: int):
+        self._agency.motivations[motivation.value] = value
 
 
 class CharacterAgencyEditor(QWidget):
@@ -1051,15 +1060,6 @@ class CharacterAgencyEditor(QWidget):
     def _emotionChanged(self, emotion: int):
         self.agenda.emotion = emotion
 
-    def _emotionReset(self):
-        self.agenda.emotion = None
-
-    def _motivationChanged(self, motivation: Motivation, value: int):
-        pass
-
-    def _motivationReset(self):
-        self.agenda.motivations.clear()
-
     def _hasElement(self, row: int, col: int) -> bool:
         item = self.wdgElements.layout().itemAtPosition(row, col)
         if item and item.widget() and isinstance(item.widget(), CharacterChangeBubble):
@@ -1068,15 +1068,10 @@ class CharacterAgencyEditor(QWidget):
     def __initElementWidget(self, element: StoryElement) -> CharacterChangeBubble:
         if element.type == StoryElementType.Connector:
             wdg = StoryElementConnector(element)
+        elif element.type == StoryElementType.Motivation:
+            wdg = CharacterMotivationChange(self.novel, self.scene, self.agenda, element)
         else:
             wdg = CharacterChangeBubble(element)
-            if element.type == StoryElementType.Motivation:
-                motivationEditor = SceneAgendaMotivationEditor()
-                motivationEditor.motivationChanged.connect(self._motivationChanged)
-                motivationEditor.setNovel(self.novel)
-                motivationEditor.setScene(self.scene)
-                motivationEditor.setAgenda(self.agenda)
-                wdg.addBottomWidget(motivationEditor)
 
         return wdg
 
