@@ -21,17 +21,17 @@ from functools import partial
 from typing import Dict, Optional, Tuple
 
 import qtanim
-from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer
-from PyQt6.QtGui import QEnterEvent, QMouseEvent, QIcon, QCursor
-from PyQt6.QtWidgets import QWidget, QSlider, QGridLayout, QButtonGroup, QAbstractButton
+from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
+from PyQt6.QtGui import QEnterEvent, QMouseEvent, QIcon, QCursor, QDragEnterEvent, QDragLeaveEvent
+from PyQt6.QtWidgets import QWidget, QSlider, QGridLayout, QButtonGroup, QAbstractButton, QFrame
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
     flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon
-from qthandy.filter import OpacityEventFilter
+from qthandy.filter import OpacityEventFilter, DragEventFilter, DropEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR
 from plotlyst.core.domain import Motivation, Novel, Scene, CharacterAgency, Character, StoryElementType, \
     StoryElement
 from plotlyst.env import app_env
@@ -554,6 +554,26 @@ class StoryElementPreviewIcon(Icon):
         self.left.emit()
 
 
+agency_element_mime_type = 'aplication/agency-element'
+
+
+class _PlaceholderWidget(QFrame):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(True)
+
+    @overrides
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if event.mimeData().hasFormat(agency_element_mime_type):
+            event.accept()
+            self.setStyleSheet(f'background: {PLOTLYST_TERTIARY_COLOR};')
+
+    @overrides
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
+        self.setStyleSheet('')
+
+
 class CharacterChangesSelectorPopup(MenuWidget):
     DEFAULT_DESC: str = "Reflect a character's change by selecting the initial and final states"
     DEFAULT_ICON: str = 'ph.user-focus'
@@ -569,6 +589,13 @@ class CharacterChangesSelectorPopup(MenuWidget):
         transparent_menu(self)
         self._initialized = False
         self._selectors: Dict[StoryElementType, _CharacterChangeSelectorToggle] = {}
+
+        self._dragged: Optional[StoryElementPreviewIcon] = None
+        self._dropped: bool = False
+        self._droppedRow: int = -1
+        self._droppedCol: int = -1
+        self._draggedRow: int = -1
+        self._draggedCol: int = -1
 
         self.btnGroup = QButtonGroup()
         self.btnGroup.setExclusive(False)
@@ -668,48 +695,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
                 self._selectors[el.type].setChecked(True)
             self.__initPreviewIcon(el, el.row, el.col)
 
-        # for i, change in enumerate(self.agenda.changes):
-        #     if change.initial is not None:
-        #         self.__initPreviewIcon(change.initial.type, 2 + i, self.INITIAL_COL)
-        #         if change.initial.type == StoryElementType.Goal:
-        #             self.selectorGoal.setChecked(True)
-        #         elif change.initial.type == StoryElementType.Expectation:
-        #             self.selectorExpectation.setChecked(True)
-        #         elif change.initial.type == StoryElementType.Character_internal_state:
-        #             self.selectorInternalState.setChecked(True)
-        #         elif change.initial.type == StoryElementType.Character_state:
-        #             self.selectorExternalState.setChecked(True)
-        #
-        #     if change.transition is not None:
-        #         self.__initPreviewIcon(change.transition.type, 2 + i, self.TRANSITION_COL)
-        #         if change.transition.type == StoryElementType.Conflict:
-        #             self.selectorConflict.setChecked(True)
-        #         elif change.transition.type == StoryElementType.Internal_conflict:
-        #             self.selectorInternalConflict.setChecked(True)
-        #         elif change.transition.type == StoryElementType.Catalyst:
-        #             self.selectorCatalyst.setChecked(True)
-        #         elif change.transition.type == StoryElementType.Action:
-        #             self.selectorAction.setChecked(True)
-        #
-        #     if change.final is not None:
-        #         self.__initPreviewIcon(change.final.type, 2 + i, self.FINAL_COL)
-        #         if change.final.type == StoryElementType.Outcome:
-        #             self.selectorOutcome.setChecked(True)
-        #         elif change.final.type == StoryElementType.Character_state_change:
-        #             self.selectorExternalChange.setChecked(True)
-        #         elif change.final.type == StoryElementType.Character_internal_state_change:
-        #             self.selectorInternalChange.setChecked(True)
-        #         elif change.final.type == StoryElementType.Realization:
-        #             self.selectorRealization.setChecked(True)
-        #         elif change.final.type == StoryElementType.Motivation:
-        #             self.selectorMotivation.setChecked(True)
-
-        # self.btnAdd = push_btn(IconRegistry.plus_icon(RELAXED_WHITE_COLOR), 'Add agency',
-        #                        properties=['confirm', 'positive'])
-        # self.btnAdd.setDisabled(True)
-        # self.wdgRightSide.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignRight)
-        # self.btnAdd.clicked.connect(self._addChanges)
-        # self.aboutToHide.connect(self._addChanges)
+        for row in range(2, self.wdgPreview.layout().rowCount()):
+            self._fillInRow(row)
 
         btnQuickAddGoal.clicked.connect(
             lambda: self._quickSelect(self.selectorGoal, self.selectorConflict, self.selectorOutcome))
@@ -734,7 +721,10 @@ class CharacterChangesSelectorPopup(MenuWidget):
             row = layout.rowCount() - 1
             item = layout.itemAtPosition(row, col)
             if item and item.widget():
-                row += 1
+                if isinstance(item.widget(), _PlaceholderWidget):
+                    layout.removeWidget(item.widget())
+                else:
+                    row += 1
 
             element = StoryElement(type_, row=row, col=col)
             self.agenda.elements.append(element)
@@ -744,19 +734,22 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
             if col == self.FINAL_COL and self._hasElement(row, self.INITIAL_COL) and not self._hasElement(row,
                                                                                                           self.TRANSITION_COL):
+                self._clearPlaceholder(row, self.TRANSITION_COL)
                 connector = StoryElement(StoryElementType.Connector, row=row, col=self.TRANSITION_COL)
                 self.agenda.elements.append(connector)
                 self.__initPreviewIcon(connector, row, self.TRANSITION_COL)
+
+            self._fillInRow(row)
         else:
             for el in self.agenda.elements:
                 if el.type == type_:
                     item = layout.itemAtPosition(el.row, el.col)
-                    fade_out_and_gc(self.wdgPreview, item.widget())
+                    fade_out_and_gc(self.wdgPreview, item.widget(), teardown=lambda: self._fillInRow(el.row))
 
                     if col == self.FINAL_COL and self._hasConnector(el.row, self.TRANSITION_COL):
                         item = layout.itemAtPosition(el.row, self.TRANSITION_COL)
                         self.agenda.elements.remove(item.widget().element)
-                        fade_out_and_gc(self.wdgPreview, item.widget())
+                        fade_out_and_gc(self.wdgPreview, item.widget(), teardown=lambda: self._fillInRow(el.row))
 
                     self.agenda.elements.remove(el)
                     break
@@ -818,6 +811,19 @@ class CharacterChangesSelectorPopup(MenuWidget):
                                            Qt.AlignmentFlag.AlignCenter)
         self.wdgPreview.layout().addWidget(line(color='lightgrey'), 1, 1, 1, 3)
 
+    def _fillInRow(self, row: int):
+        for col in range(1, 4):
+            if not self.wdgPreview.layout().itemAtPosition(row, col):
+                wdg = _PlaceholderWidget()
+                wdg.installEventFilter(
+                    DropEventFilter(wdg, [agency_element_mime_type], droppedSlot=partial(self._droppedAt, row, col)))
+                self.wdgPreview.layout().addWidget(wdg, row, col)
+
+    def _clearPlaceholder(self, row: int, col: int):
+        item = self.wdgPreview.layout().itemAtPosition(row, col)
+        if item and item.widget() and isinstance(item.widget(), _PlaceholderWidget):
+            self.wdgPreview.layout().removeWidget(item.widget())
+
     def _quickSelect(self, *selectors):
         if all(x.isChecked() for x in selectors):
             for btn in selectors:
@@ -826,16 +832,33 @@ class CharacterChangesSelectorPopup(MenuWidget):
             for btn in selectors:
                 btn.setChecked(True)
 
-    # def _addChanges(self):
-    #     changes: List[CharacterAgencyChanges] = []
-    #     for row in range(2, self.wdgPreview.layout().rowCount()):
-    #         change = CharacterAgencyChanges(initial=self._elementAt(row, self.INITIAL_COL),
-    #                                         transition=self._elementAt(row, self.TRANSITION_COL),
-    #                                         final=self._elementAt(row, self.FINAL_COL))
-    #         if change.initial or change.transition or change.final:
-    #             changes.append(change)
-    #
-    #     self.added.emit(changes)
+    def _dragStarted(self, wdg: StoryElementPreviewIcon, row: int, col: int):
+        self._dragged = wdg
+        self._dragged.setDisabled(True)
+        self._draggedRow = row
+        self._draggedCol = col
+
+    def _droppedAt(self, row: int, col: int, mimeData: QMimeData):
+        self._dropped = True
+        self._droppedRow = row
+        self._droppedCol = col
+
+    def _dragFinished(self):
+        if self._dropped:
+            row = self._droppedRow
+            col = self._droppedCol
+            self._dragged.element.row = row
+            self._dragged.element.col = col
+            self._clearPlaceholder(row, col)
+            self.__initPreviewIcon(self._dragged.element, row, col)
+
+            fade_out_and_gc(self.wdgPreview, self._dragged, teardown=lambda: self._fillInRow(self._draggedRow))
+            self._dropped = False
+            self._droppedRow = -1
+            self._droppedCol = -1
+        else:
+            self._dragged.setEnabled(True)
+        self._dragged = None
 
     def __initSelector(self, type_: StoryElementType, row: int, col: int,
                        quickAdd: bool = False) -> Tuple[_CharacterChangeSelectorToggle, Optional[QAbstractButton]]:
@@ -864,6 +887,9 @@ class CharacterChangesSelectorPopup(MenuWidget):
             wdg = StoryElementPreviewIcon(el)
             wdg.hovered.connect(partial(self._typeHovered, el.type))
             wdg.left.connect(self._typeLeft)
+            wdg.installEventFilter(
+                DragEventFilter(wdg, agency_element_mime_type, lambda x: wdg.element,
+                                startedSlot=partial(self._dragStarted, wdg, row, col), finishedSlot=self._dragFinished))
 
         self.wdgPreview.layout().addWidget(wdg, row, col, Qt.AlignmentFlag.AlignCenter)
 
