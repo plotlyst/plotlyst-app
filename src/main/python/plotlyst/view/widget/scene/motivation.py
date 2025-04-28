@@ -18,72 +18,83 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from functools import partial
-from typing import Dict, Optional
+from typing import Dict
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QWidget, QSlider, QPushButton
+from PyQt6.QtWidgets import QWidget, QPushButton
 from overrides import overrides
-from qthandy import vbox, spacer, hbox, bold, decr_icon, translucent, decr_font, sp, transparent, italic
+from qthandy import vbox, spacer, hbox, decr_icon, translucent, decr_font, sp, transparent, italic
 
+from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Motivation, Scene, Novel, CharacterAgency
 from plotlyst.view.common import label
-from plotlyst.view.generated.scene_goal_stakes_ui import Ui_GoalReferenceStakesEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.button import ChargeButton
 
 
-class MotivationDisplay(QWidget, Ui_GoalReferenceStakesEditor):
-    def __init__(self, parent=None):
+class MotivationPyramidStepButton(QPushButton):
+    def __init__(self, mot: Motivation, parent=None):
         super().__init__(parent)
-        self.setupUi(self)
-        self._novel: Optional[Novel] = None
-        self._scene: Optional[Scene] = None
-        self._agenda: Optional[CharacterAgency] = None
-        bold(self.lblTitle)
+        self.setIcon(IconRegistry.from_name(mot.icon(), mot.color()))
 
-        self._sliders: Dict[Motivation, QSlider] = {
-            Motivation.PHYSIOLOGICAL: self.sliderPhysiological,
-            Motivation.SAFETY: self.sliderSecurity,
-            Motivation.BELONGING: self.sliderBelonging,
-            Motivation.ESTEEM: self.sliderEsteem,
-            Motivation.SELF_ACTUALIZATION: self.sliderActualization,
-            Motivation.SELF_TRANSCENDENCE: self.sliderTranscendence,
-        }
+        self.setFixedWidth(180 - mot.value * 30)
+        self.setStyleSheet(f'''
+                   QPushButton {{
+                       background-color: {RELAXED_WHITE_COLOR};
+                       border: 1px solid lightgrey;
+                       border-bottom: 1px hidden grey;
+                       padding: 4px;
+                   }}
+               ''')
+        self.setEnabled(False)
 
-        for slider in self._sliders.values():
-            slider.setEnabled(False)
-        translucent(self)
+    def setValue(self, value: int):
+        pass
+
+
+class MotivationDisplay(QWidget):
+    def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, parent=None):
+        super().__init__(parent)
+        self._novel: Novel = novel
+        self._scene: Scene = scene
+        self._agenda: CharacterAgency = agency
+
+        vbox(self, 5, 0)
+
+        self._steps = {}
+        for mot in Motivation:
+            self._steps[mot] = MotivationPyramidStepButton(mot)
+
+        self.layout().addWidget(self._steps[Motivation.SELF_TRANSCENDENCE], alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._steps[Motivation.SELF_ACTUALIZATION], alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._steps[Motivation.ESTEEM], alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._steps[Motivation.BELONGING], alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._steps[Motivation.SAFETY], alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._steps[Motivation.PHYSIOLOGICAL], alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self._refresh()
 
     @overrides
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         pass
 
-    def setNovel(self, novel: Novel):
-        self._novel = novel
-
-    def setScene(self, scene: Scene):
-        self._scene = scene
-
-    def setAgenda(self, agenda: CharacterAgency):
-        self._agenda = agenda
-        self._refresh()
-
     def _refresh(self):
-        for slider in self._sliders.values():
-            slider.setValue(0)
-        for scene in self._novel.scenes:
-            if scene is self._scene:
-                break
-            for agenda in scene.agency:
-                if agenda.character_id and agenda.character_id == self._agenda.character_id:
-                    for mot, v in agenda.motivations.items():
-                        slider = self._sliders[Motivation(mot)]
-                        slider.setValue(slider.value() + v)
+        pass
+        # for btn in self._steps.values():
+        #     btn.setDisabled(True)
+        # for scene in self._novel.scenes:
+        #     if scene is self._scene:
+        #         break
+        #     for agenda in scene.agency:
+        #         if agenda.character_id and agenda.character_id == self._agenda.character_id:
+        #             for mot, v in agenda.motivations.items():
+        #                 slider = self._sliders[Motivation(mot)]
+        #                 slider.setValue(slider.value() + v)
 
 
 class MotivationChargeLabel(QPushButton):
-    def __init__(self, motivation: Motivation, simplified: bool = False, parent=None):
+    def __init__(self, motivation: Motivation, parent=None):
         super().__init__(parent)
         self._motivation = motivation
         sp(self).h_max()
@@ -109,7 +120,7 @@ class MotivationCharge(QWidget):
 
     def __init__(self, motivation: Motivation, parent=None):
         super().__init__(parent)
-        hbox(self)
+        hbox(self, 0, 0)
         self._motivation = motivation
         self._charge = 0
 
@@ -120,6 +131,7 @@ class MotivationCharge(QWidget):
         self._negCharge.clicked.connect(lambda: self._changeCharge(-1))
         self._negCharge.setHidden(True)
 
+        self.layout().addWidget(label(self._motivation.display_name()))
         self.layout().addWidget(self._label)
         self.layout().addWidget(spacer())
         self.layout().addWidget(self._negCharge)
@@ -152,17 +164,16 @@ class MotivationEditor(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-
         vbox(self)
-        self.layout().addWidget(label("Does the character's motivation change?"))
+        # self.layout().addWidget(label("Does the character's motivation change?"))
 
         self._editors: Dict[Motivation, MotivationCharge] = {}
-        self._addEditor(Motivation.PHYSIOLOGICAL)
-        self._addEditor(Motivation.SAFETY)
-        self._addEditor(Motivation.BELONGING)
-        self._addEditor(Motivation.ESTEEM)
-        self._addEditor(Motivation.SELF_ACTUALIZATION)
         self._addEditor(Motivation.SELF_TRANSCENDENCE)
+        self._addEditor(Motivation.SELF_ACTUALIZATION)
+        self._addEditor(Motivation.ESTEEM)
+        self._addEditor(Motivation.BELONGING)
+        self._addEditor(Motivation.SAFETY)
+        self._addEditor(Motivation.PHYSIOLOGICAL)
 
     def _addEditor(self, motivation: Motivation):
         wdg = MotivationCharge(motivation)

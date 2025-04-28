@@ -614,6 +614,7 @@ class ChargeButton(SecondaryActionToolButton):
         else:
             self.setIcon(IconRegistry.minus_icon('grey'))
         decr_icon(self, 4)
+        transparent(self)
         retain_when_hidden(self)
 
 

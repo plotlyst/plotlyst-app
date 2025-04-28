@@ -112,7 +112,7 @@ class SceneAgendaMotivationEditor(QWidget):
         super().__init__(parent)
         hbox(self, 1, 1)
 
-        self._motivationDisplay = MotivationDisplay()
+        self._motivationDisplay = MotivationDisplay(novel, scene, agency)
         self._motivationEditor = MotivationEditor()
         self._motivationEditor.motivationChanged.connect(self._valueChanged)
 
@@ -123,17 +123,14 @@ class SceneAgendaMotivationEditor(QWidget):
         self._icon = push_btn(IconRegistry.from_name('fa5s.fist-raised', 'lightgrey'), transparent_=True)
 
         self._menu = MenuWidget(self._icon)
+        self._wdgEditor = columns()
+        self._wdgEditor.layout().addWidget(self._motivationDisplay)
+        self._wdgEditor.layout().addWidget(self._motivationEditor)
         apply_white_menu(self._menu)
-        self._menu.addWidget(self._motivationDisplay)
-        self._menu.addSeparator()
-        self._menu.addWidget(self._motivationEditor)
+        self._menu.addWidget(self._wdgEditor)
 
         self.layout().addWidget(self._icon, alignment=Qt.AlignmentFlag.AlignTop)
         self.layout().addWidget(self._wdgLabels)
-
-        self._motivationDisplay.setNovel(novel)
-        self._motivationDisplay.setScene(scene)
-        self._motivationDisplay.setAgenda(agency)
 
         if agency.motivations:
             values = {Motivation(k): v for k, v in agency.motivations.items()}
@@ -147,7 +144,7 @@ class SceneAgendaMotivationEditor(QWidget):
 
     def _updateLabels(self, motivation: Motivation, value: int):
         if motivation not in self._labels.keys():
-            lbl = MotivationChargeLabel(motivation, simplified=True)
+            lbl = MotivationChargeLabel(motivation)
             self._labels[motivation] = lbl
             self._wdgLabels.layout().addWidget(lbl)
         if value:
