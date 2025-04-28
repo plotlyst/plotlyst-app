@@ -41,7 +41,7 @@ from plotlyst.events import NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, CharacterDeletedEvent
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, shadow, frame, scroll_area, rows, \
-    columns, spawn
+    columns
 from plotlyst.view.generated.scene_goal_stakes_ui import Ui_GoalReferenceStakesEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
@@ -600,7 +600,6 @@ class _PlaceholderWidget(QFrame):
         self.setStyleSheet('')
 
 
-@spawn
 class CharacterChangesSelectorPopup(MenuWidget):
     DEFAULT_DESC: str = "Reflect a character's change by selecting the initial and final states"
     DEFAULT_ICON: str = 'ph.user-focus'
@@ -610,9 +609,9 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
     added = pyqtSignal(list)
 
-    def __init__(self):  # agenda: CharacterAgency
+    def __init__(self, agenda: CharacterAgency):  # agenda: CharacterAgency
         super().__init__()
-        self.agenda = CharacterAgency()
+        self.agenda = agenda
         transparent_menu(self)
         self._initialized = False
         self._selectors: Dict[StoryElementType, _CharacterChangeSelectorToggle] = {}
@@ -759,13 +758,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
             wdg = self.__initPreviewIcon(element, row, col)
             fade_in(wdg)
 
-            if col == self.FINAL_COL and self._hasElement(row, self.INITIAL_COL) and not self._hasElement(row,
-                                                                                                          self.TRANSITION_COL):
-                self._clearPlaceholder(row, self.TRANSITION_COL)
-                connector = StoryElement(StoryElementType.Connector, row=row, col=self.TRANSITION_COL)
-                self.agenda.elements.append(connector)
-                self.__initPreviewIcon(connector, row, self.TRANSITION_COL)
-
+            self._checkForConnector(row, col, added=True)
             self._fillInRow(row)
         else:
             for el in self.agenda.elements:
@@ -773,11 +766,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
                     item = layout.itemAtPosition(el.row, el.col)
                     fade_out_and_gc(self.wdgPreview, item.widget(), teardown=lambda: self._fillInRow(el.row))
 
-                    if col == self.FINAL_COL and self._hasConnector(el.row, self.TRANSITION_COL):
-                        item = layout.itemAtPosition(el.row, self.TRANSITION_COL)
-                        self.agenda.elements.remove(item.widget().element)
-                        fade_out_and_gc(self.wdgPreview, item.widget(), teardown=lambda: self._fillInRow(el.row))
-
+                    self._checkForConnector(el.row, col, added=False)
                     self.agenda.elements.remove(el)
                     break
 
@@ -835,6 +824,20 @@ class CharacterChangesSelectorPopup(MenuWidget):
                     DropEventFilter(wdg, [agency_element_mime_type], droppedSlot=partial(self._droppedAt, row, col)))
                 self.wdgPreview.layout().addWidget(wdg, row, col)
 
+    def _checkForConnector(self, row: int, col: int, added: bool):
+        if added:
+            if col == self.FINAL_COL and self._hasElement(row, self.INITIAL_COL) and not self._hasElement(row,
+                                                                                                          self.TRANSITION_COL):
+                self._clearPlaceholder(row, self.TRANSITION_COL)
+                connector = StoryElement(StoryElementType.Connector, row=row, col=self.TRANSITION_COL)
+                self.agenda.elements.append(connector)
+                self.__initPreviewIcon(connector, row, self.TRANSITION_COL)
+
+        elif col == self.FINAL_COL and self._hasConnector(row, self.TRANSITION_COL):
+            item = self.wdgPreview.layout().itemAtPosition(row, self.TRANSITION_COL)
+            self.agenda.elements.remove(item.widget().element)
+            fade_out_and_gc(self.wdgPreview, item.widget(), teardown=lambda: self._fillInRow(row))
+
     def _clearPlaceholder(self, row: int, col: int):
         item = self.wdgPreview.layout().itemAtPosition(row, col)
         if item and item.widget() and isinstance(item.widget(), _PlaceholderWidget):
@@ -875,8 +878,10 @@ class CharacterChangesSelectorPopup(MenuWidget):
             self._dragged.element.col = col
             self._clearPlaceholder(row, col)
             self.__initPreviewIcon(self._dragged.element, row, col)
+            self._checkForConnector(row, col, added=True)
 
             fade_out_and_gc(self.wdgPreview, self._dragged, teardown=lambda: self._fillInRow(self._draggedRow))
+            self._checkForConnector(self._draggedRow, self._draggedCol, added=False)
             self._dropped = False
             self._droppedRow = -1
             self._droppedCol = -1
