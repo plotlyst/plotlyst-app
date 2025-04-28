@@ -18,17 +18,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from functools import partial
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
-from PyQt6.QtGui import QEnterEvent, QMouseEvent, QIcon, QCursor, QDragEnterEvent, QDragLeaveEvent
+from PyQt6.QtGui import QEnterEvent, QMouseEvent, QIcon, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent
 from PyQt6.QtWidgets import QWidget, QSlider, QGridLayout, QButtonGroup, QAbstractButton, QFrame
 from overrides import overrides
 from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
     flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon
-from qthandy.filter import OpacityEventFilter, DragEventFilter, DropEventFilter
+from qthandy.filter import OpacityEventFilter, DragEventFilter, DropEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR
@@ -41,7 +41,7 @@ from plotlyst.events import NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, CharacterDeletedEvent
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, shadow, frame, scroll_area, rows, \
-    columns
+    columns, spawn
 from plotlyst.view.generated.scene_goal_stakes_ui import Ui_GoalReferenceStakesEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
@@ -527,14 +527,30 @@ class _CharacterChangeSelectorToggle(SelectorToggleButton):
 
 
 class StoryElementConnector(ConnectorWidget):
-    def __init__(self, element: StoryElement, parent=None):
+    remove = pyqtSignal()
+
+    def __init__(self, element: StoryElement, parent=None, removalEnabled: bool = False):
         super().__init__(parent)
         self.element = element
+        self._removalEnabled = removalEnabled
+        if self._removalEnabled:
+            self._btnRemove = RemovalButton(self)
+            self.installEventFilter(VisibilityToggleEventFilter(self._btnRemove, self))
+            self._btnRemove.raise_()
+            self._btnRemove.clicked.connect(self.remove)
+
+    @overrides
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        if self._removalEnabled:
+            self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 0,
+                                        self._btnRemove.sizeHint().width(),
+                                        self._btnRemove.sizeHint().height())
 
 
 class StoryElementPreviewIcon(Icon):
     hovered = pyqtSignal()
     left = pyqtSignal()
+    remove = pyqtSignal()
 
     def __init__(self, element: StoryElement, parent=None):
         super().__init__(parent)
@@ -545,6 +561,11 @@ class StoryElementPreviewIcon(Icon):
         self.setIcon(IconRegistry.from_name(element.type.icon()))
         decr_font(self, 2)
 
+        self._btnRemove = RemovalButton(self)
+        self.installEventFilter(VisibilityToggleEventFilter(self._btnRemove, self))
+        self._btnRemove.raise_()
+        self._btnRemove.clicked.connect(self.remove)
+
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
         self.hovered.emit()
@@ -553,6 +574,11 @@ class StoryElementPreviewIcon(Icon):
     def leaveEvent(self, event: QEvent) -> None:
         self.left.emit()
 
+    @overrides
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 0,
+                                    self._btnRemove.sizeHint().width(),
+                                    self._btnRemove.sizeHint().height())
 
 agency_element_mime_type = 'aplication/agency-element'
 
@@ -574,6 +600,7 @@ class _PlaceholderWidget(QFrame):
         self.setStyleSheet('')
 
 
+@spawn
 class CharacterChangesSelectorPopup(MenuWidget):
     DEFAULT_DESC: str = "Reflect a character's change by selecting the initial and final states"
     DEFAULT_ICON: str = 'ph.user-focus'
@@ -583,9 +610,9 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
     added = pyqtSignal(list)
 
-    def __init__(self, agenda: CharacterAgency):  # agenda: CharacterAgency
+    def __init__(self):  # agenda: CharacterAgency
         super().__init__()
-        self.agenda = agenda
+        self.agenda = CharacterAgency()
         transparent_menu(self)
         self._initialized = False
         self._selectors: Dict[StoryElementType, _CharacterChangeSelectorToggle] = {}
@@ -754,17 +781,6 @@ class CharacterChangesSelectorPopup(MenuWidget):
                     self.agenda.elements.remove(el)
                     break
 
-            # for row in range(2, layout.rowCount()):
-            #     if self._hasElement(row, col, type_):
-            #         item = layout.itemAtPosition(row, col)
-            #         fade_out_and_gc(self.wdgPreview, item.widget())
-            #
-            #         if col == self.FINAL_COL and self._hasConnector(row, self.TRANSITION_COL):
-            #             item = layout.itemAtPosition(row, self.TRANSITION_COL)
-            #             fade_out_and_gc(self.wdgPreview, item.widget())
-            #
-            #         break
-
         self.wdgPreviewParent.setVisible(True)
 
     def _typeHovered(self, type_: StoryElementType):
@@ -824,6 +840,14 @@ class CharacterChangesSelectorPopup(MenuWidget):
         if item and item.widget() and isinstance(item.widget(), _PlaceholderWidget):
             self.wdgPreview.layout().removeWidget(item.widget())
 
+    def _deleteElement(self, wdg: Union[StoryElementPreviewIcon, ConnectorWidget], row: int, col: int):
+        if wdg.element.type == StoryElementType.Connector:
+            fade_out_and_gc(self.wdgPreview, wdg, teardown=lambda: self._fillInRow(row))
+            self.agenda.elements.remove(wdg.element)
+        else:
+            self._selectors[wdg.element.type].setChecked(False)
+            # self._toggled(wdg.element.type, col, False)
+
     def _quickSelect(self, *selectors):
         if all(x.isChecked() for x in selectors):
             for btn in selectors:
@@ -882,7 +906,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
     def __initPreviewIcon(self, el: StoryElement, row: int, col: int) -> StoryElementPreviewIcon:
         if el.type == StoryElementType.Connector:
-            wdg = StoryElementConnector(el)
+            wdg = StoryElementConnector(el, removalEnabled=True)
         else:
             wdg = StoryElementPreviewIcon(el)
             wdg.hovered.connect(partial(self._typeHovered, el.type))
@@ -891,6 +915,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
                 DragEventFilter(wdg, agency_element_mime_type, lambda x: wdg.element,
                                 startedSlot=partial(self._dragStarted, wdg, row, col), finishedSlot=self._dragFinished))
 
+        wdg.remove.connect(partial(self._deleteElement, wdg, row, col))
         self.wdgPreview.layout().addWidget(wdg, row, col, Qt.AlignmentFlag.AlignCenter)
 
         return wdg

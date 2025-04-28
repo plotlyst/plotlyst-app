@@ -582,7 +582,7 @@ class ConnectorWidget(QWidget):
 
     @overrides
     def sizeHint(self) -> QSize:
-        return QSize(80, 20)
+        return QSize(80, 40)
 
     @overrides
     def paintEvent(self, event: QPaintEvent) -> None:
