@@ -731,7 +731,6 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         self.addWidget(self.wdgFrame)
 
-        print(self.sizeHint())
         self._initialized = True
 
     def _toggled(self, type_: StoryElementType, col: int, toggled: bool):
