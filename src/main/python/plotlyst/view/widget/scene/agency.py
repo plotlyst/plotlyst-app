@@ -112,7 +112,6 @@ class SceneAgendaMotivationEditor(QWidget):
         super().__init__(parent)
         hbox(self)
         sp(self).h_max()
-        self._removalEnabled = False
 
         self._motivationDisplay = MotivationDisplay()
         self._motivationEditor = MotivationEditor()
@@ -138,13 +137,8 @@ class SceneAgendaMotivationEditor(QWidget):
         self._motivationDisplay.setAgenda(agency)
 
         if agency.motivations:
-            values: Dict[Motivation, int] = {}
-            for k, v in agency.motivations.items():
-                motivation = Motivation(k)
-                values[motivation] = v
-
+            values = {Motivation(k): v for k, v in agency.motivations.items()}
             self._motivationEditor.setMotivations(values)
-
             for mot, v in values.items():
                 self._updateLabels(mot, v)
 
