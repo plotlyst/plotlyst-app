@@ -22,7 +22,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
-from PyQt6.QtGui import QEnterEvent, QMouseEvent, QIcon, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent
+from PyQt6.QtGui import QEnterEvent, QMouseEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent
 from PyQt6.QtWidgets import QWidget, QSlider, QGridLayout, QButtonGroup, QAbstractButton, QFrame
 from overrides import overrides
 from qtanim import fade_in
@@ -210,44 +210,7 @@ class MotivationEditor(QWidget):
             self._editors[mot].setValue(v)
 
 
-class AbstractAgencyEditor(QWidget):
-    deactivated = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        # self._activated: bool = False
-        # self._removalEnabled: bool = True
-
-        self._icon = push_btn(QIcon(), transparent_=True)
-        # self._icon.setIconSize(QSize(28, 28))
-        self._icon.clicked.connect(self._iconClicked)
-
-        # self._btnReset = RemovalButton()
-        # self._btnReset.clicked.connect(self._resetClicked)
-        # retain_when_hidden(self._btnReset)
-
-    # @overrides
-    # def enterEvent(self, event: QEnterEvent) -> None:
-    #     if self._activated and self._removalEnabled:
-    #         self._btnReset.setVisible(True)
-    #
-    # @overrides
-    # def leaveEvent(self, event: QEvent) -> None:
-    #     self._btnReset.setVisible(False)
-
-    # def reset(self):
-    #     self._activated = False
-    #     self._btnReset.setVisible(False)
-    #
-    # def _resetClicked(self):
-    #     self.deactivated.emit()
-    #     self.reset()
-
-    def _iconClicked(self):
-        pass
-
-
-class SceneAgendaEmotionEditor(AbstractAgencyEditor):
+class SceneAgendaEmotionEditor(QWidget):
     emotionChanged = pyqtSignal(int)
     deactivated = pyqtSignal()
 
@@ -264,7 +227,6 @@ class SceneAgendaEmotionEditor(AbstractAgencyEditor):
         self.layout().addWidget(self._icon)
         self.layout().addWidget(self._slider)
         self.layout().addWidget(spacer(max_stretch=5))
-        self.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignTop)
 
         self.reset()
 
@@ -272,14 +234,12 @@ class SceneAgendaEmotionEditor(AbstractAgencyEditor):
         self._activated = True
         self._slider.setVisible(True)
         self._icon.setText('')
-        self._icon.removeEventFilter(self._opacityFilter)
 
     def reset(self):
         # super().reset()
         self._slider.setVisible(False)
         self._icon.setIcon(IconRegistry.from_name('mdi.emoticon-neutral', 'lightgrey'))
         self._icon.setText('Emotion')
-        self._icon.installEventFilter(self._opacityFilter)
         translucent(self._icon, 0.4)
 
     def setValue(self, value: int):
@@ -289,21 +249,17 @@ class SceneAgendaEmotionEditor(AbstractAgencyEditor):
         else:
             self._slider.setValue(value)
 
-        self._btnReset.setHidden(True)
-
-    @overrides
     def _iconClicked(self):
         if not self._activated:
             self.setValue(5)
             qtanim.fade_in(self._slider, 150)
-            self._btnReset.setVisible(True)
 
     def _valueChanged(self, value: int):
         self._icon.setIcon(IconRegistry.emotion_icon_from_feeling(value))
         self.emotionChanged.emit(value)
 
 
-class SceneAgendaMotivationEditor(AbstractAgencyEditor):
+class SceneAgendaMotivationEditor(QWidget):
     motivationChanged = pyqtSignal(Motivation, int)
 
     def __init__(self, parent=None):
@@ -320,7 +276,7 @@ class SceneAgendaMotivationEditor(AbstractAgencyEditor):
         hbox(self._wdgLabels, 0, 0)
         self._labels: Dict[Motivation, MotivationChargeLabel] = {}
 
-        self._icon.setIcon(IconRegistry.from_name('fa5s.fist-raised', 'lightgrey'))
+        self._icon = push_btn(IconRegistry.from_name('fa5s.fist-raised', 'lightgrey'), transparent_=True)
 
         self._menu = MenuWidget(self._icon)
         apply_white_menu(self._menu)
@@ -330,7 +286,6 @@ class SceneAgendaMotivationEditor(AbstractAgencyEditor):
 
         self.layout().addWidget(self._icon)
         self.layout().addWidget(self._wdgLabels)
-        # self.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignTop)
 
         self.reset()
 
@@ -353,25 +308,14 @@ class SceneAgendaMotivationEditor(AbstractAgencyEditor):
         else:
             self.reset()
 
-    # def activate(self):
-    #     self._activated = True
-    #     if self._removalEnabled:
-    #         self._btnReset.setVisible(True)
-    #     self._icon.setText('')
-
     def reset(self):
-        # super().reset()
-        # self._icon.setText('Motivation')
-
         self._motivationEditor.reset()
 
         self._labels.clear()
         clear_layout(self._wdgLabels)
 
     def setValues(self, motivations: Dict[Motivation, int]):
-        # self.activate()
         self._motivationEditor.setMotivations(motivations)
-        # self._btnReset.setHidden(True)
 
         self._labels.clear()
         clear_layout(self._wdgLabels)
@@ -386,20 +330,14 @@ class SceneAgendaMotivationEditor(AbstractAgencyEditor):
         if motivation not in self._labels.keys():
             lbl = MotivationChargeLabel(motivation, simplified=True)
             self._labels[motivation] = lbl
-            # translucent(lbl, 0.8)
             self._wdgLabels.layout().addWidget(lbl)
-            # fade_in(lbl, 150)
         if value:
             self._labels[motivation].setCharge(value)
         else:
             fade_out_and_gc(self._wdgLabels, self._labels.pop(motivation))
-        # if self._labels and not self._activated:
-        #     self.activate()
-        # elif not self._labels and self._activated:
-        #     self.reset()
 
 
-class SceneAgendaConflictEditor(AbstractAgencyEditor):
+class SceneAgendaConflictEditor(QWidget):
     conflictReset = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -473,7 +411,6 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
         self._sliderIntensity.setValue(value)
         self.activate()
 
-    @overrides
     def _iconClicked(self):
         if not self._activated:
             self.setValue(1)
