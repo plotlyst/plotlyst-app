@@ -729,7 +729,7 @@ class CharacterAgencyEditor(QWidget):
         self._charDisplay.setIconSize(QSize(36, 36))
         self._menuSelector: Optional[CharacterChangesSelectorPopup] = None
         self._menu = MenuWidget()
-        self._menu.addAction(action('Edit agency', IconRegistry.edit_icon(), slot=self._openSelector))
+        self._menu.addAction(action('Edit agency', IconRegistry.edit_icon(), slot=self.openSelector))
         self._menu.addSeparator()
         self._menu.addAction(action('Reset agency', IconRegistry.from_name('ph.x-light'), slot=self.reset))
         self._menu.addAction(action('Remove agency', IconRegistry.trash_can_icon(), slot=self.removed))
@@ -737,7 +737,7 @@ class CharacterAgencyEditor(QWidget):
 
         self.btnAdd = push_btn(IconRegistry.plus_icon('grey'), 'Track character changes', transparent_=True)
         self.btnAdd.installEventFilter(OpacityEventFilter(self.btnAdd, leaveOpacity=0.7))
-        self.btnAdd.clicked.connect(self._openSelector)
+        self.btnAdd.clicked.connect(self.openSelector)
 
         self.wdgElements = QWidget()
         grid(self.wdgElements)
@@ -799,7 +799,7 @@ class CharacterAgencyEditor(QWidget):
                 incr_icon(arrow, 4)
                 self.wdgElements.layout().addWidget(arrow, el.row, 4, Qt.AlignmentFlag.AlignCenter)
 
-    def _openSelector(self):
+    def openSelector(self):
         def added():
             self._menuSelector.hide()
             self.refresh()
@@ -898,6 +898,7 @@ class SceneAgencyEditor(QWidget, EventListener):
         wdg = self.__initAgencyWidget(agency)
         qtanim.fade_in(wdg, teardown=finish)
         QTimer.singleShot(20, lambda: self.agencyAdded.emit(wdg))
+        QTimer.singleShot(70, wdg.openSelector)
 
     def _agencyRemoved(self, wdg: CharacterAgencyEditor):
         if confirmed(f"Are you sure you want to delete this agency?", 'Delete character agency'):
