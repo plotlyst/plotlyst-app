@@ -896,14 +896,58 @@ class NodeItem(QAbstractGraphicsShapeItem):
     @overrides
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
-            if self._confinedRect is not None:
+            if self._confinedRect is not None or self._stickyPoint is not None or self.networkScene().isSnapToGrid():
                 new_pos = value
-                new_pos.setX(max(self._confinedRect.left(), min(self._confinedRect.right(), new_pos.x())))
-                new_pos.setY(max(self._confinedRect.top(), min(self._confinedRect.bottom(), new_pos.y())))
+                if self._confinedRect is not None:
+                    new_pos.setX(max(self._confinedRect.left(), min(self._confinedRect.right(), new_pos.x())))
+                    new_pos.setY(max(self._confinedRect.top(), min(self._confinedRect.bottom(), new_pos.y())))
 
-                if self._stickyPoint:
+                if self._stickyPoint is not None:
                     if self._stickyPoint.y() - self._stickyRange < new_pos.y() < self._stickyPoint.y() + self._stickyRange:
                         new_pos.setY(self._stickyPoint.y())
+
+                if self.networkScene().isSnapToGrid():
+                    grid_dist = self.networkScene().gridDistance()
+                    grid_range = self.networkScene().gridRange()
+
+                    center_offset = self.boundingRect().center()
+
+                    center_scene_pos = new_pos + center_offset
+
+                    x_mod = center_scene_pos.x() % grid_dist
+                    y_mod = center_scene_pos.y() % grid_dist
+
+                    snapped_center_x = center_scene_pos.x()
+                    snapped_center_y = center_scene_pos.y()
+
+                    if x_mod < grid_range:
+                        snapped_center_x -= x_mod
+                    elif x_mod > grid_dist - grid_range:
+                        snapped_center_x += (grid_dist - x_mod)
+
+                    if y_mod < grid_range:
+                        snapped_center_y -= y_mod
+                    elif y_mod > grid_dist - grid_range:
+                        snapped_center_y += (grid_dist - y_mod)
+
+                    new_pos = QPointF(
+                        snapped_center_x - center_offset.x(),
+                        snapped_center_y - center_offset.y()
+                    )
+                    # grid_dist = self.networkScene().gridDistance()
+                    # grid_radius = self.networkScene().gridRange()
+                    # x_mod = new_pos.x() % grid_dist
+                    # y_mod = new_pos.y() % grid_dist
+                    #
+                    # if x_mod < grid_radius:
+                    #     new_pos.setX(new_pos.x() - x_mod)
+                    # elif x_mod > grid_dist - grid_radius:
+                    #     new_pos.setX(new_pos.x() + (grid_dist - x_mod))
+                    #
+                    # if y_mod < grid_radius:
+                    #     new_pos.setY(new_pos.y() - y_mod)
+                    # elif y_mod > grid_dist - grid_radius:
+                    #     new_pos.setY(new_pos.y() + (grid_dist - y_mod))
 
                 self.setPos(new_pos)
                 self._onPosChanged()
