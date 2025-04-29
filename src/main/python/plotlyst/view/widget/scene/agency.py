@@ -270,7 +270,12 @@ class _CharacterChangeSelectorToggle(SelectorToggleButton):
         self.left.emit()
 
 
-class StoryElementConnector(ConnectorWidget):
+class AgencyElementWidget:
+    def __init__(self):
+        pass
+
+
+class StoryElementConnector(ConnectorWidget, AgencyElementWidget):
     remove = pyqtSignal()
 
     def __init__(self, element: StoryElement, parent=None, removalEnabled: bool = False):
@@ -429,29 +434,42 @@ class CharacterChangesSelectorPopup(MenuWidget):
                                              self.FINAL_COL)
         self.wdgSelectors.layout().addWidget(line(color='lightgrey'), 1, self.INITIAL_COL, 1, 3)
 
-        self.selectorGoal, btnQuickAddGoal = self.__initSelector(StoryElementType.Goal, 2, self.INITIAL_COL,
+        row = 2
+        self.selectorGoal, btnQuickAddGoal = self.__initSelector(StoryElementType.Goal, row, self.INITIAL_COL,
                                                                  quickAdd=True)
-        self.selectorConflict = self.__initSelector(StoryElementType.Conflict, 2, self.TRANSITION_COL)
-        self.selectorOutcome = self.__initSelector(StoryElementType.Outcome, 2, self.FINAL_COL)
+        self.selectorConflict = self.__initSelector(StoryElementType.Conflict, row, self.TRANSITION_COL)
+        self.selectorOutcome = self.__initSelector(StoryElementType.Outcome, row, self.FINAL_COL)
+        row += 1
 
-        self.selectorExpectation, btnQuickAddExpectation = self.__initSelector(StoryElementType.Expectation, 4,
+        self.selectorExpectation, btnQuickAddExpectation = self.__initSelector(StoryElementType.Expectation, row,
                                                                                self.INITIAL_COL, quickAdd=True)
-        self.selectorRealization = self.__initSelector(StoryElementType.Realization, 4, self.FINAL_COL)
+        self.selectorRealization = self.__initSelector(StoryElementType.Realization, row, self.FINAL_COL)
+        row += 1
+
+        self.selectorEmotion, btnQuickAddEmotion = self.__initSelector(StoryElementType.Emotion, row, self.INITIAL_COL,
+                                                                       quickAdd=True)
+        self.selectorEmotionChange = self.__initSelector(StoryElementType.Emotion_change, row, self.FINAL_COL)
+        row += 1
+
         self.selectorInternalState, btnQuickAddInternal = self.__initSelector(StoryElementType.Character_internal_state,
-                                                                              5, self.INITIAL_COL, quickAdd=True)
+                                                                              row, self.INITIAL_COL, quickAdd=True)
         self.selectorInternalConflict: _CharacterChangeSelectorToggle = self.__initSelector(
-            StoryElementType.Internal_conflict, 5, self.TRANSITION_COL)
-        self.selectorInternalChange = self.__initSelector(StoryElementType.Character_internal_state_change, 5,
+            StoryElementType.Internal_conflict, row, self.TRANSITION_COL)
+        self.selectorInternalChange = self.__initSelector(StoryElementType.Character_internal_state_change, row,
                                                           self.FINAL_COL)
+        row += 1
 
-        self.selectorExternalState, btnQuickAddExternal = self.__initSelector(StoryElementType.Character_state, 6,
+        self.selectorExternalState, btnQuickAddExternal = self.__initSelector(StoryElementType.Character_state, row,
                                                                               self.INITIAL_COL, quickAdd=True)
-        self.selectorCatalyst = self.__initSelector(StoryElementType.Catalyst, 6, self.TRANSITION_COL)
+        self.selectorCatalyst = self.__initSelector(StoryElementType.Catalyst, row, self.TRANSITION_COL)
         self.selectorExternalChange: _CharacterChangeSelectorToggle = self.__initSelector(
-            StoryElementType.Character_state_change, 6, self.FINAL_COL)
-        self.selectorAction = self.__initSelector(StoryElementType.Action, 8, self.TRANSITION_COL)
+            StoryElementType.Character_state_change, row, self.FINAL_COL)
+        row += 1
 
-        self.selectorMotivation = self.__initSelector(StoryElementType.Motivation, 9, self.FINAL_COL)
+        self.selectorAction = self.__initSelector(StoryElementType.Action, row, self.TRANSITION_COL)
+        row += 1
+
+        self.selectorMotivation = self.__initSelector(StoryElementType.Motivation, row, self.FINAL_COL)
 
         if self.agenda.elements:
             self.wdgPreviewParent.setVisible(True)
@@ -471,6 +489,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
         btnQuickAddInternal.clicked.connect(
             lambda: self._quickSelect(self.selectorInternalState, self.selectorInternalConflict,
                                       self.selectorInternalChange))
+        btnQuickAddEmotion.clicked.connect(
+            lambda: self._quickSelect(self.selectorEmotion, self.selectorEmotionChange))
         btnQuickAddExternal.clicked.connect(
             lambda: self._quickSelect(self.selectorExternalState, self.selectorCatalyst, self.selectorExternalChange))
 
@@ -669,7 +689,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
         return wdg
 
 
-class CharacterChangeBubble(TextEditBubbleWidget):
+class CharacterChangeBubble(TextEditBubbleWidget, AgencyElementWidget):
     def __init__(self, element: StoryElement, parent=None):
         super().__init__(parent)
         margins(self, left=1, right=1)
@@ -713,6 +733,41 @@ class CharacterMotivationChange(CharacterChangeBubble):
     def _motivationChanged(self, motivation: Motivation, value: int):
         self._agency.motivations[motivation.value] = value
 
+
+class CharacterEmotionChange(QFrame, AgencyElementWidget):
+    def __init__(self, element: StoryElement, agency: CharacterAgency, parent=None):
+        super().__init__(parent)
+        self.element = element
+        self.agency = agency
+        vbox(self)
+
+        self._icon = push_btn(IconRegistry.from_name('mdi.emoticon-neutral', 'lightgrey'), transparent_=True)
+        incr_icon(self._icon, 12)
+        self._icon.clicked.connect(self._displayEditor)
+
+        self.layout().addWidget(self._icon, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        if not self.element.value:
+            self.element.value = 5
+
+        self._update()
+
+    def _displayEditor(self):
+        menu = MenuWidget()
+        emotionSlider = EmotionEditorSlider()
+        emotionSlider.setMaximumWidth(200)
+        emotionSlider.setValue(self.element.value)
+        emotionSlider.valueChanged.connect(self._emotionChanged)
+        menu.addWidget(emotionSlider)
+
+        menu.exec(self.mapToGlobal(self._icon.rect().topRight()))
+
+    def _emotionChanged(self, value: int):
+        self.element.value = value
+        self._update()
+
+    def _update(self):
+        self._icon.setIcon(IconRegistry.emotion_icon_from_feeling(self.element.value))
 
 class CharacterAgencyEditor(QWidget):
     removed = pyqtSignal()
@@ -818,11 +873,13 @@ class CharacterAgencyEditor(QWidget):
         if item and item.widget() and isinstance(item.widget(), CharacterChangeBubble):
             return True
 
-    def __initElementWidget(self, element: StoryElement) -> CharacterChangeBubble:
+    def __initElementWidget(self, element: StoryElement) -> AgencyElementWidget:
         if element.type == StoryElementType.Connector:
             wdg = StoryElementConnector(element)
         elif element.type == StoryElementType.Motivation:
             wdg = CharacterMotivationChange(self.novel, self.scene, self.agenda, element)
+        elif element.type == StoryElementType.Emotion or element.type == StoryElementType.Emotion_change:
+            wdg = CharacterEmotionChange(element, self.agenda)
         else:
             wdg = CharacterChangeBubble(element)
 

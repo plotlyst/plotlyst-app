@@ -1832,6 +1832,7 @@ class StoryElementType(Enum):
     Responsibility = 'responsibility'
     Decision = 'decision'
     Emotion = 'emotion'
+    Emotion_change = 'emotion_change'
     Agency = 'agency'
     Initiative = 'initiative'
     Catalyst = 'catalyst'
@@ -1890,6 +1891,10 @@ class StoryElementType(Enum):
             return 'fa5.lightbulb'
         elif self == StoryElementType.Motivation:
             return 'fa5s.fist-raised'
+        elif self == StoryElementType.Emotion:
+            return 'mdi.emoticon-neutral-outline'
+        elif self == StoryElementType.Emotion_change:
+            return 'mdi.emoticon-neutral-outline'
 
     def placeholder(self) -> str:
         if self == StoryElementType.Goal:
@@ -1924,6 +1929,10 @@ class StoryElementType(Enum):
             return "What decision does the character have to make?"
         elif self == StoryElementType.Motivation:
             return "How does the character's motivation change?"
+        elif self == StoryElementType.Emotion:
+            return "What's the character's emotional state?"
+        elif self == StoryElementType.Emotion_change:
+            return "How does the character's emotional state change?"
 
         return ''
 
@@ -1934,6 +1943,7 @@ class StoryElement:
     ref: Optional[uuid.UUID] = None
     text: str = ''
     intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
+    value: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     row: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     col: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     arrows: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
