@@ -20,37 +20,88 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from functools import partial
 from typing import Dict
 
+import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtGui import QMouseEvent, QColor
 from PyQt6.QtWidgets import QWidget, QPushButton
 from overrides import overrides
 from qthandy import vbox, spacer, hbox, decr_icon, translucent, decr_font, sp, transparent, italic
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Motivation, Scene, Novel, CharacterAgency
-from plotlyst.view.common import label
+from plotlyst.view.common import label, to_rgba_str
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.button import ChargeButton
+
+MAX_CHARGE: int = 5
 
 
 class MotivationPyramidStepButton(QPushButton):
     def __init__(self, mot: Motivation, parent=None):
         super().__init__(parent)
-        self.setIcon(IconRegistry.from_name(mot.icon(), mot.color()))
+        self._motivation = mot
+        self._value: int = 0
 
         self.setFixedWidth(180 - mot.value * 30)
-        self.setStyleSheet(f'''
-                   QPushButton {{
-                       background-color: {RELAXED_WHITE_COLOR};
-                       border: 1px solid lightgrey;
-                       border-bottom: 1px hidden grey;
-                       padding: 4px;
-                   }}
-               ''')
         self.setEnabled(False)
 
+    def value(self) -> int:
+        return self._value
+
     def setValue(self, value: int):
-        pass
+        self._value = value
+        self.refresh()
+
+    def refresh(self):
+        if self._value == 0:
+            self.setDisabled(True)
+            self.setGraphicsEffect(None)
+            self._setDefaultStylesheet()
+        else:
+            self.setEnabled(True)
+
+            if self._value == MAX_CHARGE:
+                self.setIcon(IconRegistry.from_name(self._motivation.icon(), RELAXED_WHITE_COLOR))
+                qtanim.glow(self, color=QColor(self._motivation.color()), reverseAnimation=False, radius=15)
+                rgba_str = to_rgba_str(QColor(self._motivation.color()), 175)
+                self.setStyleSheet(f"""
+                                    QPushButton {{
+                                            border: 1px solid lightgrey;
+                                            border-bottom: 1px hidden grey;
+                                            padding: 4px;
+                                            background: {rgba_str};
+                                    }}
+                                        """)
+            else:
+                self.setGraphicsEffect(None)
+                self.setIcon(IconRegistry.from_name(self._motivation.icon(), self._motivation.color()))
+
+                normalized = min(self._value / MAX_CHARGE, 1)
+                self.setStyleSheet(f"""
+                    QPushButton {{
+                            border: 1px solid lightgrey;
+                            border-bottom: 1px hidden grey;
+                            padding: 4px;
+                            background: qlineargradient(
+                                x1: 0, y1: 1, x2: 0, y2: 0,
+                                stop: 0 {self._motivation.color()},
+                                stop: {normalized:.2f} {self._motivation.color()},
+                                stop: {normalized:.2f} transparent,
+                                stop: 1 transparent
+                            );
+                    }}
+                        """)
+
+    def _setDefaultStylesheet(self):
+        self.setIcon(IconRegistry.from_name(self._motivation.icon(), self._motivation.color()))
+        self.setStyleSheet(f'''
+                           QPushButton {{
+                               background-color: {RELAXED_WHITE_COLOR};
+                               border: 1px solid lightgrey;
+                               border-bottom: 1px hidden grey;
+                               padding: 4px;
+                           }}
+                       ''')
 
 
 class MotivationDisplay(QWidget):
@@ -73,24 +124,21 @@ class MotivationDisplay(QWidget):
         self.layout().addWidget(self._steps[Motivation.SAFETY], alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._steps[Motivation.PHYSIOLOGICAL], alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self._refresh()
+        self.refresh()
 
     @overrides
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         pass
 
-    def _refresh(self):
-        pass
-        # for btn in self._steps.values():
-        #     btn.setDisabled(True)
-        # for scene in self._novel.scenes:
-        #     if scene is self._scene:
-        #         break
-        #     for agenda in scene.agency:
-        #         if agenda.character_id and agenda.character_id == self._agenda.character_id:
-        #             for mot, v in agenda.motivations.items():
-        #                 slider = self._sliders[Motivation(mot)]
-        #                 slider.setValue(slider.value() + v)
+    def refresh(self):
+        for step in self._steps.values():
+            step.setValue(0)
+        for scene in self._novel.scenes:
+            for agenda in scene.agency:
+                if agenda.character_id and agenda.character_id == self._agenda.character_id:
+                    for mot, v in agenda.motivations.items():
+                        step = self._steps[Motivation(mot)]
+                        step.setValue(step.value() + v)
 
 
 class MotivationChargeLabel(QPushButton):
@@ -116,7 +164,6 @@ class MotivationChargeLabel(QPushButton):
 
 class MotivationCharge(QWidget):
     charged = pyqtSignal(int)
-    MAX_CHARGE: int = 5
 
     def __init__(self, motivation: Motivation, parent=None):
         super().__init__(parent)
@@ -138,7 +185,7 @@ class MotivationCharge(QWidget):
         self.layout().addWidget(self._posCharge)
 
     def setValue(self, value: int):
-        self._charge = min(value, self.MAX_CHARGE)
+        self._charge = min(value, MAX_CHARGE)
         self._update()
 
     def _changeCharge(self, charge: int):
@@ -153,7 +200,7 @@ class MotivationCharge(QWidget):
             self._negCharge.setHidden(True)
         else:
             self._negCharge.setVisible(True)
-        if self._charge == self.MAX_CHARGE:
+        if self._charge == MAX_CHARGE:
             self._posCharge.setHidden(True)
         else:
             self._posCharge.setVisible(True)
@@ -165,7 +212,6 @@ class MotivationEditor(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         vbox(self)
-        # self.layout().addWidget(label("Does the character's motivation change?"))
 
         self._editors: Dict[Motivation, MotivationCharge] = {}
         self._addEditor(Motivation.SELF_TRANSCENDENCE)

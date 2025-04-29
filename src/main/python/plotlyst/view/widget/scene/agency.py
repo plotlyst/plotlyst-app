@@ -136,11 +136,13 @@ class SceneAgendaMotivationEditor(QWidget):
             values = {Motivation(k): v for k, v in agency.motivations.items()}
             self._motivationEditor.setMotivations(values)
             for mot, v in values.items():
-                self._updateLabels(mot, v)
+                if v:
+                    self._updateLabels(mot, v)
 
     def _valueChanged(self, motivation: Motivation, value: int):
         self.motivationChanged.emit(motivation, value)
         self._updateLabels(motivation, value)
+        self._motivationDisplay.refresh()
 
     def _updateLabels(self, motivation: Motivation, value: int):
         if motivation not in self._labels.keys():
