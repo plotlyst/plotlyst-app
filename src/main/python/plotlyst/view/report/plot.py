@@ -29,7 +29,7 @@ from overrides import overrides
 from qthandy import clear_layout, vspacer, gc
 
 from plotlyst.common import clamp, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Novel, Plot, Character, Motivation, StoryElement
+from plotlyst.core.domain import Novel, Plot, Character, Motivation, StoryElement, StoryElementType
 from plotlyst.env import app_env
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import icon_to_html_img
@@ -400,8 +400,15 @@ class StoryArcChart(BaseChart):
             for agenda in scene.agency:
                 if character and agenda.character_id != character.id:
                     continue
-                if agenda.emotion:
-                    series.append(i + 1, agenda.emotion)
+                emotion = 0
+                emotion_backup = 0
+                for el in agenda.elements:
+                    if el.type == StoryElementType.Emotion_change:
+                        emotion = el.value
+                    elif el.type == StoryElementType.Emotion:
+                        emotion_backup = el.value
+                if emotion or emotion_backup:
+                    series.append(i + 1, emotion if emotion else emotion_backup)
         return series
 
     def _characterMotivationSeries(self, character: Character) -> List[QAbstractSeries]:
