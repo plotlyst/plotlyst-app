@@ -517,7 +517,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
             wdg = self.__initPreviewIcon(element, row, col)
             fade_in(wdg)
 
-            self._checkForConnector(row, col, added=True)
+            if type_ != StoryElementType.Emotion_change:
+                self._checkForConnector(row, col, added=True)
             self._fillInRow(row)
         else:
             for el in self.agenda.elements:
