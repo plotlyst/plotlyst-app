@@ -351,7 +351,7 @@ class _PlaceholderWidget(QFrame):
 
 
 class CharacterChangesSelectorPopup(MenuWidget):
-    DEFAULT_DESC: str = "Reflect a character's change by selecting the initial and final states"
+    DEFAULT_DESC: str = "Reflect how a character changes or takes action that impacts the story"
     DEFAULT_ICON: str = 'ph.user-focus'
     INITIAL_COL: int = 1
     TRANSITION_COL: int = 2
@@ -400,7 +400,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.wdgEditor.layout().addWidget(self.wdgRightSide)
 
         self.wdgSelectors = QWidget()
-        grid(self.wdgSelectors, 0, 7, 7)
+        grid(self.wdgSelectors, 0, 5, 2)
         scroll = scroll_area(h_on=False, frameless=True)
         scroll.setMaximumHeight(400)
         transparent(scroll)
@@ -441,6 +441,11 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.selectorOutcome = self.__initSelector(StoryElementType.Outcome, row, self.FINAL_COL)
         row += 1
 
+        self.selectorDilemma, btnQuickAddDilemma = self.__initSelector(StoryElementType.Dilemma, row,
+                                                                       self.TRANSITION_COL, quickAdd=True)
+        self.selectorDecision = self.__initSelector(StoryElementType.Decision, row, self.FINAL_COL)
+        row += 1
+
         self.selectorExpectation, btnQuickAddExpectation = self.__initSelector(StoryElementType.Expectation, row,
                                                                                self.INITIAL_COL, quickAdd=True)
         self.selectorRealization = self.__initSelector(StoryElementType.Realization, row, self.FINAL_COL)
@@ -453,8 +458,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         self.selectorInternalState, btnQuickAddInternal = self.__initSelector(StoryElementType.Character_internal_state,
                                                                               row, self.INITIAL_COL, quickAdd=True)
-        self.selectorInternalConflict: _CharacterChangeSelectorToggle = self.__initSelector(
-            StoryElementType.Internal_conflict, row, self.TRANSITION_COL)
+        # self.selectorInternalConflict: _CharacterChangeSelectorToggle = self.__initSelector(
+        #     StoryElementType.Internal_conflict, row, self.TRANSITION_COL)
         self.selectorInternalChange = self.__initSelector(StoryElementType.Character_internal_state_change, row,
                                                           self.FINAL_COL)
         row += 1
@@ -466,7 +471,9 @@ class CharacterChangesSelectorPopup(MenuWidget):
             StoryElementType.Character_state_change, row, self.FINAL_COL)
         row += 1
 
-        self.selectorAction = self.__initSelector(StoryElementType.Action, row, self.TRANSITION_COL)
+        self.selectorAction, btnQuickAddAction = self.__initSelector(StoryElementType.Action, row, self.TRANSITION_COL,
+                                                                     quickAdd=True)
+        self.selectorImpact = self.__initSelector(StoryElementType.Impact, row, self.FINAL_COL)
         row += 1
 
         self.selectorMotivation = self.__initSelector(StoryElementType.Motivation, row, self.FINAL_COL)
@@ -484,15 +491,16 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         btnQuickAddGoal.clicked.connect(
             lambda: self._quickSelect(self.selectorGoal, self.selectorConflict, self.selectorOutcome))
+        btnQuickAddDilemma.clicked.connect(lambda: self._quickSelect(self.selectorDilemma, self.selectorDecision))
         btnQuickAddExpectation.clicked.connect(
             lambda: self._quickSelect(self.selectorExpectation, self.selectorRealization))
         btnQuickAddInternal.clicked.connect(
-            lambda: self._quickSelect(self.selectorInternalState, self.selectorInternalConflict,
-                                      self.selectorInternalChange))
+            lambda: self._quickSelect(self.selectorInternalState, self.selectorInternalChange))
         btnQuickAddEmotion.clicked.connect(
             lambda: self._quickSelect(self.selectorEmotion, self.selectorEmotionChange))
         btnQuickAddExternal.clicked.connect(
             lambda: self._quickSelect(self.selectorExternalState, self.selectorCatalyst, self.selectorExternalChange))
+        btnQuickAddAction.clicked.connect(lambda: self._quickSelect(self.selectorAction, self.selectorImpact))
 
         self.addWidget(self.wdgFrame)
 
@@ -503,7 +511,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
             return
         layout: QGridLayout = self.wdgPreview.layout()
         if toggled:
-            row = layout.rowCount() - 1
+            row = self._nextRowToInsert(type_, col)
             item = layout.itemAtPosition(row, col)
             if item and item.widget():
                 if isinstance(item.widget(), _PlaceholderWidget):
@@ -543,10 +551,22 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.lblDesc.setIcon(IconRegistry.from_name(self.DEFAULT_ICON))
         self.lblDesc.setText(self.DEFAULT_DESC)
 
+    def _nextRowToInsert(self, type_: StoryElementType, col: int):
+        row = self.wdgPreview.layout().rowCount() - 1
+        if col == self.INITIAL_COL and self._hasElement(row, self.TRANSITION_COL):
+            if type_ == StoryElementType.Goal and self._hasElement(row, self.TRANSITION_COL, StoryElementType.Conflict):
+                return row
+            if type_ == StoryElementType.Expectation and self._hasElement(row, self.TRANSITION_COL,
+                                                                          StoryElementType.Realization):
+                return row
+            row += 1
+
+        return row
+
     def _hasElement(self, row: int, col: int, type_: Optional[StoryElementType] = None) -> bool:
         item = self.wdgPreview.layout().itemAtPosition(row, col)
         if item and item.widget() and isinstance(item.widget(), StoryElementPreviewIcon):
-            if not type_ or item.widget().element == type_:
+            if not type_ or item.widget().element.type == type_:
                 return True
 
     def _elementAt(self, row: int, col: int) -> Optional[StoryElement]:
@@ -665,10 +685,11 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         self.wdgSelectors.layout().addWidget(selector, row, col, Qt.AlignmentFlag.AlignLeft)
 
-        if col == 1 and quickAdd:
+        if quickAdd:
             btnQuickAdd = tool_btn(IconRegistry.from_name('mdi.check-all', 'grey'))
+            decr_icon(btnQuickAdd, 4)
             btnQuickAdd.installEventFilter(OpacityEventFilter(btnQuickAdd, leaveOpacity=0.7))
-            self.wdgSelectors.layout().addWidget(btnQuickAdd, row, col - 1)
+            self.wdgSelectors.layout().addWidget(btnQuickAdd, row, 0)
             return selector, btnQuickAdd
 
         return selector
@@ -769,6 +790,7 @@ class CharacterEmotionChange(QFrame, AgencyElementWidget):
 
     def _update(self):
         self._icon.setIcon(IconRegistry.emotion_icon_from_feeling(self.element.value))
+
 
 class CharacterAgencyEditor(QWidget):
     removed = pyqtSignal()

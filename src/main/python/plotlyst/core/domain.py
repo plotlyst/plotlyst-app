@@ -1873,6 +1873,8 @@ class StoryElementType(Enum):
             return 'fa5s.vial'
         elif self == StoryElementType.Action:
             return 'mdi.run-fast'
+        elif self == StoryElementType.Impact:
+            return 'mdi.motion'
         elif self == StoryElementType.Outcome:
             return 'fa5s.bomb'
         elif self == StoryElementType.Character_state:
@@ -1925,6 +1927,8 @@ class StoryElementType(Enum):
             return "An impossible choice between two equally good or bad outcomes"
         elif self == StoryElementType.Action:
             return "What steps or decisions does the character make?"
+        elif self == StoryElementType.Impact:
+            return "What impact do the character’s actions have on the story?"
         elif self == StoryElementType.Decision:
             return "What decision does the character have to make?"
         elif self == StoryElementType.Motivation:
