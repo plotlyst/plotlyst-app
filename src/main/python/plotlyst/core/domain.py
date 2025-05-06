@@ -1960,6 +1960,7 @@ class StoryElement:
     elements: List['StoryElement'] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     dimension: str = field(default='', metadata=config(exclude=exclude_if_empty))
     modifier: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    icon: str = field(default='', metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass

@@ -23,10 +23,10 @@ from typing import Dict, Optional, Tuple, Union
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
 from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent, QIcon
-from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame, QPushButton
+from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame
 from overrides import overrides
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon, vline, incr_font
+    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon, incr_font
 from qthandy.filter import OpacityEventFilter, DragEventFilter, DropEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
@@ -793,6 +793,15 @@ class CharacterEmotionChange(QFrame, AgencyElementWidget):
         self._icon.setIcon(IconRegistry.emotion_icon_from_feeling(self.element.value))
 
 
+class _DimensionSelectorButton(SelectorToggleButton):
+    def __init__(self, dimension: str, icon: str, parent=None):
+        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=80)
+        self.dimension = dimension
+        self.iconName = icon
+        self.setText(dimension)
+        self.setIcon(IconRegistry.from_name(icon))
+
+
 class RelationshipChangeDimensionPopup(MenuWidget):
     def __init__(self, element: StoryElement, parent=None):
         super().__init__(parent)
@@ -805,51 +814,77 @@ class RelationshipChangeDimensionPopup(MenuWidget):
 
         self.btnGroupDimensions = ExclusiveOptionalButtonGroup()
 
-        self.wdgUnion = columns(0)
-        # self.wdgUnion = QWidget()
-        # flow(self.wdgUnion)
-        self.wdgConflict = columns(0)
-        self.wdgCooperation = columns(0)
+        self.wdgUnion = rows(0)
+        self.wdgConflict = rows(0)
+        self.wdgCooperation = rows(0)
 
-        self.wdgEditor = rows(0, 8)
+        self.wdgEditor = columns(0, 8)
         self.wdgEditor.layout().addWidget(self.wdgUnion)
-        self.wdgEditor.layout().addWidget(self.wdgConflict)
         self.wdgEditor.layout().addWidget(self.wdgCooperation)
+        self.wdgEditor.layout().addWidget(self.wdgConflict)
+
+        self.wdgFrame.layout().addWidget(
+            label(
+                "Select in which dimension the relationship evolves—union, cooperation, or conflict—or choose a more specific subtype within those categories",
+                description=True, wordWrap=True))
         self.wdgFrame.layout().addWidget(self.wdgEditor)
 
-        self.__initDimension('Union', self.wdgUnion)
-        self.wdgUnion.layout().addWidget(vline())
-        self.__initDimension('Love', self.wdgUnion)
-        self.__initDimension('Friendship', self.wdgUnion)
-        self.__initDimension('Alliance', self.wdgUnion)
-        self.__initDimension('Family', self.wdgUnion)
+        btn = self.__initDimension('Union', self.wdgUnion, 'fa5s.hand-holding-heart')
+        incr_font(btn, 2)
+        self.wdgUnion.layout().addWidget(line())
+        self.__initDimension('Love', self.wdgUnion, 'fa5s.heart')
+        self.__initDimension('Friendship', self.wdgUnion, 'ei.asl')
+        self.__initDimension('Family', self.wdgUnion, 'ei.group-alt')
 
-        self.wdgUnion.layout().addWidget(spacer())
+        self.wdgUnion.layout().addWidget(vspacer())
 
-        self.__initDimension('Conflict', self.wdgConflict)
-        self.wdgConflict.layout().addWidget(vline())
-        self.__initDimension('Rivalry', self.wdgConflict)
-        self.__initDimension('Betrayal', self.wdgConflict)
-        self.__initDimension('Jealousy', self.wdgConflict)
-        self.wdgConflict.layout().addWidget(spacer())
+        btn = self.__initDimension('Cooperation', self.wdgCooperation, 'fa5.handshake')
+        incr_font(btn, 2)
+        self.wdgCooperation.layout().addWidget(line())
+        self.__initDimension('Trust', self.wdgCooperation, 'fa5s.user-shield')
+        self.__initDimension('Alliance', self.wdgCooperation, 'fa5s.thumbs-up')
+        self.__initDimension('Respect', self.wdgCooperation, 'ri.award-fill')
+        self.__initDimension('Loyalty', self.wdgCooperation, 'ei.link')
+        self.wdgCooperation.layout().addWidget(vspacer())
+
+        btn = self.__initDimension('Conflict', self.wdgConflict, 'mdi.sword-cross')
+        incr_font(btn, 2)
+        self.wdgConflict.layout().addWidget(line())
+        self.__initDimension('Rivalry', self.wdgConflict, 'mdi6.trophy-outline')
+        self.__initDimension('Betrayal', self.wdgConflict, 'mdi6.knife')
+        self.__initDimension('Jealousy', self.wdgConflict, 'mdi.eye-circle-outline')
+        self.wdgConflict.layout().addWidget(vspacer())
 
         self.addWidget(self.wdgFrame)
 
-    def __initDimension(self, name: str, parent: QWidget):
-        btn = SelectorToggleButton(minWidth=80)
-        btn.setText(name)
+        if element.dimension:
+            for btn in self.btnGroupDimensions.buttons():
+                if btn.text() == element.dimension:
+                    btn.setChecked(True)
+                    break
+
+    def __initDimension(self, name: str, parent: QWidget, icon: str = '') -> SelectorToggleButton:
+        btn = _DimensionSelectorButton(name, icon)
         self.btnGroupDimensions.addButton(btn)
 
-        parent.layout().addWidget(btn)
+        parent.layout().addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        return btn
 
 
 class RelationshipChangeWidget(QWidget):
+    removed = pyqtSignal()
+
     def __init__(self, element: StoryElement, agency: CharacterAgency, novel: Novel, parent=None):
         super().__init__(parent)
         self.element = element
         self.agency = agency
         self.novel = novel
         vbox(self, 0, 0)
+
+        self._btnRemove = RemovalButton(self)
+        self._btnRemove.clicked.connect(self.removed)
+        self._btnRemove.setHidden(True)
 
         self._characterLbl = tool_btn(QIcon(), transparent_=True)
         incr_icon(self._characterLbl, 14)
@@ -863,14 +898,9 @@ class RelationshipChangeWidget(QWidget):
         self._lblDimension.clicked.connect(self._edit)
         self._lblModifier = label('', description=True, italic=True, decr_font_diff=1)
 
-        # self.wdgHeader = columns(0, 0)
         self.layout().addWidget(self._characterLbl, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._lblDimension, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._lblModifier, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.wdgHeader.layout().addWidget(self._lblModifier)
-        # self.wdgHeader.layout().addWidget(spacer())
-
-        # self.layout().addWidget(self.wdgHeader)
 
         character = entities_registry.character(str(element.ref))
         if character:
@@ -878,6 +908,7 @@ class RelationshipChangeWidget(QWidget):
 
         if self.element.dimension:
             self._lblDimension.setText(self.element.dimension)
+            self._lblDimension.setIcon(IconRegistry.from_name(self.element.icon))
         else:
             self._lblDimension.setIcon(IconRegistry.edit_icon('grey'))
 
@@ -886,21 +917,31 @@ class RelationshipChangeWidget(QWidget):
         else:
             self._lblModifier.setHidden(True)
 
-        # pointy(self)
+        self.installEventFilter(VisibilityToggleEventFilter(self._btnRemove, self))
 
-    # @overrides
-    # def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-    #     self._edit()
+    @overrides
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 2,
+                                    self._btnRemove.sizeHint().width(), self._btnRemove.sizeHint().height())
 
     def _edit(self):
         self._menu = RelationshipChangeDimensionPopup(self.element)
         self._menu.btnGroupDimensions.buttonClicked.connect(self._dimensionChanged)
+        self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
         self._menu.exec()
 
-    def _dimensionChanged(self, btn: QPushButton):
-        self._lblDimension.setText(btn.text())
-        self._lblDimension.setIcon(QIcon())
-        self._lblModifier.setText('')
+    def _dimensionChanged(self, btn: _DimensionSelectorButton):
+        if btn.isChecked():
+            self._lblDimension.setText(btn.dimension)
+            self._lblDimension.setIcon(IconRegistry.from_name(btn.iconName))
+            self.element.dimension = btn.dimension
+            self.element.icon = btn.iconName
+        else:
+            self._lblDimension.setText('')
+            self._lblDimension.setIcon(QIcon())
+            self.element.dimension = ''
+            self.element.icon = ''
+
 
 
 class RelationshipChangesEditor(QFrame, AgencyElementWidget):
@@ -933,11 +974,25 @@ class RelationshipChangesEditor(QFrame, AgencyElementWidget):
         shadow(self)
         translucent(self._title, 0.7)
 
+        for element in self.element.elements:
+            self.__initWidget(element)
+
     def _addNew(self, character: Character):
         element = StoryElement(StoryElementType.Relationship, ref=character.id)
-        wdg = RelationshipChangeWidget(element, self.agency, self.novel)
-        self.layout().addWidget(wdg)
+        self.element.elements.append(element)
+        wdg = self.__initWidget(element)
         fade_in(wdg)
+
+    def _removed(self, wdg: RelationshipChangeWidget):
+        self.element.elements.remove(wdg.element)
+        fade_out_and_gc(self, wdg)
+
+    def __initWidget(self, element: StoryElement) -> RelationshipChangeWidget:
+        wdg = RelationshipChangeWidget(element, self.agency, self.novel)
+        wdg.removed.connect(partial(self._removed, wdg))
+        self.layout().addWidget(wdg)
+
+        return wdg
 
 
 class CharacterAgencyEditor(QWidget):
