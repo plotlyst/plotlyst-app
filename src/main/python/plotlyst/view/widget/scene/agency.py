@@ -22,12 +22,11 @@ from typing import Dict, Optional, Tuple, Union
 
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
-from PyQt6.QtGui import QEnterEvent, QMouseEvent, QIcon, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent
-from PyQt6.QtWidgets import QWidget, QSlider, QGridLayout, QButtonGroup, QAbstractButton, QFrame
+from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent, QIcon
+from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame
 from overrides import overrides
-from qtanim import fade_in
-from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon
+from qthandy import hbox, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
+    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon, incr_font
 from qthandy.filter import OpacityEventFilter, DragEventFilter, DropEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
@@ -41,12 +40,11 @@ from plotlyst.events import NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, CharacterDeletedEvent
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, shadow, frame, scroll_area, rows, \
-    columns
-from plotlyst.view.generated.scene_goal_stakes_ui import Ui_GoalReferenceStakesEditor
+    columns, fade_in, ExclusiveOptionalButtonGroup, wrap
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
-from plotlyst.view.widget.button import ChargeButton, SmallToggleButton, SelectorToggleButton, DotsMenuButton
+from plotlyst.view.widget.button import SelectorToggleButton, DotsMenuButton
 from plotlyst.view.widget.character.editor import EmotionEditorSlider
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.confirm import confirmed
@@ -54,356 +52,60 @@ from plotlyst.view.widget.display import ArrowButton, SeparatorLineWithShadow, C
     MenuOverlayEventFilter, Icon, icon_text
 from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget
 from plotlyst.view.widget.scene.conflict import ConflictIntensityEditor, CharacterConflictSelector
+from plotlyst.view.widget.scene.motivation import MotivationDisplay, MotivationEditor, MotivationChargeLabel
 
 
-class MotivationDisplay(QWidget, Ui_GoalReferenceStakesEditor):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setupUi(self)
-        self._novel: Optional[Novel] = None
-        self._scene: Optional[Scene] = None
-        self._agenda: Optional[CharacterAgency] = None
-        bold(self.lblTitle)
-
-        self._sliders: Dict[Motivation, QSlider] = {
-            Motivation.PHYSIOLOGICAL: self.sliderPhysiological,
-            Motivation.SAFETY: self.sliderSecurity,
-            Motivation.BELONGING: self.sliderBelonging,
-            Motivation.ESTEEM: self.sliderEsteem,
-            Motivation.SELF_ACTUALIZATION: self.sliderActualization,
-            Motivation.SELF_TRANSCENDENCE: self.sliderTranscendence,
-        }
-
-        for slider in self._sliders.values():
-            slider.setEnabled(False)
-        translucent(self)
-
-    @overrides
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        pass
-
-    def setNovel(self, novel: Novel):
-        self._novel = novel
-
-    def setScene(self, scene: Scene):
-        self._scene = scene
-
-    def setAgenda(self, agenda: CharacterAgency):
-        self._agenda = agenda
-        self._refresh()
-
-    def _refresh(self):
-        for slider in self._sliders.values():
-            slider.setValue(0)
-        for scene in self._novel.scenes:
-            if scene is self._scene:
-                break
-            for agenda in scene.agency:
-                if agenda.character_id and agenda.character_id == self._agenda.character_id:
-                    for mot, v in agenda.motivations.items():
-                        slider = self._sliders[Motivation(mot)]
-                        slider.setValue(slider.value() + v)
-
-
-class MotivationChargeLabel(QWidget):
-    def __init__(self, motivation: Motivation, simplified: bool = False, parent=None):
-        super().__init__(parent)
-        self._motivation = motivation
-        hbox(self, margin=0 if simplified else 1, spacing=0)
-        if simplified:
-            self._btn = tool_btn(IconRegistry.from_name(self._motivation.icon(), self._motivation.color()),
-                                 icon_resize=False, transparent_=True)
-        else:
-            self._btn = push_btn(IconRegistry.from_name(self._motivation.icon(), self._motivation.color()),
-                                 text=motivation.display_name(), icon_resize=False,
-                                 transparent_=True)
-        self._btn.setCursor(Qt.CursorShape.ArrowCursor)
-
-        self._lblCharge = label('', description=True, italic=True)
-
-        self.layout().addWidget(self._btn)
-        self.layout().addWidget(self._lblCharge)
-
-    def setCharge(self, charge: int):
-        bold(self._btn, charge > 0)
-        if charge == 0:
-            self._lblCharge.clear()
-        else:
-            self._lblCharge.setText(f'+{charge}')
-
-
-class MotivationCharge(QWidget):
-    charged = pyqtSignal(int)
-    MAX_CHARGE: int = 5
-
-    def __init__(self, motivation: Motivation, parent=None):
-        super().__init__(parent)
-        hbox(self)
-        self._motivation = motivation
-        self._charge = 0
-
-        self._label = MotivationChargeLabel(self._motivation)
-        self._posCharge = ChargeButton(positive=True)
-        self._posCharge.clicked.connect(lambda: self._changeCharge(1))
-        self._negCharge = ChargeButton(positive=False)
-        self._negCharge.clicked.connect(lambda: self._changeCharge(-1))
-        self._negCharge.setHidden(True)
-
-        self.layout().addWidget(self._label)
-        self.layout().addWidget(spacer())
-        self.layout().addWidget(self._negCharge)
-        self.layout().addWidget(self._posCharge)
-
-    def setValue(self, value: int):
-        self._charge = min(value, self.MAX_CHARGE)
-        self._update()
-
-    def _changeCharge(self, charge: int):
-        self._charge += charge
-        self._update()
-
-        self.charged.emit(self._charge)
-
-    def _update(self):
-        self._label.setCharge(self._charge)
-        if self._charge == 0:
-            self._negCharge.setHidden(True)
-        else:
-            self._negCharge.setVisible(True)
-        if self._charge == self.MAX_CHARGE:
-            self._posCharge.setHidden(True)
-        else:
-            self._posCharge.setVisible(True)
-
-
-class MotivationEditor(QWidget):
+class SceneAgendaMotivationEditor(QWidget):
     motivationChanged = pyqtSignal(Motivation, int)
 
-    def __init__(self, parent=None):
+    def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, parent=None):
         super().__init__(parent)
+        hbox(self, 1, 1)
 
-        vbox(self)
-        self.layout().addWidget(label("Does the character's motivation change?"))
-
-        self._editors: Dict[Motivation, MotivationCharge] = {}
-        self._addEditor(Motivation.PHYSIOLOGICAL)
-        self._addEditor(Motivation.SAFETY)
-        self._addEditor(Motivation.BELONGING)
-        self._addEditor(Motivation.ESTEEM)
-        self._addEditor(Motivation.SELF_ACTUALIZATION)
-        self._addEditor(Motivation.SELF_TRANSCENDENCE)
-
-    def _addEditor(self, motivation: Motivation):
-        wdg = MotivationCharge(motivation)
-        self._editors[motivation] = wdg
-        wdg.charged.connect(partial(self.motivationChanged.emit, motivation))
-        self.layout().addWidget(wdg)
-
-    def reset(self):
-        for editor in self._editors.values():
-            editor.setValue(0)
-
-    def setMotivations(self, motivations: Dict[Motivation, int]):
-        self.reset()
-        for mot, v in motivations.items():
-            self._editors[mot].setValue(v)
-
-
-class AbstractAgencyEditor(QWidget):
-    deactivated = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._activated: bool = False
-        self._removalEnabled: bool = True
-
-        self._icon = push_btn(QIcon(), transparent_=True)
-        self._icon.setIconSize(QSize(28, 28))
-        self._opacityFilter = OpacityEventFilter(self._icon)
-        self._icon.clicked.connect(self._iconClicked)
-
-        self._btnReset = RemovalButton()
-        self._btnReset.clicked.connect(self._resetClicked)
-        retain_when_hidden(self._btnReset)
-
-    @overrides
-    def enterEvent(self, event: QEnterEvent) -> None:
-        if self._activated and self._removalEnabled:
-            self._btnReset.setVisible(True)
-
-    @overrides
-    def leaveEvent(self, event: QEvent) -> None:
-        self._btnReset.setVisible(False)
-
-    def reset(self):
-        self._activated = False
-        self._btnReset.setVisible(False)
-
-    def _resetClicked(self):
-        self.deactivated.emit()
-        self.reset()
-
-    def _iconClicked(self):
-        pass
-
-
-class SceneAgendaEmotionEditor(AbstractAgencyEditor):
-    emotionChanged = pyqtSignal(int)
-    deactivated = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        hbox(self)
-        sp(self).h_max()
-
-        self._icon.setIcon(IconRegistry.from_name('mdi.emoticon-neutral', 'lightgrey'))
-
-        self._slider = EmotionEditorSlider()
-        self._slider.valueChanged.connect(self._valueChanged)
-
-        self.layout().addWidget(self._icon)
-        self.layout().addWidget(self._slider)
-        self.layout().addWidget(spacer(max_stretch=5))
-        self.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignTop)
-
-        self.reset()
-
-    def activate(self):
-        self._activated = True
-        self._slider.setVisible(True)
-        self._icon.setText('')
-        self._icon.removeEventFilter(self._opacityFilter)
-
-    @overrides
-    def reset(self):
-        super().reset()
-        self._slider.setVisible(False)
-        self._icon.setIcon(IconRegistry.from_name('mdi.emoticon-neutral', 'lightgrey'))
-        self._icon.setText('Emotion')
-        self._icon.installEventFilter(self._opacityFilter)
-        translucent(self._icon, 0.4)
-
-    def setValue(self, value: int):
-        self.activate()
-        if self._slider.value() == value:
-            self.emotionChanged.emit(value)
-        else:
-            self._slider.setValue(value)
-
-        self._btnReset.setHidden(True)
-
-    @overrides
-    def _iconClicked(self):
-        if not self._activated:
-            self.setValue(5)
-            qtanim.fade_in(self._slider, 150)
-            self._btnReset.setVisible(True)
-
-    def _valueChanged(self, value: int):
-        self._icon.setIcon(IconRegistry.emotion_icon_from_feeling(value))
-        self.emotionChanged.emit(value)
-
-
-class SceneAgendaMotivationEditor(AbstractAgencyEditor):
-    motivationChanged = pyqtSignal(Motivation, int)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        hbox(self)
-        sp(self).h_max()
-        self._removalEnabled = False
-
-        self._motivationDisplay = MotivationDisplay()
+        self._motivationDisplay = MotivationDisplay(novel, scene, agency)
         self._motivationEditor = MotivationEditor()
         self._motivationEditor.motivationChanged.connect(self._valueChanged)
 
         self._wdgLabels = QWidget()
-        hbox(self._wdgLabels, 0, 0)
+        flow(self._wdgLabels, 0, 0)
         self._labels: Dict[Motivation, MotivationChargeLabel] = {}
 
-        self._icon.setIcon(IconRegistry.from_name('fa5s.fist-raised', 'lightgrey'))
+        self._icon = push_btn(IconRegistry.from_name('fa5s.fist-raised', 'lightgrey'), transparent_=True)
 
         self._menu = MenuWidget(self._icon)
+        self._wdgEditor = columns()
+        self._wdgEditor.layout().addWidget(self._motivationDisplay)
+        self._wdgEditor.layout().addWidget(self._motivationEditor)
         apply_white_menu(self._menu)
-        self._menu.addWidget(self._motivationDisplay)
-        self._menu.addSeparator()
-        self._menu.addWidget(self._motivationEditor)
+        self._menu.addWidget(self._wdgEditor)
 
-        self.layout().addWidget(self._icon)
+        self.layout().addWidget(self._icon, alignment=Qt.AlignmentFlag.AlignTop)
         self.layout().addWidget(self._wdgLabels)
-        self.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignTop)
 
-        self.reset()
-
-    def setNovel(self, novel: Novel):
-        self._motivationDisplay.setNovel(novel)
-
-    def setScene(self, scene: Scene):
-        self._motivationDisplay.setScene(scene)
-
-    def setAgenda(self, agenda: CharacterAgency):
-        self._motivationDisplay.setAgenda(agenda)
-
-        if agenda.motivations:
-            values: Dict[Motivation, int] = {}
-            for k, v in agenda.motivations.items():
-                motivation = Motivation(k)
-                values[motivation] = v
-
-            self.setValues(values)
-        else:
-            self.reset()
-
-    def activate(self):
-        self._activated = True
-        if self._removalEnabled:
-            self._btnReset.setVisible(True)
-        self._icon.setText('')
-        self._icon.removeEventFilter(self._opacityFilter)
-
-    @overrides
-    def reset(self):
-        super().reset()
-        self._icon.setText('Motivation')
-        self._icon.installEventFilter(self._opacityFilter)
-
-        self._motivationEditor.reset()
-
-        self._labels.clear()
-        clear_layout(self._wdgLabels)
-
-    def setValues(self, motivations: Dict[Motivation, int]):
-        self.activate()
-        self._motivationEditor.setMotivations(motivations)
-        self._btnReset.setHidden(True)
-
-        self._labels.clear()
-        clear_layout(self._wdgLabels)
-        for mot, v in motivations.items():
-            self._updateLabels(mot, v)
+        if agency.motivations:
+            values = {Motivation(k): v for k, v in agency.motivations.items()}
+            self._motivationEditor.setMotivations(values)
+            for mot, v in values.items():
+                if v:
+                    self._updateLabels(mot, v)
 
     def _valueChanged(self, motivation: Motivation, value: int):
         self.motivationChanged.emit(motivation, value)
         self._updateLabels(motivation, value)
+        self._motivationDisplay.refresh()
 
     def _updateLabels(self, motivation: Motivation, value: int):
         if motivation not in self._labels.keys():
-            lbl = MotivationChargeLabel(motivation, simplified=True)
+            lbl = MotivationChargeLabel(motivation)
             self._labels[motivation] = lbl
-            translucent(lbl, 0.8)
             self._wdgLabels.layout().addWidget(lbl)
-            fade_in(lbl, 150)
         if value:
             self._labels[motivation].setCharge(value)
         else:
             fade_out_and_gc(self._wdgLabels, self._labels.pop(motivation))
-        if self._labels and not self._activated:
-            self.activate()
-        elif not self._labels and self._activated:
-            self.reset()
 
 
-class SceneAgendaConflictEditor(AbstractAgencyEditor):
+class SceneAgendaConflictEditor(QWidget):
     conflictReset = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -416,7 +118,7 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
 
         self._icon.setIcon(IconRegistry.conflict_icon('lightgrey'))
         self._icon.setText('Conflict')
-        self._icon.installEventFilter(self._opacityFilter)
+        # self._icon.installEventFilter(self._opacityFilter)
 
         self._sliderIntensity = ConflictIntensityEditor()
         self._sliderIntensity.intensityChanged.connect(self._intensityChanged)
@@ -426,7 +128,7 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
 
         self._wdgSliders = QWidget()
         hbox(self._wdgSliders).addWidget(self._sliderIntensity, alignment=Qt.AlignmentFlag.AlignLeft)
-        self._wdgSliders.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+        # self._wdgSliders.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.layout().addWidget(self._icon)
         self.layout().addWidget(self._wdgSliders)
@@ -464,9 +166,8 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
         self._wdgConflicts.setVisible(True)
         self._icon.setHidden(True)
 
-    @overrides
     def reset(self):
-        super().reset()
+        # super().reset()
         self._wdgSliders.setVisible(False)
         self._wdgConflicts.setVisible(False)
         self._icon.setVisible(True)
@@ -478,12 +179,11 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
         self._sliderIntensity.setValue(value)
         self.activate()
 
-    @overrides
     def _iconClicked(self):
         if not self._activated:
             self.setValue(1)
             qtanim.fade_in(self._sliderIntensity, 150)
-            self._btnReset.setVisible(True)
+            # self._btnReset.setVisible(True)
 
     def _intensityChanged(self, value: int):
         if self._agenda:
@@ -497,12 +197,6 @@ class SceneAgendaConflictEditor(AbstractAgencyEditor):
         conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agenda)
         conflictSelector.conflictSelected.connect(self._conflictSelected)
         self._wdgConflicts.layout().addWidget(conflictSelector)
-
-
-class _CharacterStateToggle(SmallToggleButton):
-    def __init__(self, type_: StoryElementType, parent=None):
-        super().__init__(parent)
-        self.type = type_
 
 
 class _CharacterChangeSelectorToggle(SelectorToggleButton):
@@ -526,7 +220,12 @@ class _CharacterChangeSelectorToggle(SelectorToggleButton):
         self.left.emit()
 
 
-class StoryElementConnector(ConnectorWidget):
+class AgencyElementWidget:
+    def __init__(self):
+        pass
+
+
+class StoryElementConnector(ConnectorWidget, AgencyElementWidget):
     remove = pyqtSignal()
 
     def __init__(self, element: StoryElement, parent=None, removalEnabled: bool = False):
@@ -580,6 +279,7 @@ class StoryElementPreviewIcon(Icon):
                                     self._btnRemove.sizeHint().width(),
                                     self._btnRemove.sizeHint().height())
 
+
 agency_element_mime_type = 'aplication/agency-element'
 
 
@@ -601,7 +301,7 @@ class _PlaceholderWidget(QFrame):
 
 
 class CharacterChangesSelectorPopup(MenuWidget):
-    DEFAULT_DESC: str = "Reflect a character's change by selecting the initial and final states"
+    DEFAULT_DESC: str = "Reflect how a character changes or takes action that impacts the story"
     DEFAULT_ICON: str = 'ph.user-focus'
     INITIAL_COL: int = 1
     TRANSITION_COL: int = 2
@@ -650,7 +350,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.wdgEditor.layout().addWidget(self.wdgRightSide)
 
         self.wdgSelectors = QWidget()
-        grid(self.wdgSelectors, 0, 7, 7)
+        grid(self.wdgSelectors, 0, 5, 2)
         scroll = scroll_area(h_on=False, frameless=True)
         scroll.setMaximumHeight(400)
         transparent(scroll)
@@ -684,29 +384,51 @@ class CharacterChangesSelectorPopup(MenuWidget):
                                              self.FINAL_COL)
         self.wdgSelectors.layout().addWidget(line(color='lightgrey'), 1, self.INITIAL_COL, 1, 3)
 
-        self.selectorGoal, btnQuickAddGoal = self.__initSelector(StoryElementType.Goal, 2, self.INITIAL_COL,
+        row = 2
+        self.selectorGoal, btnQuickAddGoal = self.__initSelector(StoryElementType.Goal, row, self.INITIAL_COL,
                                                                  quickAdd=True)
-        self.selectorConflict = self.__initSelector(StoryElementType.Conflict, 2, self.TRANSITION_COL)
-        self.selectorOutcome = self.__initSelector(StoryElementType.Outcome, 2, self.FINAL_COL)
+        self.selectorConflict = self.__initSelector(StoryElementType.Conflict, row, self.TRANSITION_COL)
+        self.selectorOutcome = self.__initSelector(StoryElementType.Outcome, row, self.FINAL_COL)
+        row += 1
 
-        self.selectorExpectation, btnQuickAddExpectation = self.__initSelector(StoryElementType.Expectation, 4,
+        self.selectorDilemma, btnQuickAddDilemma = self.__initSelector(StoryElementType.Dilemma, row,
+                                                                       self.TRANSITION_COL, quickAdd=True)
+        self.selectorDecision = self.__initSelector(StoryElementType.Decision, row, self.FINAL_COL)
+        row += 1
+
+        self.selectorExpectation, btnQuickAddExpectation = self.__initSelector(StoryElementType.Expectation, row,
                                                                                self.INITIAL_COL, quickAdd=True)
-        self.selectorRealization = self.__initSelector(StoryElementType.Realization, 4, self.FINAL_COL)
+        self.selectorRealization = self.__initSelector(StoryElementType.Realization, row, self.FINAL_COL)
+        row += 1
+
+        self.selectorEmotion, btnQuickAddEmotion = self.__initSelector(StoryElementType.Emotion, row, self.INITIAL_COL,
+                                                                       quickAdd=True)
+        self.selectorEmotionChange = self.__initSelector(StoryElementType.Emotion_change, row, self.FINAL_COL)
+        row += 1
+
         self.selectorInternalState, btnQuickAddInternal = self.__initSelector(StoryElementType.Character_internal_state,
-                                                                              5, self.INITIAL_COL, quickAdd=True)
-        self.selectorInternalConflict: _CharacterChangeSelectorToggle = self.__initSelector(
-            StoryElementType.Internal_conflict, 5, self.TRANSITION_COL)
-        self.selectorInternalChange = self.__initSelector(StoryElementType.Character_internal_state_change, 5,
+                                                                              row, self.INITIAL_COL, quickAdd=True)
+        # self.selectorInternalConflict: _CharacterChangeSelectorToggle = self.__initSelector(
+        #     StoryElementType.Internal_conflict, row, self.TRANSITION_COL)
+        self.selectorInternalChange = self.__initSelector(StoryElementType.Character_internal_state_change, row,
                                                           self.FINAL_COL)
+        row += 1
 
-        self.selectorExternalState, btnQuickAddExternal = self.__initSelector(StoryElementType.Character_state, 6,
+        self.selectorExternalState, btnQuickAddExternal = self.__initSelector(StoryElementType.Character_state, row,
                                                                               self.INITIAL_COL, quickAdd=True)
-        self.selectorCatalyst = self.__initSelector(StoryElementType.Catalyst, 6, self.TRANSITION_COL)
+        self.selectorCatalyst = self.__initSelector(StoryElementType.Catalyst, row, self.TRANSITION_COL)
         self.selectorExternalChange: _CharacterChangeSelectorToggle = self.__initSelector(
-            StoryElementType.Character_state_change, 6, self.FINAL_COL)
-        self.selectorAction = self.__initSelector(StoryElementType.Action, 8, self.TRANSITION_COL)
+            StoryElementType.Character_state_change, row, self.FINAL_COL)
+        row += 1
 
-        self.selectorMotivation = self.__initSelector(StoryElementType.Motivation, 9, self.FINAL_COL)
+        self.selectorAction, btnQuickAddAction = self.__initSelector(StoryElementType.Action, row, self.TRANSITION_COL,
+                                                                     quickAdd=True)
+        self.selectorImpact = self.__initSelector(StoryElementType.Impact, row, self.FINAL_COL)
+        row += 1
+
+        self.selectorMotivation = self.__initSelector(StoryElementType.Motivation, row, self.FINAL_COL)
+        row += 1
+        self.selectorRelationChange = self.__initSelector(StoryElementType.Relationship, row, self.FINAL_COL)
 
         if self.agenda.elements:
             self.wdgPreviewParent.setVisible(True)
@@ -721,13 +443,16 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         btnQuickAddGoal.clicked.connect(
             lambda: self._quickSelect(self.selectorGoal, self.selectorConflict, self.selectorOutcome))
+        btnQuickAddDilemma.clicked.connect(lambda: self._quickSelect(self.selectorDilemma, self.selectorDecision))
         btnQuickAddExpectation.clicked.connect(
             lambda: self._quickSelect(self.selectorExpectation, self.selectorRealization))
         btnQuickAddInternal.clicked.connect(
-            lambda: self._quickSelect(self.selectorInternalState, self.selectorInternalConflict,
-                                      self.selectorInternalChange))
+            lambda: self._quickSelect(self.selectorInternalState, self.selectorInternalChange))
+        btnQuickAddEmotion.clicked.connect(
+            lambda: self._quickSelect(self.selectorEmotion, self.selectorEmotionChange))
         btnQuickAddExternal.clicked.connect(
             lambda: self._quickSelect(self.selectorExternalState, self.selectorCatalyst, self.selectorExternalChange))
+        btnQuickAddAction.clicked.connect(lambda: self._quickSelect(self.selectorAction, self.selectorImpact))
 
         self.addWidget(self.wdgFrame)
 
@@ -738,7 +463,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
             return
         layout: QGridLayout = self.wdgPreview.layout()
         if toggled:
-            row = layout.rowCount() - 1
+            row = self._nextRowToInsert(type_, col)
             item = layout.itemAtPosition(row, col)
             if item and item.widget():
                 if isinstance(item.widget(), _PlaceholderWidget):
@@ -752,7 +477,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
             wdg = self.__initPreviewIcon(element, row, col)
             fade_in(wdg)
 
-            self._checkForConnector(row, col, added=True)
+            if type_ != StoryElementType.Emotion_change:
+                self._checkForConnector(row, col, added=True)
             self._fillInRow(row)
         else:
             for el in self.agenda.elements:
@@ -762,6 +488,9 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
                     self._checkForConnector(el.row, col, added=False)
                     self.agenda.elements.remove(el)
+
+                    if el.type == StoryElementType.Motivation:
+                        self.agenda.motivations.clear()
                     break
 
         self.wdgPreviewParent.setVisible(True)
@@ -774,10 +503,22 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.lblDesc.setIcon(IconRegistry.from_name(self.DEFAULT_ICON))
         self.lblDesc.setText(self.DEFAULT_DESC)
 
+    def _nextRowToInsert(self, type_: StoryElementType, col: int):
+        row = self.wdgPreview.layout().rowCount() - 1
+        if col == self.INITIAL_COL and self._hasElement(row, self.TRANSITION_COL):
+            if type_ == StoryElementType.Goal and self._hasElement(row, self.TRANSITION_COL, StoryElementType.Conflict):
+                return row
+            if type_ == StoryElementType.Expectation and self._hasElement(row, self.TRANSITION_COL,
+                                                                          StoryElementType.Realization):
+                return row
+            row += 1
+
+        return row
+
     def _hasElement(self, row: int, col: int, type_: Optional[StoryElementType] = None) -> bool:
         item = self.wdgPreview.layout().itemAtPosition(row, col)
         if item and item.widget() and isinstance(item.widget(), StoryElementPreviewIcon):
-            if not type_ or item.widget().element == type_:
+            if not type_ or item.widget().element.type == type_:
                 return True
 
     def _elementAt(self, row: int, col: int) -> Optional[StoryElement]:
@@ -896,10 +637,11 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
         self.wdgSelectors.layout().addWidget(selector, row, col, Qt.AlignmentFlag.AlignLeft)
 
-        if col == 1 and quickAdd:
+        if quickAdd:
             btnQuickAdd = tool_btn(IconRegistry.from_name('mdi.check-all', 'grey'))
+            decr_icon(btnQuickAdd, 4)
             btnQuickAdd.installEventFilter(OpacityEventFilter(btnQuickAdd, leaveOpacity=0.7))
-            self.wdgSelectors.layout().addWidget(btnQuickAdd, row, col - 1)
+            self.wdgSelectors.layout().addWidget(btnQuickAdd, row, 0)
             return selector, btnQuickAdd
 
         return selector
@@ -921,17 +663,16 @@ class CharacterChangesSelectorPopup(MenuWidget):
         return wdg
 
 
-class CharacterChangeBubble(TextEditBubbleWidget):
+class CharacterChangeBubble(TextEditBubbleWidget, AgencyElementWidget):
     def __init__(self, element: StoryElement, parent=None):
         super().__init__(parent)
         margins(self, left=1, right=1)
         self.element = element
         self.setProperty('large-rounded', True)
         self.setProperty('relaxed-white-bg', True)
-        # self._textedit.setProperty('rounded', False)
-        # self._textedit.setProperty('transparent', True)
-        self.setMaximumSize(170, 135)
         transparent(self._textedit)
+        self.setMaximumWidth(170)
+        self._textedit.setMaximumSize(165, 105)
 
         self._title.setIcon(IconRegistry.from_name(self.element.type.icon(), PLOTLYST_SECONDARY_COLOR))
         self._title.setText(self.element.type.displayed_name())
@@ -952,6 +693,336 @@ class CharacterChangeBubble(TextEditBubbleWidget):
         self.element.text = self._textedit.toPlainText()
 
 
+class CharacterMotivationChange(CharacterChangeBubble):
+    def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, element: StoryElement, parent=None):
+        super().__init__(element, parent)
+        self._agency = agency
+
+        self.motivationEditor = SceneAgendaMotivationEditor(novel, scene, agency)
+        self.motivationEditor.motivationChanged.connect(self._motivationChanged)
+        self.addBottomWidget(self.motivationEditor)
+
+        self._textedit.setMaximumSize(165, 95)
+
+    def _motivationChanged(self, motivation: Motivation, value: int):
+        self._agency.motivations[motivation.value] = value
+
+
+class CharacterEmotionChange(QFrame, AgencyElementWidget):
+    def __init__(self, element: StoryElement, agency: CharacterAgency, parent=None):
+        super().__init__(parent)
+        self.element = element
+        self.agency = agency
+        vbox(self)
+
+        self._icon = push_btn(IconRegistry.from_name('mdi.emoticon-neutral', 'lightgrey'), transparent_=True)
+        incr_icon(self._icon, 12)
+        self._icon.clicked.connect(self._displayEditor)
+
+        self.layout().addWidget(self._icon, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        if not self.element.value:
+            self.element.value = 5
+
+        self._update()
+
+    def _displayEditor(self):
+        menu = MenuWidget()
+        emotionSlider = EmotionEditorSlider()
+        emotionSlider.setMaximumWidth(200)
+        emotionSlider.setValue(self.element.value)
+        emotionSlider.valueChanged.connect(self._emotionChanged)
+        menu.addWidget(emotionSlider)
+
+        menu.exec(self.mapToGlobal(self._icon.rect().topRight()))
+
+    def _emotionChanged(self, value: int):
+        self.element.value = value
+        self._update()
+
+    def _update(self):
+        self._icon.setIcon(IconRegistry.emotion_icon_from_feeling(self.element.value))
+
+
+class _DimensionSelectorButton(SelectorToggleButton):
+    def __init__(self, dimension: str, icon: str, parent=None):
+        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=80, parent=parent)
+        self.dimension = dimension
+        self.iconName = icon
+        self.setText(dimension)
+        self.setIcon(IconRegistry.from_name(icon))
+
+
+class _ModifierSelectorButton(SelectorToggleButton):
+    def __init__(self, modifier: str, parent=None):
+        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=60, parent=parent)
+        self.modifier = modifier
+        self.setText(modifier)
+        decr_font(self)
+
+
+class RelationshipChangeDimensionPopup(MenuWidget):
+    def __init__(self, element: StoryElement, parent=None):
+        super().__init__(parent)
+        transparent_menu(self)
+
+        self.wdgFrame = frame()
+        vbox(self.wdgFrame, 10)
+        self.wdgFrame.setProperty('white-bg', True)
+        self.wdgFrame.setProperty('large-rounded', True)
+
+        self.btnGroupDimensions = ExclusiveOptionalButtonGroup()
+        self.btnGroupModifiers = ExclusiveOptionalButtonGroup()
+
+        self.btnGroupDimensions.buttonClicked.connect(self._dimensionClicked)
+
+        self.wdgUnion = rows(0)
+        self.wdgConflict = rows(0)
+        self.wdgCooperation = rows(0)
+
+        self.wdgEditor = columns(0, 8)
+        self.wdgEditor.layout().addWidget(self.wdgUnion)
+        self.wdgEditor.layout().addWidget(self.wdgCooperation)
+        self.wdgEditor.layout().addWidget(self.wdgConflict)
+
+        self.wdgFrame.layout().addWidget(
+            label(
+                "Select in which dimension the relationship evolves—union, cooperation, or conflict—or choose a more specific subtype within those categories",
+                description=True, wordWrap=True))
+        self.wdgFrame.layout().addWidget(self.wdgEditor)
+
+        btn = self.__initDimension('Union', self.wdgUnion, 'fa5s.hand-holding-heart')
+        incr_font(btn, 2)
+        self.wdgUnion.layout().addWidget(line())
+        self.__initDimension('Love', self.wdgUnion, 'fa5s.heart')
+        self.__initDimension('Friendship', self.wdgUnion, 'ei.asl')
+        self.__initDimension('Family', self.wdgUnion, 'ei.group-alt')
+
+        self.wdgUnion.layout().addWidget(vspacer())
+
+        btn = self.__initDimension('Cooperation', self.wdgCooperation, 'fa5.handshake')
+        incr_font(btn, 2)
+        self.wdgCooperation.layout().addWidget(line())
+        self.__initDimension('Trust', self.wdgCooperation, 'fa5s.user-shield')
+        self.__initDimension('Alliance', self.wdgCooperation, 'fa5s.thumbs-up')
+        self.__initDimension('Respect', self.wdgCooperation, 'ri.award-fill')
+        self.__initDimension('Loyalty', self.wdgCooperation, 'ei.link')
+        self.wdgCooperation.layout().addWidget(vspacer())
+
+        btn = self.__initDimension('Conflict', self.wdgConflict, 'mdi.sword-cross')
+        incr_font(btn, 2)
+        self.wdgConflict.layout().addWidget(line())
+        self.__initDimension('Rivalry', self.wdgConflict, 'mdi6.trophy-outline')
+        self.__initDimension('Betrayal', self.wdgConflict, 'mdi6.knife')
+        self.__initDimension('Jealousy', self.wdgConflict, 'mdi.eye-circle-outline')
+        self.wdgConflict.layout().addWidget(vspacer())
+
+        self.wdgFrame.layout().addWidget(
+            wrap(label(
+                "Optionally select a modifier to reflect how the relationship dynamic has shifted",
+                description=True), margin_top=25), alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.wdgModifiers = columns(0)
+        self.wdgFrame.layout().addWidget(self.wdgModifiers, alignment=Qt.AlignmentFlag.AlignRight)
+        self.__initModifier('Building')
+        self.__initModifier('Growing')
+        self.__initModifier('Strengthened')
+        self.__initModifier('Pressured')
+        self.__initModifier('Peaked')
+        self.__initModifier('Fading')
+        self.__initModifier('Broken')
+
+        self.addWidget(self.wdgFrame)
+
+        if element.dimension:
+            for btn in self.btnGroupDimensions.buttons():
+                if btn.text() == element.dimension:
+                    btn.setChecked(True)
+                    break
+            if element.modifier:
+                for btn in self.btnGroupModifiers.buttons():
+                    if btn.text() == element.modifier:
+                        btn.setChecked(True)
+                        break
+        else:
+            for btn in self.btnGroupModifiers.buttons():
+                btn.setEnabled(False)
+
+    def _dimensionClicked(self):
+        checkedDim = self.btnGroupDimensions.checkedButton() is not None
+        if not checkedDim:
+            self.btnGroupModifiers.reset()
+
+        for btn in self.btnGroupModifiers.buttons():
+            btn.setEnabled(checkedDim)
+
+    def __initDimension(self, name: str, parent: QWidget, icon: str = '') -> _DimensionSelectorButton:
+        btn = _DimensionSelectorButton(name, icon)
+        self.btnGroupDimensions.addButton(btn)
+
+        parent.layout().addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        return btn
+
+    def __initModifier(self, modifier: str) -> _ModifierSelectorButton:
+        btn = _ModifierSelectorButton(modifier)
+        self.btnGroupModifiers.addButton(btn)
+        self.wdgModifiers.layout().addWidget(btn)
+
+        return btn
+
+
+class RelationshipChangeWidget(QWidget):
+    removed = pyqtSignal()
+
+    def __init__(self, element: StoryElement, agency: CharacterAgency, novel: Novel, parent=None):
+        super().__init__(parent)
+        self.element = element
+        self.agency = agency
+        self.novel = novel
+        vbox(self, 0, 0)
+
+        self._btnRemove = RemovalButton(self)
+        self._btnRemove.clicked.connect(self.removed)
+        self._btnRemove.setHidden(True)
+
+        self._characterLbl = tool_btn(QIcon(), transparent_=True)
+        incr_icon(self._characterLbl, 14)
+        self._characterLbl.clicked.connect(self._edit)
+
+        self._lblDimension = push_btn(transparent_=True)
+        incr_font(self._lblDimension, 2)
+        font = self._lblDimension.font()
+        font.setFamily(app_env.serif_font())
+        self._lblDimension.setFont(font)
+        self._lblDimension.clicked.connect(self._edit)
+        self._lblModifier = label('', description=True, decr_font_diff=1)
+
+        # self._textedit = QTextEdit(self)
+        # self._textedit.setTabChangesFocus(True)
+        # if app_env.is_mac():
+        #     incr_font(self._textedit)
+        # self._textedit.verticalScrollBar().setVisible(False)
+        # transparent(self._textedit)
+        # self._textedit.setMaximumSize(165, 85)
+        #
+        # self._textedit.setPlaceholderText("How does the relationship evolve")
+        # self._textedit.setText(self.element.text)
+        # self._textedit.textChanged.connect(self._textChanged)
+
+        self.layout().addWidget(self._characterLbl, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._lblDimension, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._lblModifier, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.layout().addWidget(self._textedit)
+
+        character = entities_registry.character(str(element.ref))
+        if character:
+            self._characterLbl.setIcon(avatars.avatar(character))
+
+        if self.element.dimension:
+            self._lblDimension.setText(self.element.dimension)
+            self._lblDimension.setIcon(IconRegistry.from_name(self.element.icon))
+            if self.element.modifier:
+                self._lblModifier.setText(f'[{self.element.modifier}]')
+            else:
+                self._lblModifier.setHidden(True)
+        else:
+            self._lblDimension.setIcon(IconRegistry.edit_icon('grey'))
+            self._lblModifier.setHidden(True)
+
+        self.installEventFilter(VisibilityToggleEventFilter(self._btnRemove, self))
+
+    @overrides
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 2,
+                                    self._btnRemove.sizeHint().width(), self._btnRemove.sizeHint().height())
+
+    def _edit(self):
+        self._menu = RelationshipChangeDimensionPopup(self.element)
+        self._menu.btnGroupDimensions.buttonClicked.connect(self._dimensionChanged)
+        self._menu.btnGroupModifiers.buttonClicked.connect(self._modifierChanged)
+        self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
+        self._menu.exec()
+
+    # def _textChanged(self):
+    #     self.element.text = self._textedit.toPlainText()
+
+    def _dimensionChanged(self, btn: _DimensionSelectorButton):
+        if btn.isChecked():
+            self._lblDimension.setText(btn.dimension)
+            self._lblDimension.setIcon(IconRegistry.from_name(btn.iconName))
+            self.element.dimension = btn.dimension
+            self.element.icon = btn.iconName
+        else:
+            self._lblDimension.setText('')
+            self._lblDimension.setIcon(IconRegistry.edit_icon('grey'))
+            self._lblModifier.setText('')
+            self._lblModifier.setVisible(False)
+            self.element.modifier = ''
+            self.element.dimension = ''
+            self.element.icon = ''
+
+    def _modifierChanged(self, btn: _ModifierSelectorButton):
+        self._lblModifier.setVisible(btn.isChecked())
+        if btn.isChecked():
+            self._lblModifier.setText(f'[{btn.modifier}]')
+            self.element.modifier = btn.modifier
+        else:
+            self._lblModifier.setText('')
+            self.element.modifier = ''
+
+
+class RelationshipChangesEditor(QFrame, AgencyElementWidget):
+    def __init__(self, element: StoryElement, agency: CharacterAgency, novel: Novel, parent=None):
+        super().__init__(parent)
+        self.element = element
+        self.agency = agency
+        self.novel = novel
+        vbox(self, 5)
+        self.setProperty('large-rounded', True)
+        self.setProperty('relaxed-white-bg', True)
+        self.setMaximumWidth(170)
+
+        self.wdgHeader = columns(0, 0)
+        margins(self.wdgHeader, left=5, right=5)
+
+        self._btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
+        self._title = push_btn(IconRegistry.from_name('fa5s.people-arrows', PLOTLYST_SECONDARY_COLOR), 'Relationships',
+                               transparent_=True)
+        self._title.clicked.connect(self._btnAdd.animateClick)
+        self.wdgHeader.layout().addWidget(self._title)
+        self.wdgHeader.layout().addWidget(self._btnAdd)
+
+        self.layout().addWidget(self.wdgHeader)
+        self.layout().addWidget(line())
+
+        menu = CharacterSelectorMenu(self.novel, self._btnAdd)
+        menu.selected.connect(self._addNew)
+
+        shadow(self)
+        translucent(self._title, 0.7)
+
+        for element in self.element.elements:
+            self.__initWidget(element)
+
+    def _addNew(self, character: Character):
+        element = StoryElement(StoryElementType.Relationship, ref=character.id)
+        self.element.elements.append(element)
+        wdg = self.__initWidget(element)
+        fade_in(wdg)
+
+    def _removed(self, wdg: RelationshipChangeWidget):
+        self.element.elements.remove(wdg.element)
+        fade_out_and_gc(self, wdg)
+
+    def __initWidget(self, element: StoryElement) -> RelationshipChangeWidget:
+        wdg = RelationshipChangeWidget(element, self.agency, self.novel)
+        wdg.removed.connect(partial(self._removed, wdg))
+        self.layout().addWidget(wdg)
+
+        return wdg
+
+
 class CharacterAgencyEditor(QWidget):
     removed = pyqtSignal()
     reset = pyqtSignal()
@@ -967,7 +1038,7 @@ class CharacterAgencyEditor(QWidget):
         self._charDisplay.setIconSize(QSize(36, 36))
         self._menuSelector: Optional[CharacterChangesSelectorPopup] = None
         self._menu = MenuWidget()
-        self._menu.addAction(action('Edit agency', IconRegistry.edit_icon(), slot=self._openSelector))
+        self._menu.addAction(action('Edit agency', IconRegistry.edit_icon(), slot=self.openSelector))
         self._menu.addSeparator()
         self._menu.addAction(action('Reset agency', IconRegistry.from_name('ph.x-light'), slot=self.reset))
         self._menu.addAction(action('Remove agency', IconRegistry.trash_can_icon(), slot=self.removed))
@@ -975,7 +1046,7 @@ class CharacterAgencyEditor(QWidget):
 
         self.btnAdd = push_btn(IconRegistry.plus_icon('grey'), 'Track character changes', transparent_=True)
         self.btnAdd.installEventFilter(OpacityEventFilter(self.btnAdd, leaveOpacity=0.7))
-        self.btnAdd.clicked.connect(self._openSelector)
+        self.btnAdd.clicked.connect(self.openSelector)
 
         self.wdgElements = QWidget()
         grid(self.wdgElements)
@@ -1022,7 +1093,8 @@ class CharacterAgencyEditor(QWidget):
                 self.wdgElements.layout().addWidget(wdg, el.row, col - 1, 1, 3)
                 continue
 
-            self.wdgElements.layout().addWidget(wdg, el.row, col, Qt.AlignmentFlag.AlignCenter)
+            self.wdgElements.layout().addWidget(wdg, el.row, col,
+                                                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop)
 
             if col == 3 and self._hasElement(el.row, 1):
                 arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
@@ -1036,7 +1108,7 @@ class CharacterAgencyEditor(QWidget):
                 incr_icon(arrow, 4)
                 self.wdgElements.layout().addWidget(arrow, el.row, 4, Qt.AlignmentFlag.AlignCenter)
 
-    def _openSelector(self):
+    def openSelector(self):
         def added():
             self._menuSelector.hide()
             self.refresh()
@@ -1050,32 +1122,22 @@ class CharacterAgencyEditor(QWidget):
     def _emotionChanged(self, emotion: int):
         self.agenda.emotion = emotion
 
-    def _emotionReset(self):
-        self.agenda.emotion = None
-
-    def _motivationChanged(self, motivation: Motivation, value: int):
-        pass
-
-    def _motivationReset(self):
-        self.agenda.motivations.clear()
-
     def _hasElement(self, row: int, col: int) -> bool:
         item = self.wdgElements.layout().itemAtPosition(row, col)
         if item and item.widget() and isinstance(item.widget(), CharacterChangeBubble):
             return True
 
-    def __initElementWidget(self, element: StoryElement) -> CharacterChangeBubble:
+    def __initElementWidget(self, element: StoryElement) -> AgencyElementWidget:
         if element.type == StoryElementType.Connector:
             wdg = StoryElementConnector(element)
+        elif element.type == StoryElementType.Motivation:
+            wdg = CharacterMotivationChange(self.novel, self.scene, self.agenda, element)
+        elif element.type == StoryElementType.Emotion or element.type == StoryElementType.Emotion_change:
+            wdg = CharacterEmotionChange(element, self.agenda)
+        elif element.type == StoryElementType.Relationship:
+            wdg = RelationshipChangesEditor(element, self.agenda, self.novel)
         else:
             wdg = CharacterChangeBubble(element)
-            if element.type == StoryElementType.Motivation:
-                motivationEditor = SceneAgendaMotivationEditor()
-                motivationEditor.motivationChanged.connect(self._motivationChanged)
-                motivationEditor.setNovel(self.novel)
-                motivationEditor.setScene(self.scene)
-                motivationEditor.setAgenda(self.agenda)
-                wdg.addBottomWidget(motivationEditor)
 
         return wdg
 
@@ -1149,6 +1211,7 @@ class SceneAgencyEditor(QWidget, EventListener):
         wdg = self.__initAgencyWidget(agency)
         qtanim.fade_in(wdg, teardown=finish)
         QTimer.singleShot(20, lambda: self.agencyAdded.emit(wdg))
+        QTimer.singleShot(70, wdg.openSelector)
 
     def _agencyRemoved(self, wdg: CharacterAgencyEditor):
         if confirmed(f"Are you sure you want to delete this agency?", 'Delete character agency'):

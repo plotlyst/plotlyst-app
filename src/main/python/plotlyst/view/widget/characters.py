@@ -555,7 +555,7 @@ class CharacterAvatar(QWidget):
     avatarUpdated = pyqtSignal()
 
     def __init__(self, parent=None, defaultIconSize: int = 118, avatarSize: int = 168, customIconSize: int = 132,
-                 margins: int = 17):
+                 margins: int = 17, opacityFilter: bool = True):
         super().__init__(parent)
         self._menu: Optional[MenuWidget] = None
         self._overlay: Optional[OverlayWidget] = None
@@ -569,7 +569,9 @@ class CharacterAvatar(QWidget):
         hbox(self, 0, 0).addWidget(self.wdgFrame)
         self.btnAvatar = tool_btn(IconRegistry.character_icon(), transparent_=True, icon_resize=False)
         hbox(self.wdgFrame, margins).addWidget(self.btnAvatar)
-        self.btnAvatar.installEventFilter(OpacityEventFilter(parent=self.btnAvatar, enterOpacity=0.7, leaveOpacity=1.0))
+        if opacityFilter:
+            self.btnAvatar.installEventFilter(
+                OpacityEventFilter(parent=self.btnAvatar, enterOpacity=0.7, leaveOpacity=1.0))
         apply_border_image(self.wdgFrame, resource_registry.circular_frame1)
 
         self._character: Optional[Character] = None
