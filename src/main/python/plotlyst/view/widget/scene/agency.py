@@ -74,9 +74,11 @@ class SceneAgendaMotivationEditor(QWidget):
 
         self._menu = MenuWidget(self._icon)
         self._wdgEditor = columns()
+        margins(self._wdgEditor, top=10)
         self._wdgEditor.layout().addWidget(self._motivationDisplay)
         self._wdgEditor.layout().addWidget(self._motivationEditor)
         apply_white_menu(self._menu)
+        self._menu.addWidget(label("Track how the character's motivation changes", description=True))
         self._menu.addWidget(self._wdgEditor)
 
         self.layout().addWidget(self._icon, alignment=Qt.AlignmentFlag.AlignTop)
@@ -693,6 +695,11 @@ class CharacterChangeBubble(TextEditBubbleWidget, AgencyElementWidget):
         self.element.text = self._textedit.toPlainText()
 
 
+class ConflictAgencyElementWidget(CharacterChangeBubble):
+    def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, element: StoryElement, parent=None):
+        super().__init__(element, parent)
+
+
 class CharacterMotivationChange(CharacterChangeBubble):
     def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, element: StoryElement, parent=None):
         super().__init__(element, parent)
@@ -1132,6 +1139,8 @@ class CharacterAgencyEditor(QWidget):
             wdg = StoryElementConnector(element)
         elif element.type == StoryElementType.Motivation:
             wdg = CharacterMotivationChange(self.novel, self.scene, self.agenda, element)
+        elif element.type == StoryElementType.Conflict:
+            wdg = ConflictAgencyElementWidget(self.novel, self.scene, self.agenda, element)
         elif element.type == StoryElementType.Emotion or element.type == StoryElementType.Emotion_change:
             wdg = CharacterEmotionChange(element, self.agenda)
         elif element.type == StoryElementType.Relationship:
