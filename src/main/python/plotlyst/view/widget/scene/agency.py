@@ -40,7 +40,7 @@ from plotlyst.events import NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, CharacterDeletedEvent
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, shadow, frame, scroll_area, rows, \
-    columns, fade_in, ExclusiveOptionalButtonGroup
+    columns, fade_in, ExclusiveOptionalButtonGroup, wrap
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
@@ -795,11 +795,19 @@ class CharacterEmotionChange(QFrame, AgencyElementWidget):
 
 class _DimensionSelectorButton(SelectorToggleButton):
     def __init__(self, dimension: str, icon: str, parent=None):
-        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=80)
+        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=80, parent=parent)
         self.dimension = dimension
         self.iconName = icon
         self.setText(dimension)
         self.setIcon(IconRegistry.from_name(icon))
+
+
+class _ModifierSelectorButton(SelectorToggleButton):
+    def __init__(self, modifier: str, parent=None):
+        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=60, parent=parent)
+        self.modifier = modifier
+        self.setText(modifier)
+        decr_font(self)
 
 
 class RelationshipChangeDimensionPopup(MenuWidget):
@@ -813,6 +821,9 @@ class RelationshipChangeDimensionPopup(MenuWidget):
         self.wdgFrame.setProperty('large-rounded', True)
 
         self.btnGroupDimensions = ExclusiveOptionalButtonGroup()
+        self.btnGroupModifiers = ExclusiveOptionalButtonGroup()
+
+        self.btnGroupDimensions.buttonClicked.connect(self._dimensionClicked)
 
         self.wdgUnion = rows(0)
         self.wdgConflict = rows(0)
@@ -855,6 +866,21 @@ class RelationshipChangeDimensionPopup(MenuWidget):
         self.__initDimension('Jealousy', self.wdgConflict, 'mdi.eye-circle-outline')
         self.wdgConflict.layout().addWidget(vspacer())
 
+        self.wdgFrame.layout().addWidget(
+            wrap(label(
+                "Optionally select a modifier to reflect how the relationship dynamic has shifted",
+                description=True), margin_top=25), alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.wdgModifiers = columns(0)
+        self.wdgFrame.layout().addWidget(self.wdgModifiers, alignment=Qt.AlignmentFlag.AlignRight)
+        self.__initModifier('Building')
+        self.__initModifier('Growing')
+        self.__initModifier('Strengthened')
+        self.__initModifier('Pressured')
+        self.__initModifier('Peaked')
+        self.__initModifier('Fading')
+        self.__initModifier('Broken')
+
         self.addWidget(self.wdgFrame)
 
         if element.dimension:
@@ -862,12 +888,32 @@ class RelationshipChangeDimensionPopup(MenuWidget):
                 if btn.text() == element.dimension:
                     btn.setChecked(True)
                     break
+        if element.modifier:
+            for btn in self.btnGroupModifiers.buttons():
+                if btn.text() == element.modifier:
+                    btn.setChecked(True)
+                    break
 
-    def __initDimension(self, name: str, parent: QWidget, icon: str = '') -> SelectorToggleButton:
+    def _dimensionClicked(self):
+        checkedDim = self.btnGroupDimensions.checkedButton() is not None
+        if not checkedDim:
+            self.btnGroupModifiers.reset()
+
+        for btn in self.btnGroupModifiers.buttons():
+            btn.setEnabled(checkedDim)
+
+    def __initDimension(self, name: str, parent: QWidget, icon: str = '') -> _DimensionSelectorButton:
         btn = _DimensionSelectorButton(name, icon)
         self.btnGroupDimensions.addButton(btn)
 
         parent.layout().addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        return btn
+
+    def __initModifier(self, modifier: str) -> _ModifierSelectorButton:
+        btn = _ModifierSelectorButton(modifier)
+        self.btnGroupModifiers.addButton(btn)
+        self.wdgModifiers.layout().addWidget(btn)
 
         return btn
 
@@ -896,7 +942,7 @@ class RelationshipChangeWidget(QWidget):
         font.setFamily(app_env.serif_font())
         self._lblDimension.setFont(font)
         self._lblDimension.clicked.connect(self._edit)
-        self._lblModifier = label('', description=True, italic=True, decr_font_diff=1)
+        self._lblModifier = label('', description=True, decr_font_diff=1)
 
         self.layout().addWidget(self._characterLbl, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._lblDimension, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -909,12 +955,12 @@ class RelationshipChangeWidget(QWidget):
         if self.element.dimension:
             self._lblDimension.setText(self.element.dimension)
             self._lblDimension.setIcon(IconRegistry.from_name(self.element.icon))
+            if self.element.modifier:
+                self._lblModifier.setText(f'[{self.element.modifier}]')
+            else:
+                self._lblModifier.setHidden(True)
         else:
             self._lblDimension.setIcon(IconRegistry.edit_icon('grey'))
-
-        if self.element.modifier:
-            self._lblModifier.setText(f'[{self.element.modifier}]')
-        else:
             self._lblModifier.setHidden(True)
 
         self.installEventFilter(VisibilityToggleEventFilter(self._btnRemove, self))
@@ -927,6 +973,7 @@ class RelationshipChangeWidget(QWidget):
     def _edit(self):
         self._menu = RelationshipChangeDimensionPopup(self.element)
         self._menu.btnGroupDimensions.buttonClicked.connect(self._dimensionChanged)
+        self._menu.btnGroupModifiers.buttonClicked.connect(self._modifierChanged)
         self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
         self._menu.exec()
 
@@ -938,10 +985,21 @@ class RelationshipChangeWidget(QWidget):
             self.element.icon = btn.iconName
         else:
             self._lblDimension.setText('')
-            self._lblDimension.setIcon(QIcon())
+            self._lblDimension.setIcon(IconRegistry.edit_icon('grey'))
+            self._lblModifier.setText('')
+            self._lblModifier.setVisible(False)
+            self.element.modifier = ''
             self.element.dimension = ''
             self.element.icon = ''
 
+    def _modifierChanged(self, btn: _ModifierSelectorButton):
+        self._lblModifier.setVisible(btn.isChecked())
+        if btn.isChecked():
+            self._lblModifier.setText(f'[{btn.modifier}]')
+            self.element.modifier = btn.modifier
+        else:
+            self._lblModifier.setText('')
+            self.element.modifier = ''
 
 
 class RelationshipChangesEditor(QFrame, AgencyElementWidget):
