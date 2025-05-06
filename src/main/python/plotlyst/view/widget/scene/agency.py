@@ -888,11 +888,14 @@ class RelationshipChangeDimensionPopup(MenuWidget):
                 if btn.text() == element.dimension:
                     btn.setChecked(True)
                     break
-        if element.modifier:
+            if element.modifier:
+                for btn in self.btnGroupModifiers.buttons():
+                    if btn.text() == element.modifier:
+                        btn.setChecked(True)
+                        break
+        else:
             for btn in self.btnGroupModifiers.buttons():
-                if btn.text() == element.modifier:
-                    btn.setChecked(True)
-                    break
+                btn.setEnabled(False)
 
     def _dimensionClicked(self):
         checkedDim = self.btnGroupDimensions.checkedButton() is not None
@@ -944,9 +947,22 @@ class RelationshipChangeWidget(QWidget):
         self._lblDimension.clicked.connect(self._edit)
         self._lblModifier = label('', description=True, decr_font_diff=1)
 
+        # self._textedit = QTextEdit(self)
+        # self._textedit.setTabChangesFocus(True)
+        # if app_env.is_mac():
+        #     incr_font(self._textedit)
+        # self._textedit.verticalScrollBar().setVisible(False)
+        # transparent(self._textedit)
+        # self._textedit.setMaximumSize(165, 85)
+        #
+        # self._textedit.setPlaceholderText("How does the relationship evolve")
+        # self._textedit.setText(self.element.text)
+        # self._textedit.textChanged.connect(self._textChanged)
+
         self.layout().addWidget(self._characterLbl, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._lblDimension, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._lblModifier, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.layout().addWidget(self._textedit)
 
         character = entities_registry.character(str(element.ref))
         if character:
@@ -976,6 +992,9 @@ class RelationshipChangeWidget(QWidget):
         self._menu.btnGroupModifiers.buttonClicked.connect(self._modifierChanged)
         self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
         self._menu.exec()
+
+    # def _textChanged(self):
+    #     self.element.text = self._textedit.toPlainText()
 
     def _dimensionChanged(self, btn: _DimensionSelectorButton):
         if btn.isChecked():
