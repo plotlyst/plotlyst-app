@@ -25,7 +25,7 @@ from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
 from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent, QIcon
 from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame
 from overrides import overrides
-from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
+from qthandy import hbox, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
     flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon, incr_font
 from qthandy.filter import OpacityEventFilter, DragEventFilter, DropEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
@@ -53,55 +53,6 @@ from plotlyst.view.widget.display import ArrowButton, SeparatorLineWithShadow, C
 from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget
 from plotlyst.view.widget.scene.conflict import ConflictIntensityEditor, CharacterConflictSelector
 from plotlyst.view.widget.scene.motivation import MotivationDisplay, MotivationEditor, MotivationChargeLabel
-
-
-class SceneAgendaEmotionEditor(QWidget):
-    emotionChanged = pyqtSignal(int)
-    deactivated = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        hbox(self)
-        sp(self).h_max()
-
-        self._icon.setIcon(IconRegistry.from_name('mdi.emoticon-neutral', 'lightgrey'))
-
-        self._slider = EmotionEditorSlider()
-        self._slider.valueChanged.connect(self._valueChanged)
-
-        self.layout().addWidget(self._icon)
-        self.layout().addWidget(self._slider)
-        self.layout().addWidget(spacer(max_stretch=5))
-
-        self.reset()
-
-    def activate(self):
-        self._activated = True
-        self._slider.setVisible(True)
-        self._icon.setText('')
-
-    def reset(self):
-        # super().reset()
-        self._slider.setVisible(False)
-        self._icon.setIcon(IconRegistry.from_name('mdi.emoticon-neutral', 'lightgrey'))
-        self._icon.setText('Emotion')
-        translucent(self._icon, 0.4)
-
-    def setValue(self, value: int):
-        self.activate()
-        if self._slider.value() == value:
-            self.emotionChanged.emit(value)
-        else:
-            self._slider.setValue(value)
-
-    def _iconClicked(self):
-        if not self._activated:
-            self.setValue(5)
-            qtanim.fade_in(self._slider, 150)
-
-    def _valueChanged(self, value: int):
-        self._icon.setIcon(IconRegistry.emotion_icon_from_feeling(value))
-        self.emotionChanged.emit(value)
 
 
 class SceneAgendaMotivationEditor(QWidget):
