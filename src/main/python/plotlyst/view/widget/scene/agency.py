@@ -22,12 +22,11 @@ from typing import Dict, Optional, Tuple, Union
 
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
-from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent
-from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame
+from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent, QIcon
+from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame, QPushButton
 from overrides import overrides
-from qtanim import fade_in
 from qthandy import hbox, spacer, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon
+    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon, vline, incr_font
 from qthandy.filter import OpacityEventFilter, DragEventFilter, DropEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
@@ -41,7 +40,7 @@ from plotlyst.events import NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, CharacterDeletedEvent
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, shadow, frame, scroll_area, rows, \
-    columns
+    columns, fade_in, ExclusiveOptionalButtonGroup
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
@@ -477,6 +476,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
         row += 1
 
         self.selectorMotivation = self.__initSelector(StoryElementType.Motivation, row, self.FINAL_COL)
+        row += 1
+        self.selectorRelationChange = self.__initSelector(StoryElementType.Relationship, row, self.FINAL_COL)
 
         if self.agenda.elements:
             self.wdgPreviewParent.setVisible(True)
@@ -792,6 +793,153 @@ class CharacterEmotionChange(QFrame, AgencyElementWidget):
         self._icon.setIcon(IconRegistry.emotion_icon_from_feeling(self.element.value))
 
 
+class RelationshipChangeDimensionPopup(MenuWidget):
+    def __init__(self, element: StoryElement, parent=None):
+        super().__init__(parent)
+        transparent_menu(self)
+
+        self.wdgFrame = frame()
+        vbox(self.wdgFrame, 10)
+        self.wdgFrame.setProperty('white-bg', True)
+        self.wdgFrame.setProperty('large-rounded', True)
+
+        self.btnGroupDimensions = ExclusiveOptionalButtonGroup()
+
+        self.wdgUnion = columns(0)
+        # self.wdgUnion = QWidget()
+        # flow(self.wdgUnion)
+        self.wdgConflict = columns(0)
+        self.wdgCooperation = columns(0)
+
+        self.wdgEditor = rows(0, 8)
+        self.wdgEditor.layout().addWidget(self.wdgUnion)
+        self.wdgEditor.layout().addWidget(self.wdgConflict)
+        self.wdgEditor.layout().addWidget(self.wdgCooperation)
+        self.wdgFrame.layout().addWidget(self.wdgEditor)
+
+        self.__initDimension('Union', self.wdgUnion)
+        self.wdgUnion.layout().addWidget(vline())
+        self.__initDimension('Love', self.wdgUnion)
+        self.__initDimension('Friendship', self.wdgUnion)
+        self.__initDimension('Alliance', self.wdgUnion)
+        self.__initDimension('Family', self.wdgUnion)
+
+        self.wdgUnion.layout().addWidget(spacer())
+
+        self.__initDimension('Conflict', self.wdgConflict)
+        self.wdgConflict.layout().addWidget(vline())
+        self.__initDimension('Rivalry', self.wdgConflict)
+        self.__initDimension('Betrayal', self.wdgConflict)
+        self.__initDimension('Jealousy', self.wdgConflict)
+        self.wdgConflict.layout().addWidget(spacer())
+
+        self.addWidget(self.wdgFrame)
+
+    def __initDimension(self, name: str, parent: QWidget):
+        btn = SelectorToggleButton(minWidth=80)
+        btn.setText(name)
+        self.btnGroupDimensions.addButton(btn)
+
+        parent.layout().addWidget(btn)
+
+
+class RelationshipChangeWidget(QWidget):
+    def __init__(self, element: StoryElement, agency: CharacterAgency, novel: Novel, parent=None):
+        super().__init__(parent)
+        self.element = element
+        self.agency = agency
+        self.novel = novel
+        vbox(self, 0, 0)
+
+        self._characterLbl = tool_btn(QIcon(), transparent_=True)
+        incr_icon(self._characterLbl, 14)
+        self._characterLbl.clicked.connect(self._edit)
+
+        self._lblDimension = push_btn(transparent_=True)
+        incr_font(self._lblDimension, 2)
+        font = self._lblDimension.font()
+        font.setFamily(app_env.serif_font())
+        self._lblDimension.setFont(font)
+        self._lblDimension.clicked.connect(self._edit)
+        self._lblModifier = label('', description=True, italic=True, decr_font_diff=1)
+
+        # self.wdgHeader = columns(0, 0)
+        self.layout().addWidget(self._characterLbl, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._lblDimension, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._lblModifier, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.wdgHeader.layout().addWidget(self._lblModifier)
+        # self.wdgHeader.layout().addWidget(spacer())
+
+        # self.layout().addWidget(self.wdgHeader)
+
+        character = entities_registry.character(str(element.ref))
+        if character:
+            self._characterLbl.setIcon(avatars.avatar(character))
+
+        if self.element.dimension:
+            self._lblDimension.setText(self.element.dimension)
+        else:
+            self._lblDimension.setIcon(IconRegistry.edit_icon('grey'))
+
+        if self.element.modifier:
+            self._lblModifier.setText(f'[{self.element.modifier}]')
+        else:
+            self._lblModifier.setHidden(True)
+
+        # pointy(self)
+
+    # @overrides
+    # def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+    #     self._edit()
+
+    def _edit(self):
+        self._menu = RelationshipChangeDimensionPopup(self.element)
+        self._menu.btnGroupDimensions.buttonClicked.connect(self._dimensionChanged)
+        self._menu.exec()
+
+    def _dimensionChanged(self, btn: QPushButton):
+        self._lblDimension.setText(btn.text())
+        self._lblDimension.setIcon(QIcon())
+        self._lblModifier.setText('')
+
+
+class RelationshipChangesEditor(QFrame, AgencyElementWidget):
+    def __init__(self, element: StoryElement, agency: CharacterAgency, novel: Novel, parent=None):
+        super().__init__(parent)
+        self.element = element
+        self.agency = agency
+        self.novel = novel
+        vbox(self, 5)
+        self.setProperty('large-rounded', True)
+        self.setProperty('relaxed-white-bg', True)
+        self.setMaximumWidth(170)
+
+        self.wdgHeader = columns(0, 0)
+        margins(self.wdgHeader, left=5, right=5)
+
+        self._btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
+        self._title = push_btn(IconRegistry.from_name('fa5s.people-arrows', PLOTLYST_SECONDARY_COLOR), 'Relationships',
+                               transparent_=True)
+        self._title.clicked.connect(self._btnAdd.animateClick)
+        self.wdgHeader.layout().addWidget(self._title)
+        self.wdgHeader.layout().addWidget(self._btnAdd)
+
+        self.layout().addWidget(self.wdgHeader)
+        self.layout().addWidget(line())
+
+        menu = CharacterSelectorMenu(self.novel, self._btnAdd)
+        menu.selected.connect(self._addNew)
+
+        shadow(self)
+        translucent(self._title, 0.7)
+
+    def _addNew(self, character: Character):
+        element = StoryElement(StoryElementType.Relationship, ref=character.id)
+        wdg = RelationshipChangeWidget(element, self.agency, self.novel)
+        self.layout().addWidget(wdg)
+        fade_in(wdg)
+
+
 class CharacterAgencyEditor(QWidget):
     removed = pyqtSignal()
     reset = pyqtSignal()
@@ -903,6 +1051,8 @@ class CharacterAgencyEditor(QWidget):
             wdg = CharacterMotivationChange(self.novel, self.scene, self.agenda, element)
         elif element.type == StoryElementType.Emotion or element.type == StoryElementType.Emotion_change:
             wdg = CharacterEmotionChange(element, self.agenda)
+        elif element.type == StoryElementType.Relationship:
+            wdg = RelationshipChangesEditor(element, self.agenda, self.novel)
         else:
             wdg = CharacterChangeBubble(element)
 

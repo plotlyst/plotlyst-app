@@ -1819,6 +1819,8 @@ class StoryElementType(Enum):
     Character_internal_state_change = 'character_internal_state_change'
 
     Connector = 'connector'
+    H_line = 'h_line'
+    V_line = 'v_line'
 
     Expectation = 'expectation'
     Realization = 'realization'
@@ -1833,6 +1835,7 @@ class StoryElementType(Enum):
     Decision = 'decision'
     Emotion = 'emotion'
     Emotion_change = 'emotion_change'
+    Relationship = 'relationship'
     Agency = 'agency'
     Initiative = 'initiative'
     Catalyst = 'catalyst'
@@ -1840,8 +1843,7 @@ class StoryElementType(Enum):
     Plan_change = 'plan_change'
     Collaboration = 'collaboration'
     Subtext = 'subtext'
-    H_line = 'h_line'
-    V_line = 'v_line'
+
     Event = 'event'
     Effect = 'effect'
     Delayed_effect = 'delayed_effect'
@@ -1897,6 +1899,8 @@ class StoryElementType(Enum):
             return 'mdi.emoticon-neutral-outline'
         elif self == StoryElementType.Emotion_change:
             return 'mdi.emoticon-neutral-outline'
+        elif self == StoryElementType.Relationship:
+            return 'fa5s.people-arrows'
 
     def placeholder(self) -> str:
         if self == StoryElementType.Goal:
@@ -1937,6 +1941,8 @@ class StoryElementType(Enum):
             return "What's the character's emotional state?"
         elif self == StoryElementType.Emotion_change:
             return "How does the character's emotional state change?"
+        elif self == StoryElementType.Relationship:
+            return "How does the dynamic evolve among the characters?"
 
         return ''
 
@@ -1951,6 +1957,9 @@ class StoryElement:
     row: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     col: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     arrows: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
+    elements: List['StoryElement'] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+    dimension: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    modifier: str = field(default='', metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass
