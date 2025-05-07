@@ -21,18 +21,18 @@ from functools import partial
 from typing import Dict, Optional, Tuple, Union
 
 import qtanim
-from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
+from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData, QObject
 from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent, QIcon
-from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame
+from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame, QTextEdit
 from overrides import overrides
 from qthandy import hbox, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon, incr_font
+    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon, incr_font, pointy
 from qthandy.filter import OpacityEventFilter, DragEventFilter, DropEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR, PLACEHOLDER_TEXT_COLOR
 from plotlyst.core.domain import Motivation, Novel, Scene, CharacterAgency, Character, StoryElementType, \
-    StoryElement
+    StoryElement, ConflictReference, Conflict, ConflictType
 from plotlyst.env import app_env
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
@@ -490,6 +490,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
                         self.agenda.motivations.clear()
                     elif el.type == StoryElementType.Conflict:
                         self.agenda.intensity = 0
+                        self.agenda.conflict_references.clear()
                     break
 
         self.wdgPreviewParent.setVisible(True)
@@ -692,6 +693,67 @@ class CharacterChangeBubble(TextEditBubbleWidget, AgencyElementWidget):
         self.element.text = self._textedit.toPlainText()
 
 
+class ConflictReferenceWidget(QWidget):
+    removed = pyqtSignal()
+
+    def __init__(self, ref: ConflictReference, conflict: Conflict, parent=None):
+        super().__init__(parent)
+        self.ref = ref
+        self.conflict = conflict
+
+        vbox(self, 0, 0)
+
+        self._btnRemove = RemovalButton(self)
+        self._btnRemove.clicked.connect(self.removed)
+        self._btnRemove.setHidden(True)
+
+        self._iconConflict = tool_btn(IconRegistry.conflict_society_icon(), transparent_=True)
+        incr_icon(self._iconConflict, 8)
+
+        self._lblConflict = label(self.conflict.text, wordWrap=True)
+        pointy(self._lblConflict)
+        font = self._lblConflict.font()
+        font.setFamily(app_env.serif_font())
+        self._lblConflict.setFont(font)
+        self._lblConflict.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._lblConflict.installEventFilter(self)
+
+        self._textedit = QTextEdit(self)
+        self._textedit.setTabChangesFocus(True)
+        if app_env.is_mac():
+            incr_font(self._textedit)
+        self._textedit.verticalScrollBar().setVisible(False)
+        self._textedit.setStyleSheet(f'color: {PLACEHOLDER_TEXT_COLOR}; border: 0px; padding: 2px;')
+        self._textedit.setMaximumSize(165, 85)
+
+        self._textedit.setPlaceholderText("What kind of conflict does the character have to face?")
+        self._textedit.setText(self.ref.message)
+        self._textedit.textChanged.connect(self._textChanged)
+
+        self.layout().addWidget(self._iconConflict, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._lblConflict)
+        self.layout().addWidget(self._textedit)
+
+        self.installEventFilter(VisibilityToggleEventFilter(self._btnRemove, self))
+
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.MouseButtonRelease:
+            self._edit()
+        return super().eventFilter(watched, event)
+
+    @overrides
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 2,
+                                    self._btnRemove.sizeHint().width(), self._btnRemove.sizeHint().height())
+
+    def _textChanged(self):
+        self.ref.message = self._textedit.toPlainText()
+
+    def _edit(self):
+        pass
+
+
 class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
     def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, element: StoryElement, parent=None):
         super().__init__(parent)
@@ -711,6 +773,7 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
         self._title = push_btn(IconRegistry.conflict_icon(), 'Conflict',
                                transparent_=True)
         self._title.clicked.connect(self._btnAdd.animateClick)
+        self._btnAdd.clicked.connect(self._addNew)
         self.wdgHeader.layout().addWidget(self._title)
         self.wdgHeader.layout().addWidget(self._btnAdd)
 
@@ -721,7 +784,7 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
         sp(self._sliderIntensity).h_max()
 
         self.wdgConflicts = rows()
-        # self.wdgConflicts.setMinimumSize(165, 25)
+        self.wdgConflicts.setMinimumSize(165, 25)
 
         self.layout().addWidget(self.wdgHeader, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(line())
@@ -733,6 +796,24 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
 
     def _intensityChanged(self, value: int):
         self.agency.intensity = value
+
+    def _addNew(self):
+        conflict = Conflict('New Conflict keyphrase', ConflictType.SOCIETY)
+        ref = ConflictReference(conflict.id)
+        self.agency.conflict_references.append(ref)
+        wdg = self.__initWidget(ref, conflict)
+        fade_in(wdg)
+
+    def _removed(self, wdg: ConflictReferenceWidget):
+        self.agency.conflict_references.remove(wdg.ref)
+        fade_out_and_gc(self, wdg)
+
+    def __initWidget(self, ref: ConflictReference, conflict: Conflict) -> ConflictReferenceWidget:
+        wdg = ConflictReferenceWidget(ref, conflict)
+        wdg.removed.connect(partial(self._removed, wdg))
+        self.wdgConflicts.layout().addWidget(wdg)
+
+        return wdg
 
 
 class CharacterMotivationChange(CharacterChangeBubble):
@@ -940,22 +1021,9 @@ class RelationshipChangeWidget(QWidget):
         self._lblDimension.clicked.connect(self._edit)
         self._lblModifier = label('', description=True, decr_font_diff=1)
 
-        # self._textedit = QTextEdit(self)
-        # self._textedit.setTabChangesFocus(True)
-        # if app_env.is_mac():
-        #     incr_font(self._textedit)
-        # self._textedit.verticalScrollBar().setVisible(False)
-        # transparent(self._textedit)
-        # self._textedit.setMaximumSize(165, 85)
-        #
-        # self._textedit.setPlaceholderText("How does the relationship evolve")
-        # self._textedit.setText(self.element.text)
-        # self._textedit.textChanged.connect(self._textChanged)
-
         self.layout().addWidget(self._characterLbl, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._lblDimension, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._lblModifier, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.layout().addWidget(self._textedit)
 
         character = entities_registry.character(str(element.ref))
         if character:
@@ -985,9 +1053,6 @@ class RelationshipChangeWidget(QWidget):
         self._menu.btnGroupModifiers.buttonClicked.connect(self._modifierChanged)
         self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
         self._menu.exec()
-
-    # def _textChanged(self):
-    #     self.element.text = self._textedit.toPlainText()
 
     def _dimensionChanged(self, btn: _DimensionSelectorButton):
         if btn.isChecked():
@@ -1138,13 +1203,15 @@ class CharacterAgencyEditor(QWidget):
                 arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
                 arrow.setState(arrow.STATE_MAX)
                 incr_icon(arrow, 4)
-                self.wdgElements.layout().addWidget(arrow, el.row, 2, Qt.AlignmentFlag.AlignCenter)
+                self.wdgElements.layout().addWidget(wrap(arrow, margin_top=50), el.row, 2,
+                                                    Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop)
 
             if col == 5 and self._hasElement(el.row, 3):
                 arrow = ArrowButton(Qt.Edge.RightEdge, readOnly=True)
                 arrow.setState(1)
                 incr_icon(arrow, 4)
-                self.wdgElements.layout().addWidget(arrow, el.row, 4, Qt.AlignmentFlag.AlignCenter)
+                self.wdgElements.layout().addWidget(wrap(arrow, margin_top=50), el.row, 4,
+                                                    Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop)
 
     def openSelector(self):
         def added():
@@ -1162,7 +1229,6 @@ class CharacterAgencyEditor(QWidget):
 
     def _hasElement(self, row: int, col: int) -> bool:
         item = self.wdgElements.layout().itemAtPosition(row, col)
-        print(f'{row} {col} {item.widget()}')
         if item and item.widget() and isinstance(item.widget(), AgencyElementWidget):
             return True
 
