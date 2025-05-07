@@ -110,23 +110,21 @@ class SceneAgendaMotivationEditor(QWidget):
 class SceneAgendaConflictEditor(QWidget):
     conflictReset = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, parent=None):
         super().__init__(parent)
-        vbox(self)
+        vbox(self, 1, 1)
 
-        self._novel: Optional[Novel] = None
-        self._scene: Optional[Scene] = None
-        self._agenda: Optional[CharacterAgency] = None
+        self._novel = novel
+        self._scene = scene
+        self._agency = agency
 
-        self._icon.setIcon(IconRegistry.conflict_icon('lightgrey'))
-        self._icon.setText('Conflict')
-        # self._icon.installEventFilter(self._opacityFilter)
+        self._icon = push_btn(IconRegistry.conflict_icon('lightgrey'), transparent_=True)
 
         self._sliderIntensity = ConflictIntensityEditor()
         self._sliderIntensity.intensityChanged.connect(self._intensityChanged)
 
         self._wdgConflicts = QWidget()
-        hbox(self._wdgConflicts)
+        flow(self._wdgConflicts)
 
         self._wdgSliders = QWidget()
         hbox(self._wdgSliders).addWidget(self._sliderIntensity, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -136,16 +134,14 @@ class SceneAgendaConflictEditor(QWidget):
         self.layout().addWidget(self._wdgSliders)
         self.layout().addWidget(self._wdgConflicts)
 
-        self.reset()
+        conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agency)
+        conflictSelector.conflictSelected.connect(self._conflictSelected)
+        self._wdgConflicts.layout().addWidget(conflictSelector)
 
-    def setNovel(self, novel: Novel):
-        self._novel = novel
-
-    def setScene(self, scene: Scene):
-        self._scene = scene
+        # self.reset()
 
     def setAgenda(self, agenda: CharacterAgency):
-        self._agenda = agenda
+        self._agency = agenda
         clear_layout(self._wdgConflicts)
 
         if agenda.intensity > 0 or agenda.conflict_references:
@@ -154,49 +150,48 @@ class SceneAgendaConflictEditor(QWidget):
             self.reset()
 
         for ref in agenda.conflict_references:
-            conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agenda)
+            conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agency)
             conflictSelector.setConflict(ref.conflict(self._novel), ref)
             self._wdgConflicts.layout().addWidget(conflictSelector)
 
-        conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agenda)
+        conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agency)
         conflictSelector.conflictSelected.connect(self._conflictSelected)
         self._wdgConflicts.layout().addWidget(conflictSelector, alignment=Qt.AlignmentFlag.AlignLeft)
 
-    def activate(self):
-        self._activated = True
-        self._wdgSliders.setVisible(True)
-        self._wdgConflicts.setVisible(True)
-        self._icon.setHidden(True)
-
-    def reset(self):
-        # super().reset()
-        self._wdgSliders.setVisible(False)
-        self._wdgConflicts.setVisible(False)
-        self._icon.setVisible(True)
-        if self._agenda:
-            self._agenda.intensity = 0
-            self._agenda.conflict_references.clear()
+    # def activate(self):
+    #     self._activated = True
+    #     self._wdgSliders.setVisible(True)
+    #     self._wdgConflicts.setVisible(True)
+    #     self._icon.setHidden(True)
+    #
+    # def reset(self):
+    #     self._wdgSliders.setVisible(False)
+    #     self._wdgConflicts.setVisible(False)
+    #     self._icon.setVisible(True)
+    #     if self._agency:
+    #         self._agency.intensity = 0
+    #         self._agency.conflict_references.clear()
 
     def setValue(self, value: int):
         self._sliderIntensity.setValue(value)
-        self.activate()
+        # self.activate()
 
-    def _iconClicked(self):
-        if not self._activated:
-            self.setValue(1)
-            qtanim.fade_in(self._sliderIntensity, 150)
-            # self._btnReset.setVisible(True)
+    # def _iconClicked(self):
+    #     if not self._activated:
+    #         self.setValue(1)
+    #         qtanim.fade_in(self._sliderIntensity, 150)
+    # self._btnReset.setVisible(True)
 
     def _intensityChanged(self, value: int):
-        if self._agenda:
-            self._agenda.intensity = value
+        if self._agency:
+            self._agency.intensity = value
 
         # shadow(self._iconActive, offset=0, radius=value * 2, color=QColor('#f3a712'))
         # shadow(self._titleActive, offset=0, radius=value, color=QColor('#f3a712'))
         # shadow(self._textEditor, offset=0, radius=value * 2, color=QColor('#f3a712'))
 
     def _conflictSelected(self):
-        conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agenda)
+        conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agency)
         conflictSelector.conflictSelected.connect(self._conflictSelected)
         self._wdgConflicts.layout().addWidget(conflictSelector)
 
@@ -493,6 +488,8 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
                     if el.type == StoryElementType.Motivation:
                         self.agenda.motivations.clear()
+                    elif el.type == StoryElementType.Conflict:
+                        self.agenda.intensity = 0
                     break
 
         self.wdgPreviewParent.setVisible(True)
@@ -695,9 +692,47 @@ class CharacterChangeBubble(TextEditBubbleWidget, AgencyElementWidget):
         self.element.text = self._textedit.toPlainText()
 
 
-class ConflictAgencyElementWidget(CharacterChangeBubble):
+class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
     def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, element: StoryElement, parent=None):
-        super().__init__(element, parent)
+        super().__init__(parent)
+        self.novel = novel
+        self.scene = scene
+        self.agency = agency
+        self.element = element
+        vbox(self, 5)
+        self.setProperty('large-rounded', True)
+        self.setProperty('relaxed-white-bg', True)
+        self.setMaximumWidth(170)
+
+        self.wdgHeader = columns(0, 0)
+        margins(self.wdgHeader, left=5, right=5)
+
+        self._btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
+        self._title = push_btn(IconRegistry.conflict_icon(), 'Conflict',
+                               transparent_=True)
+        self._title.clicked.connect(self._btnAdd.animateClick)
+        self.wdgHeader.layout().addWidget(self._title)
+        self.wdgHeader.layout().addWidget(self._btnAdd)
+
+        self._sliderIntensity = ConflictIntensityEditor(minWidth=160)
+        if self.agency.intensity:
+            self._sliderIntensity.setValue(self.agency.intensity)
+        self._sliderIntensity.intensityChanged.connect(self._intensityChanged)
+        sp(self._sliderIntensity).h_max()
+
+        self.wdgConflicts = rows()
+        # self.wdgConflicts.setMinimumSize(165, 25)
+
+        self.layout().addWidget(self.wdgHeader, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(line())
+        self.layout().addWidget(self._sliderIntensity, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.wdgConflicts)
+
+        shadow(self)
+        translucent(self._title, 0.7)
+
+    def _intensityChanged(self, value: int):
+        self.agency.intensity = value
 
 
 class CharacterMotivationChange(CharacterChangeBubble):
@@ -1058,11 +1093,7 @@ class CharacterAgencyEditor(QWidget):
         self.wdgElements = QWidget()
         grid(self.wdgElements)
 
-        # self._btnDots = DotsMenuButton()
-        # self._btnDots.clicked.connect(lambda: self._menu.exec(QCursor.pos()))
-
         self.layout().addWidget(self.wdgElements)
-        # self.installEventFilter(VisibilityToggleEventFilter(self._btnDots, self))
 
         if self.agenda.character_id:
             character = entities_registry.character(str(self.agenda.character_id))
@@ -1131,7 +1162,8 @@ class CharacterAgencyEditor(QWidget):
 
     def _hasElement(self, row: int, col: int) -> bool:
         item = self.wdgElements.layout().itemAtPosition(row, col)
-        if item and item.widget() and isinstance(item.widget(), CharacterChangeBubble):
+        print(f'{row} {col} {item.widget()}')
+        if item and item.widget() and isinstance(item.widget(), AgencyElementWidget):
             return True
 
     def __initElementWidget(self, element: StoryElement) -> AgencyElementWidget:

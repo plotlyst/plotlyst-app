@@ -1685,6 +1685,7 @@ class CharacterAgency:
     character_id: Optional[uuid.UUID] = None
     conflict_references: List[ConflictReference] = field(default_factory=list)
     motivations: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
+    intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     changes: List[CharacterAgencyChanges] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     elements: List['StoryElement'] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
 
@@ -1952,7 +1953,6 @@ class StoryElement:
     type: StoryElementType
     ref: Optional[uuid.UUID] = None
     text: str = ''
-    intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     value: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     row: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     col: int = field(default=0, metadata=config(exclude=exclude_if_empty))

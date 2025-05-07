@@ -44,7 +44,7 @@ from plotlyst.view.widget.labels import ConflictLabel
 class ConflictIntensityEditor(QWidget):
     intensityChanged = pyqtSignal(int)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, minWidth: int = 100):
         super().__init__(parent)
         hbox(self, 0)
         self._slider = QSlider()
@@ -53,7 +53,7 @@ class ConflictIntensityEditor(QWidget):
         self._slider.setMaximum(10)
         self._slider.setPageStep(1)
         self._slider.setValue(1)
-        self._slider.setMinimumWidth(100)
+        self._slider.setMinimumWidth(minWidth)
         self._slider.setMaximumWidth(200)
         self._slider.valueChanged.connect(self._valueChanged)
         self._slider.setProperty('conflict', True)
