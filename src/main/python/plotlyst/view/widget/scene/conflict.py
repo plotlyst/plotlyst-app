@@ -20,25 +20,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import Optional
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt
-from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QWidget, QSlider, QHeaderView, QFrame
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject
+from PyQt6.QtGui import QMouseEvent, QResizeEvent
+from PyQt6.QtWidgets import QWidget, QSlider, QHeaderView, QFrame, QTextEdit
 from overrides import overrides
-from qthandy import hbox, gc
-from qthandy.filter import OpacityEventFilter, DisabledClickEventFilter
-from qtmenu import MenuWidget
+from qthandy import hbox, vbox, incr_icon, pointy, incr_font
+from qthandy.filter import DisabledClickEventFilter, VisibilityToggleEventFilter
 
-from plotlyst.common import RELAXED_WHITE_COLOR
+from plotlyst.common import RELAXED_WHITE_COLOR, PLACEHOLDER_TEXT_COLOR
 from plotlyst.core.domain import Conflict, ConflictReference, Novel, Scene, ConflictType, \
     CharacterAgency, Character
+from plotlyst.env import app_env
 from plotlyst.event.core import emit_critical
 from plotlyst.model.scenes_model import SceneConflictsModel
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import tool_btn, push_btn
-from plotlyst.view.generated.character_conflict_widget_ui import Ui_CharacterConflictWidget
+from plotlyst.view.common import tool_btn, label
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorButton
-from plotlyst.view.widget.labels import ConflictLabel
+from plotlyst.view.widget.input import RemovalButton
 
 
 class ConflictIntensityEditor(QWidget):
@@ -84,16 +83,15 @@ class ConflictIntensityEditor(QWidget):
         self.intensityChanged.emit(value)
 
 
-class CharacterConflictWidget(QFrame, Ui_CharacterConflictWidget):
+class ConflictSelectorWidget(QFrame):
     conflictSelectionChanged = pyqtSignal()
 
     def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
-        super(CharacterConflictWidget, self).__init__(parent)
+        super().__init__(parent)
         self.novel = novel
         self.scene = scene
         self.agenda = agenda
         self._character: Optional[Character] = None
-        self.setupUi(self)
 
         self.repo = RepositoryPersistenceManager.instance()
 
@@ -205,77 +203,137 @@ class CharacterConflictWidget(QFrame, Ui_CharacterConflictWidget):
         self.conflictSelectionChanged.emit()
 
 
-class CharacterConflictSelector(QWidget):
-    conflictSelected = pyqtSignal()
+class ConflictReferenceWidget(QWidget):
+    removed = pyqtSignal()
 
-    def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
+    def __init__(self, ref: ConflictReference, conflict: Conflict, parent=None):
         super().__init__(parent)
-        self.novel = novel
-        self.scene = scene
-        self.agenda = agenda
-        self.conflict: Optional[Conflict] = None
-        self.conflict_ref: Optional[ConflictReference] = None
-        hbox(self)
-
-        self.label: Optional[ConflictLabel] = None
-
-        self.btnLinkConflict = push_btn(IconRegistry.conflict_icon(), 'Track conflict')
-        self.layout().addWidget(self.btnLinkConflict)
-        self.btnLinkConflict.setIcon(IconRegistry.conflict_icon())
-        self.btnLinkConflict.setObjectName('btnSelector')
-        self.btnLinkConflict.setStyleSheet('''
-                        #btnSelector::menu-indicator {
-                            width: 0px;
-                        }
-                        #btnSelector {
-                            border: 2px dotted grey;
-                            border-radius: 6px;
-                            font: italic;
-                        }
-                        #btnSelector:hover {
-                            border: 2px dotted orange;
-                            color: orange;
-                            font: normal;
-                        }
-                        #btnSelector:pressed {
-                            border: 2px solid white;
-                        }
-                    ''')
-
-        self.btnLinkConflict.installEventFilter(OpacityEventFilter(parent=self.btnLinkConflict))
-        self.selectorWidget = CharacterConflictWidget(self.novel, self.scene, self.agenda)
-        self._menu = MenuWidget(self.btnLinkConflict)
-        self._menu.addWidget(self.selectorWidget)
-
-        self.selectorWidget.conflictSelectionChanged.connect(self._conflictSelected)
-
-    def setConflict(self, conflict: Conflict, conflict_ref: ConflictReference):
+        self.ref = ref
         self.conflict = conflict
-        self.conflict_ref = conflict_ref
-        self.label = ConflictLabel(self.novel, self.conflict)
-        self.label.removalRequested.connect(self._remove)
-        self.label.clicked.connect(self._conflictRefClicked)
-        self.layout().addWidget(self.label)
-        self.btnLinkConflict.setHidden(True)
 
-    def _conflictSelected(self):
-        self._menu.hide()
-        new_conflict = self.agenda.conflicts(self.novel)[-1]
-        new_conflict_ref = self.agenda.conflict_references[-1]
-        # self.btnLinkConflict.menu().hide()
-        self.setConflict(new_conflict, new_conflict_ref)
+        vbox(self, 0, 0)
 
-        self.conflictSelected.emit()
+        self._btnRemove = RemovalButton(self)
+        self._btnRemove.clicked.connect(self.removed)
+        self._btnRemove.setHidden(True)
 
-    def _conflictRefClicked(self):
+        self._iconConflict = tool_btn(IconRegistry.conflict_society_icon(), transparent_=True)
+        incr_icon(self._iconConflict, 8)
+
+        self._lblConflict = label(self.conflict.text, wordWrap=True)
+        pointy(self._lblConflict)
+        font = self._lblConflict.font()
+        font.setFamily(app_env.serif_font())
+        self._lblConflict.setFont(font)
+        self._lblConflict.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._lblConflict.installEventFilter(self)
+
+        self._textedit = QTextEdit(self)
+        self._textedit.setTabChangesFocus(True)
+        if app_env.is_mac():
+            incr_font(self._textedit)
+        self._textedit.verticalScrollBar().setVisible(False)
+        self._textedit.setStyleSheet(f'color: {PLACEHOLDER_TEXT_COLOR}; border: 0px; padding: 2px;')
+        self._textedit.setMaximumSize(165, 85)
+
+        self._textedit.setPlaceholderText("What kind of conflict does the character have to face?")
+        self._textedit.setText(self.ref.message)
+        self._textedit.textChanged.connect(self._textChanged)
+
+        self.layout().addWidget(self._iconConflict, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self._lblConflict)
+        self.layout().addWidget(self._textedit)
+
+        self.installEventFilter(VisibilityToggleEventFilter(self._btnRemove, self))
+
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.MouseButtonRelease:
+            self._edit()
+        return super().eventFilter(watched, event)
+
+    @overrides
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 2,
+                                    self._btnRemove.sizeHint().width(), self._btnRemove.sizeHint().height())
+
+    def _textChanged(self):
+        self.ref.message = self._textedit.toPlainText()
+
+    def _edit(self):
         pass
 
-    def _remove(self):
-        if self.parent():
-            anim = qtanim.fade_out(self, duration=150)
-            anim.finished.connect(self.__destroy)
-
-    def __destroy(self):
-        self.agenda.remove_conflict(self.conflict)
-        self.parent().layout().removeWidget(self)
-        gc(self)
+# class CharacterConflictSelector(QWidget):
+#     conflictSelected = pyqtSignal()
+#
+#     def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
+#         super().__init__(parent)
+#         self.novel = novel
+#         self.scene = scene
+#         self.agenda = agenda
+#         self.conflict: Optional[Conflict] = None
+#         self.conflict_ref: Optional[ConflictReference] = None
+#         hbox(self)
+#
+#         self.label: Optional[ConflictLabel] = None
+#
+#         self.btnLinkConflict = push_btn(IconRegistry.conflict_icon(), 'Track conflict')
+#         self.layout().addWidget(self.btnLinkConflict)
+#         self.btnLinkConflict.setIcon(IconRegistry.conflict_icon())
+#         self.btnLinkConflict.setObjectName('btnSelector')
+#         self.btnLinkConflict.setStyleSheet('''
+#                         #btnSelector::menu-indicator {
+#                             width: 0px;
+#                         }
+#                         #btnSelector {
+#                             border: 2px dotted grey;
+#                             border-radius: 6px;
+#                             font: italic;
+#                         }
+#                         #btnSelector:hover {
+#                             border: 2px dotted orange;
+#                             color: orange;
+#                             font: normal;
+#                         }
+#                         #btnSelector:pressed {
+#                             border: 2px solid white;
+#                         }
+#                     ''')
+#
+#         self.btnLinkConflict.installEventFilter(OpacityEventFilter(parent=self.btnLinkConflict))
+#         self.selectorWidget = CharacterConflictWidget(self.novel, self.scene, self.agenda)
+#         self._menu = MenuWidget(self.btnLinkConflict)
+#         self._menu.addWidget(self.selectorWidget)
+#
+#         self.selectorWidget.conflictSelectionChanged.connect(self._conflictSelected)
+#
+#     def setConflict(self, conflict: Conflict, conflict_ref: ConflictReference):
+#         self.conflict = conflict
+#         self.conflict_ref = conflict_ref
+#         self.label = ConflictLabel(self.novel, self.conflict)
+#         self.label.removalRequested.connect(self._remove)
+#         self.label.clicked.connect(self._conflictRefClicked)
+#         self.layout().addWidget(self.label)
+#         self.btnLinkConflict.setHidden(True)
+#
+#     def _conflictSelected(self):
+#         self._menu.hide()
+#         new_conflict = self.agenda.conflicts(self.novel)[-1]
+#         new_conflict_ref = self.agenda.conflict_references[-1]
+#         # self.btnLinkConflict.menu().hide()
+#         self.setConflict(new_conflict, new_conflict_ref)
+#
+#         self.conflictSelected.emit()
+#
+#     def _conflictRefClicked(self):
+#         pass
+#
+#     def _remove(self):
+#         if self.parent():
+#             anim = qtanim.fade_out(self, duration=150)
+#             anim.finished.connect(self.__destroy)
+#
+#     def __destroy(self):
+#         self.agenda.remove_conflict(self.conflict)
+#         self.parent().layout().removeWidget(self)
+#         gc(self)
