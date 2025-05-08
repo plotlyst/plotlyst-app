@@ -177,7 +177,7 @@ class ConflictSelectorPopup(MenuWidget):
         conflict = Conflict(self.lineKey.lineEdit.text(), scope=self.btnGroupConflicts.checkedButton().scope)
         self.conflictChanged.emit(conflict)
 
-    def __initConflictScope(self, scope: ConflictType, parent: QWidget, icon: str = '') -> _ConflictSelectorButton:
+    def __initConflictScope(self, scope: ConflictType, parent: QWidget) -> _ConflictSelectorButton:
         btn = _ConflictSelectorButton(scope)
         self.btnGroupConflicts.addButton(btn)
 
