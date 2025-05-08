@@ -844,29 +844,29 @@ class RelationshipChangeDimensionPopup(MenuWidget):
 
         self.btnGroupDimensions.buttonClicked.connect(self._dimensionClicked)
 
-        self.wdgUnion = rows(0)
+        self.wdgBond = rows(0)
         self.wdgConflict = rows(0)
         self.wdgCooperation = rows(0)
 
         self.wdgEditor = columns(0, 8)
-        self.wdgEditor.layout().addWidget(self.wdgUnion)
+        self.wdgEditor.layout().addWidget(self.wdgBond)
         self.wdgEditor.layout().addWidget(self.wdgCooperation)
         self.wdgEditor.layout().addWidget(self.wdgConflict)
 
         self.wdgFrame.layout().addWidget(
             label(
-                "Select in which dimension the relationship evolves—union, cooperation, or conflict—or choose a more specific subtype within those categories",
+                "Select in which dimension the relationship evolves—bond, cooperation, or conflict—or choose a more specific subtype within those categories",
                 description=True, wordWrap=True))
         self.wdgFrame.layout().addWidget(self.wdgEditor)
 
-        btn = self.__initDimension('Union', self.wdgUnion, 'fa5s.hand-holding-heart')
+        btn = self.__initDimension('Bond', self.wdgBond, 'fa5s.hand-holding-heart')
         incr_font(btn, 2)
-        self.wdgUnion.layout().addWidget(line())
-        self.__initDimension('Love', self.wdgUnion, 'fa5s.heart')
-        self.__initDimension('Friendship', self.wdgUnion, 'ei.asl')
-        self.__initDimension('Family', self.wdgUnion, 'ei.group-alt')
+        self.wdgBond.layout().addWidget(line())
+        self.__initDimension('Love', self.wdgBond, 'fa5s.heart')
+        self.__initDimension('Friendship', self.wdgBond, 'ei.asl')
+        self.__initDimension('Family', self.wdgBond, 'ei.group-alt')
 
-        self.wdgUnion.layout().addWidget(vspacer())
+        self.wdgBond.layout().addWidget(vspacer())
 
         btn = self.__initDimension('Cooperation', self.wdgCooperation, 'fa5.handshake')
         incr_font(btn, 2)
