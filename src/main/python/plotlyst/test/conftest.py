@@ -23,7 +23,7 @@ import pytest
 
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Character, Scene, Chapter, \
-    Novel, Conflict, ConflictType, Plot, PlotType, ScenePlotReference, CharacterAgency, ScenePurposeType
+    Novel, Plot, PlotType, ScenePlotReference, CharacterAgency, ScenePurposeType
 from plotlyst.env import app_env
 from plotlyst.event.handler import global_event_dispatcher
 from plotlyst.view.main_window import MainWindow
@@ -83,8 +83,6 @@ def init_project():
     internalplot = Plot(text='Lesser', plot_type=PlotType.Internal, icon='mdi.mirror')
     subplot = Plot(text='Love', plot_type=PlotType.Subplot, icon='mdi.source-branch')
     novel.plots.extend([mainplot, internalplot, subplot])
-    conflict = Conflict('Test', ConflictType.SOCIETY, character_id=char_a.id)
-    novel.conflicts.append(conflict)
 
     chapter_1 = Chapter(title='1')
     chapter_2 = Chapter(title='2')

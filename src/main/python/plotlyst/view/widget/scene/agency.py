@@ -22,17 +22,17 @@ from typing import Dict, Optional, Tuple, Union
 
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
-from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent, QIcon
+from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent
 from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame
 from overrides import overrides
 from qthandy import hbox, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
-    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon, incr_font
+    flow, retain_when_hidden, transparent, incr_icon, line, grid, decr_font, decr_icon
 from qthandy.filter import OpacityEventFilter, DragEventFilter, DropEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR
 from plotlyst.core.domain import Motivation, Novel, Scene, CharacterAgency, Character, StoryElementType, \
-    StoryElement, ConflictReference, Conflict
+    StoryElement, Conflict
 from plotlyst.env import app_env
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
@@ -40,7 +40,7 @@ from plotlyst.events import NovelEmotionTrackingToggleEvent, \
     NovelMotivationTrackingToggleEvent, NovelConflictTrackingToggleEvent, CharacterDeletedEvent
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, action, shadow, frame, scroll_area, rows, \
-    columns, fade_in, ExclusiveOptionalButtonGroup, wrap
+    columns, fade_in, wrap
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
@@ -52,8 +52,9 @@ from plotlyst.view.widget.display import ArrowButton, SeparatorLineWithShadow, C
     MenuOverlayEventFilter, Icon, icon_text
 from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget
 from plotlyst.view.widget.scene.conflict import ConflictIntensityEditor, ConflictReferenceWidget, \
-    ConflictSelectorWidget
+    ConflictSelectorPopup
 from plotlyst.view.widget.scene.motivation import MotivationDisplay, MotivationEditor, MotivationChargeLabel
+from plotlyst.view.widget.scene.relationship import RelationshipChangeWidget
 
 
 class SceneAgendaMotivationEditor(QWidget):
@@ -106,89 +107,6 @@ class SceneAgendaMotivationEditor(QWidget):
             self._labels[motivation].setCharge(value)
         else:
             fade_out_and_gc(self._wdgLabels, self._labels.pop(motivation))
-
-
-# class SceneAgendaConflictEditor(QWidget):
-#     conflictReset = pyqtSignal()
-#
-#     def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, parent=None):
-#         super().__init__(parent)
-#         vbox(self, 1, 1)
-#
-#         self._novel = novel
-#         self._scene = scene
-#         self._agency = agency
-#
-#         self._icon = push_btn(IconRegistry.conflict_icon('lightgrey'), transparent_=True)
-#
-#         self._sliderIntensity = ConflictIntensityEditor()
-#         self._sliderIntensity.intensityChanged.connect(self._intensityChanged)
-#
-#         self._wdgConflicts = QWidget()
-#         flow(self._wdgConflicts)
-#
-#         self._wdgSliders = QWidget()
-#         hbox(self._wdgSliders).addWidget(self._sliderIntensity, alignment=Qt.AlignmentFlag.AlignLeft)
-        # self._wdgSliders.layout().addWidget(self._btnReset, alignment=Qt.AlignmentFlag.AlignRight)
-
-# self.layout().addWidget(self._icon)
-# self.layout().addWidget(self._wdgSliders)
-# self.layout().addWidget(self._wdgConflicts)
-#
-# conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agency)
-# conflictSelector.conflictSelected.connect(self._conflictSelected)
-# self._wdgConflicts.layout().addWidget(conflictSelector)
-
-# def setAgenda(self, agenda: CharacterAgency):
-#     self._agency = agenda
-#     clear_layout(self._wdgConflicts)
-#
-#     if agenda.intensity > 0 or agenda.conflict_references:
-#         self.setValue(agenda.intensity)
-#     else:
-#         self.reset()
-#
-#     for ref in agenda.conflict_references:
-#         conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agency)
-#         conflictSelector.setConflict(ref.conflict(self._novel), ref)
-#         self._wdgConflicts.layout().addWidget(conflictSelector)
-#
-#     conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agency)
-#     conflictSelector.conflictSelected.connect(self._conflictSelected)
-#     self._wdgConflicts.layout().addWidget(conflictSelector, alignment=Qt.AlignmentFlag.AlignLeft)
-
-    # def activate(self):
-    #     self._activated = True
-    #     self._wdgSliders.setVisible(True)
-    #     self._wdgConflicts.setVisible(True)
-    #     self._icon.setHidden(True)
-    #
-    # def reset(self):
-    #     self._wdgSliders.setVisible(False)
-    #     self._wdgConflicts.setVisible(False)
-    #     self._icon.setVisible(True)
-    #     if self._agency:
-    #         self._agency.intensity = 0
-    #         self._agency.conflict_references.clear()
-
-# def setValue(self, value: int):
-#     self._sliderIntensity.setValue(value)
-        # self.activate()
-
-    # def _iconClicked(self):
-    #     if not self._activated:
-    #         self.setValue(1)
-    #         qtanim.fade_in(self._sliderIntensity, 150)
-    # self._btnReset.setVisible(True)
-
-        # shadow(self._iconActive, offset=0, radius=value * 2, color=QColor('#f3a712'))
-        # shadow(self._titleActive, offset=0, radius=value, color=QColor('#f3a712'))
-        # shadow(self._textEditor, offset=0, radius=value * 2, color=QColor('#f3a712'))
-
-# def _conflictSelected(self):
-#     conflictSelector = CharacterConflictSelector(self._novel, self._scene, self._agency)
-#     conflictSelector.conflictSelected.connect(self._conflictSelected)
-#     self._wdgConflicts.layout().addWidget(conflictSelector)
 
 
 class _CharacterChangeSelectorToggle(SelectorToggleButton):
@@ -485,7 +403,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
                         self.agenda.motivations.clear()
                     elif el.type == StoryElementType.Conflict:
                         self.agenda.intensity = 0
-                        self.agenda.conflict_references.clear()
+                        self.agenda.conflicts.clear()
                     break
 
         self.wdgPreviewParent.setVisible(True)
@@ -688,9 +606,6 @@ class CharacterChangeBubble(TextEditBubbleWidget, AgencyElementWidget):
         self.element.text = self._textedit.toPlainText()
 
 
-
-
-
 class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
     def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, element: StoryElement, parent=None):
         super().__init__(parent)
@@ -705,6 +620,8 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
 
         self.wdgHeader = columns(0, 0)
         margins(self.wdgHeader, left=5, right=5)
+
+        self._menu: Optional[MenuWidget] = None
 
         self._btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
         self._title = push_btn(IconRegistry.conflict_icon(), 'Conflict',
@@ -731,30 +648,30 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
         shadow(self)
         translucent(self._title, 0.7)
 
+        for conflict in self.agency.conflicts:
+            self.__initWidget(conflict)
+
     def _intensityChanged(self, value: int):
         self.agency.intensity = value
 
     def _openSelector(self):
-        wdg = ConflictSelectorWidget(self.novel, self.scene, self.agency)
-        menu = MenuWidget()
-        transparent_menu(menu)
-        menu.addWidget(wdg)
-        menu.installEventFilter(MenuOverlayEventFilter(menu))
-        menu.exec()
+        self._menu = ConflictSelectorPopup(self.novel, self.scene, self.agency)
+        self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
+        self._menu.conflictChanged.connect(self._addNew)
+        self._menu.exec()
 
     def _addNew(self, conflict: Conflict):
-        # conflict = Conflict('New Conflict keyphrase', ConflictType.SOCIETY)
-        ref = ConflictReference(conflict.id)
-        self.agency.conflict_references.append(ref)
-        wdg = self.__initWidget(ref, conflict)
+        self._menu.hide()
+        self.agency.conflicts.append(conflict)
+        wdg = self.__initWidget(conflict)
         fade_in(wdg)
 
     def _removed(self, wdg: ConflictReferenceWidget):
-        self.agency.conflict_references.remove(wdg.ref)
+        self.agency.conflicts.remove(wdg.conflict)
         fade_out_and_gc(self, wdg)
 
-    def __initWidget(self, ref: ConflictReference, conflict: Conflict) -> ConflictReferenceWidget:
-        wdg = ConflictReferenceWidget(ref, conflict)
+    def __initWidget(self, conflict: Conflict) -> ConflictReferenceWidget:
+        wdg = ConflictReferenceWidget(conflict)
         wdg.removed.connect(partial(self._removed, wdg))
         self.wdgConflicts.layout().addWidget(wdg)
 
@@ -810,218 +727,6 @@ class CharacterEmotionChange(QFrame, AgencyElementWidget):
 
     def _update(self):
         self._icon.setIcon(IconRegistry.emotion_icon_from_feeling(self.element.value))
-
-
-class _DimensionSelectorButton(SelectorToggleButton):
-    def __init__(self, dimension: str, icon: str, parent=None):
-        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=80, parent=parent)
-        self.dimension = dimension
-        self.iconName = icon
-        self.setText(dimension)
-        self.setIcon(IconRegistry.from_name(icon))
-
-
-class _ModifierSelectorButton(SelectorToggleButton):
-    def __init__(self, modifier: str, parent=None):
-        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=60, parent=parent)
-        self.modifier = modifier
-        self.setText(modifier)
-        decr_font(self)
-
-
-class RelationshipChangeDimensionPopup(MenuWidget):
-    def __init__(self, element: StoryElement, parent=None):
-        super().__init__(parent)
-        transparent_menu(self)
-
-        self.wdgFrame = frame()
-        vbox(self.wdgFrame, 10)
-        self.wdgFrame.setProperty('white-bg', True)
-        self.wdgFrame.setProperty('large-rounded', True)
-
-        self.btnGroupDimensions = ExclusiveOptionalButtonGroup()
-        self.btnGroupModifiers = ExclusiveOptionalButtonGroup()
-
-        self.btnGroupDimensions.buttonClicked.connect(self._dimensionClicked)
-
-        self.wdgBond = rows(0)
-        self.wdgConflict = rows(0)
-        self.wdgCooperation = rows(0)
-
-        self.wdgEditor = columns(0, 8)
-        self.wdgEditor.layout().addWidget(self.wdgBond)
-        self.wdgEditor.layout().addWidget(self.wdgCooperation)
-        self.wdgEditor.layout().addWidget(self.wdgConflict)
-
-        self.wdgFrame.layout().addWidget(
-            label(
-                "Select in which dimension the relationship evolves—bond, cooperation, or conflict—or choose a more specific subtype within those categories",
-                description=True, wordWrap=True))
-        self.wdgFrame.layout().addWidget(self.wdgEditor)
-
-        btn = self.__initDimension('Bond', self.wdgBond, 'fa5s.hand-holding-heart')
-        incr_font(btn, 2)
-        self.wdgBond.layout().addWidget(line())
-        self.__initDimension('Love', self.wdgBond, 'fa5s.heart')
-        self.__initDimension('Friendship', self.wdgBond, 'ei.asl')
-        self.__initDimension('Family', self.wdgBond, 'ei.group-alt')
-
-        self.wdgBond.layout().addWidget(vspacer())
-
-        btn = self.__initDimension('Cooperation', self.wdgCooperation, 'fa5.handshake')
-        incr_font(btn, 2)
-        self.wdgCooperation.layout().addWidget(line())
-        self.__initDimension('Trust', self.wdgCooperation, 'fa5s.user-shield')
-        self.__initDimension('Alliance', self.wdgCooperation, 'fa5s.thumbs-up')
-        self.__initDimension('Respect', self.wdgCooperation, 'ri.award-fill')
-        self.__initDimension('Loyalty', self.wdgCooperation, 'ei.link')
-        self.wdgCooperation.layout().addWidget(vspacer())
-
-        btn = self.__initDimension('Conflict', self.wdgConflict, 'mdi.sword-cross')
-        incr_font(btn, 2)
-        self.wdgConflict.layout().addWidget(line())
-        self.__initDimension('Rivalry', self.wdgConflict, 'mdi6.trophy-outline')
-        self.__initDimension('Betrayal', self.wdgConflict, 'mdi6.knife')
-        self.__initDimension('Jealousy', self.wdgConflict, 'mdi.eye-circle-outline')
-        self.wdgConflict.layout().addWidget(vspacer())
-
-        self.wdgFrame.layout().addWidget(
-            wrap(label(
-                "Optionally select a modifier to reflect how the relationship dynamic has shifted",
-                description=True), margin_top=25), alignment=Qt.AlignmentFlag.AlignRight)
-
-        self.wdgModifiers = columns(0)
-        self.wdgFrame.layout().addWidget(self.wdgModifiers, alignment=Qt.AlignmentFlag.AlignRight)
-        self.__initModifier('Building')
-        self.__initModifier('Growing')
-        self.__initModifier('Strengthened')
-        self.__initModifier('Pressured')
-        self.__initModifier('Peaked')
-        self.__initModifier('Fading')
-        self.__initModifier('Broken')
-
-        self.addWidget(self.wdgFrame)
-
-        if element.dimension:
-            for btn in self.btnGroupDimensions.buttons():
-                if btn.text() == element.dimension:
-                    btn.setChecked(True)
-                    break
-            if element.modifier:
-                for btn in self.btnGroupModifiers.buttons():
-                    if btn.text() == element.modifier:
-                        btn.setChecked(True)
-                        break
-        else:
-            for btn in self.btnGroupModifiers.buttons():
-                btn.setEnabled(False)
-
-    def _dimensionClicked(self):
-        checkedDim = self.btnGroupDimensions.checkedButton() is not None
-        if not checkedDim:
-            self.btnGroupModifiers.reset()
-
-        for btn in self.btnGroupModifiers.buttons():
-            btn.setEnabled(checkedDim)
-
-    def __initDimension(self, name: str, parent: QWidget, icon: str = '') -> _DimensionSelectorButton:
-        btn = _DimensionSelectorButton(name, icon)
-        self.btnGroupDimensions.addButton(btn)
-
-        parent.layout().addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        return btn
-
-    def __initModifier(self, modifier: str) -> _ModifierSelectorButton:
-        btn = _ModifierSelectorButton(modifier)
-        self.btnGroupModifiers.addButton(btn)
-        self.wdgModifiers.layout().addWidget(btn)
-
-        return btn
-
-
-class RelationshipChangeWidget(QWidget):
-    removed = pyqtSignal()
-
-    def __init__(self, element: StoryElement, agency: CharacterAgency, novel: Novel, parent=None):
-        super().__init__(parent)
-        self.element = element
-        self.agency = agency
-        self.novel = novel
-        vbox(self, 0, 0)
-
-        self._btnRemove = RemovalButton(self)
-        self._btnRemove.clicked.connect(self.removed)
-        self._btnRemove.setHidden(True)
-
-        self._characterLbl = tool_btn(QIcon(), transparent_=True)
-        incr_icon(self._characterLbl, 14)
-        self._characterLbl.clicked.connect(self._edit)
-
-        self._lblDimension = push_btn(transparent_=True)
-        incr_font(self._lblDimension, 2)
-        font = self._lblDimension.font()
-        font.setFamily(app_env.serif_font())
-        self._lblDimension.setFont(font)
-        self._lblDimension.clicked.connect(self._edit)
-        self._lblModifier = label('', description=True, decr_font_diff=1)
-
-        self.layout().addWidget(self._characterLbl, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(self._lblDimension, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(self._lblModifier, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        character = entities_registry.character(str(element.ref))
-        if character:
-            self._characterLbl.setIcon(avatars.avatar(character))
-
-        if self.element.dimension:
-            self._lblDimension.setText(self.element.dimension)
-            self._lblDimension.setIcon(IconRegistry.from_name(self.element.icon))
-            if self.element.modifier:
-                self._lblModifier.setText(f'[{self.element.modifier}]')
-            else:
-                self._lblModifier.setHidden(True)
-        else:
-            self._lblDimension.setIcon(IconRegistry.edit_icon('grey'))
-            self._lblModifier.setHidden(True)
-
-        self.installEventFilter(VisibilityToggleEventFilter(self._btnRemove, self))
-
-    @overrides
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 2,
-                                    self._btnRemove.sizeHint().width(), self._btnRemove.sizeHint().height())
-
-    def _edit(self):
-        self._menu = RelationshipChangeDimensionPopup(self.element)
-        self._menu.btnGroupDimensions.buttonClicked.connect(self._dimensionChanged)
-        self._menu.btnGroupModifiers.buttonClicked.connect(self._modifierChanged)
-        self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
-        self._menu.exec()
-
-    def _dimensionChanged(self, btn: _DimensionSelectorButton):
-        if btn.isChecked():
-            self._lblDimension.setText(btn.dimension)
-            self._lblDimension.setIcon(IconRegistry.from_name(btn.iconName))
-            self.element.dimension = btn.dimension
-            self.element.icon = btn.iconName
-        else:
-            self._lblDimension.setText('')
-            self._lblDimension.setIcon(IconRegistry.edit_icon('grey'))
-            self._lblModifier.setText('')
-            self._lblModifier.setVisible(False)
-            self.element.modifier = ''
-            self.element.dimension = ''
-            self.element.icon = ''
-
-    def _modifierChanged(self, btn: _ModifierSelectorButton):
-        self._lblModifier.setVisible(btn.isChecked())
-        if btn.isChecked():
-            self._lblModifier.setText(f'[{btn.modifier}]')
-            self.element.modifier = btn.modifier
-        else:
-            self._lblModifier.setText('')
-            self.element.modifier = ''
 
 
 class RelationshipChangesEditor(QFrame, AgencyElementWidget):

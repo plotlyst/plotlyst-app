@@ -29,7 +29,7 @@ from plotlyst.common import CONFLICT_CHARACTER_COLOR, \
     CONFLICT_SELF_COLOR, CHARACTER_MAJOR_COLOR, CHARACTER_MINOR_COLOR, CHARACTER_SECONDARY_COLOR, \
     PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR, NEUTRAL_EMOTION_COLOR, EMOTION_COLORS, RED_COLOR, act_color, \
     BLACK_COLOR
-from plotlyst.core.domain import Character, ConflictType, \
+from plotlyst.core.domain import Character, \
     Scene, PlotType, MALE, FEMALE, TRANSGENDER, NON_BINARY, GENDERLESS, ScenePurposeType, StoryStructure
 from plotlyst.core.template import SelectionItem
 from plotlyst.view.common import rounded_pixmap
@@ -430,21 +430,6 @@ class IconRegistry:
     @staticmethod
     def cards_icon() -> QIcon:
         return IconRegistry.from_name('mdi.cards', color_on=PLOTLYST_SECONDARY_COLOR)
-
-    @staticmethod
-    def conflict_type_icon(type: ConflictType) -> QIcon:
-        if type == ConflictType.CHARACTER:
-            return IconRegistry.conflict_character_icon()
-        elif type == ConflictType.SOCIETY:
-            return IconRegistry.conflict_society_icon()
-        elif type == ConflictType.NATURE:
-            return IconRegistry.conflict_nature_icon()
-        elif type == ConflictType.TECHNOLOGY:
-            return IconRegistry.conflict_technology_icon()
-        elif type == ConflictType.SUPERNATURAL:
-            return IconRegistry.conflict_supernatural_icon()
-        elif type == ConflictType.SELF:
-            return IconRegistry.conflict_self_icon()
 
     @staticmethod
     def conflict_character_icon() -> QIcon:

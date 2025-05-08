@@ -274,15 +274,15 @@ def link_buttons_to_pages(stack: QStackedWidget, buttons: List[Tuple[QAbstractBu
         btn.toggled.connect(partial(_open, wdg))
 
 
-def link_editor_to_btn(editor: QWidget, btn: QAbstractButton, disabledShake: bool = False):
+def link_editor_to_btn(editor: QWidget, btn: QAbstractButton, disabledShake: bool = False,
+                       shakedWidget: Optional[QWidget] = None):
     if isinstance(editor, QLineEdit):
         editor.textChanged.connect(lambda: btn.setEnabled((len(editor.text()) > 0)))
     elif isinstance(editor, QTextEdit):
         editor.textChanged.connect(lambda: btn.setEnabled((len(editor.toPlainText()) > 0)))
 
     if disabledShake:
-        # btn.installEventFilter(DisabledClickEventFilter(btn, slot=lambda: qtanim.shake(editor)))
-        btn.installEventFilter(DisabledClickEventFilter(btn, lambda: qtanim.shake(editor)))
+        btn.installEventFilter(DisabledClickEventFilter(btn, lambda: qtanim.shake(shakedWidget or editor)))
 
 
 def scroll_to_top(scroll_area: QAbstractScrollArea):

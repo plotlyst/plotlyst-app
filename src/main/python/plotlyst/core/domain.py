@@ -1454,35 +1454,34 @@ class Plot(SelectionItem, CharacterBased):
 
 
 class ConflictType(Enum):
-    CHARACTER = 0
-    SOCIETY = 1
-    NATURE = 2
-    TECHNOLOGY = 3
-    SUPERNATURAL = 4
-    SELF = 5
+    PERSONAL = 0
+    SOCIAL = 1
+    MILIEU = 2
+    GLOBAL = 3
+    INTERNAL = 4
+
+    def display_name(self) -> str:
+        return self.name.lower().capitalize()
+
+    def icon(self) -> str:
+        if self == ConflictType.PERSONAL:
+            return 'fa5s.user'
+        elif self == ConflictType.SOCIAL:
+            return 'ei.group-alt'
+        elif self == ConflictType.INTERNAL:
+            return 'mdi.mirror'
+        elif self == ConflictType.GLOBAL:
+            return 'fa5s.globe'
+        elif self == ConflictType.MILIEU:
+            return 'mdi.globe-model'
 
 
 @dataclass
-class Conflict(SelectionItem, CharacterBased):
-    type: ConflictType = ConflictType.CHARACTER
+class Conflict(SelectionItem):
+    scope: ConflictType = ConflictType.PERSONAL
     character_id: Optional[uuid.UUID] = None
     id: uuid.UUID = field(default_factory=uuid.uuid4)
-    conflicting_character_id: Optional[uuid.UUID] = None
-
-    def __post_init__(self):
-        self._character: Optional[Character] = None
-        self._conflicting_character: Optional[Character] = None
-
-    def conflicting_character(self, novel: 'Novel') -> Optional[Character]:
-        if not self.conflicting_character_id:
-            return None
-        if not self._conflicting_character:
-            for c in novel.characters:
-                if c.id == self.conflicting_character_id:
-                    self._conflicting_character = c
-                    break
-
-        return self._conflicting_character
+    desc: str = field(default='', metadata=config(exclude=exclude_if_empty))
 
     @overrides
     def __eq__(self, other: 'Conflict'):
@@ -1594,18 +1593,6 @@ class SceneStructureItem(OutlineItem):
         self.meta['outcome'] = value.value
 
 
-@dataclass
-class ConflictReference:
-    conflict_id: uuid.UUID
-    message: str = ''
-    intensity: int = 1
-
-    def conflict(self, novel: 'Novel') -> Optional[Conflict]:
-        for conflict in novel.conflicts:
-            if conflict.id == self.conflict_id:
-                return conflict
-
-
 class Motivation(Enum):
     PHYSIOLOGICAL = 0
     SAFETY = 1
@@ -1683,31 +1670,11 @@ class CharacterAgencyChanges:
 @dataclass
 class CharacterAgency:
     character_id: Optional[uuid.UUID] = None
-    conflict_references: List[ConflictReference] = field(default_factory=list)
+    conflicts: List[Conflict] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     motivations: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
     intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     changes: List[CharacterAgencyChanges] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     elements: List['StoryElement'] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
-
-    def conflicts(self, novel: 'Novel') -> List[Conflict]:
-        conflicts_ = []
-        for id_ in [x.conflict_id for x in self.conflict_references]:
-            for conflict in novel.conflicts:
-                if conflict.id == id_:
-                    conflicts_.append(conflict)
-
-        return conflicts_
-
-    def remove_conflict(self, conflict: Conflict):
-        self.conflict_references = [x for x in self.conflict_references if x.conflict_id != conflict.id]
-
-    def remove_goal(self, char_goal: CharacterGoal):
-        self.goal_references = [x for x in self.goal_references if x.character_goal_id != char_goal.id]
-
-    def goals(self, character: Character) -> List[CharacterGoal]:
-        goals_ = character.flatten_goals()
-        agenda_goal_ids = [x.character_goal_id for x in self.goal_references]
-        return [x for x in goals_ if x.id in agenda_goal_ids]
 
 
 @dataclass
