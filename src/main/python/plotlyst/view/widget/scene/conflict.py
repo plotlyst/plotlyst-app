@@ -30,7 +30,7 @@ from plotlyst.common import PLACEHOLDER_TEXT_COLOR, RELAXED_WHITE_COLOR, PLOTLYS
 from plotlyst.core.domain import Conflict, Novel, CharacterAgency, Character, ConflictType
 from plotlyst.env import app_env
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import tool_btn, label, frame, rows, columns, push_btn, wrap
+from plotlyst.view.common import tool_btn, label, frame, rows, columns, push_btn, wrap, action
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
@@ -94,6 +94,7 @@ class _ConflictSelectorButton(SelectorToggleButton):
 
 class ConflictSelectorPopup(MenuWidget):
     conflictChanged = pyqtSignal(Conflict)
+    remove = pyqtSignal()
 
     def __init__(self, novel: Novel, agency: CharacterAgency, conflict: Optional[Conflict] = None, parent=None):
         super().__init__(parent)
@@ -132,6 +133,11 @@ class ConflictSelectorPopup(MenuWidget):
         self.characterSelector = CharacterSelectorButton(self.novel)
         self.characterSelector.characterSelected.connect(self._characterSelected)
 
+        # self.btnRemove = push_btn(IconRegistry.trash_can_icon(), 'Delete', properties=['confirm', 'cancel'])
+        # self.btnRemove.clicked.connect(self.remove)
+        # if not conflict:
+        #     self.btnRemove.setDisabled(True)
+
         self.btnConfirm = push_btn(IconRegistry.ok_icon(RELAXED_WHITE_COLOR), 'Confirm',
                                    properties=['confirm', 'positive'])
         self.btnConfirm.clicked.connect(self._confirm)
@@ -149,7 +155,7 @@ class ConflictSelectorPopup(MenuWidget):
                 description=True))
 
         self.wdgFrame.layout().addWidget(
-            group(self.characterSelector, self.wdgKeyPhraseFrame, margin_left=15), alignment=Qt.AlignmentFlag.AlignLeft)
+            group(self.wdgKeyPhraseFrame, self.characterSelector, margin_left=15), alignment=Qt.AlignmentFlag.AlignLeft)
         self.wdgFrame.layout().addWidget(
             wrap(label("Select the scope of the conflict", description=True), margin_top=25))
         self.wdgFrame.layout().addWidget(self.wdgScope)
@@ -214,6 +220,7 @@ class ConflictReferenceWidget(QWidget):
         self.novel = novel
         self.agency = agency
         self.conflict = conflict
+        self._contextMenu: Optional[MenuWidget] = None
         self._menu: Optional[MenuWidget] = None
 
         vbox(self, 0, 0)
@@ -221,7 +228,7 @@ class ConflictReferenceWidget(QWidget):
         self._iconConflict = tool_btn(QIcon(), transparent_=True)
         incr_icon(self._iconConflict, 2)
         translucent(self._iconConflict, 0.7)
-        self._iconConflict.clicked.connect(self._edit)
+        self._iconConflict.clicked.connect(self._openMenu)
 
         self._lblConflict = label('', wordWrap=True, color=self.conflict.display_color())
         pointy(self._lblConflict)
@@ -253,11 +260,18 @@ class ConflictReferenceWidget(QWidget):
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.MouseButtonRelease:
-            self._edit()
+            self._openMenu()
         return super().eventFilter(watched, event)
 
     def _textChanged(self):
         self.conflict.desc = self._textedit.toPlainText()
+
+    def _openMenu(self):
+        self._contextMenu = MenuWidget()
+        self._contextMenu.addAction(action('Edit conflict', IconRegistry.edit_icon(), slot=self._edit))
+        self._contextMenu.addSeparator()
+        self._contextMenu.addAction(action('Delete', IconRegistry.trash_can_icon(), slot=self.removed))
+        self._contextMenu.exec()
 
     def _edit(self):
         self._menu = ConflictSelectorPopup(self.novel, self.agency, self.conflict)

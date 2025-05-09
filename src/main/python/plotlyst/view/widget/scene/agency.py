@@ -623,8 +623,8 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
 
         self._menu: Optional[MenuWidget] = None
 
-        self._btnAdd = push_btn(IconRegistry.plus_icon('lightgrey'), 'Add conflict', transparent_=True)
-        apply_button_palette_color(self._btnAdd, 'lightgrey')
+        self._btnAdd = push_btn(IconRegistry.plus_icon('grey'), 'Add conflict', transparent_=True)
+        apply_button_palette_color(self._btnAdd, 'grey')
         self._btnAdd.clicked.connect(self._openSelector)
         self.wdgHeader.layout().addWidget(self._btnAdd, alignment=Qt.AlignmentFlag.AlignRight)
 
