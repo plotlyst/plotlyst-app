@@ -23,7 +23,8 @@ from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QSlider, QTextEdit, QButtonGroup
 from overrides import overrides
-from qthandy import hbox, vbox, incr_icon, pointy, incr_font, vspacer, line, margins, vline, translucent, spacer
+from qthandy import hbox, vbox, incr_icon, pointy, incr_font, vspacer, line, margins, vline, translucent, spacer, \
+    decr_icon
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLACEHOLDER_TEXT_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
@@ -131,12 +132,14 @@ class ConflictSelectorPopup(MenuWidget):
         hbox(self.wdgKeyPhraseFrame, 10).addWidget(self.lineKey)
 
         self.characterSelector = CharacterSelectorButton(self.novel)
+        character = entities_registry.character(str(self.agency.character_id))
+        if character:
+            self.characterSelector.characterSelectorMenu().excludeCharacter(character)
         self.characterSelector.characterSelected.connect(self._characterSelected)
 
-        # self.btnRemove = push_btn(IconRegistry.trash_can_icon(), 'Delete', properties=['confirm', 'cancel'])
-        # self.btnRemove.clicked.connect(self.remove)
-        # if not conflict:
-        #     self.btnRemove.setDisabled(True)
+        self.btnResetCharacter = tool_btn(IconRegistry.trash_can_icon('lightgrey'), transparent_=True)
+        decr_icon(self.btnResetCharacter, 2)
+        self.btnResetCharacter.clicked.connect(self._resetCharacter)
 
         self.btnConfirm = push_btn(IconRegistry.ok_icon(RELAXED_WHITE_COLOR), 'Confirm',
                                    properties=['confirm', 'positive'])
@@ -155,7 +158,9 @@ class ConflictSelectorPopup(MenuWidget):
                 description=True))
 
         self.wdgFrame.layout().addWidget(
-            group(self.wdgKeyPhraseFrame, self.characterSelector, margin_left=15), alignment=Qt.AlignmentFlag.AlignLeft)
+            group(self.wdgKeyPhraseFrame, label('Interpersonal:', description=True), self.characterSelector,
+                  self.btnResetCharacter,
+                  margin_left=15), alignment=Qt.AlignmentFlag.AlignLeft)
         self.wdgFrame.layout().addWidget(
             wrap(label("Select the scope of the conflict", description=True), margin_top=25))
         self.wdgFrame.layout().addWidget(self.wdgScope)
@@ -181,12 +186,10 @@ class ConflictSelectorPopup(MenuWidget):
             if character:
                 btnPersonal.setIcon(avatars.avatar(character))
 
-        for btn in self.btnGroupConflicts.buttons():
-            if btn.scope == self.conflict.scope:
-                btn.setChecked(True)
-                break
         if self.conflict.character_id:
             self.characterSelector.setCharacterById(self.conflict.character_id)
+        else:
+            self.btnResetCharacter.setHidden(True)
 
         self.lineKey.lineEdit.setFocus()
 
@@ -199,6 +202,12 @@ class ConflictSelectorPopup(MenuWidget):
 
     def _characterSelected(self, character: Character):
         self.conflict.character_id = character.id
+        self.btnResetCharacter.setVisible(True)
+
+    def _resetCharacter(self):
+        self.characterSelector.clear()
+        self.conflict.character_id = None
+        self.btnResetCharacter.setHidden(True)
 
     def _confirm(self):
         self.conflictChanged.emit(self.conflict)
@@ -206,6 +215,9 @@ class ConflictSelectorPopup(MenuWidget):
     def __initConflictScope(self, scope: ConflictType, parent: QWidget) -> _ConflictSelectorButton:
         btn = _ConflictSelectorButton(scope)
         self.btnGroupConflicts.addButton(btn)
+
+        if scope == self.conflict.scope:
+            btn.setChecked(True)
 
         parent.layout().addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -230,6 +242,10 @@ class ConflictReferenceWidget(QWidget):
         translucent(self._iconConflict, 0.7)
         self._iconConflict.clicked.connect(self._openMenu)
 
+        self._interpersonalCharacterIcon = tool_btn(QIcon(), transparent_=True)
+        incr_icon(self._interpersonalCharacterIcon, 8)
+        self._interpersonalCharacterIcon.clicked.connect(self._openMenu)
+
         self._lblConflict = label('', wordWrap=True, color=self.conflict.display_color())
         pointy(self._lblConflict)
         font = self._lblConflict.font()
@@ -251,7 +267,8 @@ class ConflictReferenceWidget(QWidget):
         self._textedit.setText(self.conflict.desc)
         self._textedit.textChanged.connect(self._textChanged)
 
-        self.layout().addWidget(self._iconConflict, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(group(self._iconConflict, self._interpersonalCharacterIcon, margin=0, spacing=0),
+                                alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._lblConflict)
         self.layout().addWidget(self._textedit)
 
@@ -284,5 +301,14 @@ class ConflictReferenceWidget(QWidget):
         self._lblConflict.setText(self.conflict.display_name())
         self._lblConflict.setStyleSheet(f'color: {self.conflict.display_color()};')
         self._iconConflict.setIcon(IconRegistry.from_name(self.conflict.display_icon(), self.conflict.display_color()))
+
+        if self.conflict.character_id:
+            character = entities_registry.character(str(self.conflict.character_id))
+            if character:
+                self._interpersonalCharacterIcon.setIcon(avatars.avatar(character))
+
+            self._interpersonalCharacterIcon.setVisible(True)
+        else:
+            self._interpersonalCharacterIcon.setVisible(False)
 
         self._menu = None

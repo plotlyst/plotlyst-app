@@ -21,7 +21,7 @@ import string
 import uuid
 from dataclasses import dataclass
 from functools import partial
-from typing import Iterable, List, Optional, Dict, Union
+from typing import Iterable, List, Optional, Dict, Union, Set
 
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QByteArray, QBuffer, QIODevice
 from PyQt6.QtGui import QIcon, QColor, QImageReader, QImage, QPixmap, \
@@ -172,6 +172,7 @@ class CharacterSelectorMenu(ScrollableMenuWidget):
         super().__init__(parent)
         self._novel = novel
         self._characters: Optional[List[Character]] = None
+        self._excludedCharacters: Set[Character] = set()
         self.aboutToShow.connect(self._beforeShow)
 
     @overrides
@@ -201,6 +202,9 @@ class CharacterSelectorMenu(ScrollableMenuWidget):
         else:
             return self._novel.characters
 
+    def excludeCharacter(self, character: Character):
+        self._excludedCharacters.add(character)
+
     def refresh(self):
         self._fillUpMenu()
 
@@ -212,6 +216,8 @@ class CharacterSelectorMenu(ScrollableMenuWidget):
         self.clear()
 
         for char in self.characters():
+            if self._excludedCharacters and char in self._excludedCharacters:
+                continue
             charAction = action(char.displayed_name(), avatars.avatar(char), slot=partial(self.selected.emit, char),
                                 parent=self)
             font = charAction.font()
