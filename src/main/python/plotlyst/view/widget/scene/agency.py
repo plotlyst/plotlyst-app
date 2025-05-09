@@ -608,10 +608,9 @@ class CharacterChangeBubble(TextEditBubbleWidget, AgencyElementWidget):
 
 
 class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
-    def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, element: StoryElement, parent=None):
+    def __init__(self, novel: Novel, agency: CharacterAgency, element: StoryElement, parent=None):
         super().__init__(parent)
         self.novel = novel
-        self.scene = scene
         self.agency = agency
         self.element = element
         vbox(self, 5)
@@ -626,29 +625,16 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
 
         self._btnAdd = push_btn(IconRegistry.plus_icon('lightgrey'), 'Add conflict', transparent_=True)
         apply_button_palette_color(self._btnAdd, 'lightgrey')
-        # self._title = push_btn(IconRegistry.conflict_icon(), 'Conflict',
-        #                        transparent_=True)
-        # self._title.clicked.connect(self._btnAdd.animateClick)
         self._btnAdd.clicked.connect(self._openSelector)
-        # self.wdgHeader.layout().addWidget(self._title)
         self.wdgHeader.layout().addWidget(self._btnAdd, alignment=Qt.AlignmentFlag.AlignRight)
 
-        # self._sliderIntensity = ConflictIntensityEditor(minWidth=130)
-        # if self.agency.intensity:
-        #     self._sliderIntensity.setValue(self.agency.intensity)
-        # self._sliderIntensity.intensityChanged.connect(self._intensityChanged)
-        # sp(self._sliderIntensity).h_max()
-
-        self.wdgConflicts = rows()
+        self.wdgConflicts = rows(0)
         self.wdgConflicts.setMinimumSize(165, 25)
 
         self.layout().addWidget(self.wdgHeader)
-        self.layout().addWidget(line())
-        # self.layout().addWidget(self._sliderIntensity, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgConflicts)
 
         shadow(self)
-        # translucent(self._title, 0.7)
 
         if self.agency.conflicts:
             self._btnAdd.setText('')
@@ -660,7 +646,7 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
         self.agency.intensity = value
 
     def _openSelector(self):
-        self._menu = ConflictSelectorPopup(self.novel, self.scene, self.agency)
+        self._menu = ConflictSelectorPopup(self.novel, self.agency)
         self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
         self._menu.conflictChanged.connect(self._addNew)
         self._menu.exec()
@@ -677,7 +663,7 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
         fade_out_and_gc(self, wdg)
 
     def __initWidget(self, conflict: Conflict) -> ConflictReferenceWidget:
-        wdg = ConflictReferenceWidget(conflict)
+        wdg = ConflictReferenceWidget(self.novel, self.agency, conflict)
         wdg.removed.connect(partial(self._removed, wdg))
         self.wdgConflicts.layout().addWidget(wdg)
 
@@ -894,7 +880,7 @@ class CharacterAgencyEditor(QWidget):
         elif element.type == StoryElementType.Motivation:
             wdg = CharacterMotivationChange(self.novel, self.scene, self.agenda, element)
         elif element.type == StoryElementType.Conflict:
-            wdg = ConflictAgencyElementWidget(self.novel, self.scene, self.agenda, element)
+            wdg = ConflictAgencyElementWidget(self.novel, self.agenda, element)
         elif element.type == StoryElementType.Emotion or element.type == StoryElementType.Emotion_change:
             wdg = CharacterEmotionChange(element, self.agenda)
         elif element.type == StoryElementType.Relationship:

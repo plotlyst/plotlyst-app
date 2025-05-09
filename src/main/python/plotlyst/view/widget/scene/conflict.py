@@ -20,15 +20,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import Optional
 
 from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject
-from PyQt6.QtGui import QResizeEvent
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QSlider, QTextEdit, QButtonGroup
 from overrides import overrides
 from qthandy import hbox, vbox, incr_icon, pointy, incr_font, vspacer, line, margins, vline, translucent, spacer
-from qthandy.filter import VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLACEHOLDER_TEXT_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Conflict, Novel, Scene, CharacterAgency, Character, ConflictType
+from plotlyst.core.domain import Conflict, Novel, CharacterAgency, Character, ConflictType
 from plotlyst.env import app_env
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import tool_btn, label, frame, rows, columns, push_btn, wrap
@@ -37,7 +36,8 @@ from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
 from plotlyst.view.widget.button import SelectorToggleButton
 from plotlyst.view.widget.characters import CharacterSelectorButton
-from plotlyst.view.widget.input import RemovalButton, DecoratedLineEdit
+from plotlyst.view.widget.display import MenuOverlayEventFilter
+from plotlyst.view.widget.input import DecoratedLineEdit
 
 
 class ConflictIntensityEditor(QWidget):
@@ -95,12 +95,14 @@ class _ConflictSelectorButton(SelectorToggleButton):
 class ConflictSelectorPopup(MenuWidget):
     conflictChanged = pyqtSignal(Conflict)
 
-    def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, parent=None):
+    def __init__(self, novel: Novel, agency: CharacterAgency, conflict: Optional[Conflict] = None, parent=None):
         super().__init__(parent)
         self.novel = novel
-        self.scene = scene
         self.agency = agency
-        self._character: Optional[Character] = None
+        if conflict:
+            self.conflict = conflict
+        else:
+            self.conflict = Conflict('', scope=ConflictType.PERSONAL)
         transparent_menu(self)
 
         self.wdgFrame = frame()
@@ -109,6 +111,7 @@ class ConflictSelectorPopup(MenuWidget):
         self.wdgFrame.setProperty('large-rounded', True)
 
         self.btnGroupConflicts = QButtonGroup()
+        self.btnGroupConflicts.buttonClicked.connect(self._scopeChanged)
 
         self.wdgPersonal = rows(0)
         self.wdgGlobal = rows(0)
@@ -116,8 +119,10 @@ class ConflictSelectorPopup(MenuWidget):
         self.lineKey = DecoratedLineEdit(defaultWidth=150)
         self.lineKey.setIcon(IconRegistry.conflict_icon(PLOTLYST_SECONDARY_COLOR, PLOTLYST_SECONDARY_COLOR))
         self.lineKey.lineEdit.setPlaceholderText('Keyphrase')
+        self.lineKey.setText(self.conflict.text)
         incr_font(self.lineKey.lineEdit, 2)
         incr_icon(self.lineKey.icon, 6)
+        self.lineKey.lineEdit.textEdited.connect(self._keyPhraseEdited)
 
         self.wdgKeyPhraseFrame = frame()
         self.wdgKeyPhraseFrame.setProperty('large-rounded', True)
@@ -165,23 +170,32 @@ class ConflictSelectorPopup(MenuWidget):
 
         self.addWidget(self.wdgFrame)
 
-        btnPersonal.setChecked(True)
-
         if self.agency.character_id:
             character = entities_registry.character(str(self.agency.character_id))
             if character:
                 btnPersonal.setIcon(avatars.avatar(character))
 
+        for btn in self.btnGroupConflicts.buttons():
+            if btn.scope == self.conflict.scope:
+                btn.setChecked(True)
+                break
+        if self.conflict.character_id:
+            self.characterSelector.setCharacterById(self.conflict.character_id)
+
         self.lineKey.lineEdit.setFocus()
 
+    def _keyPhraseEdited(self, text: str):
+        self.conflict.text = text
+
+    def _scopeChanged(self):
+        btn = self.btnGroupConflicts.checkedButton()
+        self.conflict.scope = btn.scope
+
     def _characterSelected(self, character: Character):
-        self._character = character
+        self.conflict.character_id = character.id
 
     def _confirm(self):
-        conflict = Conflict(self.lineKey.lineEdit.text(), scope=self.btnGroupConflicts.checkedButton().scope)
-        if self._character:
-            conflict.character_id = self._character.id
-        self.conflictChanged.emit(conflict)
+        self.conflictChanged.emit(self.conflict)
 
     def __initConflictScope(self, scope: ConflictType, parent: QWidget) -> _ConflictSelectorButton:
         btn = _ConflictSelectorButton(scope)
@@ -195,24 +209,21 @@ class ConflictSelectorPopup(MenuWidget):
 class ConflictReferenceWidget(QWidget):
     removed = pyqtSignal()
 
-    def __init__(self, conflict: Conflict, parent=None):
+    def __init__(self, novel: Novel, agency: CharacterAgency, conflict: Conflict, parent=None):
         super().__init__(parent)
+        self.novel = novel
+        self.agency = agency
         self.conflict = conflict
+        self._menu: Optional[MenuWidget] = None
 
         vbox(self, 0, 0)
 
-        self._btnRemove = RemovalButton(self)
-        self._btnRemove.clicked.connect(self.removed)
-        self._btnRemove.setHidden(True)
-
-        self._iconConflict = tool_btn(
-            IconRegistry.from_name(self.conflict.display_icon(), self.conflict.display_color()),
-            transparent_=True)
+        self._iconConflict = tool_btn(QIcon(), transparent_=True)
         incr_icon(self._iconConflict, 2)
         translucent(self._iconConflict, 0.7)
         self._iconConflict.clicked.connect(self._edit)
 
-        self._lblConflict = label(self.conflict.display_name(), wordWrap=True, color=self.conflict.display_color())
+        self._lblConflict = label('', wordWrap=True, color=self.conflict.display_color())
         pointy(self._lblConflict)
         font = self._lblConflict.font()
         font.setFamily(app_env.serif_font())
@@ -237,7 +248,7 @@ class ConflictReferenceWidget(QWidget):
         self.layout().addWidget(self._lblConflict)
         self.layout().addWidget(self._textedit)
 
-        self.installEventFilter(VisibilityToggleEventFilter(self._btnRemove, self))
+        self._refresh()
 
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
@@ -245,21 +256,19 @@ class ConflictReferenceWidget(QWidget):
             self._edit()
         return super().eventFilter(watched, event)
 
-    @overrides
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 2,
-                                    self._btnRemove.sizeHint().width(), self._btnRemove.sizeHint().height())
-
-    # @overrides
-    # def paintEvent(self, event: QPaintEvent) -> None:
-    #     painter = QPainter(self)
-    #     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    #
-    #     # IconRegistry.from_name(self.conflict.scope.icon(), '#FDF3DD').paint(painter, self.rect())
-    #     IconRegistry.conflict_icon('#FDF3DD').paint(painter, self.rect())
-
     def _textChanged(self):
         self.conflict.desc = self._textedit.toPlainText()
 
     def _edit(self):
-        pass
+        self._menu = ConflictSelectorPopup(self.novel, self.agency, self.conflict)
+        self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
+        self._menu.aboutToHide.connect(self._refresh)
+        self._menu.conflictChanged.connect(self._menu.hide)
+        self._menu.exec()
+
+    def _refresh(self):
+        self._lblConflict.setText(self.conflict.display_name())
+        self._lblConflict.setStyleSheet(f'color: {self.conflict.display_color()};')
+        self._iconConflict.setIcon(IconRegistry.from_name(self.conflict.display_icon(), self.conflict.display_color()))
+
+        self._menu = None
