@@ -30,12 +30,12 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import truncate_string, RELAXED_WHITE_COLOR, RED_COLOR, PLOTLYST_SECONDARY_COLOR, \
     PLOTLYST_MAIN_COLOR
-from plotlyst.core.domain import Character, Conflict, SelectionItem, Novel, ScenePlotReference, \
+from plotlyst.core.domain import Character, SelectionItem, Novel, ScenePlotReference, \
     CharacterGoal, PlotValue, Scene, GoalReference, NovelDescriptor
 from plotlyst.env import app_env
 from plotlyst.model.common import SelectionItemsModel
 from plotlyst.view.common import text_color_with_bg_color, tool_btn, ButtonPressResizeEventFilter
-from plotlyst.view.icons import set_avatar, IconRegistry, avatars
+from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.widget.display import Icon
 from plotlyst.view.widget.input import RemovalButton
 from plotlyst.view.widget.items_editor import ItemsEditorWidget
@@ -113,39 +113,6 @@ class CharacterAvatarLabel(QToolButton):
         self.setIcon(avatars.avatar(character))
         self.setToolTip(character.name)
         self.setIconSize(QSize(size, size))
-
-
-class ConflictLabel(Label):
-    removalRequested = pyqtSignal()
-
-    def __init__(self, novel: Novel, conflict: Conflict, parent=None):
-        super(ConflictLabel, self).__init__(parent)
-        self.novel = novel
-        self.conflict = conflict
-
-        self.lblConflict = QLabel()
-        self.lblConflict.setPixmap(IconRegistry.conflict_icon().pixmap(QSize(24, 24)))
-        self.layout().addWidget(self.lblConflict)
-
-        self.lblAvatar = QLabel()
-        if self.conflict.conflicting_character(self.novel):
-            set_avatar(self.lblAvatar, self.conflict.conflicting_character(self.novel), 24)
-        else:
-            icon = IconRegistry.conflict_type_icon(self.conflict.type)
-            self.lblAvatar.setPixmap(icon.pixmap(QSize(24, 24)))
-        self.layout().addWidget(self.lblAvatar)
-        self.layout().addWidget(QLabel(self.conflict.text))
-
-        self.btnRemoval = RemovalButton()
-        self.layout().addWidget(self.btnRemoval)
-        self.btnRemoval.clicked.connect(self.removalRequested.emit)
-
-        self.setStyleSheet('''
-                ConflictLabel {
-                    border: 2px solid #f3a712;
-                    border-radius: 8px; padding-left: 3px; padding-right: 3px;}
-                ''')
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnRemoval, self))
 
 
 class TraitLabel(QLabel):

@@ -60,7 +60,7 @@ QSlider::add-page:horizontal[conflict=true] {
     background: lightgray;
 }
 QSlider::sub-page:horizontal[conflict=true] {
-    background: #f3a712;
+    background: #e57c04;
 }
 
 QSlider::add-page:horizontal[emotion_0=true] {

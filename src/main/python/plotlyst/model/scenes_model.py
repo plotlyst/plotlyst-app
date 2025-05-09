@@ -29,10 +29,10 @@ from overrides import overrides
 
 from plotlyst.common import ALT_BACKGROUND_COLOR
 from plotlyst.core.domain import Novel, Scene, CharacterArc, Character, \
-    SelectionItem, SceneStage, CharacterAgency, ScenePurposeType
+    SceneStage, ScenePurposeType
 from plotlyst.event.core import emit_event
 from plotlyst.events import SceneStatusChangedEvent
-from plotlyst.model.common import AbstractHorizontalHeaderBasedTableModel, SelectionItemsModel
+from plotlyst.model.common import AbstractHorizontalHeaderBasedTableModel
 from plotlyst.service.cache import acts_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import emoji_font
@@ -233,7 +233,6 @@ class ScenesTableModel(AbstractHorizontalHeaderBasedTableModel, BaseScenesTableM
         return True
 
 
-
 class ScenesFilterProxyModel(QSortFilterProxyModel):
 
     def __init__(self):
@@ -364,45 +363,3 @@ class ScenesStageTableModel(QAbstractTableModel, BaseScenesTableModel):
 
     def _stage(self, index: QModelIndex):
         return self.novel.stages[index.column() - 2]
-
-
-class SceneConflictsModel(SelectionItemsModel):
-
-    def __init__(self, novel: Novel, scene: Scene, agenda: CharacterAgency, parent=None):
-        super().__init__(parent)
-        self.novel = novel
-        self.scene = scene
-        self.agenda = agenda
-        self._conflicts = []
-        self.update()
-
-    def update(self):
-        if self.agenda.character_id:
-            self._conflicts = [x for x in self.novel.conflicts if x.character_id == self.agenda.character_id]
-
-    @overrides
-    def rowCount(self, parent: QModelIndex = None) -> int:
-        return len(self._conflicts)
-
-    @overrides
-    def _newItem(self) -> QModelIndex:
-        pass
-
-    @overrides
-    def _insertItem(self, row: int) -> QModelIndex:
-        pass
-
-    @overrides
-    def item(self, index: QModelIndex) -> SelectionItem:
-        return self._conflicts[index.row()]
-
-    @overrides
-    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
-        conflict = self._conflicts[index.row()]
-        if index.column() == self.ColIcon:
-            if role == Qt.ItemDataRole.DecorationRole:
-                if conflict.conflicting_character(self.novel):
-                    return avatars.avatar(conflict.conflicting_character(self.novel))
-                else:
-                    return IconRegistry.conflict_type_icon(conflict.type)
-        return super(SceneConflictsModel, self).data(index, role)

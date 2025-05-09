@@ -1461,7 +1461,7 @@ class DecoratedLineEdit(QWidget):
     iconChanged = pyqtSignal(str, str)
 
     def __init__(self, parent=None, maxWidth: Optional[int] = None, iconEditable: bool = False,
-                 autoAdjustable: bool = True, pickIconColor: bool = True):
+                 autoAdjustable: bool = True, pickIconColor: bool = True, defaultWidth: int = 50):
         super().__init__(parent)
         self._pickIconColor = pickIconColor
         self._pickerMenu: Optional[MenuWidget] = None
@@ -1474,7 +1474,7 @@ class DecoratedLineEdit(QWidget):
             self.icon.installEventFilter(OpacityEventFilter(self.icon, leaveOpacity=1.0, enterOpacity=0.7))
             self.icon.clicked.connect(self._changeIcon)
         if autoAdjustable:
-            self.lineEdit = AutoAdjustableLineEdit(defaultWidth=50, maxWidth=maxWidth)
+            self.lineEdit = AutoAdjustableLineEdit(defaultWidth=defaultWidth, maxWidth=maxWidth)
         else:
             self.lineEdit = QLineEdit()
             if maxWidth:

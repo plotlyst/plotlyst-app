@@ -38,7 +38,7 @@ from plotlyst.common import recursive
 from plotlyst.core.domain import Novel, Character, Scene, Chapter, SceneStage, \
     default_stages, StoryStructure, \
     default_story_structures, NovelDescriptor, TemplateValue, \
-    Conflict, BackstoryEvent, Comment, Document, default_documents, DocumentType, Causality, \
+    BackstoryEvent, Comment, Document, default_documents, DocumentType, Causality, \
     Plot, ScenePlotReference, CharacterAgency, \
     three_act_structure, SceneStoryBeat, Tag, default_general_tags, TagType, \
     default_tag_types, LanguageSettings, ImportOrigin, NovelPreferences, Goal, CharacterPreferences, TagReference, \
@@ -223,7 +223,6 @@ class NovelInfo:
     chapters: List[ChapterInfo] = field(default_factory=list)
     custom_chapters: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     stages: List[SceneStage] = field(default_factory=default_stages)
-    conflicts: List[Conflict] = field(default_factory=list)
     goals: List[Goal] = field(default_factory=list)
     tags: List[Tag] = field(default_factory=default_general_tags)
     tag_types: List[TagType] = field(default_factory=default_tag_types, metadata=config(exclude=exclude_if_empty))
@@ -557,17 +556,6 @@ class JsonClient:
         for char in characters:
             characters_ids[str(char.id)] = char
 
-        conflicts = []
-        conflict_ids = {}
-        for conflict in novel_info.conflicts:
-            if str(conflict.character_id) not in characters_ids.keys():
-                continue
-            if conflict.conflicting_character_id and str(
-                    conflict.conflicting_character_id) not in characters_ids.keys():
-                continue
-            conflicts.append(conflict)
-            conflict_ids[str(conflict.id)] = conflict
-
         if not novel_info.story_structures:
             novel_info.story_structures = [copy.deepcopy(three_act_structure)]
 
@@ -649,7 +637,7 @@ class JsonClient:
                       scenes=scenes, chapters=chapters, custom_chapters=novel_info.custom_chapters,
                       stages=novel_info.stages,
                       story_structures=novel_info.story_structures,
-                      conflicts=conflicts, goals=[x for x in novel_info.goals if str(x.id) in goal_ids], tags=tags_dict,
+                      goals=[x for x in novel_info.goals if str(x.id) in goal_ids], tags=tags_dict,
                       documents=novel_info.documents, premise=novel_info.premise, synopsis=novel_info.synopsis,
                       prefs=novel_info.prefs, locations=novel_info.locations,
                       manuscript_goals=novel_info.manuscript_goals,
@@ -688,7 +676,6 @@ class JsonClient:
                                chapters=[ChapterInfo(title=x.title, id=x.id, type=x.type) for x in novel.chapters],
                                custom_chapters=novel.custom_chapters,
                                stages=novel.stages, story_structures=novel.story_structures,
-                               conflicts=novel.conflicts,
                                goals=novel.goals,
                                tags=[item for sublist in novel.tags.values() for item in sublist if not item.builtin],
                                tag_types=list(novel.tags.keys()),
