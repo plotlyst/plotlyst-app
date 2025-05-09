@@ -44,6 +44,7 @@ from plotlyst.view.common import push_btn, label, fade_out_and_gc, tool_btn, act
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
+from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.button import SelectorToggleButton, DotsMenuButton
 from plotlyst.view.widget.character.editor import EmotionEditorSlider
 from plotlyst.view.widget.characters import CharacterSelectorMenu
@@ -51,7 +52,7 @@ from plotlyst.view.widget.confirm import confirmed
 from plotlyst.view.widget.display import ArrowButton, SeparatorLineWithShadow, ConnectorWidget, \
     MenuOverlayEventFilter, Icon, icon_text
 from plotlyst.view.widget.input import RemovalButton, TextEditBubbleWidget
-from plotlyst.view.widget.scene.conflict import ConflictIntensityEditor, ConflictReferenceWidget, \
+from plotlyst.view.widget.scene.conflict import ConflictReferenceWidget, \
     ConflictSelectorPopup
 from plotlyst.view.widget.scene.motivation import MotivationDisplay, MotivationEditor, MotivationChargeLabel
 from plotlyst.view.widget.scene.relationship import RelationshipChangeWidget
@@ -623,30 +624,34 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
 
         self._menu: Optional[MenuWidget] = None
 
-        self._btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
-        self._title = push_btn(IconRegistry.conflict_icon(), 'Conflict',
-                               transparent_=True)
-        self._title.clicked.connect(self._btnAdd.animateClick)
+        self._btnAdd = push_btn(IconRegistry.plus_icon('lightgrey'), 'Add conflict', transparent_=True)
+        apply_button_palette_color(self._btnAdd, 'lightgrey')
+        # self._title = push_btn(IconRegistry.conflict_icon(), 'Conflict',
+        #                        transparent_=True)
+        # self._title.clicked.connect(self._btnAdd.animateClick)
         self._btnAdd.clicked.connect(self._openSelector)
-        self.wdgHeader.layout().addWidget(self._title)
-        self.wdgHeader.layout().addWidget(self._btnAdd)
+        # self.wdgHeader.layout().addWidget(self._title)
+        self.wdgHeader.layout().addWidget(self._btnAdd, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self._sliderIntensity = ConflictIntensityEditor(minWidth=160)
-        if self.agency.intensity:
-            self._sliderIntensity.setValue(self.agency.intensity)
-        self._sliderIntensity.intensityChanged.connect(self._intensityChanged)
-        sp(self._sliderIntensity).h_max()
+        # self._sliderIntensity = ConflictIntensityEditor(minWidth=130)
+        # if self.agency.intensity:
+        #     self._sliderIntensity.setValue(self.agency.intensity)
+        # self._sliderIntensity.intensityChanged.connect(self._intensityChanged)
+        # sp(self._sliderIntensity).h_max()
 
         self.wdgConflicts = rows()
         self.wdgConflicts.setMinimumSize(165, 25)
 
-        self.layout().addWidget(self.wdgHeader, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.wdgHeader)
         self.layout().addWidget(line())
-        self.layout().addWidget(self._sliderIntensity, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.layout().addWidget(self._sliderIntensity, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgConflicts)
 
         shadow(self)
-        translucent(self._title, 0.7)
+        # translucent(self._title, 0.7)
+
+        if self.agency.conflicts:
+            self._btnAdd.setText('')
 
         for conflict in self.agency.conflicts:
             self.__initWidget(conflict)
@@ -665,6 +670,7 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
         self.agency.conflicts.append(conflict)
         wdg = self.__initWidget(conflict)
         fade_in(wdg)
+        self._btnAdd.setText('')
 
     def _removed(self, wdg: ConflictReferenceWidget):
         self.agency.conflicts.remove(wdg.conflict)

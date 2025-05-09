@@ -1493,6 +1493,25 @@ class Conflict(SelectionItem):
     def __hash__(self):
         return hash(str(self.id))
 
+    def display_icon(self) -> str:
+        if self.scope == ConflictType.PERSONAL:
+            return 'mdi.sword-cross'
+        else:
+            return self.scope.icon()
+
+    def display_name(self) -> str:
+        if self.text:
+            return self.text
+        elif self.scope == ConflictType.PERSONAL:
+            return 'Conflict'
+        else:
+            return f'{self.scope.display_name()} conflict'
+
+    def display_color(self) -> str:
+        if self.scope == ConflictType.INTERNAL:
+            return '#843B4D'
+        return '#e57c04'
+
 
 @dataclass
 class Goal(SelectionItem):

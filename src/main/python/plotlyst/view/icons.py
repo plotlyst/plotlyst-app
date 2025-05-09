@@ -343,7 +343,7 @@ class IconRegistry:
         return IconRegistry.from_name('fa5s.map-signs', '#ba6f4d')
 
     @staticmethod
-    def conflict_icon(color: str = '#f3a712', color_on: str = '#f3a712') -> QIcon:
+    def conflict_icon(color: str = '#e57c04', color_on: str = '#e57c04') -> QIcon:
         return IconRegistry.from_name('mdi.sword-cross', color=color, color_on=color_on)
 
     @staticmethod

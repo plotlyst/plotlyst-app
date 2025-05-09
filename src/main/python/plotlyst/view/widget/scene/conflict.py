@@ -23,7 +23,7 @@ from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject
 from PyQt6.QtGui import QResizeEvent
 from PyQt6.QtWidgets import QWidget, QSlider, QTextEdit, QButtonGroup
 from overrides import overrides
-from qthandy import hbox, vbox, incr_icon, pointy, incr_font, vspacer, line, margins
+from qthandy import hbox, vbox, incr_icon, pointy, incr_font, vspacer, line, margins, vline, translucent, spacer
 from qthandy.filter import VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
@@ -31,11 +31,12 @@ from plotlyst.common import PLACEHOLDER_TEXT_COLOR, RELAXED_WHITE_COLOR, PLOTLYS
 from plotlyst.core.domain import Conflict, Novel, Scene, CharacterAgency, Character, ConflictType
 from plotlyst.env import app_env
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import tool_btn, label, frame, rows, columns, push_btn, \
-    link_editor_to_btn
+from plotlyst.view.common import tool_btn, label, frame, rows, columns, push_btn, wrap
 from plotlyst.view.icons import IconRegistry, avatars
+from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
 from plotlyst.view.widget.button import SelectorToggleButton
+from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.input import RemovalButton, DecoratedLineEdit
 
 
@@ -56,7 +57,7 @@ class ConflictIntensityEditor(QWidget):
         self._slider.valueChanged.connect(self._valueChanged)
         self._slider.setProperty('conflict', True)
 
-        self._iconColor = '#f3a712'
+        self._iconColor = '#e57c04'
         self._icon = tool_btn(IconRegistry.from_name('mdi.battery-charging-10', self._iconColor), transparent_=True)
         tip = 'Conflict intensity'
         self._slider.setToolTip(tip)
@@ -84,7 +85,8 @@ class ConflictIntensityEditor(QWidget):
 
 class _ConflictSelectorButton(SelectorToggleButton):
     def __init__(self, conflictType: ConflictType, parent=None):
-        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=80, parent=parent)
+        super().__init__(Qt.ToolButtonStyle.ToolButtonTextBesideIcon, minWidth=80, checkedColor='#f3a712',
+                         hoverColor='#FBE6BB', parent=parent)
         self.scope = conflictType
         self.setText(conflictType.display_name())
         self.setIcon(IconRegistry.from_name(conflictType.icon()))
@@ -109,7 +111,6 @@ class ConflictSelectorPopup(MenuWidget):
         self.btnGroupConflicts = QButtonGroup()
 
         self.wdgPersonal = rows(0)
-        self.wdgSocial = rows(0)
         self.wdgGlobal = rows(0)
 
         self.lineKey = DecoratedLineEdit(defaultWidth=150)
@@ -123,25 +124,29 @@ class ConflictSelectorPopup(MenuWidget):
         self.wdgKeyPhraseFrame.setProperty('muted-bg', True)
         hbox(self.wdgKeyPhraseFrame, 10).addWidget(self.lineKey)
 
+        self.characterSelector = CharacterSelectorButton(self.novel)
+        self.characterSelector.characterSelected.connect(self._characterSelected)
+
         self.btnConfirm = push_btn(IconRegistry.ok_icon(RELAXED_WHITE_COLOR), 'Confirm',
                                    properties=['confirm', 'positive'])
-        self.btnConfirm.setDisabled(True)
-        link_editor_to_btn(self.lineKey.lineEdit, self.btnConfirm, disabledShake=True,
-                           shakedWidget=self.wdgKeyPhraseFrame)
         self.btnConfirm.clicked.connect(self._confirm)
 
         self.wdgScope = columns(0, 8)
-        margins(self.wdgScope, bottom=35, top=35)
+        margins(self.wdgScope, bottom=35)
         self.wdgScope.layout().addWidget(self.wdgPersonal)
-        self.wdgScope.layout().addWidget(self.wdgSocial)
+        self.wdgScope.layout().addWidget(vline())
         self.wdgScope.layout().addWidget(self.wdgGlobal)
+        self.wdgScope.layout().addWidget(spacer())
 
         self.wdgFrame.layout().addWidget(
             label(
-                "Define the conflict and select who is directly impacted by it",
+                "Define the conflict with an optional keyphrase.\nFor interpersonal conflicts, select the character involved in the conflict",
                 description=True))
 
-        self.wdgFrame.layout().addWidget(self.wdgKeyPhraseFrame, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgFrame.layout().addWidget(
+            group(self.characterSelector, self.wdgKeyPhraseFrame, margin_left=15), alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgFrame.layout().addWidget(
+            wrap(label("Select the scope of the conflict", description=True), margin_top=25))
         self.wdgFrame.layout().addWidget(self.wdgScope)
         self.wdgFrame.layout().addWidget(self.btnConfirm, alignment=Qt.AlignmentFlag.AlignRight)
 
@@ -150,13 +155,12 @@ class ConflictSelectorPopup(MenuWidget):
         self.wdgPersonal.layout().addWidget(line())
         self.__initConflictScope(ConflictType.INTERNAL, self.wdgPersonal)
         self.__initConflictScope(ConflictType.MILIEU, self.wdgPersonal)
-        btn = self.__initConflictScope(ConflictType.SOCIAL, self.wdgSocial)
-        incr_font(btn, 2)
         btn = self.__initConflictScope(ConflictType.GLOBAL, self.wdgGlobal)
         incr_font(btn, 2)
+        self.wdgGlobal.layout().addWidget(line())
+        self.__initConflictScope(ConflictType.SOCIAL, self.wdgGlobal)
 
         self.wdgPersonal.layout().addWidget(vspacer())
-        self.wdgSocial.layout().addWidget(vspacer())
         self.wdgGlobal.layout().addWidget(vspacer())
 
         self.addWidget(self.wdgFrame)
@@ -175,6 +179,8 @@ class ConflictSelectorPopup(MenuWidget):
 
     def _confirm(self):
         conflict = Conflict(self.lineKey.lineEdit.text(), scope=self.btnGroupConflicts.checkedButton().scope)
+        if self._character:
+            conflict.character_id = self._character.id
         self.conflictChanged.emit(conflict)
 
     def __initConflictScope(self, scope: ConflictType, parent: QWidget) -> _ConflictSelectorButton:
@@ -199,10 +205,14 @@ class ConflictReferenceWidget(QWidget):
         self._btnRemove.clicked.connect(self.removed)
         self._btnRemove.setHidden(True)
 
-        self._iconConflict = tool_btn(IconRegistry.from_name(self.conflict.scope.icon()), transparent_=True)
-        incr_icon(self._iconConflict, 8)
+        self._iconConflict = tool_btn(
+            IconRegistry.from_name(self.conflict.display_icon(), self.conflict.display_color()),
+            transparent_=True)
+        incr_icon(self._iconConflict, 2)
+        translucent(self._iconConflict, 0.7)
+        self._iconConflict.clicked.connect(self._edit)
 
-        self._lblConflict = label(self.conflict.text, wordWrap=True)
+        self._lblConflict = label(self.conflict.display_name(), wordWrap=True, color=self.conflict.display_color())
         pointy(self._lblConflict)
         font = self._lblConflict.font()
         font.setFamily(app_env.serif_font())
@@ -215,7 +225,8 @@ class ConflictReferenceWidget(QWidget):
         if app_env.is_mac():
             incr_font(self._textedit)
         self._textedit.verticalScrollBar().setVisible(False)
-        self._textedit.setStyleSheet(f'color: {PLACEHOLDER_TEXT_COLOR}; border: 0px; padding: 2px;')
+        self._textedit.setStyleSheet(
+            f'color: {PLACEHOLDER_TEXT_COLOR}; border: 0px; padding: 2px; background-color: rgba(0, 0, 0, 0);')
         self._textedit.setMaximumSize(165, 85)
 
         self._textedit.setPlaceholderText("What kind of conflict does the character have to face?")
@@ -238,6 +249,14 @@ class ConflictReferenceWidget(QWidget):
     def resizeEvent(self, event: QResizeEvent) -> None:
         self._btnRemove.setGeometry(self.width() - self._btnRemove.sizeHint().width(), 2,
                                     self._btnRemove.sizeHint().width(), self._btnRemove.sizeHint().height())
+
+    # @overrides
+    # def paintEvent(self, event: QPaintEvent) -> None:
+    #     painter = QPainter(self)
+    #     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    #
+    #     # IconRegistry.from_name(self.conflict.scope.icon(), '#FDF3DD').paint(painter, self.rect())
+    #     IconRegistry.conflict_icon('#FDF3DD').paint(painter, self.rect())
 
     def _textChanged(self):
         self.conflict.desc = self._textedit.toPlainText()
