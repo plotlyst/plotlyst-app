@@ -871,7 +871,8 @@ class CharacterAgencyEditor(QWidget):
 
     def _hasElement(self, row: int, col: int) -> bool:
         item = self.wdgElements.layout().itemAtPosition(row, col)
-        if item and item.widget() and isinstance(item.widget(), AgencyElementWidget):
+        if item and item.widget() and isinstance(item.widget(), AgencyElementWidget) and not isinstance(item.widget(),
+                                                                                                        StoryElementConnector):
             return True
 
     def __initElementWidget(self, element: StoryElement) -> AgencyElementWidget:
