@@ -28,9 +28,10 @@ from plotlyst.common import CONFLICT_CHARACTER_COLOR, \
     CONFLICT_SOCIETY_COLOR, CONFLICT_NATURE_COLOR, CONFLICT_TECHNOLOGY_COLOR, CONFLICT_SUPERNATURAL_COLOR, \
     CONFLICT_SELF_COLOR, CHARACTER_MAJOR_COLOR, CHARACTER_MINOR_COLOR, CHARACTER_SECONDARY_COLOR, \
     PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR, NEUTRAL_EMOTION_COLOR, EMOTION_COLORS, RED_COLOR, act_color, \
-    BLACK_COLOR
+    BLACK_COLOR, RELAXED_WHITE_COLOR, LIGHTGREY_ACTIVE_COLOR
 from plotlyst.core.domain import Character, \
-    Scene, PlotType, MALE, FEMALE, TRANSGENDER, NON_BINARY, GENDERLESS, ScenePurposeType, StoryStructure
+    Scene, PlotType, MALE, FEMALE, TRANSGENDER, NON_BINARY, GENDERLESS, ScenePurposeType, StoryStructure, Tier, \
+    ConflictType
 from plotlyst.core.template import SelectionItem
 from plotlyst.view.common import rounded_pixmap
 
@@ -717,6 +718,23 @@ class IconRegistry:
         return qtawesome.icon('mdi6.checkbox-blank-badge-outline', name,
                               options=[{'color': act_color, 'scale_factor': 1.5},
                                        {'color': color, 'color_disabled': 'lightgrey', 'scale_factor': 0.7}])
+
+    @staticmethod
+    def conflict_tier_badge_icon(scope: ConflictType, tier: Tier):
+        suffix = ''
+        color = scope.color()
+        if tier == Tier.S:
+            suffix = '-box-outline'
+        elif tier == Tier.A:
+            suffix = '-box-outline'
+        elif tier == Tier.C:
+            color = 'grey'
+        elif tier == Tier.D:
+            color = LIGHTGREY_ACTIVE_COLOR
+
+        return qtawesome.icon('fa5s.square', f'mdi6.alpha-{tier.value}{suffix}',
+                              options=[{'color': RELAXED_WHITE_COLOR, 'scale_factor': 1.2},
+                                       {'color': color, 'color_disabled': 'lightgrey', 'scale_factor': 1.4}])
 
     @staticmethod
     def refresh_icon(color: str = PLOTLYST_MAIN_COLOR) -> QIcon:

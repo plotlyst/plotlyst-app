@@ -34,7 +34,7 @@ from plotlyst.core.domain import Conflict, Novel, CharacterAgency, Character, Co
 from plotlyst.env import app_env
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import tool_btn, label, frame, rows, columns, push_btn, wrap, action, \
-    ExclusiveOptionalButtonGroup
+    ExclusiveOptionalButtonGroup, shadow
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
@@ -361,14 +361,28 @@ class ConflictTierBadge(QToolButton):
         super().__init__(parent)
         self.conflict = conflict
         transparent(self)
+        self.setIconSize(QSize(24, 24))
 
         self.refresh()
 
     def refresh(self):
         if self.conflict.tier:
-            self.setIcon(IconRegistry.from_name(f'mdi6.alpha-{self.conflict.tier.value}'))
+            color = self.conflict.scope.color()
+            if self.conflict.tier == Tier.S:
+                # qtanim.glow(self, color=QColor(color), radius=5, reverseAnimation=False)
+                shadow(self, 0, 5, color=QColor(color))
+            elif self.conflict.tier == Tier.A:
+                translucent(self, 0.8)
+            elif self.conflict.tier == Tier.B:
+                translucent(self, 0.8)
+            else:
+                self.setGraphicsEffect(None)
+
+            self.setIcon(
+                IconRegistry.conflict_tier_badge_icon(self.conflict.scope, self.conflict.tier))
         else:
             self.setIcon(QIcon())
+            self.setGraphicsEffect(None)
 
 
 class ConflictReferenceWidget(QWidget):
