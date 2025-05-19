@@ -225,8 +225,6 @@ class PlotTreeView(TreeView, EventListener):
 
 
 class PrincipleSelectorButton(SelectorToggleButton):
-    displayHint = pyqtSignal(str)
-    hideHint = pyqtSignal()
 
     def __init__(self, principle: PlotPrincipleType, selector: PrincipleSelectorObject, parent=None):
         super().__init__(minWidth=70, parent=parent)

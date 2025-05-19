@@ -1454,35 +1454,77 @@ class Plot(SelectionItem, CharacterBased):
 
 
 class ConflictType(Enum):
-    CHARACTER = 0
-    SOCIETY = 1
-    NATURE = 2
-    TECHNOLOGY = 3
-    SUPERNATURAL = 4
-    SELF = 5
+    PERSONAL = 0
+    COMMUNITY = 1
+    MILIEU = 2
+    GLOBAL = 3
+    INTERNAL = 4
+
+    def display_name(self) -> str:
+        return self.name.lower().capitalize()
+
+    def icon(self) -> str:
+        if self == ConflictType.PERSONAL:
+            return 'fa5s.user'
+        elif self == ConflictType.COMMUNITY:
+            return 'ei.group-alt'
+        elif self == ConflictType.INTERNAL:
+            return 'mdi.mirror'
+        elif self == ConflictType.GLOBAL:
+            return 'fa5s.globe'
+        elif self == ConflictType.MILIEU:
+            return 'mdi.globe-model'
+
+    def color(self) -> str:
+        if self == ConflictType.INTERNAL:
+            return '#843b4d'
+        if self == ConflictType.GLOBAL:
+            return '#513E2B'
+        if self == ConflictType.MILIEU:
+            return '#787236'
+        if self == ConflictType.COMMUNITY:
+            return '#705089'
+        return '#e57c04'
+
+    def placeholder(self) -> str:
+        if self == ConflictType.COMMUNITY:
+            return "Conflict that affects a community the character is part of"
+        if self == ConflictType.GLOBAL:
+            return "Conflict that globally impacts a broader population"
+        if self == ConflictType.INTERNAL:
+            return "Character struggles with their own desires and beliefs"
+        if self == ConflictType.MILIEU:
+            return "Conflict against the environment or society"
+        return "Conflict that personally affects the character"
+
+
+class Tier(Enum):
+    S = 's'
+    A = 'a'
+    B = 'b'
+    C = 'c'
+    D = 'd'
+
+    def intensity(self) -> int:
+        if self == Tier.D:
+            return 1
+        if self == Tier.C:
+            return 2
+        if self == Tier.B:
+            return 3
+        if self == Tier.A:
+            return 4
+        if self == Tier.S:
+            return 5
 
 
 @dataclass
-class Conflict(SelectionItem, CharacterBased):
-    type: ConflictType = ConflictType.CHARACTER
+class Conflict(SelectionItem):
+    scope: ConflictType = ConflictType.PERSONAL
     character_id: Optional[uuid.UUID] = None
     id: uuid.UUID = field(default_factory=uuid.uuid4)
-    conflicting_character_id: Optional[uuid.UUID] = None
-
-    def __post_init__(self):
-        self._character: Optional[Character] = None
-        self._conflicting_character: Optional[Character] = None
-
-    def conflicting_character(self, novel: 'Novel') -> Optional[Character]:
-        if not self.conflicting_character_id:
-            return None
-        if not self._conflicting_character:
-            for c in novel.characters:
-                if c.id == self.conflicting_character_id:
-                    self._conflicting_character = c
-                    break
-
-        return self._conflicting_character
+    desc: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    tier: Optional[Tier] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
     @overrides
     def __eq__(self, other: 'Conflict'):
@@ -1493,6 +1535,23 @@ class Conflict(SelectionItem, CharacterBased):
     @overrides
     def __hash__(self):
         return hash(str(self.id))
+
+    def display_icon(self) -> str:
+        if self.scope == ConflictType.PERSONAL:
+            return 'mdi.sword-cross'
+        else:
+            return self.scope.icon()
+
+    def display_name(self) -> str:
+        if self.text:
+            return self.text
+        elif self.scope == ConflictType.PERSONAL:
+            return 'Conflict'
+        else:
+            return f'{self.scope.display_name()} conflict'
+
+    def display_color(self) -> str:
+        return self.scope.color()
 
 
 @dataclass
@@ -1594,18 +1653,6 @@ class SceneStructureItem(OutlineItem):
         self.meta['outcome'] = value.value
 
 
-@dataclass
-class ConflictReference:
-    conflict_id: uuid.UUID
-    message: str = ''
-    intensity: int = 1
-
-    def conflict(self, novel: 'Novel') -> Optional[Conflict]:
-        for conflict in novel.conflicts:
-            if conflict.id == self.conflict_id:
-                return conflict
-
-
 class Motivation(Enum):
     PHYSIOLOGICAL = 0
     SAFETY = 1
@@ -1683,30 +1730,11 @@ class CharacterAgencyChanges:
 @dataclass
 class CharacterAgency:
     character_id: Optional[uuid.UUID] = None
-    conflict_references: List[ConflictReference] = field(default_factory=list)
+    conflicts: List[Conflict] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     motivations: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
+    intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     changes: List[CharacterAgencyChanges] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     elements: List['StoryElement'] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
-
-    def conflicts(self, novel: 'Novel') -> List[Conflict]:
-        conflicts_ = []
-        for id_ in [x.conflict_id for x in self.conflict_references]:
-            for conflict in novel.conflicts:
-                if conflict.id == id_:
-                    conflicts_.append(conflict)
-
-        return conflicts_
-
-    def remove_conflict(self, conflict: Conflict):
-        self.conflict_references = [x for x in self.conflict_references if x.conflict_id != conflict.id]
-
-    def remove_goal(self, char_goal: CharacterGoal):
-        self.goal_references = [x for x in self.goal_references if x.character_goal_id != char_goal.id]
-
-    def goals(self, character: Character) -> List[CharacterGoal]:
-        goals_ = character.flatten_goals()
-        agenda_goal_ids = [x.character_goal_id for x in self.goal_references]
-        return [x for x in goals_ if x.id in agenda_goal_ids]
 
 
 @dataclass
@@ -1952,7 +1980,6 @@ class StoryElement:
     type: StoryElementType
     ref: Optional[uuid.UUID] = None
     text: str = ''
-    intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     value: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     row: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     col: int = field(default=0, metadata=config(exclude=exclude_if_empty))

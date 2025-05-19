@@ -18,9 +18,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import string
+import uuid
 from dataclasses import dataclass
 from functools import partial
-from typing import Iterable, List, Optional, Dict, Union
+from typing import Iterable, List, Optional, Dict, Union, Set
 
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QByteArray, QBuffer, QIODevice
 from PyQt6.QtGui import QIcon, QColor, QImageReader, QImage, QPixmap, \
@@ -41,6 +42,7 @@ from plotlyst.event.core import EventListener, Event
 from plotlyst.event.handler import event_dispatchers
 from plotlyst.events import CharacterSummaryChangedEvent, CharacterBackstoryChangedEvent
 from plotlyst.resources import resource_registry
+from plotlyst.service.cache import entities_registry
 from plotlyst.settings import CHARACTER_INITIAL_AVATAR_COLOR_CODES
 from plotlyst.view.common import action, ButtonPressResizeEventFilter, tool_btn, label, push_btn, scroll_area
 from plotlyst.view.generated.characters_progress_widget_ui import Ui_CharactersProgressWidget
@@ -170,6 +172,7 @@ class CharacterSelectorMenu(ScrollableMenuWidget):
         super().__init__(parent)
         self._novel = novel
         self._characters: Optional[List[Character]] = None
+        self._excludedCharacters: Set[Character] = set()
         self.aboutToShow.connect(self._beforeShow)
 
     @overrides
@@ -199,6 +202,9 @@ class CharacterSelectorMenu(ScrollableMenuWidget):
         else:
             return self._novel.characters
 
+    def excludeCharacter(self, character: Character):
+        self._excludedCharacters.add(character)
+
     def refresh(self):
         self._fillUpMenu()
 
@@ -210,6 +216,8 @@ class CharacterSelectorMenu(ScrollableMenuWidget):
         self.clear()
 
         for char in self.characters():
+            if self._excludedCharacters and char in self._excludedCharacters:
+                continue
             charAction = action(char.displayed_name(), avatars.avatar(char), slot=partial(self.selected.emit, char),
                                 parent=self)
             font = charAction.font()
@@ -256,6 +264,11 @@ class CharacterSelectorButton(QToolButton):
             self.removeEventFilter(self._opacityFilter)
             translucent(self, 1.0)
         self.setIconSize(QSize(self._setIconSize, self._setIconSize))
+
+    def setCharacterById(self, character_id: uuid.UUID):
+        character = entities_registry.character(str(character_id))
+        if character:
+            self.setCharacter(character)
 
     def clear(self):
         self.setStyleSheet('''

@@ -40,7 +40,6 @@ from plotlyst.view.generated.reports_view_ui import Ui_ReportsView
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report import AbstractReport
 from plotlyst.view.report.character import CharacterReport
-from plotlyst.view.report.conflict import ConflictReport
 from plotlyst.view.report.manuscript import ManuscriptReport
 from plotlyst.view.report.plot import ArcReport
 from plotlyst.view.report.productivity import ProductivityReport
@@ -140,17 +139,6 @@ class ScenesReportPage(ReportPage):
     @overrides
     def _initReport(self):
         return SceneReport(self._novel)
-
-
-class ConflictsReportPage(ReportPage):
-    def __init__(self, novel: Novel, parent=None):
-        super(ConflictsReportPage, self).__init__(novel, parent)
-        self._dispatcher.register(self, SceneChangedEvent, SceneDeletedEvent, CharacterChangedEvent,
-                                  CharacterDeletedEvent)
-
-    @overrides
-    def _initReport(self):
-        return ConflictReport(self._novel)
 
 
 class ArcReportPage(ReportPage):
