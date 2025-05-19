@@ -1475,6 +1475,12 @@ class ConflictType(Enum):
         elif self == ConflictType.MILIEU:
             return 'mdi.globe-model'
 
+    def color(self) -> str:
+        if self == ConflictType.INTERNAL:
+            return '#843B4D'
+        if self == ConflictType.GLOBAL:
+            return '#9E5D74'
+        return '#e57c04'
 
 @dataclass
 class Conflict(SelectionItem):
@@ -1508,9 +1514,7 @@ class Conflict(SelectionItem):
             return f'{self.scope.display_name()} conflict'
 
     def display_color(self) -> str:
-        if self.scope == ConflictType.INTERNAL:
-            return '#843B4D'
-        return '#e57c04'
+        return self.scope.color()
 
 
 @dataclass

@@ -17,24 +17,28 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from enum import Enum
 from typing import Optional
 
-from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QWidget, QSlider, QTextEdit, QButtonGroup
+import qtanim
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject, QSize
+from PyQt6.QtGui import QIcon, QPaintEvent, QEnterEvent, QColor
+from PyQt6.QtWidgets import QWidget, QSlider, QTextEdit, QButtonGroup, QPushButton
 from overrides import overrides
 from qthandy import hbox, vbox, incr_icon, pointy, incr_font, vspacer, line, margins, vline, translucent, spacer, \
-    decr_icon
+    decr_icon, sp
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLACEHOLDER_TEXT_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import Conflict, Novel, CharacterAgency, Character, ConflictType
 from plotlyst.env import app_env
 from plotlyst.service.cache import entities_registry
-from plotlyst.view.common import tool_btn, label, frame, rows, columns, push_btn, wrap, action
+from plotlyst.view.common import tool_btn, label, frame, rows, columns, push_btn, wrap, action, \
+    ExclusiveOptionalButtonGroup
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import transparent_menu
+from plotlyst.view.style.theme import BG_MUTED_COLOR, BG_SECONDARY_COLOR
 from plotlyst.view.widget.button import SelectorToggleButton
 from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.display import MenuOverlayEventFilter
@@ -91,6 +95,123 @@ class _ConflictSelectorButton(SelectorToggleButton):
         self.scope = conflictType
         self.setText(conflictType.display_name())
         self.setIcon(IconRegistry.from_name(conflictType.icon()))
+
+
+class Tier(Enum):
+    S = 's'
+    A = 'a'
+    B = 'b'
+    C = 'c'
+    D = 'd'
+
+    def intensity(self) -> int:
+        if self == Tier.D:
+            return 0
+        if self == Tier.C:
+            return 1
+        if self == Tier.B:
+            return 2
+        if self == Tier.A:
+            return 3
+        if self == Tier.S:
+            return 4
+
+
+class ConflictTierWidget(QWidget):
+    def __init__(self, tier: Tier, parent=None):
+        super().__init__(parent)
+        self.tier = tier
+        hbox(self, 0, 0)
+
+        self.lbl = QPushButton()
+        self.lbl.setIconSize(QSize(24, 24))
+        sp(self.lbl).h_max()
+        self.lbl.setMaximumWidth(40)
+        font = self.lbl.font()
+        font.setFamily(app_env.serif_font())
+        self.lbl.setFont(font)
+
+        self.btn = push_btn(transparent_=True, checkable=True)
+        self.btn.setStyleSheet(f'''
+                    QPushButton {{
+                        background: {BG_SECONDARY_COLOR};
+                        border: 1px solid lightgrey;
+                        padding: 6px;
+                        border-top-right-radius: 6px;
+                        border-bottom-right-radius: 6px;
+                    }}
+                ''')
+
+        self.btn.toggled.connect(self._toggled)
+
+        self.lbl.setStyleSheet(f'''
+            QPushButton {{
+                background: {BG_MUTED_COLOR};
+                border: 1px solid lightgrey;
+                padding: 6px;
+                border-top-left-radius: 6px;
+                border-bottom-left-radius: 6px;
+            }}
+        ''')
+
+        self.layout().addWidget(self.lbl)
+        self.layout().addWidget(self.btn)
+
+        self._updateTierIcon()
+
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        pass
+
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        if not self.btn.isChecked():
+            self.btn.setIcon(IconRegistry.conflict_icon('lightgrey', 'lightgrey'))
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        if not self.btn.isChecked():
+            self.btn.setIcon(IconRegistry.empty_icon())
+
+    def _toggled(self, toggled: bool):
+        if toggled:
+            self.btn.setIcon(IconRegistry.conflict_icon())
+        else:
+            self.btn.setIcon(IconRegistry.empty_icon())
+
+        self._updateTierIcon()
+
+    def _updateTierIcon(self):
+        if self.btn.isChecked():
+            self.lbl.setIcon(
+                IconRegistry.from_name(f'mdi6.alpha-{self.tier.value}', scale=1.4))
+            qtanim.colorize(self.lbl, color=QColor('#e57c04'), strength=1.0, reverseAnimation=False)
+        else:
+            self.lbl.setIcon(IconRegistry.from_name(f'mdi6.alpha-{self.tier.value}', scale=1.4))
+            qtanim.colorize(self.lbl, color=QColor('#e57c04'), strength=0.0, reverseAnimation=False,
+                            startStrength=1.0,
+                            teardown=lambda: self.lbl.setGraphicsEffect(None))
+
+
+class ConflictTierSelectorWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        vbox(self)
+
+        self.layout().addWidget(label('Tiers', centered=True, incr_font_diff=1))
+
+        self.btnGroup = ExclusiveOptionalButtonGroup()
+
+        self.__initTierWidget(Tier.S)
+        self.__initTierWidget(Tier.A)
+        self.__initTierWidget(Tier.B)
+        self.__initTierWidget(Tier.C)
+        self.__initTierWidget(Tier.D)
+
+    def __initTierWidget(self, tier: Tier):
+        wdg = ConflictTierWidget(tier)
+        self.btnGroup.addButton(wdg.btn)
+        self.layout().addWidget(wdg)
 
 
 class ConflictSelectorPopup(MenuWidget):
@@ -151,6 +272,9 @@ class ConflictSelectorPopup(MenuWidget):
         self.wdgScope.layout().addWidget(vline())
         self.wdgScope.layout().addWidget(self.wdgGlobal)
         self.wdgScope.layout().addWidget(spacer())
+
+        self.wdgTierSelector = ConflictTierSelectorWidget()
+        self.wdgScope.layout().addWidget(self.wdgTierSelector)
 
         self.wdgFrame.layout().addWidget(
             label(
