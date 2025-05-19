@@ -386,9 +386,9 @@ class StoryArcChart(BaseChart):
             for agency in scene.agency:
                 if character and agency.character_id != character.id:
                     continue
-                # for change in agency.changes:
-                #     transition: StoryElement = change.transition
-                intensity = max([intensity, agency.intensity])
+                for conflict in agency.conflicts:
+                    if conflict.tier:
+                        intensity = max([intensity, conflict.tier.intensity()])
             series.append(i + 1, intensity)
 
         return series

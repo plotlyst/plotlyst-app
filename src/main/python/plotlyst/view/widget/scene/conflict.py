@@ -17,20 +17,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from enum import Enum
+from functools import partial
 from typing import Optional
 
 import qtanim
 from PyQt6.QtCore import pyqtSignal, Qt, QEvent, QObject, QSize
 from PyQt6.QtGui import QIcon, QPaintEvent, QEnterEvent, QColor
-from PyQt6.QtWidgets import QWidget, QSlider, QTextEdit, QButtonGroup, QPushButton
+from PyQt6.QtWidgets import QWidget, QSlider, QTextEdit, QButtonGroup, QPushButton, QToolButton
 from overrides import overrides
 from qthandy import hbox, vbox, incr_icon, pointy, incr_font, vspacer, line, margins, vline, translucent, spacer, \
-    decr_icon, sp
+    decr_icon, sp, transparent
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLACEHOLDER_TEXT_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Conflict, Novel, CharacterAgency, Character, ConflictType
+from plotlyst.core.domain import Conflict, Novel, CharacterAgency, Character, ConflictType, Tier
 from plotlyst.env import app_env
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import tool_btn, label, frame, rows, columns, push_btn, wrap, action, \
@@ -95,26 +95,6 @@ class _ConflictSelectorButton(SelectorToggleButton):
         self.scope = conflictType
         self.setText(conflictType.display_name())
         self.setIcon(IconRegistry.from_name(conflictType.icon()))
-
-
-class Tier(Enum):
-    S = 's'
-    A = 'a'
-    B = 'b'
-    C = 'c'
-    D = 'd'
-
-    def intensity(self) -> int:
-        if self == Tier.D:
-            return 0
-        if self == Tier.C:
-            return 1
-        if self == Tier.B:
-            return 2
-        if self == Tier.A:
-            return 3
-        if self == Tier.S:
-            return 4
 
 
 class ConflictTierWidget(QWidget):
@@ -194,6 +174,9 @@ class ConflictTierWidget(QWidget):
 
 
 class ConflictTierSelectorWidget(QWidget):
+    selected = pyqtSignal(Tier)
+    cleared = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         vbox(self)
@@ -208,15 +191,30 @@ class ConflictTierSelectorWidget(QWidget):
         self.__initTierWidget(Tier.C)
         self.__initTierWidget(Tier.D)
 
+    def selectTier(self, tier: Tier):
+        for i in range(self.layout().count()):
+            item = self.layout().itemAt(i)
+            if item.widget() and isinstance(item.widget(), ConflictTierWidget):
+                if item.widget().tier == tier:
+                    item.widget().btn.setChecked(True)
+
+    def _clicked(self, tier: Tier):
+        btn = self.btnGroup.checkedButton()
+        if btn:
+            self.selected.emit(tier)
+        else:
+            self.cleared.emit()
+
     def __initTierWidget(self, tier: Tier):
         wdg = ConflictTierWidget(tier)
         self.btnGroup.addButton(wdg.btn)
         self.layout().addWidget(wdg)
 
+        wdg.btn.clicked.connect(partial(self._clicked, tier))
+
 
 class ConflictSelectorPopup(MenuWidget):
     conflictChanged = pyqtSignal(Conflict)
-    remove = pyqtSignal()
 
     def __init__(self, novel: Novel, agency: CharacterAgency, conflict: Optional[Conflict] = None, parent=None):
         super().__init__(parent)
@@ -274,7 +272,11 @@ class ConflictSelectorPopup(MenuWidget):
         self.wdgScope.layout().addWidget(spacer())
 
         self.wdgTierSelector = ConflictTierSelectorWidget()
+        self.wdgTierSelector.selected.connect(self._tierSelected)
+        self.wdgTierSelector.cleared.connect(self._tierCleared)
         self.wdgScope.layout().addWidget(self.wdgTierSelector)
+        if self.conflict.tier:
+            self.wdgTierSelector.selectTier(self.conflict.tier)
 
         self.wdgFrame.layout().addWidget(
             label(
@@ -333,6 +335,12 @@ class ConflictSelectorPopup(MenuWidget):
         self.conflict.character_id = None
         self.btnResetCharacter.setHidden(True)
 
+    def _tierSelected(self, tier: Tier):
+        self.conflict.tier = tier
+
+    def _tierCleared(self):
+        self.conflict.tier = None
+
     def _confirm(self):
         self.conflictChanged.emit(self.conflict)
 
@@ -348,6 +356,21 @@ class ConflictSelectorPopup(MenuWidget):
         return btn
 
 
+class ConflictTierBadge(QToolButton):
+    def __init__(self, conflict: Conflict, parent=None):
+        super().__init__(parent)
+        self.conflict = conflict
+        transparent(self)
+
+        self.refresh()
+
+    def refresh(self):
+        if self.conflict.tier:
+            self.setIcon(IconRegistry.from_name(f'mdi6.alpha-{self.conflict.tier.value}'))
+        else:
+            self.setIcon(QIcon())
+
+
 class ConflictReferenceWidget(QWidget):
     removed = pyqtSignal()
 
@@ -360,6 +383,9 @@ class ConflictReferenceWidget(QWidget):
         self._menu: Optional[MenuWidget] = None
 
         vbox(self, 0, 0)
+
+        self._tierBadge = ConflictTierBadge(self.conflict, parent=self)
+        self._tierBadge.setGeometry(0, 0, self._tierBadge.sizeHint().width(), self._tierBadge.sizeHint().height())
 
         self._iconConflict = tool_btn(QIcon(), transparent_=True)
         incr_icon(self._iconConflict, 2)
@@ -425,6 +451,7 @@ class ConflictReferenceWidget(QWidget):
         self._lblConflict.setText(self.conflict.display_name())
         self._lblConflict.setStyleSheet(f'color: {self.conflict.display_color()};')
         self._iconConflict.setIcon(IconRegistry.from_name(self.conflict.display_icon(), self.conflict.display_color()))
+        self._tierBadge.refresh()
 
         if self.conflict.character_id:
             character = entities_registry.character(str(self.conflict.character_id))

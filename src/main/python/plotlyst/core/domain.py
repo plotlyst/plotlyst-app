@@ -1477,10 +1477,35 @@ class ConflictType(Enum):
 
     def color(self) -> str:
         if self == ConflictType.INTERNAL:
-            return '#843B4D'
+            return '#843b4d'  # 843B4D
         if self == ConflictType.GLOBAL:
-            return '#9E5D74'
+            return '#513E2B'  # 9E5D74
+        if self == ConflictType.MILIEU:
+            return '#787236'  # 4B665E
+        if self == ConflictType.SOCIAL:
+            return '#705089'  # 705089
         return '#e57c04'
+
+
+class Tier(Enum):
+    S = 's'
+    A = 'a'
+    B = 'b'
+    C = 'c'
+    D = 'd'
+
+    def intensity(self) -> int:
+        if self == Tier.D:
+            return 0
+        if self == Tier.C:
+            return 1
+        if self == Tier.B:
+            return 2
+        if self == Tier.A:
+            return 3
+        if self == Tier.S:
+            return 4
+
 
 @dataclass
 class Conflict(SelectionItem):
@@ -1488,6 +1513,7 @@ class Conflict(SelectionItem):
     character_id: Optional[uuid.UUID] = None
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     desc: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    tier: Optional[Tier] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
     @overrides
     def __eq__(self, other: 'Conflict'):
