@@ -41,7 +41,7 @@ from plotlyst.view.style.base import transparent_menu
 from plotlyst.view.style.theme import BG_MUTED_COLOR, BG_SECONDARY_COLOR
 from plotlyst.view.widget.button import SelectorToggleButton
 from plotlyst.view.widget.characters import CharacterSelectorButton
-from plotlyst.view.widget.display import MenuOverlayEventFilter
+from plotlyst.view.widget.display import MenuOverlayEventFilter, HintLabel
 from plotlyst.view.widget.input import DecoratedLineEdit
 
 
@@ -95,6 +95,14 @@ class _ConflictSelectorButton(SelectorToggleButton):
         self.scope = conflictType
         self.setText(conflictType.display_name())
         self.setIcon(IconRegistry.from_name(conflictType.icon()))
+
+    @overrides
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.displayHint.emit(f'{self.scope.display_name()}: {self.scope.placeholder()}')
+
+    @overrides
+    def leaveEvent(self, event: QEvent) -> None:
+        self.hideHint.emit()
 
 
 class ConflictTierWidget(QWidget):
@@ -265,7 +273,7 @@ class ConflictSelectorPopup(MenuWidget):
         self.btnConfirm.clicked.connect(self._confirm)
 
         self.wdgScope = columns(0, 12)
-        margins(self.wdgScope, bottom=35)
+        margins(self.wdgScope, bottom=5)
         self.wdgScope.layout().addWidget(self.wdgPersonal)
         self.wdgScope.layout().addWidget(vline())
         self.wdgScope.layout().addWidget(self.wdgGlobal)
@@ -277,6 +285,8 @@ class ConflictSelectorPopup(MenuWidget):
         self.wdgScope.layout().addWidget(self.wdgTierSelector)
         if self.conflict.tier:
             self.wdgTierSelector.selectTier(self.conflict.tier)
+
+        self._lblInfo = HintLabel()
 
         self.wdgFrame.layout().addWidget(
             label(
@@ -290,6 +300,7 @@ class ConflictSelectorPopup(MenuWidget):
         self.wdgFrame.layout().addWidget(
             wrap(label("Select the scope of the conflict", description=True), margin_top=25))
         self.wdgFrame.layout().addWidget(self.wdgScope)
+        self.wdgFrame.layout().addWidget(self._lblInfo)
         self.wdgFrame.layout().addWidget(self.btnConfirm, alignment=Qt.AlignmentFlag.AlignRight)
 
         btnPersonal = self.__initConflictScope(ConflictType.PERSONAL, self.wdgPersonal)
@@ -352,6 +363,9 @@ class ConflictSelectorPopup(MenuWidget):
             btn.setChecked(True)
 
         parent.layout().addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        btn.displayHint.connect(self._lblInfo.display)
+        btn.hideHint.connect(self._lblInfo.clear)
 
         return btn
 

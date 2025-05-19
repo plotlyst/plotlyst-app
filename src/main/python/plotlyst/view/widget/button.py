@@ -619,6 +619,9 @@ class ChargeButton(SecondaryActionToolButton):
 
 
 class SelectorToggleButton(QToolButton):
+    displayHint = pyqtSignal(str)
+    hideHint = pyqtSignal()
+
     def __init__(self, button_style: Qt.ToolButtonStyle = Qt.ToolButtonStyle.ToolButtonTextUnderIcon,
                  minWidth: int = 100, animated: bool = True, checkedColor: str = '#D4B8E0', hoverColor: str = '#FCF5FE',
                  parent=None):
