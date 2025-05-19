@@ -1507,15 +1507,15 @@ class Tier(Enum):
 
     def intensity(self) -> int:
         if self == Tier.D:
-            return 0
-        if self == Tier.C:
             return 1
-        if self == Tier.B:
+        if self == Tier.C:
             return 2
-        if self == Tier.A:
+        if self == Tier.B:
             return 3
-        if self == Tier.S:
+        if self == Tier.A:
             return 4
+        if self == Tier.S:
+            return 5
 
 
 @dataclass

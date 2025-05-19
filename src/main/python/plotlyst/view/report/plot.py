@@ -388,7 +388,7 @@ class StoryArcChart(BaseChart):
                     continue
                 for conflict in agency.conflicts:
                     if conflict.tier:
-                        intensity = max([intensity, conflict.tier.intensity()])
+                        intensity = max([intensity, conflict.tier.intensity() * 2])
             series.append(i + 1, intensity)
 
         return series
