@@ -264,7 +264,7 @@ class ConflictSelectorPopup(MenuWidget):
                                    properties=['confirm', 'positive'])
         self.btnConfirm.clicked.connect(self._confirm)
 
-        self.wdgScope = columns(0, 8)
+        self.wdgScope = columns(0, 12)
         margins(self.wdgScope, bottom=35)
         self.wdgScope.layout().addWidget(self.wdgPersonal)
         self.wdgScope.layout().addWidget(vline())
@@ -300,7 +300,7 @@ class ConflictSelectorPopup(MenuWidget):
         btn = self.__initConflictScope(ConflictType.GLOBAL, self.wdgGlobal)
         incr_font(btn, 2)
         self.wdgGlobal.layout().addWidget(line())
-        self.__initConflictScope(ConflictType.SOCIAL, self.wdgGlobal)
+        self.__initConflictScope(ConflictType.COMMUNITY, self.wdgGlobal)
 
         self.wdgPersonal.layout().addWidget(vspacer())
         self.wdgGlobal.layout().addWidget(vspacer())
@@ -424,10 +424,9 @@ class ConflictReferenceWidget(QWidget):
             incr_font(self._textedit)
         self._textedit.verticalScrollBar().setVisible(False)
         self._textedit.setStyleSheet(
-            f'color: {PLACEHOLDER_TEXT_COLOR}; border: 0px; padding: 2px; background-color: rgba(0, 0, 0, 0);')
+            f'color: {PLACEHOLDER_TEXT_COLOR}; border: 0px; padding: 0px; background-color: rgba(0, 0, 0, 0);')
         self._textedit.setMaximumSize(165, 85)
 
-        self._textedit.setPlaceholderText("What kind of conflict does the character have to face?")
         self._textedit.setText(self.conflict.desc)
         self._textedit.textChanged.connect(self._textChanged)
 
@@ -466,6 +465,7 @@ class ConflictReferenceWidget(QWidget):
         self._lblConflict.setStyleSheet(f'color: {self.conflict.display_color()};')
         self._iconConflict.setIcon(IconRegistry.from_name(self.conflict.display_icon(), self.conflict.display_color()))
         self._tierBadge.refresh()
+        self._textedit.setPlaceholderText(self.conflict.scope.placeholder())
 
         if self.conflict.character_id:
             character = entities_registry.character(str(self.conflict.character_id))

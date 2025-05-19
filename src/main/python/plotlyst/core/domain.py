@@ -1455,7 +1455,7 @@ class Plot(SelectionItem, CharacterBased):
 
 class ConflictType(Enum):
     PERSONAL = 0
-    SOCIAL = 1
+    COMMUNITY = 1
     MILIEU = 2
     GLOBAL = 3
     INTERNAL = 4
@@ -1466,7 +1466,7 @@ class ConflictType(Enum):
     def icon(self) -> str:
         if self == ConflictType.PERSONAL:
             return 'fa5s.user'
-        elif self == ConflictType.SOCIAL:
+        elif self == ConflictType.COMMUNITY:
             return 'ei.group-alt'
         elif self == ConflictType.INTERNAL:
             return 'mdi.mirror'
@@ -1477,14 +1477,25 @@ class ConflictType(Enum):
 
     def color(self) -> str:
         if self == ConflictType.INTERNAL:
-            return '#843b4d'  # 843B4D
+            return '#843b4d'
         if self == ConflictType.GLOBAL:
-            return '#513E2B'  # 9E5D74
+            return '#513E2B'
         if self == ConflictType.MILIEU:
-            return '#787236'  # 4B665E
-        if self == ConflictType.SOCIAL:
-            return '#705089'  # 705089
+            return '#787236'
+        if self == ConflictType.COMMUNITY:
+            return '#705089'
         return '#e57c04'
+
+    def placeholder(self) -> str:
+        if self == ConflictType.COMMUNITY:
+            return "Conflict that affects a community the character is part of"
+        if self == ConflictType.GLOBAL:
+            return "Conflict that globally impacts a broader population"
+        if self == ConflictType.INTERNAL:
+            return "Character struggles with their own desires and beliefs"
+        if self == ConflictType.MILIEU:
+            return "Conflict against the environment or society"
+        return "Conflict that personally affects the character"
 
 
 class Tier(Enum):
