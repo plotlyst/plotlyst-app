@@ -646,7 +646,7 @@ class PlotWidget(QWidget, EventListener):
 
             painter.fillPath(path, gradient)
 
-            IconRegistry.from_name('ri.ghost-2-fill').paint(
+            IconRegistry.from_name('ri.ghost-2-fill', '#373737').paint(
                 painter, self.wdgMonster.rect(), alignment=Qt.AlignmentFlag.AlignCenter
             )
 
@@ -874,6 +874,7 @@ class PlotWidget(QWidget, EventListener):
         if self.width() <= self.wdgNavs.width() + 25:
             self.btnPrinciples.setText('')
             self.btnTimeline.setText('')
+            self.btnEscalation.setText('')
             self.btnSuspects.setText('')
             self.btnAllies.setText('')
             self.btnCast.setText('')
@@ -881,6 +882,7 @@ class PlotWidget(QWidget, EventListener):
         elif self.width() > self._navWidth + 25 and self.btnPrinciples.text() == '':
             self.btnPrinciples.setText('Principles')
             self.btnTimeline.setText('Timeline')
+            self.btnEscalation.setText('Escalation')
             self.btnSuspects.setText('Suspects')
             self.btnAllies.setText('Allies')
             self.btnCast.setText('Cast')

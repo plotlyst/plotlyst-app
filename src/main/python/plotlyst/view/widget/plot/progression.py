@@ -41,10 +41,10 @@ class DynamicPlotPrincipleWidget(OutlineItemWidget):
     characterChanged = pyqtSignal(Character)
 
     def __init__(self, novel: Novel, principle: DynamicPlotPrinciple, parent=None,
-                 nameAlignment=Qt.AlignmentFlag.AlignCenter):
+                 nameAlignment=Qt.AlignmentFlag.AlignCenter, colorfulShadow: bool = True):
         self.novel = novel
         self.principle = principle
-        super().__init__(principle, parent, colorfulShadow=True, nameAlignment=nameAlignment)
+        super().__init__(principle, parent, colorfulShadow=colorfulShadow, nameAlignment=nameAlignment)
         self._initStyle(name=self.principle.type.display_name(), desc=self.principle.type.placeholder())
         self._btnIcon.setHidden(True)
 

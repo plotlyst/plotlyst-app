@@ -24,12 +24,12 @@ from PyQt6.QtCore import pyqtSignal, QSize, Qt
 from PyQt6.QtGui import QResizeEvent
 from PyQt6.QtWidgets import QWidget, QFrame
 from overrides import overrides
-from qthandy import vbox, flow, sp, incr_font, incr_icon, line, vspacer, margins
+from qthandy import vbox, sp, incr_font, incr_icon, line, vspacer, margins
 
 from plotlyst.common import LIGHTGREY_ACTIVE_COLOR
 from plotlyst.core.domain import Plot, DynamicPlotPrincipleType, DynamicPlotPrincipleGroupType, Novel, \
     DynamicPlotPrinciple
-from plotlyst.view.common import push_btn, rows, label, insert_before_the_end, fade_out_and_gc
+from plotlyst.view.common import push_btn, label, insert_before_the_end, fade_out_and_gc, columns
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.display import icon_text
 from plotlyst.view.widget.plot.progression import DynamicPlotPrincipleWidget
@@ -37,8 +37,10 @@ from plotlyst.view.widget.plot.progression import DynamicPlotPrincipleWidget
 
 class EscalationPlotPrincipleWidget(DynamicPlotPrincipleWidget):
     def __init__(self, novel: Novel, principle: DynamicPlotPrinciple, parent=None):
-        super().__init__(novel, principle, parent)
+        super().__init__(novel, principle, parent, colorfulShadow=False)
         self._btnName.setHidden(True)
+
+        sp(self).v_max()
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -61,17 +63,13 @@ class EscalationWidget(QFrame):
         self.setProperty('muted-bg', True)
 
         self.container = QWidget()
-        flow(self.container, spacing=5)
-        sp(self.container).v_max()
+        vbox(self.container, spacing=5)
 
-        wdg = rows()
-        wdg.setFixedHeight(140)
         self.btnPlus = push_btn(IconRegistry.plus_icon(LIGHTGREY_ACTIVE_COLOR))
         self.btnPlus.setIconSize(QSize(36, 36))
         self.btnPlus.setStyleSheet(f'color: {LIGHTGREY_ACTIVE_COLOR}; border: 0px;')
         self.btnPlus.clicked.connect(self._plusClicked)
-        wdg.layout().addWidget(self.btnPlus, alignment=Qt.AlignmentFlag.AlignVCenter)
-        self.container.layout().addWidget(wdg)
+        self.container.layout().addWidget(self.btnPlus, alignment=Qt.AlignmentFlag.AlignCenter)
 
         header = icon_text(type_.icon(), type_.display_name(), icon_color=type_.color(), opacity=0.8)
         incr_font(header, 2)
@@ -79,8 +77,9 @@ class EscalationWidget(QFrame):
         self.layout().addWidget(header, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(line(color=type_.color()))
         self.layout().addWidget(self.container)
+        self.layout().addWidget(vspacer())
 
-        sp(self).v_max()
+        sp(self).v_exp()
 
         for principle in self.plot.escalation.principles:
             if principle.type == self.type:
@@ -98,7 +97,7 @@ class EscalationWidget(QFrame):
         wdg = EscalationPlotPrincipleWidget(self.novel, principle)
         wdg.removed.connect(partial(self._removePrinciple, wdg))
         wdg.changed.connect(self.changed)
-        insert_before_the_end(self.container, wdg)
+        insert_before_the_end(self.container, wdg, alignment=Qt.AlignmentFlag.AlignCenter)
 
         return wdg
 
@@ -115,7 +114,7 @@ class StorylineEscalationEditorWidget(QWidget):
         super().__init__(parent)
         self._plot = plot
 
-        vbox(self, 5, 8)
+        vbox(self, 5, 5)
         margins(self, left=25, right=25)
 
         self.wdgTurns = EscalationWidget(novel, self._plot, DynamicPlotPrincipleType.TURN)
@@ -126,9 +125,12 @@ class StorylineEscalationEditorWidget(QWidget):
         self.wdgTwists.changed.connect(self.changed)
         self.wdgDanger.changed.connect(self.changed)
 
+        self.wdgEditor = columns(spacing=8)
+        self.wdgEditor.layout().addWidget(self.wdgTurns)
+        self.wdgEditor.layout().addWidget(self.wdgTwists)
+        self.wdgEditor.layout().addWidget(self.wdgDanger)
+
         self.layout().addWidget(label(DynamicPlotPrincipleGroupType.ESCALATION.description(), description=True))
-        self.layout().addWidget(self.wdgTurns)
-        self.layout().addWidget(self.wdgTwists)
-        self.layout().addWidget(self.wdgDanger)
+        self.layout().addWidget(self.wdgEditor)
 
         self.layout().addWidget(vspacer())
