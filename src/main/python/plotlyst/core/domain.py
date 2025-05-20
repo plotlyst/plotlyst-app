@@ -24,7 +24,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, Set
 
 from PyQt6.QtCore import Qt
 from dataclasses_json import dataclass_json, Undefined, config
@@ -1186,7 +1186,7 @@ class DynamicPlotPrincipleGroupType(Enum):
         if self == DynamicPlotPrincipleGroupType.ESCALATION:
             return 'ph.shuffle-bold'
         elif self == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            return 'fa5s.thumbs-down'
+            return 'fa5s.thumbs-up'
         elif self == DynamicPlotPrincipleGroupType.SUSPECTS:
             return 'ri.criminal-fill'
         elif self == DynamicPlotPrincipleGroupType.ELEMENTS_OF_WONDER:
@@ -1392,6 +1392,12 @@ class StorylineLink:
 
 
 @dataclass
+class RelationshipDynamics:
+    source_characters: Set[uuid.UUID] = field(default_factory=set)
+    target_characters: Set[uuid.UUID] = field(default_factory=set)
+
+
+@dataclass
 class Plot(SelectionItem, CharacterBased):
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     plot_type: PlotType = PlotType.Main
@@ -1404,6 +1410,7 @@ class Plot(SelectionItem, CharacterBased):
     has_progression: bool = False
     timeline: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     has_relationship: bool = False
+    relationship: Optional[RelationshipDynamics] = None
     has_escalation: bool = False
     escalation: Optional[DynamicPlotPrincipleGroup] = None
     has_allies: bool = False

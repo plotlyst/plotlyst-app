@@ -60,6 +60,7 @@ from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, principle_type_index, principle_icon, principle_hint
 from plotlyst.view.widget.plot.progression import DynamicPlotPrinciplesWidget
+from plotlyst.view.widget.plot.relationship import RelationshipDynamicsWidget
 from plotlyst.view.widget.plot.timeline import StorylineTimelineWidget, StorylineVillainEvolutionWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
 from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
@@ -340,7 +341,7 @@ class PlotElementSelectorPopup(PopupDialog):
         self.centerComplex.setProperty('white-bg', True)
 
         self._addComplexSelector(DynamicPlotPrincipleGroupType.TIMELINE, self._plot.has_progression)
-        # self._addComplexSelector(DynamicPlotPrincipleGroupType.RELATIONSHIP, self._plot.has_relationship)
+        self._addComplexSelector(DynamicPlotPrincipleGroupType.RELATIONSHIP, self._plot.has_relationship)
         self._addComplexSelector(DynamicPlotPrincipleGroupType.ESCALATION, self._plot.has_escalation)
         self._addComplexSelector(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES, self._plot.has_allies)
         self._addComplexSelector(DynamicPlotPrincipleGroupType.SUSPECTS, self._plot.has_suspects)
@@ -439,6 +440,7 @@ class PlotWidget(QWidget, EventListener):
 
         self._alliesEditor: Optional[AlliesPrinciplesGroupWidget] = None
         self._timelineEditor: Optional[StorylineTimelineWidget] = None
+        self._relationshipEditor: Optional[RelationshipDynamicsWidget] = None
         self._villainEditor: Optional[StorylineVillainEvolutionWidget] = None
         self._suspectsEditor: Optional[DynamicPlotPrinciplesWidget] = None
         self._castEditor: Optional[DynamicPlotPrinciplesWidget] = None
@@ -513,6 +515,11 @@ class PlotWidget(QWidget, EventListener):
             properties=['secondary-selector', 'transparent'], checkable=True)
         self.btnTimeline.installEventFilter(
             OpacityEventFilter(self.btnTimeline, leaveOpacity=0.7, ignoreCheckedButton=True))
+        self.btnRelationship = push_btn(
+            IconRegistry.from_name('fa5s.people-arrows', 'grey', PLOTLYST_SECONDARY_COLOR), text='Relationship',
+            properties=['secondary-selector', 'transparent'], checkable=True)
+        self.btnRelationship.installEventFilter(
+            OpacityEventFilter(self.btnRelationship, leaveOpacity=0.7, ignoreCheckedButton=True))
         self.btnEscalation = push_btn(
             IconRegistry.from_name('ph.shuffle-bold', 'grey', PLOTLYST_SECONDARY_COLOR), text='Escalation',
             properties=['secondary-selector', 'transparent'], checkable=True)
@@ -545,12 +552,14 @@ class PlotWidget(QWidget, EventListener):
 
         self.wdgNavs.layout().addWidget(self.btnPrinciples)
         self.wdgNavs.layout().addWidget(self.btnTimeline)
+        self.wdgNavs.layout().addWidget(self.btnRelationship)
         self.wdgNavs.layout().addWidget(self.btnEscalation)
         self.wdgNavs.layout().addWidget(self.btnAllies)
         self.wdgNavs.layout().addWidget(self.btnSuspects)
         self.wdgNavs.layout().addWidget(self.btnCast)
         self.wdgNavs.layout().addWidget(self.btnMonster)
         self.btnTimeline.setVisible(self.plot.has_progression)
+        self.btnRelationship.setVisible(self.plot.has_relationship)
         self.btnEscalation.setVisible(self.plot.has_escalation)
         self.btnAllies.setVisible(self.plot.has_allies)
         self.btnSuspects.setVisible(self.plot.has_suspects)
@@ -561,6 +570,7 @@ class PlotWidget(QWidget, EventListener):
         self.btnGroup = QButtonGroup(self)
         self.btnGroup.addButton(self.btnPrinciples)
         self.btnGroup.addButton(self.btnTimeline)
+        self.btnGroup.addButton(self.btnRelationship)
         self.btnGroup.addButton(self.btnEscalation)
         self.btnGroup.addButton(self.btnAllies)
         self.btnGroup.addButton(self.btnSuspects)
@@ -571,6 +581,7 @@ class PlotWidget(QWidget, EventListener):
         self.stack = QStackedWidget(self)
         self.pagePrinciples, self.wdgPrinciples = self.__page(LayoutType.FLOW)
         self.pageTimeline, self.wdgTimeline = self.__page()
+        self.pageRelationship, self.wdgRelationship = self.__page()
         self.pageEscalation, self.wdgEscalation = self.__page()
         self.pageAllies, self.wdgAllies = self.__page()
         margins(self.wdgAllies, left=5, right=5)
@@ -581,6 +592,7 @@ class PlotWidget(QWidget, EventListener):
 
         link_buttons_to_pages(self.stack, [(self.btnPrinciples, self.pagePrinciples),
                                            (self.btnTimeline, self.pageTimeline),
+                                           (self.btnRelationship, self.pageRelationship),
                                            (self.btnEscalation, self.pageEscalation),
                                            (self.btnAllies, self.pageAllies),
                                            (self.btnSuspects, self.pageSuspects),
@@ -607,6 +619,8 @@ class PlotWidget(QWidget, EventListener):
             self._addGroup(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES)
         if self.plot.has_progression:
             self._addGroup(DynamicPlotPrincipleGroupType.TIMELINE)
+        if self.plot.has_relationship:
+            self._addGroup(DynamicPlotPrincipleGroupType.RELATIONSHIP)
         if self.plot.has_escalation:
             self._addGroup(DynamicPlotPrincipleGroupType.ESCALATION)
         if self.plot.has_villain:
@@ -735,6 +749,10 @@ class PlotWidget(QWidget, EventListener):
             self.plot.has_progression = toggled
             btn = self.btnTimeline
             page = self.pageTimeline
+        elif editorType == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            self.plot.has_relationship = toggled
+            btn = self.btnRelationship
+            page = self.pageRelationship
         elif editorType == DynamicPlotPrincipleGroupType.ESCALATION:
             self.plot.has_escalation = toggled
             btn = self.btnEscalation
@@ -799,6 +817,10 @@ class PlotWidget(QWidget, EventListener):
             self._timelineEditor.changed.connect(self._save)
             self._timelineEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageTimeline))
             self.wdgTimeline.layout().addWidget(self._timelineEditor)
+        if groupType == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            self._relationshipEditor = RelationshipDynamicsWidget(self.plot, self.novel)
+            self._relationshipEditor.changed.connect(self._save)
+            self.wdgRelationship.layout().addWidget(self._relationshipEditor)
         if groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
             if not self.plot.villain:
                 self.plot.villain.append(BackstoryEvent('', '', position=Position.CENTER))
@@ -839,6 +861,9 @@ class PlotWidget(QWidget, EventListener):
         elif groupType == DynamicPlotPrincipleGroupType.TIMELINE:
             clear_layout(self.wdgTimeline)
             self._timelineEditor = None
+        elif groupType == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            clear_layout(self.wdgRelationship)
+            self._relationshipEditor = None
         elif groupType == DynamicPlotPrincipleGroupType.ESCALATION:
             clear_layout(self.wdgEscalation)
             self._escalationEditor = None
@@ -875,6 +900,7 @@ class PlotWidget(QWidget, EventListener):
         if self.width() <= self.wdgNavs.width() + 25:
             self.btnPrinciples.setText('')
             self.btnTimeline.setText('')
+            self.btnRelationship.setText('')
             self.btnEscalation.setText('')
             self.btnSuspects.setText('')
             self.btnAllies.setText('')
@@ -883,6 +909,7 @@ class PlotWidget(QWidget, EventListener):
         elif self.width() > self._navWidth + 25 and self.btnPrinciples.text() == '':
             self.btnPrinciples.setText('Principles')
             self.btnTimeline.setText('Timeline')
+            self.btnRelationship.setText('Relationship')
             self.btnEscalation.setText('Escalation')
             self.btnSuspects.setText('Suspects')
             self.btnAllies.setText('Allies')
