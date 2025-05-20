@@ -1177,6 +1177,7 @@ class DynamicPlotPrincipleGroupType(Enum):
     EVOLUTION_OF_THE_MONSTER = 4
     CAST = 5
     TIMELINE = 6
+    RELATIONSHIP = 7
 
     def display_name(self) -> str:
         return self.name.lower().capitalize().replace('_', ' ')
@@ -1196,6 +1197,8 @@ class DynamicPlotPrincipleGroupType(Enum):
             return 'mdi.robber'
         elif self == DynamicPlotPrincipleGroupType.TIMELINE:
             return 'mdi.timeline-text-outline'
+        elif self == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            return 'fa5s.people-arrows'
 
     def color(self) -> str:
         if self == DynamicPlotPrincipleGroupType.ESCALATION:
@@ -1228,6 +1231,8 @@ class DynamicPlotPrincipleGroupType(Enum):
             return "The ensemble of characters involved in a caper, each with unique skills and contributions"
         elif self == DynamicPlotPrincipleGroupType.TIMELINE:
             return "Most significant events related to this storyline"
+        elif self == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            return "A dynamic relationship and its evolution between two or more characters"
 
 
 @dataclass
@@ -1398,6 +1403,7 @@ class Plot(SelectionItem, CharacterBased):
     dynamic_principles: List[DynamicPlotPrincipleGroup] = field(default_factory=list)
     has_progression: bool = False
     timeline: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+    has_relationship: bool = False
     has_escalation: bool = False
     escalation: Optional[DynamicPlotPrincipleGroup] = None
     has_allies: bool = False

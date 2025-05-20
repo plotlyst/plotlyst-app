@@ -26,7 +26,7 @@ from PyQt6.QtGui import QColor, QIcon, QResizeEvent, QEnterEvent, QPaintEvent, Q
 from PyQt6.QtWidgets import QWidget, QStackedWidget, QButtonGroup, QScrollArea, QFrame, QLabel
 from overrides import overrides
 from qthandy import flow, incr_font, \
-    margins, italic, clear_layout, vspacer, sp, vbox, transparent, incr_icon, bold, hbox, line, spacer, busy
+    margins, italic, clear_layout, vspacer, sp, vbox, transparent, incr_icon, hbox, line, spacer, busy
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
@@ -44,7 +44,7 @@ from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, label, frame, tool_btn, columns, \
-    push_btn, link_buttons_to_pages, scroll_area, rows, exclusive_buttons, scroll_to_bottom
+    push_btn, link_buttons_to_pages, scroll_area, rows, exclusive_buttons, scroll_to_bottom, wrap
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
@@ -264,13 +264,13 @@ class PlotElementSelectorPopup(PopupDialog):
         self.btnPrinciples = push_btn(IconRegistry.from_name('mdi.cube', 'grey', PLOTLYST_SECONDARY_COLOR),
                                       'Core principles',
                                       properties=['secondary-selector', 'transparent'], checkable=True)
-        incr_font(self.btnPrinciples, 2)
-        incr_icon(self.btnPrinciples, 4)
+        incr_font(self.btnPrinciples, 4)
+        incr_icon(self.btnPrinciples, 6)
         self.btnEditors = push_btn(IconRegistry.from_name('fa5s.cubes', 'grey', PLOTLYST_SECONDARY_COLOR),
                                    'Complex elements',
                                    properties=['secondary-selector', 'transparent'], checkable=True)
-        incr_font(self.btnEditors, 2)
-        incr_icon(self.btnEditors, 4)
+        incr_font(self.btnEditors, 4)
+        incr_icon(self.btnEditors, 6)
         exclusive_buttons(self, self.btnPrinciples, self.btnEditors)
 
         link_buttons_to_pages(self.stack,
@@ -340,6 +340,7 @@ class PlotElementSelectorPopup(PopupDialog):
         self.centerComplex.setProperty('white-bg', True)
 
         self._addComplexSelector(DynamicPlotPrincipleGroupType.TIMELINE, self._plot.has_progression)
+        # self._addComplexSelector(DynamicPlotPrincipleGroupType.RELATIONSHIP, self._plot.has_relationship)
         self._addComplexSelector(DynamicPlotPrincipleGroupType.ESCALATION, self._plot.has_escalation)
         self._addComplexSelector(DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES, self._plot.has_allies)
         self._addComplexSelector(DynamicPlotPrincipleGroupType.SUSPECTS, self._plot.has_suspects)
@@ -370,12 +371,12 @@ class PlotElementSelectorPopup(PopupDialog):
     def _addHeader(self, title: str, icon: str = ''):
         lbl = IconText()
         lbl.setText(title)
-        bold(lbl)
+        incr_font(lbl)
         incr_icon(lbl, 2)
         if icon:
             lbl.setIcon(IconRegistry.from_name(icon))
 
-        self.center.layout().addWidget(lbl, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.center.layout().addWidget(wrap(lbl, margin_top=5), alignment=Qt.AlignmentFlag.AlignLeft)
         self.center.layout().addWidget(line())
 
     def _addFlowContainer(self) -> QWidget:
