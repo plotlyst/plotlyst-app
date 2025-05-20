@@ -480,7 +480,10 @@ class PlotWidget(QWidget, EventListener):
         self.btnEditElements.setIconSize(QSize(32, 32))
         self.btnEditElements.installEventFilter(OpacityEventFilter(self.btnEditElements, leaveOpacity=0.7))
         incr_icon(self.btnEditElements, 2)
-        self.installEventFilter(VisibilityToggleEventFilter(target=self.btnEditElements, parent=self))
+        if self.plot.plot_type != PlotType.Relation:
+            self.installEventFilter(VisibilityToggleEventFilter(target=self.btnEditElements, parent=self))
+        else:
+            self.btnEditElements.setHidden(True)
         self.btnEditElements.clicked.connect(self._editElements)
 
         self.btnInit = push_btn(IconRegistry.plus_edit_icon(RELAXED_WHITE_COLOR), 'Initialize elements',
@@ -629,6 +632,11 @@ class PlotWidget(QWidget, EventListener):
             self._addGroup(DynamicPlotPrincipleGroupType.SUSPECTS)
         if self.plot.has_cast:
             self._addGroup(DynamicPlotPrincipleGroupType.CAST)
+
+        if self.plot.plot_type == PlotType.Relation:
+            self.wdgNavs.setHidden(True)
+            self._addGroup(DynamicPlotPrincipleGroupType.RELATIONSHIP)
+            self.stack.setCurrentWidget(self.pageRelationship)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -899,22 +907,38 @@ class PlotWidget(QWidget, EventListener):
     def __updateNavLayout(self):
         if self.width() <= self.wdgNavs.width() + 25:
             self.btnPrinciples.setText('')
+            self.btnPrinciples.setToolTip('Principles')
             self.btnTimeline.setText('')
+            self.btnTimeline.setToolTip('Timeline')
             self.btnRelationship.setText('')
+            self.btnRelationship.setToolTip('Relationship')
             self.btnEscalation.setText('')
+            self.btnEscalation.setToolTip('Escalation')
             self.btnSuspects.setText('')
+            self.btnSuspects.setToolTip('Suspects')
             self.btnAllies.setText('')
+            self.btnAllies.setToolTip('Allies')
             self.btnCast.setText('')
+            self.btnCast.setToolTip('Cast')
             self.btnMonster.setText('')
+            self.btnMonster.setToolTip('Monster')
         elif self.width() > self._navWidth + 25 and self.btnPrinciples.text() == '':
             self.btnPrinciples.setText('Principles')
+            self.btnPrinciples.setToolTip('')
             self.btnTimeline.setText('Timeline')
+            self.btnTimeline.setToolTip('')
             self.btnRelationship.setText('Relationship')
+            self.btnRelationship.setToolTip('')
             self.btnEscalation.setText('Escalation')
+            self.btnEscalation.setToolTip('')
             self.btnSuspects.setText('Suspects')
+            self.btnSuspects.setToolTip('')
             self.btnAllies.setText('Allies')
+            self.btnAllies.setToolTip('')
             self.btnCast.setText('Cast')
+            self.btnCast.setToolTip('')
             self.btnMonster.setText('Monster')
+            self.btnMonster.setToolTip('')
 
 
 class PlotEditor(QWidget, Ui_PlotEditor):
