@@ -291,10 +291,11 @@ class PlotElementSelectorPopup(PopupDialog):
         self.center.layout().addWidget(self._hintPlot)
         self.wdgPlotPrinciples = self._addFlowContainer()
 
-        self._addHeader('Character arc principles', 'mdi.mirror')
-        self._hintCharacter = label(' ', description=True, wordWrap=True)
-        self.center.layout().addWidget(self._hintCharacter)
-        self.wdgCharacterPrinciples = self._addFlowContainer()
+        if self._plot.plot_type != PlotType.Global:
+            self._addHeader('Character arc principles', 'mdi.mirror')
+            self._hintCharacter = label(' ', description=True, wordWrap=True)
+            self.center.layout().addWidget(self._hintCharacter)
+            self.wdgCharacterPrinciples = self._addFlowContainer()
 
         self._addHeader('Genre specific principles', 'mdi.drama-masks')
         self._hintGenre = label(' ', description=True, wordWrap=True)
@@ -307,11 +308,12 @@ class PlotElementSelectorPopup(PopupDialog):
                             [PlotPrincipleType.QUESTION, PlotPrincipleType.GOAL, PlotPrincipleType.ANTAGONIST,
                              PlotPrincipleType.CONFLICT, PlotPrincipleType.STAKES], selected_principles, self._hintPlot)
 
-        self._addPrinciples(self.wdgCharacterPrinciples,
-                            [PlotPrincipleType.POSITIVE_CHANGE, PlotPrincipleType.NEGATIVE_CHANGE,
-                             PlotPrincipleType.DESIRE, PlotPrincipleType.NEED, PlotPrincipleType.EXTERNAL_CONFLICT,
-                             PlotPrincipleType.INTERNAL_CONFLICT, PlotPrincipleType.FLAW], selected_principles,
-                            self._hintCharacter)
+        if self._plot.plot_type != PlotType.Global:
+            self._addPrinciples(self.wdgCharacterPrinciples,
+                                [PlotPrincipleType.POSITIVE_CHANGE, PlotPrincipleType.NEGATIVE_CHANGE,
+                                 PlotPrincipleType.DESIRE, PlotPrincipleType.NEED, PlotPrincipleType.EXTERNAL_CONFLICT,
+                                 PlotPrincipleType.INTERNAL_CONFLICT, PlotPrincipleType.FLAW], selected_principles,
+                                self._hintCharacter)
         self._addGenrePrinciples(self.wdgGenrePrinciples,
                                  [PlotPrincipleType.SKILL_SET, PlotPrincipleType.TICKING_CLOCK], selected_principles,
                                  self._hintGenre, 'Action', 'fa5s.running')
