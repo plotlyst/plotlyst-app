@@ -897,7 +897,7 @@ class PlotWidget(QWidget, EventListener):
         elif layoutType == LayoutType.FLOW:
             flow(wdg, spacing=6)
         scroll_.setWidget(wdg)
-        wdg.setProperty('relaxed-white-bg', True)
+        wdg.setProperty('bg', True)
 
         margins(wdg, left=20, right=20, top=5)
 
@@ -957,7 +957,7 @@ class PlotEditor(QWidget, Ui_PlotEditor):
 
         self.wdgEditor = frame()
         vbox(self.wdgEditor, 0, 0)
-        self.wdgEditor.setProperty('relaxed-white-bg', True)
+        self.wdgEditor.setProperty('bg', True)
         self.wdgEditor.setProperty('large-rounded', True)
         self.wdgEditor.setMaximumWidth(1000)
         self.pageDisplay.layout().addWidget(self.wdgEditor)

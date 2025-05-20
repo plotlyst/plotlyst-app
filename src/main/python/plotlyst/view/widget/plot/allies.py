@@ -28,13 +28,13 @@ from overrides import overrides
 from qthandy import decr_font, vbox, translucent, flow, sp, hbox
 from qthandy.filter import OpacityEventFilter
 
+from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import GraphicsItemType, Diagram, DiagramData, Novel, Node, DynamicPlotPrincipleGroup, \
     DynamicPlotPrinciple, Character, DynamicPlotPrincipleType
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import shadow, frame, tool_btn, fade_out_and_gc, insert_before_the_end
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.display import IconText
 from plotlyst.view.widget.graphics import NetworkGraphicsView, NetworkScene, NodeItem, CharacterItem, \
@@ -274,7 +274,7 @@ class AlliesGraphicsView(NetworkGraphicsView):
         self._novel = novel
         self._group = principleGroup
         super().__init__(parent)
-        self.setBackgroundBrush(QColor(BG_PRIMARY_COLOR))
+        self.setBackgroundBrush(QColor(RELAXED_WHITE_COLOR))
         self.setRubberBandEnabled(False)
         self.setScalingEnabled(False)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
