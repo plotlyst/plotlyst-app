@@ -372,7 +372,7 @@ class TimelineLinearWidget(QWidget):
         btnAdd = tool_btn(IconRegistry.plus_icon(color), transparent_=True, parent=self)
         btnAdd.installEventFilter(OpacityEventFilter(btnAdd))
         btnAdd.setIconSize(QSize(32, 32))
-        btnAdd.clicked.connect(self.add)
+        btnAdd.clicked.connect(lambda: self.add(Position.CENTER))
 
         btnAdd.setGeometry(0, 0, btnAdd.sizeHint().width(), btnAdd.sizeHint().height())
         margins(self, top=btnAdd.sizeHint().height())
