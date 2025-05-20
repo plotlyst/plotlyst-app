@@ -646,7 +646,7 @@ class PlotWidget(QWidget, EventListener):
 
             painter.fillPath(path, gradient)
 
-            IconRegistry.from_name('ri.ghost-2-fill').paint(
+            IconRegistry.from_name('ri.ghost-2-fill', '#373737').paint(
                 painter, self.wdgMonster.rect(), alignment=Qt.AlignmentFlag.AlignCenter
             )
 
