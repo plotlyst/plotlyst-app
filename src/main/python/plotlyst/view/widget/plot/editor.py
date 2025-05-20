@@ -323,7 +323,6 @@ class PlotElementSelectorPopup(PopupDialog):
                                  self._hintGenre, 'Horror', 'ri.knife-blood-fill')
         self._addGenrePrinciples(self.wdgGenrePrinciples,
                                  [PlotPrincipleType.CRIME, PlotPrincipleType.CRIME_CLOCK, PlotPrincipleType.SLEUTH,
-                                  PlotPrincipleType.AUTHORITY,
                                   PlotPrincipleType.MACGUFFIN], selected_principles,
                                  self._hintGenre, 'Crime', 'fa5s.mask')
         self._addGenrePrinciples(self.wdgGenrePrinciples,
