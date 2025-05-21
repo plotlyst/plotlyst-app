@@ -832,6 +832,7 @@ class PlotWidget(QWidget, EventListener):
                 self._save()
             self._relationshipEditor = RelationshipDynamicsWidget(self.plot, self.novel)
             self._relationshipEditor.changed.connect(self._save)
+            self._relationshipEditor.characterChanged.connect(self.characterChanged)
             self.wdgRelationship.layout().addWidget(self._relationshipEditor)
         if groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
             if not self.plot.villain:

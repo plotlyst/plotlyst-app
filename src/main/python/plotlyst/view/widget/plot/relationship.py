@@ -27,7 +27,7 @@ from qthandy import vbox, incr_font, incr_icon, spacer
 from qthandy.filter import OpacityEventFilter
 
 from plotlyst.common import RELAXED_WHITE_COLOR
-from plotlyst.core.domain import Plot, Novel, BackstoryEvent, Position
+from plotlyst.core.domain import Plot, Novel, BackstoryEvent, Position, Character, PlotType
 from plotlyst.view.common import push_btn, columns
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorButton
@@ -75,6 +75,7 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
 
 class RelationshipDynamicsWidget(QWidget):
     changed = pyqtSignal()
+    characterChanged = pyqtSignal()
 
     def __init__(self, plot: Plot, novel: Novel, parent=None):
         super().__init__(parent)
@@ -85,14 +86,16 @@ class RelationshipDynamicsWidget(QWidget):
         self.setMaximumWidth(600)
 
         self._sourceCharacterSelector = CharacterSelectorButton(self._novel, iconSize=48)
+        self._sourceCharacterSelector.characterSelected.connect(self._sourceCharacterSelected)
         self._targetCharacterSelector = CharacterSelectorButton(self._novel, iconSize=48)
+        self._targetCharacterSelector.characterSelected.connect(self._targetCharacterSelected)
         self._btnEdit = push_btn(IconRegistry.plus_icon('grey'), 'Add element', transparent_=True)
         self._btnEdit.installEventFilter(OpacityEventFilter(self._btnEdit, leaveOpacity=0.7))
         incr_font(self._btnEdit, 2)
         incr_icon(self._btnEdit, 4)
         self._btnEdit.clicked.connect(lambda: self.wdgEditor.add(Position.CENTER))
 
-        self.wdgHeader = columns(spacing=50)
+        self.wdgHeader = columns(spacing=55)
         self.wdgHeader.layout().addWidget(spacer())
         self.wdgHeader.layout().addWidget(self._sourceCharacterSelector)
         self.wdgHeader.layout().addWidget(self._btnEdit)
@@ -105,3 +108,22 @@ class RelationshipDynamicsWidget(QWidget):
 
         self.layout().addWidget(self.wdgHeader)
         self.layout().addWidget(self.wdgEditor)
+
+        if self._plot.relationship.source_characters:
+            self._sourceCharacterSelector.setCharacterById(self._plot.relationship.source_characters[0])
+        if self._plot.relationship.target_characters:
+            self._targetCharacterSelector.setCharacterById(self._plot.relationship.target_characters[0])
+
+    def _sourceCharacterSelected(self, character: Character):
+        self._plot.relationship.source_characters.clear()
+        self._plot.relationship.source_characters.append(character.id)
+
+        if self._plot.plot_type == PlotType.Relation:
+            self._plot.set_character(character)
+            self.characterChanged.emit()
+        self.changed.emit()
+
+    def _targetCharacterSelected(self, character: Character):
+        self._plot.relationship.target_characters.clear()
+        self._plot.relationship.target_characters.append(character.id)
+        self.changed.emit()

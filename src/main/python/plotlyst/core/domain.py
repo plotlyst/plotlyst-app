@@ -24,7 +24,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import List, Optional, Any, Dict, Set
+from typing import List, Optional, Any, Dict
 
 from PyQt6.QtCore import Qt
 from dataclasses_json import dataclass_json, Undefined, config
@@ -1393,8 +1393,8 @@ class StorylineLink:
 
 @dataclass
 class RelationshipDynamics:
-    source_characters: Set[uuid.UUID] = field(default_factory=set)
-    target_characters: Set[uuid.UUID] = field(default_factory=set)
+    source_characters: List[uuid.UUID] = field(default_factory=list)
+    target_characters: List[uuid.UUID] = field(default_factory=list)
     elements: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
 
 
