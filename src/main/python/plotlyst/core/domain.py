@@ -1395,6 +1395,7 @@ class StorylineLink:
 class RelationshipDynamics:
     source_characters: Set[uuid.UUID] = field(default_factory=set)
     target_characters: Set[uuid.UUID] = field(default_factory=set)
+    elements: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass

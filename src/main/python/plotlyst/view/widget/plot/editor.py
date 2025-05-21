@@ -33,7 +33,7 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, BLACK_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Novel, Plot, PlotType, Character, PlotPrinciple, \
     PlotPrincipleType, DynamicPlotPrincipleGroupType, LayoutType, DynamicPlotPrincipleGroup, BackstoryEvent, \
-    Position
+    Position, RelationshipDynamics
 from plotlyst.core.template import antagonist_role
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
@@ -585,7 +585,7 @@ class PlotWidget(QWidget, EventListener):
         self.stack = QStackedWidget(self)
         self.pagePrinciples, self.wdgPrinciples = self.__page(LayoutType.FLOW)
         self.pageTimeline, self.wdgTimeline = self.__page()
-        self.pageRelationship, self.wdgRelationship = self.__page()
+        self.pageRelationship, self.wdgRelationship = self.__page(LayoutType.HORIZONTAL)
         self.pageEscalation, self.wdgEscalation = self.__page()
         self.pageAllies, self.wdgAllies = self.__page()
         margins(self.wdgAllies, left=5, right=5)
@@ -827,6 +827,9 @@ class PlotWidget(QWidget, EventListener):
             self._timelineEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageTimeline))
             self.wdgTimeline.layout().addWidget(self._timelineEditor)
         if groupType == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            if self.plot.relationship is None:
+                self.plot.relationship = RelationshipDynamics()
+                self._save()
             self._relationshipEditor = RelationshipDynamicsWidget(self.plot, self.novel)
             self._relationshipEditor.changed.connect(self._save)
             self.wdgRelationship.layout().addWidget(self._relationshipEditor)
@@ -894,6 +897,8 @@ class PlotWidget(QWidget, EventListener):
         wdg = QWidget()
         if layoutType == LayoutType.VERTICAL:
             vbox(wdg)
+        elif layoutType == LayoutType.HORIZONTAL:
+            hbox(wdg)
         elif layoutType == LayoutType.FLOW:
             flow(wdg, spacing=6)
         scroll_.setWidget(wdg)

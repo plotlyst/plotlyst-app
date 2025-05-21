@@ -368,6 +368,9 @@ class TimelineLinearWidget(QWidget):
     def cardClass(self):
         return BackstoryCard
 
+    def domainClass(self):
+        return BackstoryEvent
+
     def setAddButtonEnabled(self, color: str = 'grey'):
         btnAdd = tool_btn(IconRegistry.plus_icon(color), transparent_=True, parent=self)
         btnAdd.installEventFilter(OpacityEventFilter(btnAdd))
@@ -413,7 +416,7 @@ class TimelineLinearWidget(QWidget):
         painter.end()
 
     def add(self, position: Position = Position.CENTER):
-        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        backstory = self.domainClass()('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
         self.events().append(backstory)
 
         row = self.__initEntityRow(backstory)
@@ -433,7 +436,7 @@ class TimelineLinearWidget(QWidget):
 
     def _insert(self, event: TimelineEntityRow, position: Position):
         i = self.layout().indexOf(event)
-        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        backstory = self.domainClass()('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
         self.events().insert(i, backstory)
 
         row = self.__initEntityRow(backstory)

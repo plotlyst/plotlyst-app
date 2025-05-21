@@ -857,7 +857,7 @@ class CharacterAgencyEditor(QWidget):
 
     def openSelector(self):
         def added():
-            self._menuSelector.hide()
+            # self._menuSelector.hide()
             self.refresh()
             self._menuSelector = None
 
