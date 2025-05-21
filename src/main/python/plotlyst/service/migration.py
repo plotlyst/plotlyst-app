@@ -18,7 +18,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from plotlyst.core.domain import Novel, Document, DocumentType, StoryElementType, SceneReaderInformation, \
-    ReaderInformationType, Scene, Plot, DynamicPlotPrincipleGroupType, BackstoryEvent, Position
+    ReaderInformationType, Scene, Plot, DynamicPlotPrincipleGroupType, BackstoryEvent, Position, PlotType, \
+    RelationshipDynamics
 from plotlyst.service.persistence import RepositoryPersistenceManager
 
 
@@ -39,6 +40,7 @@ def migrate_novel(novel: Novel):
     for plot in novel.plots:
         migrate_plot_principles(novel, plot)
         migrate_plot_timeline(novel, plot)
+        migrate_plot_relationships(novel, plot)
 
     for scene in novel.scenes:
         if scene.migration.migrated_functions:
@@ -83,6 +85,20 @@ def migrate_plot_timeline(novel: Novel, plot: Plot):
 
     plot.has_progression = True
     plot.progression.clear()
+
+    RepositoryPersistenceManager.instance().update_novel(novel)
+
+
+def migrate_plot_relationships(novel: Novel, plot: Plot):
+    if plot.plot_type != PlotType.Relation or plot.relationship is not None:
+        return
+
+    plot.relationship = RelationshipDynamics()
+    if plot.character_id:
+        plot.relationship.source_characters.append(plot.character_id)
+    if plot.relation_character_id:
+        plot.relationship.target_characters.append(plot.character_id)
+        plot.relation_character_id = None
 
     RepositoryPersistenceManager.instance().update_novel(novel)
 
