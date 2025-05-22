@@ -1391,11 +1391,36 @@ class StorylineLink:
     text: str = ''
 
 
+class RelationshipDynamicsType(Enum):
+    SEPARATE = 0
+    SHARED = 1
+
+
+class RelationshipDynamicsDataType(Enum):
+    TEXT = 0
+    RELATION = 1
+
+
+class ConnectorType(Enum):
+    LEFT_TO_RIGHT = 0
+    RIGHT_TO_LEFT = 1
+    BIDIRECTIONAL = 2
+
+
+@dataclass
+class RelationshipDynamicsElement(BackstoryEvent):
+    source: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    target: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    rel_type: RelationshipDynamicsType = RelationshipDynamicsType.SEPARATE
+    data_type: RelationshipDynamicsDataType = RelationshipDynamicsDataType.TEXT
+    connector_type: Optional[ConnectorType] = None
+
+
 @dataclass
 class RelationshipDynamics:
     source_characters: List[uuid.UUID] = field(default_factory=list)
     target_characters: List[uuid.UUID] = field(default_factory=list)
-    elements: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+    elements: List[RelationshipDynamicsElement] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass

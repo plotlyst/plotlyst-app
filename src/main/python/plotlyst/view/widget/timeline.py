@@ -54,14 +54,24 @@ class TimelineTheme:
     card_bg_color: str = '#ffe8d6'
 
 
-class BackstoryCard(QWidget):
-    TYPE_SIZE: int = 36
+class AbstractTimelineCard(QWidget):
     edited = pyqtSignal()
     deleteRequested = pyqtSignal(object)
 
-    def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None, iconPicker: bool = True):
+    def __init__(self, backstory: BackstoryEvent, parent=None):
         super().__init__(parent)
         self.backstory = backstory
+
+        self.btnDrag = DotsDragIcon()
+        self.btnDrag.setVisible(False)
+        decr_icon(self.btnDrag, 2)
+
+
+class BackstoryCard(AbstractTimelineCard):
+    TYPE_SIZE: int = 36
+
+    def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None, iconPicker: bool = True):
+        super().__init__(backstory, parent)
         self._theme = theme
 
         vbox(self, 0)
@@ -77,11 +87,7 @@ class BackstoryCard(QWidget):
         if iconPicker:
             self.btnType.clicked.connect(self._selectIcon)
 
-        self.btnDrag = DotsDragIcon()
-        self.btnDrag.setVisible(False)
-        decr_icon(self.btnDrag, 2)
         self.btnDrag.clicked.connect(self._showContextMenu)
-        # self.btnDrag.clicked.connect(self._remove)
 
         self.lineKeyPhrase = QLineEdit()
         self.lineKeyPhrase.setPlaceholderText('Keyphrase')
@@ -110,7 +116,6 @@ class BackstoryCard(QWidget):
         self.layout().addWidget(self.cardFrame)
 
         self.cardFrame.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self.cardFrame))
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self))
 
         self.btnType.raise_()
 
@@ -417,6 +422,9 @@ class TimelineLinearWidget(QWidget):
 
     def add(self, position: Position = Position.CENTER):
         backstory = self.domainClass()('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        self._addElement(backstory)
+
+    def _addElement(self, backstory: BackstoryEvent):
         self.events().append(backstory)
 
         row = self.__initEntityRow(backstory)
@@ -435,8 +443,11 @@ class TimelineLinearWidget(QWidget):
             row.setVisible(True)
 
     def _insert(self, event: TimelineEntityRow, position: Position):
-        i = self.layout().indexOf(event)
         backstory = self.domainClass()('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        self._insertElement(backstory, event)
+
+    def _insertElement(self, backstory: BackstoryEvent, event: TimelineEntityRow):
+        i = self.layout().indexOf(event)
         self.events().insert(i, backstory)
 
         row = self.__initEntityRow(backstory)
