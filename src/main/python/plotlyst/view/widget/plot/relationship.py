@@ -198,8 +198,7 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
         menu.exec()
 
 
-class RelationshipDynamicsWidget(QWidget):
-    changed = pyqtSignal()
+class RelationshipDynamicsHeader(QWidget):
     characterChanged = pyqtSignal()
 
     def __init__(self, plot: Plot, novel: Novel, parent=None):
@@ -207,32 +206,23 @@ class RelationshipDynamicsWidget(QWidget):
         self._plot = plot
         self._novel = novel
 
-        vbox(self)
         self.setMaximumWidth(700)
 
         self._sourceCharacterSelector = CharacterSelectorButton(self._novel, iconSize=48)
         self._sourceCharacterSelector.characterSelected.connect(self._sourceCharacterSelected)
         self._targetCharacterSelector = CharacterSelectorButton(self._novel, iconSize=48)
         self._targetCharacterSelector.characterSelected.connect(self._targetCharacterSelected)
-        self._btnEdit = push_btn(IconRegistry.plus_icon('grey'), 'Add element', transparent_=True)
-        self._btnEdit.installEventFilter(OpacityEventFilter(self._btnEdit, leaveOpacity=0.7))
-        incr_font(self._btnEdit, 2)
-        incr_icon(self._btnEdit, 4)
-        self._btnEdit.clicked.connect(lambda: self.wdgEditor.add(Position.CENTER))
+        self.btnEdit = push_btn(IconRegistry.plus_icon('grey'), 'Add element', transparent_=True)
+        self.btnEdit.installEventFilter(OpacityEventFilter(self.btnEdit, leaveOpacity=0.7))
+        incr_font(self.btnEdit, 2)
+        incr_icon(self.btnEdit, 4)
 
-        self.wdgHeader = columns(spacing=55)
-        self.wdgHeader.layout().addWidget(spacer())
-        self.wdgHeader.layout().addWidget(self._sourceCharacterSelector)
-        self.wdgHeader.layout().addWidget(self._btnEdit)
-        self.wdgHeader.layout().addWidget(self._targetCharacterSelector)
-        self.wdgHeader.layout().addWidget(spacer())
-
-        self.wdgEditor = RelationshipDynamicsEditor(self._plot)
-        self.wdgEditor.refresh()
-        self.wdgEditor.changed.connect(self.changed)
-
-        self.layout().addWidget(self.wdgHeader)
-        self.layout().addWidget(self.wdgEditor)
+        hbox(self, 0, 55)
+        self.layout().addWidget(spacer())
+        self.layout().addWidget(self._sourceCharacterSelector)
+        self.layout().addWidget(self.btnEdit, alignment=Qt.AlignmentFlag.AlignBottom)
+        self.layout().addWidget(self._targetCharacterSelector)
+        self.layout().addWidget(spacer())
 
         if self._plot.relationship.source_characters:
             self._sourceCharacterSelector.setCharacterById(self._plot.relationship.source_characters[0])
@@ -245,10 +235,36 @@ class RelationshipDynamicsWidget(QWidget):
 
         if self._plot.plot_type == PlotType.Relation:
             self._plot.set_character(character)
-            self.characterChanged.emit()
-        self.changed.emit()
+
+        self.characterChanged.emit()
 
     def _targetCharacterSelected(self, character: Character):
         self._plot.relationship.target_characters.clear()
         self._plot.relationship.target_characters.append(character.id)
-        self.changed.emit()
+        self.characterChanged.emit()
+
+
+class RelationshipDynamicsWidget(QWidget):
+    changed = pyqtSignal()
+    characterChanged = pyqtSignal()
+
+    def __init__(self, plot: Plot, novel: Novel, parent=None):
+        super().__init__(parent)
+        self._plot = plot
+        self._novel = novel
+
+        vbox(self)
+        self.setMaximumWidth(700)
+
+        self.wdgEditor = RelationshipDynamicsEditor(self._plot)
+        self.wdgEditor.refresh()
+        self.wdgEditor.changed.connect(self.changed)
+
+        if self._plot.plot_type != PlotType.Relation:
+            self.wdgRelationsHeader = RelationshipDynamicsHeader(self._plot, novel)
+            self.wdgRelationsHeader.characterChanged.connect(self.changed)
+            self.wdgRelationsHeader.characterChanged.connect(self.characterChanged)
+            self.wdgRelationsHeader.btnEdit.clicked.connect(lambda: self.wdgEditor.add(Position.CENTER))
+            self.layout().addWidget(self.wdgRelationsHeader, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.layout().addWidget(self.wdgEditor)

@@ -44,7 +44,7 @@ from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager, delete_plot
 from plotlyst.settings import STORY_LINE_COLOR_CODES
 from plotlyst.view.common import action, fade_out_and_gc, label, frame, tool_btn, columns, \
-    push_btn, link_buttons_to_pages, scroll_area, rows, exclusive_buttons, scroll_to_bottom, wrap
+    push_btn, link_buttons_to_pages, scroll_area, rows, exclusive_buttons, scroll_to_bottom, wrap, insert_after
 from plotlyst.view.generated.plot_editor_widget_ui import Ui_PlotEditor
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
@@ -60,7 +60,7 @@ from plotlyst.view.widget.plot.matrix import StorylinesImpactMatrix
 from plotlyst.view.widget.plot.principle import PlotPrincipleEditor, \
     PrincipleSelectorObject, principle_type_index, principle_icon, principle_hint
 from plotlyst.view.widget.plot.progression import DynamicPlotPrinciplesWidget
-from plotlyst.view.widget.plot.relationship import RelationshipDynamicsWidget
+from plotlyst.view.widget.plot.relationship import RelationshipDynamicsWidget, RelationshipDynamicsHeader
 from plotlyst.view.widget.plot.timeline import StorylineTimelineWidget, StorylineVillainEvolutionWidget
 from plotlyst.view.widget.tree import TreeView, ContainerNode
 from plotlyst.view.widget.utility import ColorPicker, IconSelectorDialog
@@ -638,6 +638,14 @@ class PlotWidget(QWidget, EventListener):
             self.wdgNavs.setHidden(True)
             self._addGroup(DynamicPlotPrincipleGroupType.RELATIONSHIP)
             self.stack.setCurrentWidget(self.pageRelationship)
+
+            self.wdgRelationsHeader = RelationshipDynamicsHeader(self.plot, novel)
+            self.wdgRelationsHeader.characterChanged.connect(self._save)
+            self.wdgRelationsHeader.characterChanged.connect(self.characterChanged)
+            self.wdgRelationsHeader.btnEdit.clicked.connect(
+                lambda: self._relationshipEditor.wdgEditor.add(Position.CENTER))
+
+            insert_after(self, self.wdgRelationsHeader, self.wdgNavs, alignment=Qt.AlignmentFlag.AlignCenter)
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
