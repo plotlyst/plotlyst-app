@@ -586,6 +586,7 @@ class PlotWidget(QWidget, EventListener):
         self.pagePrinciples, self.wdgPrinciples = self.__page(LayoutType.FLOW)
         self.pageTimeline, self.wdgTimeline = self.__page()
         self.pageRelationship, self.wdgRelationship = self.__page(LayoutType.HORIZONTAL)
+        margins(self.wdgRelationship, top=0)
         self.pageEscalation, self.wdgEscalation = self.__page()
         self.pageAllies, self.wdgAllies = self.__page()
         margins(self.wdgAllies, left=5, right=5)
@@ -841,6 +842,7 @@ class PlotWidget(QWidget, EventListener):
             self._relationshipEditor = RelationshipDynamicsWidget(self.plot, self.novel)
             self._relationshipEditor.changed.connect(self._save)
             self._relationshipEditor.characterChanged.connect(self.characterChanged)
+            self._relationshipEditor.wdgEditor.addedToTheEnd.connect(lambda: scroll_to_bottom(self.pageRelationship))
             self.wdgRelationship.layout().addWidget(self._relationshipEditor)
         if groupType == DynamicPlotPrincipleGroupType.EVOLUTION_OF_THE_MONSTER:
             if not self.plot.villain:
