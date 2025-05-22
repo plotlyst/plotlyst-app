@@ -21,20 +21,20 @@ from typing import List, Optional
 
 from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QPaintEvent
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QWidget, QTextEdit
 from overrides import overrides
-from qthandy import vbox, incr_font, incr_icon, spacer, hbox, bold
+from qthandy import vbox, incr_font, incr_icon, spacer, hbox, margins
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Plot, Novel, BackstoryEvent, Position, Character, PlotType, \
     RelationshipDynamicsElement, RelationshipDynamicsType, ConnectorType, RelationshipDynamicsDataType
-from plotlyst.view.common import push_btn, columns, action, shadow
+from plotlyst.env import app_env
+from plotlyst.view.common import push_btn, columns, action, shadow, frame
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorButton
-from plotlyst.view.widget.display import PopupDialog, ConnectorWidget
-from plotlyst.view.widget.input import TextEditBubbleWidget
+from plotlyst.view.widget.display import PopupDialog, ConnectorWidget, icon_text
 from plotlyst.view.widget.timeline import TimelineLinearWidget, TimelineTheme, AbstractTimelineCard, TimelineEntityRow
 
 
@@ -52,51 +52,78 @@ class RelationshipDynamicsEditorPopup(PopupDialog):
         self.exec()
 
 
-class RelationshipDynamicsTextElement(TextEditBubbleWidget):
+class RelationshipDynamicsTextElement(QTextEdit):
     changed = pyqtSignal()
 
     def __init__(self, element: RelationshipDynamicsElement, parent=None, target: bool = False):
         super().__init__(parent)
         self.element = element
         self._target = target
-        self._title.setText(self.element.keyphrase)
-        bold(self._title, False)
-        self._textedit.setText(self.element.target if target else self.element.source)
-        if self.element.type_icon:
-            self._title.setIcon(IconRegistry.from_name(self.element.type_icon, self.element.type_color))
+        self.setProperty('white-bg', True)
+        self.setProperty('rounded-on-bottom', True)
 
-        shadow(self._textedit)
+        self.setTabChangesFocus(True)
+        if app_env.is_mac():
+            incr_font(self)
+        self.setMinimumSize(175, 90)
+        self.setMaximumSize(190, 110)
+        self.verticalScrollBar().setVisible(False)
+        self.setText(self.element.target if target else self.element.source)
 
-    @overrides
+        self.textChanged.connect(self._textChanged)
+
+        shadow(self)
+
     def _textChanged(self):
         if self._target:
-            self.element.target = self._textedit.toPlainText()
+            self.element.target = self.toPlainText()
         else:
-            self.element.source = self._textedit.toPlainText()
+            self.element.source = self.toPlainText()
 
         self.changed.emit()
 
 
 class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
-    def __init__(self, element: RelationshipDynamicsElement, theme: TimelineTheme, parent=None):
+    def __init__(self, element: RelationshipDynamicsElement, _: TimelineTheme, parent=None):
         super().__init__(element, parent)
         self._element = element
-        hbox(self)
 
+        vbox(self, 0, 0)
         self.btnDrag.clicked.connect(self._showContextMenu)
 
         self._source = self.__initTextElement()
-        if element.rel_type == RelationshipDynamicsType.SEPARATE:
-            self.layout().addWidget(self._source)
-            if element.connector_type:
-                self.layout().addWidget(ConnectorWidget(direction=element.connector_type))
-            self._target = self.__initTextElement(target=True)
-            self.layout().addWidget(self._target)
-        elif element.rel_type == RelationshipDynamicsType.SHARED:
-            self.layout().addWidget(self._source, alignment=Qt.AlignmentFlag.AlignCenter)
+        self._title = icon_text(self._element.type_icon, self._element.keyphrase, self._element.type_color)
+        incr_font(self._title)
+        font = self._title.font()
+        font.setFamily(app_env.serif_font())
+        self._title.setFont(font)
+        wdgHeader = frame()
+        hbox(wdgHeader, 2, 0)
+        wdgHeader.layout().addWidget(self._title, alignment=Qt.AlignmentFlag.AlignCenter)
+        wdgHeader.setProperty('rounded-on-top', True)
+        wdgHeader.setProperty('muted-bg', True)
 
-        self.layout().addWidget(self.btnDrag)
+        wdgEditor = columns(3, 3)
+        margins(wdgEditor, top=0)
+
+        if element.rel_type == RelationshipDynamicsType.SEPARATE:
+            wdgEditor.layout().addWidget(self._source)
+            if element.connector_type:
+                wdgEditor.layout().addWidget(ConnectorWidget(direction=element.connector_type))
+            self._target = self.__initTextElement(target=True)
+            wdgEditor.layout().addWidget(self._target)
+
+        elif element.rel_type == RelationshipDynamicsType.SHARED:
+            wdgEditor.layout().addWidget(self._source, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.layout().addWidget(wdgHeader)
+        self.layout().addWidget(wdgEditor)
+
+        self.btnDrag.setParent(self)
+        self.btnDrag.setGeometry(self.sizeHint().width() - self.btnDrag.sizeHint().width(), 0,
+                                 self.btnDrag.sizeHint().width(),
+                                 self.btnDrag.sizeHint().height())
 
         self.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self))
 
