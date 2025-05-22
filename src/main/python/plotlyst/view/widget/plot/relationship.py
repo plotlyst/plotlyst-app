@@ -23,7 +23,7 @@ from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QPaintEvent
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, incr_font, incr_icon, spacer, hbox
+from qthandy import vbox, incr_font, incr_icon, spacer, hbox, bold
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
@@ -60,6 +60,8 @@ class RelationshipDynamicsTextElement(TextEditBubbleWidget):
         self.element = element
         self._target = target
         self._title.setText(self.element.keyphrase)
+        bold(self._title, False)
+        self._textedit.setText(self.element.target if target else self.element.source)
         if self.element.type_icon:
             self._title.setIcon(IconRegistry.from_name(self.element.type_icon, self.element.type_color))
 
@@ -154,7 +156,8 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
                 self._addElement(element)
 
         def addConflict():
-            element = RelationshipDynamicsElement('Conflict', '', position=position,
+            element = RelationshipDynamicsElement('Conflict', '', type_icon='mdi.sword-cross', type_color='#e57c04',
+                                                  position=position,
                                                   rel_type=RelationshipDynamicsType.SHARED,
                                                   data_type=RelationshipDynamicsDataType.TEXT)
             if row:
@@ -178,7 +181,7 @@ class RelationshipDynamicsWidget(QWidget):
         self._novel = novel
 
         vbox(self)
-        self.setMaximumWidth(600)
+        self.setMaximumWidth(700)
 
         self._sourceCharacterSelector = CharacterSelectorButton(self._novel, iconSize=48)
         self._sourceCharacterSelector.characterSelected.connect(self._sourceCharacterSelected)
