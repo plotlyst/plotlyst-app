@@ -21,7 +21,7 @@ from enum import Enum
 from functools import partial
 from typing import List, Optional
 
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import pyqtSignal, Qt, QSize
 from PyQt6.QtGui import QPaintEvent
 from PyQt6.QtWidgets import QWidget, QTextEdit
 from overrides import overrides
@@ -29,29 +29,14 @@ from qthandy import vbox, incr_font, incr_icon, spacer, hbox, margins
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget, GridMenuWidget
 
-from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Plot, Novel, BackstoryEvent, Position, Character, PlotType, \
     RelationshipDynamicsElement, RelationshipDynamicsType, RelationshipDynamicsDataType, ConnectorType
 from plotlyst.env import app_env
 from plotlyst.view.common import push_btn, columns, action, shadow, frame
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorButton
-from plotlyst.view.widget.display import PopupDialog, ConnectorWidget, icon_text
+from plotlyst.view.widget.display import ConnectorWidget, icon_text
 from plotlyst.view.widget.timeline import TimelineLinearWidget, TimelineTheme, AbstractTimelineCard, TimelineEntityRow
-
-
-class RelationshipDynamicsEditorPopup(PopupDialog):
-    def __init__(self, plot: Plot, parent=None):
-        super().__init__(parent)
-        self.plot = plot
-
-        self.btnClose = push_btn(IconRegistry.ok_icon(RELAXED_WHITE_COLOR), 'Apply', properties=['confirm', 'positive'])
-        self.btnClose.clicked.connect(self.accept)
-
-        self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
-
-    def display(self):
-        self.exec()
 
 
 class RelationshipDynamicsTextElement(QTextEdit):
@@ -98,6 +83,7 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
         self._source = self.__initTextElement()
         self._title = icon_text(self._element.type_icon, self._element.keyphrase, self._element.type_color)
+        self._title.setIconSize(QSize(28, 28))
         incr_font(self._title)
         font = self._title.font()
         font.setFamily(app_env.serif_font())
@@ -312,7 +298,7 @@ class RelationshipDynamicsWidget(QWidget):
         self._novel = novel
 
         vbox(self)
-        self.setMaximumWidth(700)
+        self.setMaximumWidth(800)
 
         self.wdgEditor = RelationshipDynamicsEditor(self._plot)
         self.wdgEditor.refresh()
