@@ -57,7 +57,7 @@ from plotlyst.model.common import proxy
 from plotlyst.service.grammar import language_tool_proxy, dictionary
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import action, label, push_btn, tool_btn, insert_before, fade_out_and_gc, shadow, emoji_font, \
-    fade_in, ButtonPressResizeEventFilter
+    fade_in, ButtonPressResizeEventFilter, columns, link_editor_to_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_color
@@ -1154,6 +1154,73 @@ class TextInputDialog(PopupDialog):
 
     def _textChanged(self, key: str):
         self.btnConfirm.setEnabled(len(key) > 0)
+
+
+class IconTextInputDialog(PopupDialog):
+    def __init__(self, title: str, placeholder: str, value: str = '', description: str = '', icon: str = 'fa5s.icons',
+                 color: str = 'black', parent=None):
+        super().__init__(parent)
+        self._icon = ''
+        self._color = color
+
+        self.title = label(title, h5=True)
+        sp(self.title).v_max()
+        self.wdgTitle = columns(0, 5)
+        self.wdgTitle.layout().addWidget(self.title, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgTitle.layout().addWidget(self.btnReset, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.lblDescription = label(description, description=True, wordWrap=True)
+        self.lblDescription.setMinimumWidth(450)
+
+        self.lineKey = DecoratedLineEdit(iconEditable=True, autoAdjustable=False)
+        self.lineKey.setMinimumWidth(250)
+        self.lineKey.lineEdit.setStyleSheet('')
+        self.lineKey.lineEdit.setProperty('white-bg', True)
+        self.lineKey.lineEdit.setProperty('rounded', True)
+        incr_font(self.lineKey.lineEdit)
+        self.lineKey.lineEdit.setPlaceholderText(placeholder)
+        self.lineKey.setText(value)
+        self.lineKey.setIcon(IconRegistry.from_name(icon, color))
+        # self.lineKey.lineEdit.textChanged.connect(self._textChanged)
+        self.lineKey.iconChanged.connect(self._iconChanged)
+
+        self.btnConfirm = push_btn(text='Confirm', properties=['confirm', 'positive'])
+        self.btnConfirm.setShortcut(Qt.Key.Key_Return)
+        sp(self.btnConfirm).h_exp()
+        self.btnConfirm.clicked.connect(self.accept)
+        self.btnConfirm.setDisabled(True)
+        link_editor_to_btn(self.lineKey.lineEdit, self.btnConfirm, disabledShake=True, shakedWidget=self.lineKey)
+        # self.btnConfirm.installEventFilter(
+        #     DisabledClickEventFilter(self.btnConfirm, lambda: qtanim.shake(self.lineKey)))
+
+        self.btnCancel = push_btn(text='Cancel', properties=['confirm', 'cancel'])
+        self.btnCancel.clicked.connect(self.reject)
+
+        self.frame.layout().addWidget(self.wdgTitle)
+        self.frame.layout().addWidget(self.lblDescription)
+        if not description:
+            self.lblDescription.setHidden(True)
+        self.frame.layout().addWidget(self.lineKey, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(group(self.btnCancel, self.btnConfirm), alignment=Qt.AlignmentFlag.AlignRight)
+
+    def display(self):
+        self.lineKey.lineEdit.setFocus()
+        result = self.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            return self.lineKey.lineEdit.text(), self._icon, self._color
+
+        return None
+
+    @classmethod
+    def edit(cls, title: str = 'Edit text', placeholder: str = 'Edit text', value: str = '', description: str = '',
+             icon: str = 'fa5s.icons',
+             color: str = 'black'):
+        return cls.popup(title, placeholder, value, description, icon, color)
+
+    def _iconChanged(self, icon: str, color: str):
+        self._icon = icon
+        self._color = color
 
 
 class SpinBoxDialog(PopupDialog):

@@ -38,6 +38,7 @@ from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.display import ConnectorWidget, icon_text
+from plotlyst.view.widget.input import IconTextInputDialog
 from plotlyst.view.widget.timeline import TimelineLinearWidget, TimelineTheme, AbstractTimelineCard, TimelineEntityRow
 
 
@@ -188,6 +189,8 @@ class RelationshipDynamicsSelectorTemplate(Enum):
 
 class RelationshipDynamicsSelector(GridMenuWidget):
     selected = pyqtSignal(RelationshipDynamicsSelectorTemplate)
+    customIndividualSelected = pyqtSignal()
+    customSharedSelected = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent, largeIcons=True)
@@ -204,6 +207,8 @@ class RelationshipDynamicsSelector(GridMenuWidget):
         self._addAction(RelationshipDynamicsSelectorTemplate.Origin, row, 2)
         self._addAction(RelationshipDynamicsSelectorTemplate.Social_status, row, 3)
 
+        self.addAction(action('Custom...', slot=self.customIndividualSelected), row, 4)
+
         row += 1
         self.addSection(
             "Elements that are shared between the characters, e.g., interpersonal conflict, shared goal, etc.",
@@ -214,6 +219,8 @@ class RelationshipDynamicsSelector(GridMenuWidget):
         self._addAction(RelationshipDynamicsSelectorTemplate.Conflict, row, 0)
         self._addAction(RelationshipDynamicsSelectorTemplate.Goal, row, 1)
         self._addAction(RelationshipDynamicsSelectorTemplate.Relationship_evolution, row, 2, colSpan=2)
+
+        self.addAction(action('Custom...', slot=self.customSharedSelected), row, 4)
 
     def _addAction(self, template: RelationshipDynamicsSelectorTemplate, row: int, col: int, colSpan: int = 1):
         self.addAction(action(template.display_name, IconRegistry.from_name(template.icon),
@@ -251,19 +258,41 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
         self._displayMenu(position, event)
 
     def _displayMenu(self, position: Position, row: Optional[TimelineEntityRow] = None):
-        def add(template: RelationshipDynamicsSelectorTemplate):
-            element = template.element()
-            element.position = position
+        self._menu = RelationshipDynamicsSelector()
+        self._menu.selected.connect(lambda x: self._add(x, position, row))
+        self._menu.customIndividualSelected.connect(
+            partial(self._addCustom, RelationshipDynamicsType.SEPARATE, ConnectorType.BIDIRECTIONAL, position, row))
+        self._menu.customSharedSelected.connect(
+            partial(self._addCustom, RelationshipDynamicsType.SHARED, None, position, row))
+        self._menu.exec()
+
+    def _add(self, template: RelationshipDynamicsSelectorTemplate, position: Position,
+             row: Optional[TimelineEntityRow] = None):
+        element = template.element()
+        element.position = position
+        if row:
+            self._insertElement(element, row)
+        else:
+            self._addElement(element)
+
+        self._menu = None
+
+    def _addCustom(self, type_: RelationshipDynamicsType, connectorType: Optional[ConnectorType], position: Position,
+                   row: Optional[TimelineEntityRow] = None):
+        result = IconTextInputDialog.edit('Edit custom element', placeholder='Name',
+                                          description="Define a custom name for a relationship element, and optionally select an icon")
+        if result is not None:
+            element = RelationshipDynamicsElement(result[0], '',
+                                                  type_icon=result[1] if result[1] else 'msc.debug-stackframe-dot',
+                                                  type_color=result[2],
+                                                  rel_type=type_, position=position,
+                                                  data_type=RelationshipDynamicsDataType.TEXT,
+                                                  connector_type=connectorType)
+
             if row:
                 self._insertElement(element, row)
             else:
                 self._addElement(element)
-
-            self._menu = None
-
-        self._menu = RelationshipDynamicsSelector()
-        self._menu.selected.connect(add)
-        self._menu.exec()
 
 
 class RelationshipDynamicsHeader(QWidget):
