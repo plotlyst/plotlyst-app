@@ -395,7 +395,6 @@ class ManuscriptDailyProgress(QWidget):
         self.lblRemoved = label('', color='grey', h3=True)
 
         self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
-        self.btnSnapshot.setHidden(True)
         self.layout().addWidget(group(self.btnDay, self.btnJumpToToday, margin=0))
         self.layout().addWidget(group(self.lblAdded, vline(), self.lblRemoved, margin=0, spacing=0),
                                 alignment=Qt.AlignmentFlag.AlignRight)
