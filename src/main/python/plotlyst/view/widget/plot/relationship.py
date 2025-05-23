@@ -22,7 +22,7 @@ from functools import partial
 from typing import List, Optional
 
 from PyQt6.QtCore import pyqtSignal, Qt, QSize
-from PyQt6.QtGui import QPaintEvent
+from PyQt6.QtGui import QPaintEvent, QResizeEvent
 from PyQt6.QtWidgets import QWidget, QTextEdit
 from overrides import overrides
 from qthandy import vbox, incr_font, incr_icon, spacer, hbox, margins
@@ -53,7 +53,7 @@ class RelationshipDynamicsTextElement(QTextEdit):
         if app_env.is_mac():
             incr_font(self)
         self.setMinimumSize(175, 90)
-        self.setMaximumSize(190, 110)
+        self.setMaximumSize(210, 110)
         self.verticalScrollBar().setVisible(False)
         self.setText(self.element.target if target else self.element.source)
         self.setPlaceholderText(
@@ -111,11 +111,15 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
         self.layout().addWidget(wdgEditor)
 
         self.btnDrag.setParent(self)
-        self.btnDrag.setGeometry(self.sizeHint().width() - self.btnDrag.sizeHint().width(), 0,
+        self.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self))
+
+        self.setMinimumWidth(550)
+
+    @overrides
+    def resizeEvent(self, a0: QResizeEvent) -> None:
+        self.btnDrag.setGeometry(self.width() - self.btnDrag.sizeHint().width(), 0,
                                  self.btnDrag.sizeHint().width(),
                                  self.btnDrag.sizeHint().height())
-
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self))
 
     def _showContextMenu(self):
         menu = MenuWidget()
