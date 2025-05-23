@@ -97,18 +97,6 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
         wdgHeader.layout().addWidget(self._title, alignment=Qt.AlignmentFlag.AlignCenter)
         wdgHeader.setProperty('rounded-on-top', True)
         wdgHeader.setProperty('muted-bg', True)
-        # wdgHeader.setStyleSheet(f'''
-        #     QFrame {{
-        #         background: {self._element.type_color};
-        #         border: 1px solid {self._element.type_color};
-        #         border-top-left-radius: 6px;
-        #         border-top-right-radius: 6px;
-        #         border-bottom-left-radius: 0px;
-        #         border-bottom-right-radius: 0px;
-        #     }}
-        # ''')
-
-        # translucent(wdgHeader, 0.7)
 
         wdgEditor = columns(3, 3)
         margins(wdgEditor, top=0)
