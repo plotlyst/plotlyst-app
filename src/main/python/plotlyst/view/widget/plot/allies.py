@@ -28,13 +28,13 @@ from overrides import overrides
 from qthandy import decr_font, vbox, translucent, flow, sp, hbox
 from qthandy.filter import OpacityEventFilter
 
+from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import GraphicsItemType, Diagram, DiagramData, Novel, Node, DynamicPlotPrincipleGroup, \
     DynamicPlotPrinciple, Character, DynamicPlotPrincipleType
 from plotlyst.service.cache import entities_registry
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import shadow, frame, tool_btn, fade_out_and_gc, insert_before_the_end
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.display import IconText
 from plotlyst.view.widget.graphics import NetworkGraphicsView, NetworkScene, NodeItem, CharacterItem, \
@@ -96,10 +96,10 @@ class AlliesEmotionalSlider(QWidget):
 
         vbox(self)
         self.label = IconText()
-        self.label.setText('Relationship')
+        self.label.setText('Sympathy')
         translucent(self.label, 0.7)
         translucent(self.slider, 0.7)
-        self.label.setIcon(IconRegistry.from_name('fa5s.heart', '#f25c54'))
+        self.label.setIcon(IconRegistry.from_name('fa5.heart', '#f25c54'))
         self.layout().addWidget(self.label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.slider)
 
@@ -177,7 +177,7 @@ class AlliesGraphicsScene(NetworkScene):
 
         self.__addIcon(Node(mid - 7, -18, GraphicsItemType.ICON, icon='fa5s.thumbs-up', color='#266dd3', size=20))
         self.__addIcon(Node(mid - 7, 360, GraphicsItemType.ICON, icon='fa5s.thumbs-down', color='#9e1946', size=20))
-        self.__addIcon(Node(355, 195, GraphicsItemType.ICON, icon='fa5s.heart', color='#f25c54', size=20))
+        self.__addIcon(Node(355, 195, GraphicsItemType.ICON, icon='fa5.heart', color='#f25c54', size=20))
         # self.__addIcon(Node(-17, 195, GraphicsItemType.ICON, icon='fa5s.angry', color='#ef0000', size=20))
 
     def addNewAlly(self, principle: DynamicPlotPrinciple):
@@ -274,7 +274,7 @@ class AlliesGraphicsView(NetworkGraphicsView):
         self._novel = novel
         self._group = principleGroup
         super().__init__(parent)
-        self.setBackgroundBrush(QColor(BG_PRIMARY_COLOR))
+        self.setBackgroundBrush(QColor(RELAXED_WHITE_COLOR))
         self.setRubberBandEnabled(False)
         self.setScalingEnabled(False)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.NoAnchor)

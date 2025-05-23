@@ -1177,6 +1177,7 @@ class DynamicPlotPrincipleGroupType(Enum):
     EVOLUTION_OF_THE_MONSTER = 4
     CAST = 5
     TIMELINE = 6
+    RELATIONSHIP = 7
 
     def display_name(self) -> str:
         return self.name.lower().capitalize().replace('_', ' ')
@@ -1185,7 +1186,7 @@ class DynamicPlotPrincipleGroupType(Enum):
         if self == DynamicPlotPrincipleGroupType.ESCALATION:
             return 'ph.shuffle-bold'
         elif self == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            return 'fa5s.thumbs-down'
+            return 'fa5s.thumbs-up'
         elif self == DynamicPlotPrincipleGroupType.SUSPECTS:
             return 'ri.criminal-fill'
         elif self == DynamicPlotPrincipleGroupType.ELEMENTS_OF_WONDER:
@@ -1196,6 +1197,8 @@ class DynamicPlotPrincipleGroupType(Enum):
             return 'mdi.robber'
         elif self == DynamicPlotPrincipleGroupType.TIMELINE:
             return 'mdi.timeline-text-outline'
+        elif self == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            return 'fa5s.people-arrows'
 
     def color(self) -> str:
         if self == DynamicPlotPrincipleGroupType.ESCALATION:
@@ -1228,6 +1231,8 @@ class DynamicPlotPrincipleGroupType(Enum):
             return "The ensemble of characters involved in a caper, each with unique skills and contributions"
         elif self == DynamicPlotPrincipleGroupType.TIMELINE:
             return "Most significant events related to this storyline"
+        elif self == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            return "A dynamic relationship and its evolution between two or more characters"
 
 
 @dataclass
@@ -1386,6 +1391,38 @@ class StorylineLink:
     text: str = ''
 
 
+class RelationshipDynamicsType(Enum):
+    SEPARATE = 0
+    SHARED = 1
+
+
+class RelationshipDynamicsDataType(Enum):
+    TEXT = 0
+    RELATION = 1
+
+
+class ConnectorType(Enum):
+    LEFT_TO_RIGHT = 0
+    RIGHT_TO_LEFT = 1
+    BIDIRECTIONAL = 2
+
+
+@dataclass
+class RelationshipDynamicsElement(BackstoryEvent):
+    source: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    target: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    rel_type: RelationshipDynamicsType = RelationshipDynamicsType.SEPARATE
+    data_type: RelationshipDynamicsDataType = RelationshipDynamicsDataType.TEXT
+    connector_type: Optional[ConnectorType] = None
+
+
+@dataclass
+class RelationshipDynamics:
+    source_characters: List[uuid.UUID] = field(default_factory=list)
+    target_characters: List[uuid.UUID] = field(default_factory=list)
+    elements: List[RelationshipDynamicsElement] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+
+
 @dataclass
 class Plot(SelectionItem, CharacterBased):
     id: uuid.UUID = field(default_factory=uuid.uuid4)
@@ -1398,6 +1435,8 @@ class Plot(SelectionItem, CharacterBased):
     dynamic_principles: List[DynamicPlotPrincipleGroup] = field(default_factory=list)
     has_progression: bool = False
     timeline: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+    has_relationship: bool = False
+    relationship: Optional[RelationshipDynamics] = None
     has_escalation: bool = False
     escalation: Optional[DynamicPlotPrincipleGroup] = None
     has_allies: bool = False
