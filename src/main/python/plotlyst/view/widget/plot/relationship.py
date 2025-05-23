@@ -22,7 +22,7 @@ from functools import partial
 from typing import List, Optional
 
 from PyQt6.QtCore import pyqtSignal, Qt, QSize
-from PyQt6.QtGui import QPaintEvent, QResizeEvent
+from PyQt6.QtGui import QResizeEvent, QPaintEvent
 from PyQt6.QtWidgets import QWidget, QTextEdit
 from overrides import overrides
 from qthandy import vbox, incr_font, incr_icon, spacer, hbox, margins
@@ -35,6 +35,7 @@ from plotlyst.env import app_env
 from plotlyst.view.common import push_btn, columns, action, shadow, frame
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
+from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.display import ConnectorWidget, icon_text
 from plotlyst.view.widget.timeline import TimelineLinearWidget, TimelineTheme, AbstractTimelineCard, TimelineEntityRow
@@ -84,6 +85,7 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
         self._source = self.__initTextElement()
         self._title = icon_text(self._element.type_icon, self._element.keyphrase, self._element.type_color)
+        apply_button_palette_color(self._title, self._element.type_color)
         self._title.setIconSize(QSize(28, 28))
         incr_font(self._title)
         font = self._title.font()
@@ -94,6 +96,18 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
         wdgHeader.layout().addWidget(self._title, alignment=Qt.AlignmentFlag.AlignCenter)
         wdgHeader.setProperty('rounded-on-top', True)
         wdgHeader.setProperty('muted-bg', True)
+        # wdgHeader.setStyleSheet(f'''
+        #     QFrame {{
+        #         background: {self._element.type_color};
+        #         border: 1px solid {self._element.type_color};
+        #         border-top-left-radius: 6px;
+        #         border-top-right-radius: 6px;
+        #         border-bottom-left-radius: 0px;
+        #         border-bottom-right-radius: 0px;
+        #     }}
+        # ''')
+
+        # translucent(wdgHeader, 0.7)
 
         wdgEditor = columns(3, 3)
         margins(wdgEditor, top=0)
@@ -114,7 +128,8 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
         self.btnDrag.setParent(self)
         self.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self))
 
-        self.setMinimumWidth(550)
+        if self._element.rel_type == RelationshipDynamicsType.SEPARATE:
+            self.setMinimumWidth(550)
 
     @overrides
     def resizeEvent(self, a0: QResizeEvent) -> None:
