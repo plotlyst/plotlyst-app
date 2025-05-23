@@ -140,8 +140,26 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
     def _showContextMenu(self):
         menu = MenuWidget()
+        menu.addAction(action('Edit', IconRegistry.edit_icon(), slot=self._edit))
+        menu.addSeparator()
         menu.addAction(action('Remove', IconRegistry.trash_can_icon(), slot=self._remove))
         menu.exec()
+
+    def _edit(self):
+        result = IconTextInputDialog.edit('Edit element', placeholder='Name',
+                                          description="Edit the name and icon of this relationship element",
+                                          value=self._element.keyphrase, icon=self._element.type_icon,
+                                          color=self._element.type_color)
+        if result is not None:
+            self._element.keyphrase = result[0]
+            self._element.type_icon = result[1]
+            self._element.type_color = result[2]
+
+            self._title.setText(self._element.keyphrase)
+            self._title.setIcon(IconRegistry.from_name(self._element.type_icon, self._element.type_color))
+            apply_button_palette_color(self._title, self._element.type_color)
+
+            self.edited.emit()
 
     def _remove(self):
         self.deleteRequested.emit(self)

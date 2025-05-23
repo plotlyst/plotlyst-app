@@ -1157,10 +1157,10 @@ class TextInputDialog(PopupDialog):
 
 
 class IconTextInputDialog(PopupDialog):
-    def __init__(self, title: str, placeholder: str, value: str = '', description: str = '', icon: str = 'fa5s.icons',
+    def __init__(self, title: str, placeholder: str, value: str = '', description: str = '', icon: str = '',
                  color: str = 'black', parent=None):
         super().__init__(parent)
-        self._icon = ''
+        self._icon = icon
         self._color = color
 
         self.title = label(title, h5=True)
@@ -1179,9 +1179,7 @@ class IconTextInputDialog(PopupDialog):
         self.lineKey.lineEdit.setProperty('rounded', True)
         incr_font(self.lineKey.lineEdit)
         self.lineKey.lineEdit.setPlaceholderText(placeholder)
-        self.lineKey.setText(value)
-        self.lineKey.setIcon(IconRegistry.from_name(icon, color))
-        # self.lineKey.lineEdit.textChanged.connect(self._textChanged)
+        self.lineKey.setIcon(IconRegistry.from_name(icon if icon else 'fa5s.icons', color))
         self.lineKey.iconChanged.connect(self._iconChanged)
 
         self.btnConfirm = push_btn(text='Confirm', properties=['confirm', 'positive'])
@@ -1190,8 +1188,7 @@ class IconTextInputDialog(PopupDialog):
         self.btnConfirm.clicked.connect(self.accept)
         self.btnConfirm.setDisabled(True)
         link_editor_to_btn(self.lineKey.lineEdit, self.btnConfirm, disabledShake=True, shakedWidget=self.lineKey)
-        # self.btnConfirm.installEventFilter(
-        #     DisabledClickEventFilter(self.btnConfirm, lambda: qtanim.shake(self.lineKey)))
+        self.lineKey.setText(value)
 
         self.btnCancel = push_btn(text='Cancel', properties=['confirm', 'cancel'])
         self.btnCancel.clicked.connect(self.reject)
