@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from enum import Enum, auto
+from enum import Enum
 from functools import partial
 from typing import List, Optional
 
@@ -71,6 +71,8 @@ class RelationshipDynamicsTextElement(QTextEdit):
         self.setMaximumSize(190, 110)
         self.verticalScrollBar().setVisible(False)
         self.setText(self.element.target if target else self.element.source)
+        self.setPlaceholderText(
+            self.element.synopsis if self.element.synopsis else f"Define the {self.element.keyphrase.lower()} of this character")
 
         self.textChanged.connect(self._textChanged)
 
@@ -145,40 +147,36 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
 
 class RelationshipDynamicsSelectorTemplate(Enum):
-    Origin = auto()
-    Attitude = auto()
-    Values = auto()
-    Social_status = auto()
-    Desire = auto()
-    Conflict = auto()
-    Goal = auto()
-    Relationship_evolution = auto()
+    Origin = ('Origin', 'ri.calendar-event-fill', 'black', 'SEPARATE', 'BIDIRECTIONAL')
+    Attitude = ('Attitude', 'mdi6.emoticon-neutral-outline', 'black', 'SEPARATE', 'BIDIRECTIONAL')
+    Values = ('Values', 'fa5s.balance-scale', 'black', 'SEPARATE', 'BIDIRECTIONAL')
+    Social_status = ('Social status', 'mdi.ladder', 'black', 'SEPARATE', 'BIDIRECTIONAL')
+    Desire = ('Desire', 'ei.star-alt', '#e9c46a', 'SEPARATE', 'BIDIRECTIONAL')
+    Conflict = (
+        'Conflict', 'mdi.sword-cross', '#e57c04', 'SHARED', None, "What causes conflict between the characters?")
+    Goal = ('Goal', 'mdi.target', 'darkBlue', 'SHARED', None, "What's the mutual goal of the characters?")
+    Relationship_evolution = ('Relationship evolution', 'fa5s.people-arrows', 'black', 'SHARED', None,
+                              "How does the relationship evolve between the characters?")
 
-    def display_name(self) -> str:
-        return self.name.capitalize().replace('_', ' ')
-
-    def icon(self) -> str:
-        if self == RelationshipDynamicsSelectorTemplate.Conflict:
-            return 'mdi.sword-cross'
-        return 'ri.calendar-event-fill'
-
-    def color(self) -> str:
-        if self == RelationshipDynamicsSelectorTemplate.Conflict:
-            return '#e57c04'
-        return 'black'
-
-    def placeholder(self) -> str:
-        pass
+    def __new__(cls, display_name: str, icon: str, color: str, rel_type: str, connector_type: Optional[str],
+                placeholder: str = ''):
+        obj = object.__new__(cls)
+        obj._value_ = display_name
+        obj.display_name = display_name
+        obj.icon = icon
+        obj.color = color
+        obj.rel_type = rel_type
+        obj.connector_type = connector_type
+        obj.placeholder = placeholder
+        return obj
 
     def element(self) -> RelationshipDynamicsElement:
-        el = RelationshipDynamicsElement(self.display_name(), '', type_icon=self.icon(), type_color=self.color(),
+        el = RelationshipDynamicsElement(self.display_name, self.placeholder, type_icon=self.icon,
+                                         type_color=self.color,
                                          data_type=RelationshipDynamicsDataType.TEXT)
-        if self in [RelationshipDynamicsSelectorTemplate.Conflict, RelationshipDynamicsSelectorTemplate.Goal]:
-            el.rel_type = RelationshipDynamicsType.SHARED
-        else:
-            el.rel_type = RelationshipDynamicsType.SEPARATE
-            el.connector_type = ConnectorType.BIDIRECTIONAL
-
+        el.rel_type = RelationshipDynamicsType[self.rel_type]
+        if self.connector_type:
+            el.connector_type = ConnectorType[self.connector_type]
         return el
 
 
@@ -211,7 +209,7 @@ class RelationshipDynamicsSelector(GridMenuWidget):
         self._addAction(RelationshipDynamicsSelectorTemplate.Relationship_evolution, row, 2, colSpan=2)
 
     def _addAction(self, template: RelationshipDynamicsSelectorTemplate, row: int, col: int, colSpan: int = 1):
-        self.addAction(action(template.display_name(), IconRegistry.from_name(template.icon()),
+        self.addAction(action(template.display_name, IconRegistry.from_name(template.icon),
                               slot=partial(self.selected.emit, template)), row, col, colSpan=colSpan)
 
 
