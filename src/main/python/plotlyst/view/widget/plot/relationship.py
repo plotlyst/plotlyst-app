@@ -17,6 +17,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from enum import Enum, auto
+from functools import partial
 from typing import List, Optional
 
 from PyQt6.QtCore import pyqtSignal, Qt
@@ -25,11 +27,11 @@ from PyQt6.QtWidgets import QWidget, QTextEdit
 from overrides import overrides
 from qthandy import vbox, incr_font, incr_icon, spacer, hbox, margins
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
-from qtmenu import MenuWidget
+from qtmenu import MenuWidget, GridMenuWidget
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Plot, Novel, BackstoryEvent, Position, Character, PlotType, \
-    RelationshipDynamicsElement, RelationshipDynamicsType, ConnectorType, RelationshipDynamicsDataType
+    RelationshipDynamicsElement, RelationshipDynamicsType, RelationshipDynamicsDataType, ConnectorType
 from plotlyst.env import app_env
 from plotlyst.view.common import push_btn, columns, action, shadow, frame
 from plotlyst.view.icons import IconRegistry
@@ -142,6 +144,77 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
         return wdg
 
 
+class RelationshipDynamicsSelectorTemplate(Enum):
+    Origin = auto()
+    Attitude = auto()
+    Values = auto()
+    Social_status = auto()
+    Desire = auto()
+    Conflict = auto()
+    Goal = auto()
+    Relationship_evolution = auto()
+
+    def display_name(self) -> str:
+        return self.name.capitalize().replace('_', ' ')
+
+    def icon(self) -> str:
+        if self == RelationshipDynamicsSelectorTemplate.Conflict:
+            return 'mdi.sword-cross'
+        return 'ri.calendar-event-fill'
+
+    def color(self) -> str:
+        if self == RelationshipDynamicsSelectorTemplate.Conflict:
+            return '#e57c04'
+        return 'black'
+
+    def placeholder(self) -> str:
+        pass
+
+    def element(self) -> RelationshipDynamicsElement:
+        el = RelationshipDynamicsElement(self.display_name(), '', type_icon=self.icon(), type_color=self.color(),
+                                         data_type=RelationshipDynamicsDataType.TEXT)
+        if self in [RelationshipDynamicsSelectorTemplate.Conflict, RelationshipDynamicsSelectorTemplate.Goal]:
+            el.rel_type = RelationshipDynamicsType.SHARED
+        else:
+            el.rel_type = RelationshipDynamicsType.SEPARATE
+            el.connector_type = ConnectorType.BIDIRECTIONAL
+
+        return el
+
+
+class RelationshipDynamicsSelector(GridMenuWidget):
+    selected = pyqtSignal(RelationshipDynamicsSelectorTemplate)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        row = 0
+        self.addSection("Individual elements that are contrasting between the two characters", row, 0, colSpan=5)
+        row += 1
+        self.addSeparator(row, 0, colSpan=5)
+
+        row += 1
+        self._addAction(RelationshipDynamicsSelectorTemplate.Attitude, row, 0)
+        self._addAction(RelationshipDynamicsSelectorTemplate.Desire, row, 1)
+        self._addAction(RelationshipDynamicsSelectorTemplate.Origin, row, 2)
+        self._addAction(RelationshipDynamicsSelectorTemplate.Social_status, row, 3)
+
+        row += 1
+        self.addSection(
+            "Mutual elements that are shared between the characters, e.g. interpersonal conflict, shared, goal, etc.",
+            row, 0, colSpan=5)
+        row += 1
+        self.addSeparator(row, 0, colSpan=5)
+        row += 1
+        self._addAction(RelationshipDynamicsSelectorTemplate.Conflict, row, 0)
+        self._addAction(RelationshipDynamicsSelectorTemplate.Goal, row, 1)
+        self._addAction(RelationshipDynamicsSelectorTemplate.Relationship_evolution, row, 2, colSpan=2)
+
+    def _addAction(self, template: RelationshipDynamicsSelectorTemplate, row: int, col: int, colSpan: int = 1):
+        self.addAction(action(template.display_name(), IconRegistry.from_name(template.icon()),
+                              slot=partial(self.selected.emit, template)), row, col, colSpan=colSpan)
+
+
 class RelationshipDynamicsEditor(TimelineLinearWidget):
     def __init__(self, plot: Plot, parent=None):
         super().__init__(parent, centerOnly=True)
@@ -172,29 +245,16 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
         self._displayMenu(position, event)
 
     def _displayMenu(self, position: Position, row: Optional[TimelineEntityRow] = None):
-        def addOrigin():
-            element = RelationshipDynamicsElement('Origin', '', position=position,
-                                                  rel_type=RelationshipDynamicsType.SEPARATE,
-                                                  data_type=RelationshipDynamicsDataType.TEXT,
-                                                  connector_type=ConnectorType.BIDIRECTIONAL)
+        def add(template: RelationshipDynamicsSelectorTemplate):
+            element = template.element()
+            element.position = position
             if row:
                 self._insertElement(element, row)
             else:
                 self._addElement(element)
 
-        def addConflict():
-            element = RelationshipDynamicsElement('Conflict', '', type_icon='mdi.sword-cross', type_color='#e57c04',
-                                                  position=position,
-                                                  rel_type=RelationshipDynamicsType.SHARED,
-                                                  data_type=RelationshipDynamicsDataType.TEXT)
-            if row:
-                self._insertElement(element, row)
-            else:
-                self._addElement(element)
-
-        menu = MenuWidget()
-        menu.addAction(action('Origin', slot=addOrigin))
-        menu.addAction(action('Conflict', slot=addConflict))
+        menu = RelationshipDynamicsSelector()
+        menu.selected.connect(add)
         menu.exec()
 
 
