@@ -172,7 +172,7 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
 
 class RelationshipDynamicsSelectorTemplate(Enum):
-    Origin = ('Origin', 'ri.calendar-event-fill', 'black', 'SEPARATE', 'BIDIRECTIONAL')
+    Origin = ('Origin', 'fa5s.archive', 'black', 'SEPARATE', 'BIDIRECTIONAL')
     Attitude = ('Attitude', 'mdi6.emoticon-neutral-outline', 'black', 'SEPARATE', 'BIDIRECTIONAL')
     Values = ('Values', 'fa5s.balance-scale', 'black', 'SEPARATE', 'BIDIRECTIONAL')
     Social_status = ('Social status', 'mdi.ladder', 'black', 'SEPARATE', 'BIDIRECTIONAL')
