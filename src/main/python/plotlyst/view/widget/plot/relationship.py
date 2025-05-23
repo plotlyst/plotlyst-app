@@ -34,6 +34,7 @@ from plotlyst.core.domain import Plot, Novel, BackstoryEvent, Position, Characte
 from plotlyst.env import app_env
 from plotlyst.view.common import push_btn, columns, action, shadow, frame
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.display import ConnectorWidget, icon_text
 from plotlyst.view.widget.timeline import TimelineLinearWidget, TimelineTheme, AbstractTimelineCard, TimelineEntityRow
@@ -144,7 +145,7 @@ class RelationshipDynamicsSelectorTemplate(Enum):
     Desire = ('Desire', 'ei.star-alt', '#e9c46a', 'SEPARATE', 'BIDIRECTIONAL')
     Conflict = (
         'Conflict', 'mdi.sword-cross', '#e57c04', 'SHARED', None, "What causes conflict between the characters?")
-    Goal = ('Goal', 'mdi.target', 'darkBlue', 'SHARED', None, "What's the mutual goal of the characters?")
+    Goal = ('Shared goal', 'mdi.target', 'darkBlue', 'SHARED', None, "What's the mutual goal of the characters?")
     Relationship_evolution = ('Relationship evolution', 'fa5s.people-arrows', 'black', 'SHARED', None,
                               "How does the relationship evolve between the characters?")
 
@@ -174,7 +175,8 @@ class RelationshipDynamicsSelector(GridMenuWidget):
     selected = pyqtSignal(RelationshipDynamicsSelectorTemplate)
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, largeIcons=True)
+        apply_white_menu(self)
 
         row = 0
         self.addSection("Individual elements that are contrasting between the two characters", row, 0, colSpan=5)
@@ -189,7 +191,7 @@ class RelationshipDynamicsSelector(GridMenuWidget):
 
         row += 1
         self.addSection(
-            "Mutual elements that are shared between the characters, e.g. interpersonal conflict, shared, goal, etc.",
+            "Elements that are shared between the characters, e.g., interpersonal conflict, shared goal, etc.",
             row, 0, colSpan=5)
         row += 1
         self.addSeparator(row, 0, colSpan=5)
@@ -200,13 +202,14 @@ class RelationshipDynamicsSelector(GridMenuWidget):
 
     def _addAction(self, template: RelationshipDynamicsSelectorTemplate, row: int, col: int, colSpan: int = 1):
         self.addAction(action(template.display_name, IconRegistry.from_name(template.icon),
-                              slot=partial(self.selected.emit, template)), row, col, colSpan=colSpan)
+                              slot=partial(self.selected.emit, template), incr_font_=1), row, col, colSpan=colSpan)
 
 
 class RelationshipDynamicsEditor(TimelineLinearWidget):
     def __init__(self, plot: Plot, parent=None):
         super().__init__(parent, centerOnly=True)
         self._plot = plot
+        self._menu: Optional[RelationshipDynamicsSelector] = None
 
     @overrides
     def events(self) -> List[BackstoryEvent]:
@@ -241,9 +244,11 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
             else:
                 self._addElement(element)
 
-        menu = RelationshipDynamicsSelector()
-        menu.selected.connect(add)
-        menu.exec()
+            self._menu = None
+
+        self._menu = RelationshipDynamicsSelector()
+        self._menu.selected.connect(add)
+        self._menu.exec()
 
 
 class RelationshipDynamicsHeader(QWidget):
