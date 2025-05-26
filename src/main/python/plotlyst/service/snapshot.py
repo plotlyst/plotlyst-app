@@ -100,12 +100,9 @@ class SocialSnapshotPopup(PopupDialog):
         self.wdgTop.layout().addWidget(vline())
         self.wdgTop.layout().addWidget(self.btnExport)
 
-        self.frame.layout().addWidget(self.wdgTop, alignment=Qt.AlignmentFlag.AlignCenter)
-
         self.lblCopied = CopiedTextMessage()
         italic(self.lblCopied)
         retain_when_hidden(self.lblCopied)
-        self.frame.layout().addWidget(self.lblCopied, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.btnRatio9_16 = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextOnly, minWidth=60)
         self.btnRatio9_16.setText('9:16')
@@ -123,8 +120,6 @@ class SocialSnapshotPopup(PopupDialog):
         self.btnRatio9_16.setChecked(True)
         self._btnGroupRatios.buttonClicked.connect(self._ratioChanged)
 
-        self.frame.layout().addWidget(self.wdgRatios, alignment=Qt.AlignmentFlag.AlignCenter)
-
         self.canvasContainer = frame()
         self.canvasContainer.setProperty('white-bg', True)
         self.canvasContainer.setProperty('large-rounded', True)
@@ -136,6 +131,9 @@ class SocialSnapshotPopup(PopupDialog):
                                   properties=['confirm', 'cancel'])
         self.btnCancel.clicked.connect(self.reject)
 
+        self.frame.layout().addWidget(self.wdgTop, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.lblCopied, alignment=Qt.AlignmentFlag.AlignRight)
+        self.frame.layout().addWidget(self.wdgRatios, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.canvasContainer, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.btnCancel, alignment=Qt.AlignmentFlag.AlignRight)
 
