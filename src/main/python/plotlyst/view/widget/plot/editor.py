@@ -80,9 +80,18 @@ class PlotNode(ContainerNode):
         return self._plot
 
     def refresh(self):
-        if self._plot.icon:
+        def setPlotIcon():
             self._icon.setIcon(IconRegistry.from_name(self._plot.icon, self._plot.icon_color))
-            self._icon.setVisible(True)
+
+        self._icon.setVisible(True)
+        if self._plot.plot_type == PlotType.Relation and self._plot.relationship.target_characters:
+            character = entities_registry.character(str(self._plot.relationship.target_characters[0]))
+            if character:
+                self._icon.setIcon(avatars.avatar(character))
+            else:
+                setPlotIcon()
+        elif self._plot.icon:
+            setPlotIcon()
         else:
             self._icon.setHidden(True)
 
@@ -637,6 +646,7 @@ class PlotWidget(QWidget, EventListener):
 
         if self.plot.plot_type == PlotType.Relation:
             self.wdgNavs.setHidden(True)
+            self.lineName.setHidden(True)
             self._addGroup(DynamicPlotPrincipleGroupType.RELATIONSHIP)
             self.stack.setCurrentWidget(self.pageRelationship)
 
@@ -1036,6 +1046,8 @@ class PlotEditor(QWidget, Ui_PlotEditor):
             name = 'Main plot'
             icon = 'fa5s.theater-masks'
         plot = Plot(name, plot_type=plot_type, icon=icon)
+        if plot_type == PlotType.Relation:
+            plot.relationship = RelationshipDynamics()
         self.novel.plots.append(plot)
 
         plot_colors = list(STORY_LINE_COLOR_CODES[plot_type.value])

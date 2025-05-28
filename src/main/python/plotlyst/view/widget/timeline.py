@@ -29,8 +29,8 @@ from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEve
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
     QLineEdit, QFrame
 from overrides import overrides
-from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc, retain_when_hidden, \
-    translucent, decr_icon
+from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc, translucent, decr_icon, \
+    retain_when_hidden
 from qthandy.filter import VisibilityToggleEventFilter, DragEventFilter, DropEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -196,7 +196,6 @@ class PlaceholderWidget(QFrame):
         self.setAcceptDrops(True)
 
         self.btnPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
-        self.btnPlus.setIconSize(QSize(22, 22))
         sp(self.btnPlus).h_exp()
         vbox(self, 0, 0).addWidget(self.btnPlus)
         translucent(self)
@@ -211,9 +210,11 @@ class PlaceholderWidget(QFrame):
 
     def activate(self):
         self.btnPlus.setVisible(True)
+        self._applyLargeIconSize()
 
     def deactivate(self):
         self.btnPlus.setHidden(True)
+        self._resetIconSize()
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
@@ -227,15 +228,23 @@ class PlaceholderWidget(QFrame):
     @overrides
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         self.setStyleSheet(f'background: {PLOTLYST_SECONDARY_COLOR};')
+        self._applyLargeIconSize()
         event.accept()
 
     @overrides
     def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
+        self._resetIconSize()
         self.setStyleSheet('')
 
     @overrides
     def dropEvent(self, event: QDropEvent) -> None:
         self.setStyleSheet('')
+
+    def _applyLargeIconSize(self):
+        self.btnPlus.setIconSize(QSize(22, 22))
+
+    def _resetIconSize(self):
+        self.btnPlus.setIconSize(QSize(8, 8))
 
     def _applyHoverStyle(self):
         self.setStyleSheet(f'background: {ALT_BACKGROUND_COLOR};')
@@ -249,6 +258,7 @@ class PlaceholdersRow(QWidget):
         self._mimeType = mimeType
         self._centerOnly = centerOnly
         hbox(self, 0, 0)
+        # self.setMinimumHeight(5)
 
         self.placeholderLeft = PlaceholderWidget()
         self.placeholderCenter = PlaceholderWidget()
@@ -281,6 +291,8 @@ class PlaceholdersRow(QWidget):
         else:
             self.placeholderCenter.activate()
 
+        # self.updateGeometry()
+
     @overrides
     def leaveEvent(self, event: QEvent) -> None:
         if not self._centerOnly:
@@ -289,6 +301,7 @@ class PlaceholdersRow(QWidget):
             self.placeholderRight.deactivate()
         else:
             self.placeholderCenter.deactivate()
+        # self.updateGeometry()
 
 
 class TimelineEntityRow(QWidget):
