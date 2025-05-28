@@ -80,9 +80,18 @@ class PlotNode(ContainerNode):
         return self._plot
 
     def refresh(self):
-        if self._plot.icon:
+        def setPlotIcon():
             self._icon.setIcon(IconRegistry.from_name(self._plot.icon, self._plot.icon_color))
-            self._icon.setVisible(True)
+
+        self._icon.setVisible(True)
+        if self._plot.plot_type == PlotType.Relation and self._plot.relationship.target_characters:
+            character = entities_registry.character(str(self._plot.relationship.target_characters[0]))
+            if character:
+                self._icon.setIcon(avatars.avatar(character))
+            else:
+                setPlotIcon()
+        elif self._plot.icon:
+            setPlotIcon()
         else:
             self._icon.setHidden(True)
 
