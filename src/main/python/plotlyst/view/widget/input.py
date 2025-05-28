@@ -1211,7 +1211,7 @@ class IconTextInputDialog(PopupDialog):
 
     @classmethod
     def edit(cls, title: str = 'Edit text', placeholder: str = 'Edit text', value: str = '', description: str = '',
-             icon: str = 'fa5s.icons',
+             icon: str = '',
              color: str = 'black'):
         return cls.popup(title, placeholder, value, description, icon, color)
 
