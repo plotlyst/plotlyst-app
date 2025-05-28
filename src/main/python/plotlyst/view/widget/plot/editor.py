@@ -646,6 +646,7 @@ class PlotWidget(QWidget, EventListener):
 
         if self.plot.plot_type == PlotType.Relation:
             self.wdgNavs.setHidden(True)
+            self.lineName.setHidden(True)
             self._addGroup(DynamicPlotPrincipleGroupType.RELATIONSHIP)
             self.stack.setCurrentWidget(self.pageRelationship)
 

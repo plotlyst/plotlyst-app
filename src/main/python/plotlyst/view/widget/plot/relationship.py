@@ -372,7 +372,7 @@ class RelationshipDynamicsHeader(QWidget):
         self._sourceCharacterSelector.characterSelected.connect(self._sourceCharacterSelected)
         self._targetCharacterSelector = CharacterSelectorButton(self._novel, iconSize=48)
         self._targetCharacterSelector.characterSelected.connect(self._targetCharacterSelected)
-        self.btnEdit = push_btn(IconRegistry.plus_icon('grey'), 'Add element', transparent_=True)
+        self.btnEdit = push_btn(IconRegistry.plus_icon('grey'), 'Relationship plot', transparent_=True)
         self.btnEdit.installEventFilter(OpacityEventFilter(self.btnEdit, leaveOpacity=0.7))
         incr_font(self.btnEdit, 2)
         incr_icon(self.btnEdit, 4)
@@ -380,7 +380,7 @@ class RelationshipDynamicsHeader(QWidget):
         hbox(self, 0, 55)
         self.layout().addWidget(spacer())
         self.layout().addWidget(self._sourceCharacterSelector)
-        self.layout().addWidget(self.btnEdit, alignment=Qt.AlignmentFlag.AlignBottom)
+        self.layout().addWidget(self.btnEdit)
         self.layout().addWidget(self._targetCharacterSelector)
         self.layout().addWidget(spacer())
 
