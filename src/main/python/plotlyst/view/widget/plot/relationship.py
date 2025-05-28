@@ -206,6 +206,7 @@ class RelationshipDynamicsSelectorTemplate(Enum):
 
 class RelationshipDynamicsSelectorWidget(QFrame):
     selected = pyqtSignal(RelationshipDynamicsSelectorTemplate, bool)
+    customSelected = pyqtSignal(RelationshipDynamicsType)
 
     def __init__(self, shared: bool, parent=None):
         super().__init__(parent)
@@ -244,6 +245,12 @@ class RelationshipDynamicsSelectorWidget(QFrame):
         self._initSelector(RelationshipDynamicsSelectorTemplate.Need)
         self._initSelector(RelationshipDynamicsSelectorTemplate.Relationship_evolution)
 
+        self._btnCustom = SelectorToggleButton()
+        self._btnCustom.setIcon(IconRegistry.from_name('fa5s.people-arrows'))
+        self._btnCustom.setText('Custom...')
+        self._selectorBtnGroup.addButton(self._btnCustom)
+        self.wdgSelectors.layout().addWidget(self._btnCustom)
+
         self.layout().addWidget(self.wdgSelectors)
         self.layout().addWidget(self.wdgContext, alignment=Qt.AlignmentFlag.AlignRight)
 
@@ -268,7 +275,11 @@ class RelationshipDynamicsSelectorWidget(QFrame):
             shared = self.toggleShared.isChecked()
         else:
             shared = False
-        self.selected.emit(self._selectorBtnGroup.checkedButton().template, shared)
+
+        if self._selectorBtnGroup.checkedButton() is self._btnCustom:
+            self.customSelected.emit(RelationshipDynamicsType.SHARED if shared else RelationshipDynamicsType.SEPARATE)
+        else:
+            self.selected.emit(self._selectorBtnGroup.checkedButton().template, shared)
 
 
 class RelationshipDynamicsEditor(TimelineLinearWidget):
@@ -308,11 +319,8 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
         transparent_menu(self._menu)
         wdg = RelationshipDynamicsSelectorWidget(self._lastShared)
         wdg.selected.connect(lambda x, y: self._add(x, y, position, row))
+        wdg.customSelected.connect(lambda x: self._addCustom(x, position, row))
         self._menu.addWidget(wdg)
-        # self._menu.customIndividualSelected.connect(
-        #     partial(self._addCustom, RelationshipDynamicsType.SEPARATE, ConnectorType.BIDIRECTIONAL, position, row))
-        # self._menu.customSharedSelected.connect(
-        #     partial(self._addCustom, RelationshipDynamicsType.SHARED, None, position, row))
         self._menu.exec()
 
     def _add(self, template: RelationshipDynamicsSelectorTemplate, shared: bool, position: Position,
@@ -332,7 +340,7 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
         self._menu.hide()
         self._menu = None
 
-    def _addCustom(self, type_: RelationshipDynamicsType, connectorType: Optional[ConnectorType], position: Position,
+    def _addCustom(self, type_: RelationshipDynamicsType, position: Position,
                    row: Optional[TimelineEntityRow] = None):
         result = IconTextInputDialog.edit('Edit custom element', placeholder='Name',
                                           description="Define a custom name for a relationship element, and optionally select an icon")
@@ -342,7 +350,7 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
                                                   type_color=result[2],
                                                   rel_type=type_, position=position,
                                                   data_type=RelationshipDynamicsDataType.TEXT,
-                                                  connector_type=connectorType)
+                                                  connector_type=ConnectorType.BIDIRECTIONAL)
 
             if row:
                 self._insertElement(element, row)
