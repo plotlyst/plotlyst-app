@@ -214,8 +214,8 @@ class RelationshipDynamicsSelectorWidget(QFrame):
         self.setProperty('large-rounded', True)
         self.setProperty('white-bg', True)
 
-        self.wdgContext = columns(spacing=0)
-        margins(self.wdgContext, top=25)
+        self.wdgBottom = columns(spacing=0)
+        margins(self.wdgBottom, top=25)
         self._selectorBtnGroup = QButtonGroup()
         self._btnContrast = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
 
@@ -226,9 +226,9 @@ class RelationshipDynamicsSelectorWidget(QFrame):
                                properties=['confirm', 'positive'])
         self.btnAdd.clicked.connect(self._add)
 
-        self.wdgContext.layout().addWidget(self.lblShared)
-        self.wdgContext.layout().addWidget(self.toggleShared)
-        self.wdgContext.layout().addWidget(self.btnAdd)
+        self.wdgBottom.layout().addWidget(self.lblShared)
+        self.wdgBottom.layout().addWidget(self.toggleShared)
+        self.wdgBottom.layout().addWidget(self.btnAdd)
 
         self.wdgSelectors = QWidget()
         flow(self.wdgSelectors)
@@ -243,7 +243,6 @@ class RelationshipDynamicsSelectorWidget(QFrame):
         self._initSelector(RelationshipDynamicsSelectorTemplate.Goal)
         self._initSelector(RelationshipDynamicsSelectorTemplate.Flaw)
         self._initSelector(RelationshipDynamicsSelectorTemplate.Need)
-        self._initSelector(RelationshipDynamicsSelectorTemplate.Relationship_evolution)
 
         self._btnCustom = SelectorToggleButton()
         self._btnCustom.setIcon(IconRegistry.from_name('fa5s.people-arrows'))
@@ -251,8 +250,10 @@ class RelationshipDynamicsSelectorWidget(QFrame):
         self._selectorBtnGroup.addButton(self._btnCustom)
         self.wdgSelectors.layout().addWidget(self._btnCustom)
 
+        self.layout().addWidget(
+            label("Select an element that is either shared or contrasting between the characters", description=True))
         self.layout().addWidget(self.wdgSelectors)
-        self.layout().addWidget(self.wdgContext, alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout().addWidget(self.wdgBottom, alignment=Qt.AlignmentFlag.AlignRight)
 
     def _selectorClicked(self, template: RelationshipDynamicsSelectorTemplate):
         shared_visible = template.rel_type == RelationshipDynamicsType.SEPARATE
