@@ -61,8 +61,12 @@ class RelationshipDynamicsTextElement(QTextEdit):
         self.setMaximumSize(210, 110)
         self.verticalScrollBar().setVisible(False)
         self.setText(self.element.target if target else self.element.source)
-        self.setPlaceholderText(
-            self.element.synopsis if self.element.synopsis else f"Define the {self.element.keyphrase.lower()} of this character")
+        if self.element.synopsis:
+            self.setPlaceholderText(self.element.synopsis)
+        elif self.element.rel_type == RelationshipDynamicsType.SEPARATE:
+            self.setPlaceholderText(f"Define the {self.element.keyphrase.lower()} of this character")
+        else:
+            self.setPlaceholderText(f"Define the mutual {self.element.keyphrase.lower()} of these character")
 
         self.textChanged.connect(self._textChanged)
 
@@ -169,10 +173,11 @@ class RelationshipDynamicsSelectorTemplate(Enum):
     Social_status = ('Social status', 'mdi.ladder', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
     Desire = ('Desire', 'ei.star-alt', '#e9c46a', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
     Conflict = (
-        'Conflict', 'mdi.sword-cross', '#e57c04', RelationshipDynamicsType.SHARED, None,
+        'Conflict', 'mdi.sword-cross', '#e57c04', RelationshipDynamicsType.SEPARATE, None,
         "What causes conflict between the characters?")
-    Goal = ('Shared goal', 'mdi.target', 'darkBlue', RelationshipDynamicsType.SHARED, None,
-            "What's the mutual goal of the characters?")
+    Goal = ('Goal', 'mdi.target', 'darkBlue', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
+    Need = ('Need', 'mdi.key', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
+    Flaw = ('Flaw', 'mdi.virus', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
     Relationship_evolution = (
         'Relationship evolution', 'fa5s.people-arrows', 'black', RelationshipDynamicsType.SHARED, None,
         "How does the relationship evolve between the characters?")
@@ -235,6 +240,8 @@ class RelationshipDynamicsSelectorWidget(QFrame):
         self._initSelector(RelationshipDynamicsSelectorTemplate.Social_status)
         self._initSelector(RelationshipDynamicsSelectorTemplate.Conflict)
         self._initSelector(RelationshipDynamicsSelectorTemplate.Goal)
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Flaw)
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Need)
         self._initSelector(RelationshipDynamicsSelectorTemplate.Relationship_evolution)
 
         self.layout().addWidget(self.wdgSelectors)
