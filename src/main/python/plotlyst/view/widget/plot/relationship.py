@@ -251,7 +251,7 @@ class RelationshipDynamicsSelectorWidget(QFrame):
         self.wdgSelectors.layout().addWidget(self._btnCustom)
 
         self.layout().addWidget(
-            label("Select an element that is either shared or contrasting between the characters", description=True))
+            label("Select an element that is either mutual or contrasting between the characters", description=True))
         self.layout().addWidget(self.wdgSelectors)
         self.layout().addWidget(self.wdgBottom, alignment=Qt.AlignmentFlag.AlignRight)
 
