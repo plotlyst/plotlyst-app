@@ -23,22 +23,24 @@ from typing import List, Optional
 
 from PyQt6.QtCore import pyqtSignal, Qt, QSize
 from PyQt6.QtGui import QResizeEvent, QPaintEvent
-from PyQt6.QtWidgets import QWidget, QTextEdit
+from PyQt6.QtWidgets import QWidget, QTextEdit, QButtonGroup, QFrame
 from overrides import overrides
-from qthandy import vbox, incr_font, incr_icon, spacer, hbox, margins
+from qthandy import vbox, incr_font, incr_icon, spacer, hbox, margins, flow
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
-from qtmenu import MenuWidget, GridMenuWidget
+from qtmenu import MenuWidget
 
+from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Plot, Novel, BackstoryEvent, Position, Character, PlotType, \
     RelationshipDynamicsElement, RelationshipDynamicsType, RelationshipDynamicsDataType, ConnectorType
 from plotlyst.env import app_env
-from plotlyst.view.common import push_btn, columns, action, shadow, frame
+from plotlyst.view.common import push_btn, columns, action, shadow, frame, label
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.style.base import apply_white_menu
+from plotlyst.view.style.base import apply_white_menu, transparent_menu
 from plotlyst.view.style.button import apply_button_palette_color
+from plotlyst.view.widget.button import SelectorToggleButton
 from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.display import ConnectorWidget, icon_text
-from plotlyst.view.widget.input import IconTextInputDialog
+from plotlyst.view.widget.input import IconTextInputDialog, Toggle
 from plotlyst.view.widget.timeline import TimelineLinearWidget, TimelineTheme, AbstractTimelineCard, TimelineEntityRow
 
 
@@ -160,18 +162,23 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
 
 class RelationshipDynamicsSelectorTemplate(Enum):
-    Origin = ('Origin', 'fa5s.archive', 'black', 'SEPARATE', 'BIDIRECTIONAL')
-    Attitude = ('Attitude', 'mdi6.emoticon-neutral-outline', 'black', 'SEPARATE', 'BIDIRECTIONAL')
-    Values = ('Values', 'fa5s.balance-scale', 'black', 'SEPARATE', 'BIDIRECTIONAL')
-    Social_status = ('Social status', 'mdi.ladder', 'black', 'SEPARATE', 'BIDIRECTIONAL')
-    Desire = ('Desire', 'ei.star-alt', '#e9c46a', 'SEPARATE', 'BIDIRECTIONAL')
+    Origin = ('Origin', 'fa5s.archive', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
+    Attitude = (
+        'Attitude', 'mdi6.emoticon-neutral-outline', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
+    Values = ('Values', 'fa5s.balance-scale', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
+    Social_status = ('Social status', 'mdi.ladder', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
+    Desire = ('Desire', 'ei.star-alt', '#e9c46a', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
     Conflict = (
-        'Conflict', 'mdi.sword-cross', '#e57c04', 'SHARED', None, "What causes conflict between the characters?")
-    Goal = ('Shared goal', 'mdi.target', 'darkBlue', 'SHARED', None, "What's the mutual goal of the characters?")
-    Relationship_evolution = ('Relationship evolution', 'fa5s.people-arrows', 'black', 'SHARED', None,
-                              "How does the relationship evolve between the characters?")
+        'Conflict', 'mdi.sword-cross', '#e57c04', RelationshipDynamicsType.SHARED, None,
+        "What causes conflict between the characters?")
+    Goal = ('Shared goal', 'mdi.target', 'darkBlue', RelationshipDynamicsType.SHARED, None,
+            "What's the mutual goal of the characters?")
+    Relationship_evolution = (
+        'Relationship evolution', 'fa5s.people-arrows', 'black', RelationshipDynamicsType.SHARED, None,
+        "How does the relationship evolve between the characters?")
 
-    def __new__(cls, display_name: str, icon: str, color: str, rel_type: str, connector_type: Optional[str],
+    def __new__(cls, display_name: str, icon: str, color: str, rel_type: RelationshipDynamicsType,
+                connector_type: Optional[str],
                 placeholder: str = ''):
         obj = object.__new__(cls)
         obj._value_ = display_name
@@ -185,59 +192,84 @@ class RelationshipDynamicsSelectorTemplate(Enum):
 
     def element(self) -> RelationshipDynamicsElement:
         el = RelationshipDynamicsElement(self.display_name, self.placeholder, type_icon=self.icon,
-                                         type_color=self.color,
+                                         type_color=self.color, rel_type=self.rel_type,
                                          data_type=RelationshipDynamicsDataType.TEXT)
-        el.rel_type = RelationshipDynamicsType[self.rel_type]
         if self.connector_type:
             el.connector_type = ConnectorType[self.connector_type]
         return el
 
 
-class RelationshipDynamicsSelector(GridMenuWidget):
-    selected = pyqtSignal(RelationshipDynamicsSelectorTemplate)
-    customIndividualSelected = pyqtSignal()
-    customSharedSelected = pyqtSignal()
+class RelationshipDynamicsSelectorWidget(QFrame):
+    selected = pyqtSignal(RelationshipDynamicsSelectorTemplate, bool)
 
-    def __init__(self, parent=None):
-        super().__init__(parent, largeIcons=True)
-        apply_white_menu(self)
+    def __init__(self, shared: bool, parent=None):
+        super().__init__(parent)
+        vbox(self, 15, 8)
+        self.setProperty('large-rounded', True)
+        self.setProperty('white-bg', True)
 
-        row = 0
-        self.addSection("Individual elements that are contrasting between the two characters", row, 0, colSpan=5)
-        row += 1
-        self.addSeparator(row, 0, colSpan=5)
+        self.wdgContext = columns(spacing=0)
+        margins(self.wdgContext, top=25)
+        self._selectorBtnGroup = QButtonGroup()
+        self._btnContrast = SelectorToggleButton(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
 
-        row += 1
-        self._addAction(RelationshipDynamicsSelectorTemplate.Attitude, row, 0)
-        self._addAction(RelationshipDynamicsSelectorTemplate.Desire, row, 1)
-        self._addAction(RelationshipDynamicsSelectorTemplate.Origin, row, 2)
-        self._addAction(RelationshipDynamicsSelectorTemplate.Social_status, row, 3)
+        self.lblShared = label('Shared between characters: ', description=True)
+        self.toggleShared = Toggle()
+        self.toggleShared.setChecked(shared)
+        self.btnAdd = push_btn(IconRegistry.plus_icon(RELAXED_WHITE_COLOR), f'Add element',
+                               properties=['confirm', 'positive'])
+        self.btnAdd.clicked.connect(self._add)
 
-        self.addAction(action('Custom...', slot=self.customIndividualSelected), row, 4)
+        self.wdgContext.layout().addWidget(self.lblShared)
+        self.wdgContext.layout().addWidget(self.toggleShared)
+        self.wdgContext.layout().addWidget(self.btnAdd)
 
-        row += 1
-        self.addSection(
-            "Elements that are shared between the characters, e.g., interpersonal conflict, shared goal, etc.",
-            row, 0, colSpan=5)
-        row += 1
-        self.addSeparator(row, 0, colSpan=5)
-        row += 1
-        self._addAction(RelationshipDynamicsSelectorTemplate.Conflict, row, 0)
-        self._addAction(RelationshipDynamicsSelectorTemplate.Goal, row, 1)
-        self._addAction(RelationshipDynamicsSelectorTemplate.Relationship_evolution, row, 2, colSpan=2)
+        self.wdgSelectors = QWidget()
+        flow(self.wdgSelectors)
 
-        self.addAction(action('Custom...', slot=self.customSharedSelected), row, 4)
+        btn = self._initSelector(RelationshipDynamicsSelectorTemplate.Attitude)
+        btn.setChecked(True)
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Desire)
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Origin)
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Values)
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Social_status)
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Conflict)
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Goal)
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Relationship_evolution)
 
-    def _addAction(self, template: RelationshipDynamicsSelectorTemplate, row: int, col: int, colSpan: int = 1):
-        self.addAction(action(template.display_name, IconRegistry.from_name(template.icon),
-                              slot=partial(self.selected.emit, template), incr_font_=1), row, col, colSpan=colSpan)
+        self.layout().addWidget(self.wdgSelectors)
+        self.layout().addWidget(self.wdgContext, alignment=Qt.AlignmentFlag.AlignRight)
+
+    def _selectorClicked(self, template: RelationshipDynamicsSelectorTemplate):
+        shared_visible = template.rel_type == RelationshipDynamicsType.SEPARATE
+        self.lblShared.setVisible(shared_visible)
+        self.toggleShared.setVisible(shared_visible)
+
+    def _initSelector(self, template: RelationshipDynamicsSelectorTemplate) -> SelectorToggleButton:
+        btn = SelectorToggleButton()
+        btn.template = template
+        btn.setIcon(IconRegistry.from_name(template.icon))
+        btn.setText(template.display_name)
+        btn.clicked.connect(partial(self._selectorClicked, template))
+        self._selectorBtnGroup.addButton(btn)
+        self.wdgSelectors.layout().addWidget(btn)
+
+        return btn
+
+    def _add(self):
+        if self.toggleShared.isVisible():
+            shared = self.toggleShared.isChecked()
+        else:
+            shared = False
+        self.selected.emit(self._selectorBtnGroup.checkedButton().template, shared)
 
 
 class RelationshipDynamicsEditor(TimelineLinearWidget):
     def __init__(self, plot: Plot, parent=None):
         super().__init__(parent, centerOnly=True)
         self._plot = plot
-        self._menu: Optional[RelationshipDynamicsSelector] = None
+        self._menu: Optional[MenuWidget] = None
+        self._lastShared: bool = False
 
     @overrides
     def events(self) -> List[BackstoryEvent]:
@@ -264,23 +296,33 @@ class RelationshipDynamicsEditor(TimelineLinearWidget):
         self._displayMenu(position, event)
 
     def _displayMenu(self, position: Position, row: Optional[TimelineEntityRow] = None):
-        self._menu = RelationshipDynamicsSelector()
-        self._menu.selected.connect(lambda x: self._add(x, position, row))
-        self._menu.customIndividualSelected.connect(
-            partial(self._addCustom, RelationshipDynamicsType.SEPARATE, ConnectorType.BIDIRECTIONAL, position, row))
-        self._menu.customSharedSelected.connect(
-            partial(self._addCustom, RelationshipDynamicsType.SHARED, None, position, row))
+        self._menu = MenuWidget()
+        apply_white_menu(self._menu)
+        transparent_menu(self._menu)
+        wdg = RelationshipDynamicsSelectorWidget(self._lastShared)
+        wdg.selected.connect(lambda x, y: self._add(x, y, position, row))
+        self._menu.addWidget(wdg)
+        # self._menu.customIndividualSelected.connect(
+        #     partial(self._addCustom, RelationshipDynamicsType.SEPARATE, ConnectorType.BIDIRECTIONAL, position, row))
+        # self._menu.customSharedSelected.connect(
+        #     partial(self._addCustom, RelationshipDynamicsType.SHARED, None, position, row))
         self._menu.exec()
 
-    def _add(self, template: RelationshipDynamicsSelectorTemplate, position: Position,
+    def _add(self, template: RelationshipDynamicsSelectorTemplate, shared: bool, position: Position,
              row: Optional[TimelineEntityRow] = None):
         element = template.element()
+        self._lastShared = shared
+        if shared:
+            element.rel_type = RelationshipDynamicsType.SHARED
+        else:
+            element.rel_type = RelationshipDynamicsType.SEPARATE
         element.position = position
         if row:
             self._insertElement(element, row)
         else:
             self._addElement(element)
 
+        self._menu.hide()
         self._menu = None
 
     def _addCustom(self, type_: RelationshipDynamicsType, connectorType: Optional[ConnectorType], position: Position,
