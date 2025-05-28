@@ -1046,6 +1046,8 @@ class PlotEditor(QWidget, Ui_PlotEditor):
             name = 'Main plot'
             icon = 'fa5s.theater-masks'
         plot = Plot(name, plot_type=plot_type, icon=icon)
+        if plot_type == PlotType.Relation:
+            plot.relationship = RelationshipDynamics()
         self.novel.plots.append(plot)
 
         plot_colors = list(STORY_LINE_COLOR_CODES[plot_type.value])
