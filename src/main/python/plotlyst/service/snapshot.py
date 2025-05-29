@@ -33,7 +33,8 @@ from plotlyst.view.common import push_btn, frame, exclusive_buttons, label, colu
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report.productivity import ProductivityCalendar
 from plotlyst.view.widget.button import TopSelectorButton, SelectorToggleButton, YearSelectorButton, MonthSelectorButton
-from plotlyst.view.widget.display import PopupDialog, PlotlystFooter, CopiedTextMessage, icon_text
+from plotlyst.view.widget.display import PopupDialog, PlotlystFooter, CopiedTextMessage, icon_text, \
+    HighQualityPaintedIcon
 from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar
 
 
@@ -67,6 +68,19 @@ class ProductivitySnapshotEditor(SnapshotCanvasEditor):
         self.canvas.layout().addWidget(calendar)
 
 
+class WritingSnapshotLegend(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        hbox(self, 0, 0)
+
+        self.layout().addWidget(HighQualityPaintedIcon(IconRegistry.from_name('fa5.square', color='#BB90CE'), size=16))
+        self.layout().addWidget(label('1+', description=True, decr_font_diff=2))
+        self.layout().addWidget(HighQualityPaintedIcon(IconRegistry.from_name('fa5s.square', color='#EDE1F2'), size=16))
+        self.layout().addWidget(label('450+', description=True, decr_font_diff=2))
+        self.layout().addWidget(HighQualityPaintedIcon(IconRegistry.from_name('fa5s.square', color='#C8A4D7'), size=16))
+        self.layout().addWidget(label('1500+ words', description=True, decr_font_diff=2))
+
+
 class WritingSnapshotEditor(SnapshotCanvasEditor):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -80,7 +94,12 @@ class WritingSnapshotEditor(SnapshotCanvasEditor):
         self.calendar.setNavigationBarVisible(False)
         self.lblTitle = label(calendar.month_name[self.calendar.monthShown()], h4=True, centered=True, wordWrap=True)
         set_font(self.lblTitle, app_env.serif_font())
+
+        self.legend = WritingSnapshotLegend()
+        margins(self.legend, top=10)
+
         self.canvas.layout().addWidget(self.lblTitle)
+        self.canvas.layout().addWidget(self.legend, alignment=Qt.AlignmentFlag.AlignCenter)
         self.canvas.layout().addWidget(self.calendar)
         self.canvas.layout().addWidget(PlotlystFooter(), alignment=Qt.AlignmentFlag.AlignLeft)
 
