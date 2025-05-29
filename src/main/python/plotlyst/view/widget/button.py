@@ -819,6 +819,7 @@ class YearSelectorButton(QPushButton):
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         self._dropDownIcon.paint(painter, self.width() - self._dropDownIconSize,
                                  (self.height() - self._dropDownIconSize) // 2,
                                  self._dropDownIconSize, self._dropDownIconSize)
@@ -841,7 +842,6 @@ class MonthSelectorButton(QPushButton):
     def __init__(self, parent=None):
         super().__init__(parent)
         current_month = datetime.today().month
-        self._month = current_month
         self.setText(calendar.month_name[current_month])
         self.setIcon(IconRegistry.from_name('mdi.calendar-month'))
         self.installEventFilter(ButtonPressResizeEventFilter(self))
@@ -860,6 +860,7 @@ class MonthSelectorButton(QPushButton):
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         self._dropDownIcon.paint(painter, self.width() - self._dropDownIconSize,
                                  (self.height() - self._dropDownIconSize) // 2,
                                  self._dropDownIconSize, self._dropDownIconSize)
@@ -873,6 +874,5 @@ class MonthSelectorButton(QPushButton):
         menu.exec(self.mapToGlobal(QPoint(0, self.sizeHint().height() + 10)))
 
     def _selected(self, month: int):
-        self._month = month
         self.setText(calendar.month_name[month])
         self.selected.emit(month)
