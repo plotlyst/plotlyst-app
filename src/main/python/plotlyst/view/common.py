@@ -739,3 +739,9 @@ def _splitter(wdg1: QWidget, wdg2: QWidget, sizes: List[int]) -> QSplitter:
     splitter.setSizes(sizes)
 
     return splitter
+
+
+def set_font(wdg: QWidget, family: str):
+    font = wdg.font()
+    font.setFamily(family)
+    wdg.setFont(font)

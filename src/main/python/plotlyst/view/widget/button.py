@@ -846,6 +846,8 @@ class MonthSelectorButton(QPushButton):
         self.setIcon(IconRegistry.from_name('mdi.calendar-blank'))
         self.installEventFilter(ButtonPressResizeEventFilter(self))
         pointy(self)
+        incr_font(self, 4)
+        incr_icon(self, 2)
 
         self._dropDownIcon = IconRegistry.from_name('ri.arrow-down-s-fill')
         self._dropDownIconSize: int = 15

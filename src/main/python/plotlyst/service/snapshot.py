@@ -17,17 +17,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import calendar
 from typing import Optional
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hidden, italic, incr_font
+from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hidden, italic, incr_font, margins
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import SnapshotType, Novel
-from plotlyst.view.common import push_btn, frame, exclusive_buttons, label, columns
+from plotlyst.env import app_env
+from plotlyst.view.common import push_btn, frame, exclusive_buttons, label, columns, set_font
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report.productivity import ProductivityCalendar
 from plotlyst.view.widget.button import TopSelectorButton, SelectorToggleButton, YearSelectorButton, MonthSelectorButton
@@ -40,6 +42,12 @@ class SnapshotCanvasEditor(QWidget):
         super().__init__(parent)
 
         self.canvas = QWidget()
+
+    def setYear(self, year: int):
+        pass
+
+    def setMonth(self, month: int):
+        pass
 
 
 class ProductivitySnapshotEditor(SnapshotCanvasEditor):
@@ -57,14 +65,27 @@ class WritingSnapshotEditor(SnapshotCanvasEditor):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self.novel = novel
-        vbox(self.canvas)
+        vbox(self.canvas, 4)
+        margins(self.canvas, top=8)
         transparent(self.canvas)
 
         self.calendar = ManuscriptProgressCalendar(self.novel, limitSize=False)
         self.calendar.setDisabled(True)
         self.calendar.setNavigationBarVisible(False)
+        self.lblTitle = label(calendar.month_name[self.calendar.monthShown()], h4=True, centered=True, wordWrap=True)
+        set_font(self.lblTitle, app_env.serif_font())
+        self.canvas.layout().addWidget(self.lblTitle)
         self.canvas.layout().addWidget(self.calendar)
         self.canvas.layout().addWidget(PlotlystFooter(), alignment=Qt.AlignmentFlag.AlignLeft)
+
+    @overrides
+    def setYear(self, year: int):
+        self.calendar.setCurrentPage(year, self.calendar.monthShown())
+
+    @overrides
+    def setMonth(self, month: int):
+        self.calendar.setCurrentPage(self.calendar.yearShown(), month)
+        self.lblTitle.setText(calendar.month_name[month])
 
 
 class SocialSnapshotPopup(PopupDialog):
@@ -199,10 +220,10 @@ class SocialSnapshotPopup(PopupDialog):
         self._selectType(self._snapshotType)
 
     def _yearSelected(self, year: int):
-        self._editor.calendar.setCurrentPage(year, self._editor.calendar.monthShown())
+        self._editor.setYear(year)
 
     def _monthSelected(self, month: int):
-        self._editor.calendar.setCurrentPage(self._editor.calendar.yearShown(), month)
+        self._editor.setMonth(month)
 
     def _export(self):
         if self._exported_pixmap is None:
