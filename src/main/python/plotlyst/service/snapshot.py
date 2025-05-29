@@ -22,7 +22,7 @@ from typing import Optional
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QWidget, QFileDialog
 from overrides import overrides
 from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hidden, italic, incr_font, margins
 
@@ -47,6 +47,9 @@ class SnapshotCanvasEditor(QWidget):
         pass
 
     def setMonth(self, month: int):
+        pass
+
+    def monthName(self) -> str:
         pass
 
 
@@ -86,6 +89,10 @@ class WritingSnapshotEditor(SnapshotCanvasEditor):
     def setMonth(self, month: int):
         self.calendar.setCurrentPage(self.calendar.yearShown(), month)
         self.lblTitle.setText(calendar.month_name[month])
+
+    @overrides
+    def monthName(self) -> str:
+        return calendar.month_name[self.calendar.monthShown()]
 
 
 class SocialSnapshotPopup(PopupDialog):
@@ -233,3 +240,15 @@ class SocialSnapshotPopup(PopupDialog):
             clipboard = QGuiApplication.clipboard()
             clipboard.setPixmap(self._exported_pixmap)
             self.lblCopied.trigger()
+        elif self.btnPng.isChecked():
+            target_path, _ = QFileDialog.getSaveFileName(self, "Save PNG",
+                                                         f'monthly-progress-{self._editor.monthName().lower()}.png',
+                                                         "PNG Files (*.png)")
+            if target_path:
+                self._exported_pixmap.save(target_path, "PNG")
+        elif self.btnJpg.isChecked():
+            target_path, _ = QFileDialog.getSaveFileName(self, "Save JPG",
+                                                         f'monthly-progress-{self._editor.monthName().lower()}.jpg',
+                                                         "JPEG Files (*.jpg *.jpeg)")
+            if target_path:
+                self._exported_pixmap.save(target_path, "JPEG")
