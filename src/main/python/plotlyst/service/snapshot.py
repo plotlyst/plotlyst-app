@@ -43,6 +43,9 @@ class SnapshotCanvasEditor(QWidget):
 
         self.canvas = QWidget()
 
+    def desc(self) -> str:
+        return ''
+
     def setYear(self, year: int):
         pass
 
@@ -82,6 +85,10 @@ class WritingSnapshotEditor(SnapshotCanvasEditor):
         self.canvas.layout().addWidget(PlotlystFooter(), alignment=Qt.AlignmentFlag.AlignLeft)
 
     @overrides
+    def desc(self) -> str:
+        return 'Capture an image of your monthly writing progress'
+
+    @overrides
     def setYear(self, year: int):
         self.calendar.setCurrentPage(year, self.calendar.monthShown())
 
@@ -107,6 +114,8 @@ class SocialSnapshotPopup(PopupDialog):
         self.frame.setProperty('white-bg', False)
         self.frame.layout().setSpacing(5)
 
+        self.lblDesc = label('', description=True)
+
         self.btnClipboard = TopSelectorButton('fa5.clipboard', 'Clipboard')
         self.btnPng = TopSelectorButton('mdi6.file-png-box', 'PNG')
         self.btnJpg = TopSelectorButton('mdi6.file-jpg-box', 'JPG')
@@ -122,7 +131,7 @@ class SocialSnapshotPopup(PopupDialog):
         self.wdgTop.setProperty('bg', True)
         self.wdgTop.setProperty('large-rounded', True)
         hbox(self.wdgTop, 10, 5)
-        self.wdgTop.layout().addWidget(label('Export image to: ', h5=True))
+        self.wdgTop.layout().addWidget(label('Export image to: ', incr_font_diff=1))
         self.wdgTop.layout().addWidget(self.btnClipboard)
         self.wdgTop.layout().addWidget(self.btnPng)
         self.wdgTop.layout().addWidget(self.btnJpg)
@@ -168,6 +177,7 @@ class SocialSnapshotPopup(PopupDialog):
                                   properties=['confirm', 'cancel'])
         self.btnCancel.clicked.connect(self.reject)
 
+        self.frame.layout().addWidget(self.lblDesc)
         self.frame.layout().addWidget(self.wdgTop, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.lblCopied, alignment=Qt.AlignmentFlag.AlignRight)
         self.frame.layout().addWidget(self.wdgRatios, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -190,6 +200,8 @@ class SocialSnapshotPopup(PopupDialog):
         elif snapshotType == SnapshotType.Writing:
             self._editor = WritingSnapshotEditor(self.novel)
             self.canvasContainer.layout().addWidget(self._editor.canvas)
+
+        self.lblDesc.setText(self._editor.desc())
 
     @overrides
     def paintEvent(self, event):
