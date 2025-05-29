@@ -395,7 +395,6 @@ class ManuscriptDailyProgress(QWidget):
         self.lblRemoved = label('', color='grey', h3=True)
 
         self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
-        self.btnSnapshot.setHidden(True)
         self.layout().addWidget(group(self.btnDay, self.btnJumpToToday, margin=0))
         self.layout().addWidget(group(self.lblAdded, vline(), self.lblRemoved, margin=0, spacing=0),
                                 alignment=Qt.AlignmentFlag.AlignRight)
@@ -429,7 +428,7 @@ class ManuscriptDailyProgress(QWidget):
 class ManuscriptProgressCalendar(QCalendarWidget):
     dayChanged = pyqtSignal(QDate)
 
-    def __init__(self, novel: Novel, parent=None):
+    def __init__(self, novel: Novel, limitSize: bool = True, parent=None):
         super().__init__(parent)
         self._novel = novel
 
@@ -457,18 +456,21 @@ class ManuscriptProgressCalendar(QCalendarWidget):
                 color: black;
             }}
             ''')
-            widget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
-            widget.horizontalHeader().setMinimumSectionSize(20)
-            widget.horizontalHeader().setDefaultSectionSize(25)
+            if limitSize:
+                widget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+                widget.horizontalHeader().setMinimumSectionSize(20)
+                widget.horizontalHeader().setDefaultSectionSize(25)
 
-            widget.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
-            widget.verticalHeader().setMinimumSectionSize(20)
-            widget.verticalHeader().setDefaultSectionSize(30)
+            if limitSize:
+                widget.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+                widget.verticalHeader().setMinimumSectionSize(20)
+                widget.verticalHeader().setDefaultSectionSize(30)
 
         today = QDate.currentDate()
         self.setMaximumDate(today)
 
-        self.setMaximumHeight(220)
+        if limitSize:
+            self.setMaximumHeight(220)
 
     @overrides
     def showEvent(self, event: QShowEvent) -> None:

@@ -17,6 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import calendar
 from datetime import datetime
 from functools import partial
 from typing import Optional, Set
@@ -804,6 +805,8 @@ class YearSelectorButton(QPushButton):
         self.setIcon(IconRegistry.from_name('mdi.calendar-blank'))
         self.installEventFilter(ButtonPressResizeEventFilter(self))
         pointy(self)
+        incr_font(self, 4)
+        incr_icon(self, 2)
 
         self._dropDownIcon = IconRegistry.from_name('ri.arrow-down-s-fill')
         self._dropDownIconSize: int = 15
@@ -816,6 +819,7 @@ class YearSelectorButton(QPushButton):
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         self._dropDownIcon.paint(painter, self.width() - self._dropDownIconSize,
                                  (self.height() - self._dropDownIconSize) // 2,
                                  self._dropDownIconSize, self._dropDownIconSize)
@@ -830,3 +834,45 @@ class YearSelectorButton(QPushButton):
     def _selected(self, year: int):
         self.setText(str(year))
         self.selected.emit(year)
+
+
+class MonthSelectorButton(QPushButton):
+    selected = pyqtSignal(int)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        current_month = datetime.today().month
+        self.setText(calendar.month_name[current_month])
+        self.setIcon(IconRegistry.from_name('mdi.calendar-month'))
+        self.installEventFilter(ButtonPressResizeEventFilter(self))
+        pointy(self)
+        incr_font(self, 4)
+        incr_icon(self, 2)
+
+        self._dropDownIcon = IconRegistry.from_name('ri.arrow-down-s-fill')
+        self._dropDownIconSize: int = 15
+        self.setStyleSheet(
+            f'border: 0px; background-color: rgba(0, 0, 0, 0); padding-right: {self._dropDownIconSize}px;')
+
+        self.clicked.connect(self._showSelector)
+
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self._dropDownIcon.paint(painter, self.width() - self._dropDownIconSize,
+                                 (self.height() - self._dropDownIconSize) // 2,
+                                 self._dropDownIconSize, self._dropDownIconSize)
+
+    def _showSelector(self):
+        menu = MenuWidget()
+        for month in range(1, 13):
+            month_name = calendar.month_name[month]
+            menu.addAction(action(month_name, slot=partial(self._selected, month)))
+
+        menu.exec(self.mapToGlobal(QPoint(0, self.sizeHint().height() + 10)))
+
+    def _selected(self, month: int):
+        self.setText(calendar.month_name[month])
+        self.selected.emit(month)

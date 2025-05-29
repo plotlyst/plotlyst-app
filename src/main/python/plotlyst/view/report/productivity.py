@@ -25,7 +25,7 @@ from PyQt6.QtCore import Qt, QRect, QDate, QPoint, QObject, QEvent
 from PyQt6.QtGui import QPainter, QTextOption, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView
 from overrides import overrides
-from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon, incr_font
+from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -78,8 +78,6 @@ class ProductivityReport(AbstractReport, QWidget):
 
         self.btnYearSelector = YearSelectorButton()
         self.btnYearSelector.selected.connect(self._yearSelected)
-        incr_font(self.btnYearSelector, 4)
-        incr_icon(self.btnYearSelector, 2)
 
         self.wdgCategoriesScroll = scroll_area(False, False, True)
         self.wdgCategories = QWidget()
