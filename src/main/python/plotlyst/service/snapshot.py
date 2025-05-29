@@ -60,7 +60,9 @@ class WritingSnapshotEditor(SnapshotCanvasEditor):
         vbox(self.canvas)
         transparent(self.canvas)
 
-        calendar = ManuscriptProgressCalendar(self.novel)
+        calendar = ManuscriptProgressCalendar(self.novel, limitSize=False)
+        calendar.setDisabled(True)
+        calendar.setNavigationBarVisible(False)
         # self.canvas.layout().addWidget(vspacer())
         self.canvas.layout().addWidget(calendar)
         # self.canvas.layout().addWidget(vspacer())
