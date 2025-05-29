@@ -843,7 +843,7 @@ class MonthSelectorButton(QPushButton):
         current_month = datetime.today().month
         self._month = current_month
         self.setText(calendar.month_name[current_month])
-        self.setIcon(IconRegistry.from_name('mdi.calendar-blank'))
+        self.setIcon(IconRegistry.from_name('mdi.calendar-month'))
         self.installEventFilter(ButtonPressResizeEventFilter(self))
         pointy(self)
         incr_font(self, 4)

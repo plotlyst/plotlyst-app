@@ -98,7 +98,7 @@ class SocialSnapshotPopup(PopupDialog):
 
         self.frame.setProperty('muted-bg', True)
         self.frame.setProperty('white-bg', False)
-        self.frame.layout().setSpacing(10)
+        self.frame.layout().setSpacing(5)
 
         self.btnClipboard = TopSelectorButton('fa5.clipboard', 'Clipboard')
         self.btnPng = TopSelectorButton('mdi6.file-png-box', 'PNG')
