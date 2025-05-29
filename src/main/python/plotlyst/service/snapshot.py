@@ -27,10 +27,10 @@ from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hi
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import SnapshotType, Novel
-from plotlyst.view.common import push_btn, frame, exclusive_buttons, label
+from plotlyst.view.common import push_btn, frame, exclusive_buttons, label, columns
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report.productivity import ProductivityCalendar
-from plotlyst.view.widget.button import TopSelectorButton, SelectorToggleButton
+from plotlyst.view.widget.button import TopSelectorButton, SelectorToggleButton, YearSelectorButton, MonthSelectorButton
 from plotlyst.view.widget.display import PopupDialog, PlotlystFooter, CopiedTextMessage, icon_text
 from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar
 
@@ -60,12 +60,10 @@ class WritingSnapshotEditor(SnapshotCanvasEditor):
         vbox(self.canvas)
         transparent(self.canvas)
 
-        calendar = ManuscriptProgressCalendar(self.novel, limitSize=False)
-        calendar.setDisabled(True)
-        calendar.setNavigationBarVisible(False)
-        # self.canvas.layout().addWidget(vspacer())
-        self.canvas.layout().addWidget(calendar)
-        # self.canvas.layout().addWidget(vspacer())
+        self.calendar = ManuscriptProgressCalendar(self.novel, limitSize=False)
+        self.calendar.setDisabled(True)
+        self.calendar.setNavigationBarVisible(False)
+        self.canvas.layout().addWidget(self.calendar)
         self.canvas.layout().addWidget(PlotlystFooter(), alignment=Qt.AlignmentFlag.AlignLeft)
 
 
@@ -75,6 +73,7 @@ class SocialSnapshotPopup(PopupDialog):
         self.novel = novel
         self._exported_pixmap: Optional[QPixmap] = None
         self._snapshotType = snapshotType
+        self._editor: Optional[SnapshotCanvasEditor] = None
 
         self.frame.setProperty('muted-bg', True)
         self.frame.setProperty('white-bg', False)
@@ -122,6 +121,14 @@ class SocialSnapshotPopup(PopupDialog):
         self.btnRatio9_16.setChecked(True)
         self._btnGroupRatios.buttonClicked.connect(self._ratioChanged)
 
+        self.btnYearSelector = YearSelectorButton()
+        self.btnYearSelector.selected.connect(self._yearSelected)
+        self.btnMonthSelector = MonthSelectorButton()
+        self.btnMonthSelector.selected.connect(self._monthSelected)
+        self.wdgDateSelectors = columns()
+        self.wdgDateSelectors.layout().addWidget(self.btnYearSelector)
+        self.wdgDateSelectors.layout().addWidget(self.btnMonthSelector)
+
         self.canvasContainer = frame()
         self.canvasContainer.setProperty('white-bg', True)
         self.canvasContainer.setProperty('large-rounded', True)
@@ -136,6 +143,7 @@ class SocialSnapshotPopup(PopupDialog):
         self.frame.layout().addWidget(self.wdgTop, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.lblCopied, alignment=Qt.AlignmentFlag.AlignRight)
         self.frame.layout().addWidget(self.wdgRatios, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame.layout().addWidget(self.wdgDateSelectors, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.canvasContainer, alignment=Qt.AlignmentFlag.AlignCenter)
         self.frame.layout().addWidget(self.btnCancel, alignment=Qt.AlignmentFlag.AlignRight)
 
@@ -149,11 +157,11 @@ class SocialSnapshotPopup(PopupDialog):
         clear_layout(self.canvasContainer)
 
         if snapshotType == SnapshotType.Productivity:
-            editor = ProductivitySnapshotEditor(self.novel)
-            self.canvasContainer.layout().addWidget(editor.canvas)
+            self._editor = ProductivitySnapshotEditor(self.novel)
+            self.canvasContainer.layout().addWidget(self._editor.canvas)
         elif snapshotType == SnapshotType.Writing:
-            editor = WritingSnapshotEditor(self.novel)
-            self.canvasContainer.layout().addWidget(editor.canvas)
+            self._editor = WritingSnapshotEditor(self.novel)
+            self.canvasContainer.layout().addWidget(self._editor.canvas)
 
     @overrides
     def paintEvent(self, event):
@@ -189,6 +197,12 @@ class SocialSnapshotPopup(PopupDialog):
             self.canvasContainer.setFixedSize(356, 356)
 
         self._selectType(self._snapshotType)
+
+    def _yearSelected(self, year: int):
+        self._editor.calendar.setCurrentPage(year, self._editor.calendar.monthShown())
+
+    def _monthSelected(self, month: int):
+        self._editor.calendar.setCurrentPage(self._editor.calendar.yearShown(), month)
 
     def _export(self):
         if self._exported_pixmap is None:
