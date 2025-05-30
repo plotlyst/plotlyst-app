@@ -29,8 +29,9 @@ from overrides import overrides
 from qthandy import clear_layout, vspacer, gc
 
 from plotlyst.common import clamp, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import Novel, Plot, Character, Motivation
+from plotlyst.core.domain import Novel, Plot, Character, Motivation, StoryElementType
 from plotlyst.env import app_env
+from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import icon_to_html_img
 from plotlyst.view.generated.report.plot_report_ui import Ui_PlotReport
 from plotlyst.view.icons import IconRegistry, avatars
@@ -90,11 +91,11 @@ class ArcsTreeView(TreeView):
         # self._conflictNode.setToggleTooltip('Toggle overall conflict intensity')
         # self._conflictNode.toggled.connect(self.conflictToggled)
         #
-        # self._agendaCharactersNode = ContainerNode('Characters', IconRegistry.character_icon('grey'), readOnly=True)
+        self._agencyCharactersNode = ContainerNode('Characters', IconRegistry.character_icon('grey'), readOnly=True)
 
     def refresh(self):
         clear_layout(self._centralWidget, auto_delete=False)
-        # self._agendaCharactersNode.clearChildren()
+        self._agencyCharactersNode.clearChildren()
 
         for plot in self._novel.plots:
             if plot not in self._storylineNodes.keys():
@@ -103,18 +104,20 @@ class ArcsTreeView(TreeView):
                 node.plotToggled.connect(self.storylineToggled.emit)
                 self._storylinesNode.addChild(node)
 
-        # characters = set()
-        # for scene in self._novel.scenes:
-        #     for agenda in scene.agendas:
-        #         if agenda.character_id:
-        #             characters.add(agenda.character(self._novel))
-        #
-        # for character in characters:
-        #     self._addCharacterAgendaNodes(character)
+        characters = set()
+        for scene in self._novel.scenes:
+            for agenda in scene.agency:
+                if agenda.character_id:
+                    character = entities_registry.character(str(agenda.character_id))
+                    if character:
+                        characters.add(character)
+
+        for character in characters:
+            self._addCharacterAgendaNodes(character)
 
         self._centralWidget.layout().addWidget(self._generalProgressNode)
         self._centralWidget.layout().addWidget(self._storylinesNode)
-        # self._centralWidget.layout().addWidget(self._agendaCharactersNode)
+        self._centralWidget.layout().addWidget(self._agencyCharactersNode)
         self._centralWidget.layout().addWidget(vspacer())
 
     def isGeneralProgressToggled(self) -> bool:
@@ -142,7 +145,7 @@ class ArcsTreeView(TreeView):
         agendaNode.addChild(motivationNode)
         agendaNode.addChild(conflictNode)
 
-        self._agendaCharactersNode.addChild(agendaNode)
+        self._agencyCharactersNode.addChild(agendaNode)
 
 
 class ArcReport(AbstractReport, Ui_PlotReport):
@@ -380,10 +383,12 @@ class StoryArcChart(BaseChart):
 
         for i, scene in enumerate(self.novel.scenes):
             intensity = 0
-            for agenda in scene.agendas:
-                if character and agenda.character_id != character.id:
+            for agency in scene.agency:
+                if character and agency.character_id != character.id:
                     continue
-                intensity = max([intensity, agenda.intensity])
+                for conflict in agency.conflicts:
+                    if conflict.tier:
+                        intensity = max([intensity, conflict.tier.intensity() * 2])
             series.append(i + 1, intensity)
 
         return series
@@ -392,11 +397,18 @@ class StoryArcChart(BaseChart):
         series = QSplineSeries()
         series.setName(icon_to_html_img(avatars.avatar(character)) + 'Emotion')
         for i, scene in enumerate(self.novel.scenes):
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 if character and agenda.character_id != character.id:
                     continue
-                if agenda.emotion:
-                    series.append(i + 1, agenda.emotion)
+                emotion = 0
+                emotion_backup = 0
+                for el in agenda.elements:
+                    if el.type == StoryElementType.Emotion_change:
+                        emotion = el.value
+                    elif el.type == StoryElementType.Emotion:
+                        emotion_backup = el.value
+                if emotion or emotion_backup:
+                    series.append(i + 1, emotion if emotion else emotion_backup)
         return series
 
     def _characterMotivationSeries(self, character: Character) -> List[QAbstractSeries]:
@@ -421,7 +433,7 @@ class StoryArcChart(BaseChart):
         splines: Dict[str, QSplineSeries] = {}
         values: Dict[str, int] = {}
         for i, scene in enumerate(self.novel.scenes):
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 if character and agenda.character_id != character.id:
                     continue
                 for motivation, v in agenda.motivations.items():

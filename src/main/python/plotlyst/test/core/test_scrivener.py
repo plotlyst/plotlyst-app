@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from plotlyst.core.domain import Novel, Chapter, Scene, SceneStructureAgenda, Character, ImportOrigin, \
+from plotlyst.core.domain import Novel, Chapter, Scene, CharacterAgency, Character, ImportOrigin, \
     ImportOriginType
 from plotlyst.core.scrivener import ScrivenerParser
 
@@ -39,15 +39,15 @@ def test_import_with_acts(test_client):
                 Chapter(title='Chapter', id=UUID('567B89D4-21E4-44DF-BD5C-3F32EEC78ADD')),
                 Chapter(title='Chapter', id=UUID('245C2ABD-E9C1-4091-B1B7-DA32402644E7'))]
     scenes = [Scene(title='Scene 1', id=UUID('A9C97B44-46C8-4CA8-8F28-B8C0606A58EF'), chapter=chapters[0],
-                    synopsis='Scene 1 synopsis', agendas=[SceneStructureAgenda()]),
+                    synopsis='Scene 1 synopsis', agency=[CharacterAgency()]),
               Scene(title='Scene 2', id=UUID('E6BBAC10-E639-4E86-A784-EDEEE7DF0206'), chapter=chapters[0],
-                    synopsis='Scene 2 synopsis', agendas=[SceneStructureAgenda()]),
+                    synopsis='Scene 2 synopsis', agency=[CharacterAgency()]),
               Scene(title='Scene 3', id=UUID('2B5EF0AA-74AE-435D-98A6-096CEAF8F721'), chapter=chapters[0],
-                    agendas=[SceneStructureAgenda()]),
+                    agency=[CharacterAgency()]),
               Scene(title='Scene', id=UUID('F5604565-3F9E-451B-98E0-142BE1BDE83D'), chapter=chapters[1],
-                    agendas=[SceneStructureAgenda()]),
+                    agency=[CharacterAgency()]),
               Scene(title='Scene', id=UUID('156AAE33-5D68-4ACA-8469-6440CDFED4EA'), chapter=chapters[2],
-                    agendas=[SceneStructureAgenda()])]
+                    agency=[CharacterAgency()])]
     characters = [Character('John', id=UUID('C33E84AA-CC86-4112-A2B4-713917EDB7EF')),
                   Character('Luna', id=UUID('CA105A6C-E2E7-4A27-9EF3-CB9D6D6B9CD9'))]
     # locations = [Location('Place one', id=UUID('BEF3ADD7-99D3-46B6-829F-D4B7CF08D4D0'))]

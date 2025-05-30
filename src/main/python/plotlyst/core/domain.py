@@ -1177,6 +1177,7 @@ class DynamicPlotPrincipleGroupType(Enum):
     EVOLUTION_OF_THE_MONSTER = 4
     CAST = 5
     TIMELINE = 6
+    RELATIONSHIP = 7
 
     def display_name(self) -> str:
         return self.name.lower().capitalize().replace('_', ' ')
@@ -1185,7 +1186,7 @@ class DynamicPlotPrincipleGroupType(Enum):
         if self == DynamicPlotPrincipleGroupType.ESCALATION:
             return 'ph.shuffle-bold'
         elif self == DynamicPlotPrincipleGroupType.ALLIES_AND_ENEMIES:
-            return 'fa5s.thumbs-down'
+            return 'fa5s.thumbs-up'
         elif self == DynamicPlotPrincipleGroupType.SUSPECTS:
             return 'ri.criminal-fill'
         elif self == DynamicPlotPrincipleGroupType.ELEMENTS_OF_WONDER:
@@ -1196,6 +1197,8 @@ class DynamicPlotPrincipleGroupType(Enum):
             return 'mdi.robber'
         elif self == DynamicPlotPrincipleGroupType.TIMELINE:
             return 'mdi.timeline-text-outline'
+        elif self == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            return 'fa5s.people-arrows'
 
     def color(self) -> str:
         if self == DynamicPlotPrincipleGroupType.ESCALATION:
@@ -1228,6 +1231,8 @@ class DynamicPlotPrincipleGroupType(Enum):
             return "The ensemble of characters involved in a caper, each with unique skills and contributions"
         elif self == DynamicPlotPrincipleGroupType.TIMELINE:
             return "Most significant events related to this storyline"
+        elif self == DynamicPlotPrincipleGroupType.RELATIONSHIP:
+            return "A dynamic relationship and its evolution between two or more characters"
 
 
 @dataclass
@@ -1386,6 +1391,38 @@ class StorylineLink:
     text: str = ''
 
 
+class RelationshipDynamicsType(Enum):
+    SEPARATE = 0
+    SHARED = 1
+
+
+class RelationshipDynamicsDataType(Enum):
+    TEXT = 0
+    RELATION = 1
+
+
+class ConnectorType(Enum):
+    LEFT_TO_RIGHT = 0
+    RIGHT_TO_LEFT = 1
+    BIDIRECTIONAL = 2
+
+
+@dataclass
+class RelationshipDynamicsElement(BackstoryEvent):
+    source: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    target: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    rel_type: RelationshipDynamicsType = RelationshipDynamicsType.SEPARATE
+    data_type: RelationshipDynamicsDataType = RelationshipDynamicsDataType.TEXT
+    connector_type: Optional[ConnectorType] = None
+
+
+@dataclass
+class RelationshipDynamics:
+    source_characters: List[uuid.UUID] = field(default_factory=list)
+    target_characters: List[uuid.UUID] = field(default_factory=list)
+    elements: List[RelationshipDynamicsElement] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+
+
 @dataclass
 class Plot(SelectionItem, CharacterBased):
     id: uuid.UUID = field(default_factory=uuid.uuid4)
@@ -1398,6 +1435,8 @@ class Plot(SelectionItem, CharacterBased):
     dynamic_principles: List[DynamicPlotPrincipleGroup] = field(default_factory=list)
     has_progression: bool = False
     timeline: List[BackstoryEvent] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+    has_relationship: bool = False
+    relationship: Optional[RelationshipDynamics] = None
     has_escalation: bool = False
     escalation: Optional[DynamicPlotPrincipleGroup] = None
     has_allies: bool = False
@@ -1454,35 +1493,77 @@ class Plot(SelectionItem, CharacterBased):
 
 
 class ConflictType(Enum):
-    CHARACTER = 0
-    SOCIETY = 1
-    NATURE = 2
-    TECHNOLOGY = 3
-    SUPERNATURAL = 4
-    SELF = 5
+    PERSONAL = 0
+    COMMUNITY = 1
+    MILIEU = 2
+    GLOBAL = 3
+    INTERNAL = 4
+
+    def display_name(self) -> str:
+        return self.name.lower().capitalize()
+
+    def icon(self) -> str:
+        if self == ConflictType.PERSONAL:
+            return 'fa5s.user'
+        elif self == ConflictType.COMMUNITY:
+            return 'ei.group-alt'
+        elif self == ConflictType.INTERNAL:
+            return 'mdi.mirror'
+        elif self == ConflictType.GLOBAL:
+            return 'fa5s.globe'
+        elif self == ConflictType.MILIEU:
+            return 'mdi.globe-model'
+
+    def color(self) -> str:
+        if self == ConflictType.INTERNAL:
+            return '#843b4d'
+        if self == ConflictType.GLOBAL:
+            return '#513E2B'
+        if self == ConflictType.MILIEU:
+            return '#787236'
+        if self == ConflictType.COMMUNITY:
+            return '#705089'
+        return '#e57c04'
+
+    def placeholder(self) -> str:
+        if self == ConflictType.COMMUNITY:
+            return "Conflict that affects a community the character is part of"
+        if self == ConflictType.GLOBAL:
+            return "Conflict that globally impacts a broader population"
+        if self == ConflictType.INTERNAL:
+            return "Character struggles with their own desires and beliefs"
+        if self == ConflictType.MILIEU:
+            return "Conflict against the environment or society"
+        return "Conflict that personally affects the character"
+
+
+class Tier(Enum):
+    S = 's'
+    A = 'a'
+    B = 'b'
+    C = 'c'
+    D = 'd'
+
+    def intensity(self) -> int:
+        if self == Tier.D:
+            return 1
+        if self == Tier.C:
+            return 2
+        if self == Tier.B:
+            return 3
+        if self == Tier.A:
+            return 4
+        if self == Tier.S:
+            return 5
 
 
 @dataclass
-class Conflict(SelectionItem, CharacterBased):
-    type: ConflictType = ConflictType.CHARACTER
+class Conflict(SelectionItem):
+    scope: ConflictType = ConflictType.PERSONAL
     character_id: Optional[uuid.UUID] = None
     id: uuid.UUID = field(default_factory=uuid.uuid4)
-    conflicting_character_id: Optional[uuid.UUID] = None
-
-    def __post_init__(self):
-        self._character: Optional[Character] = None
-        self._conflicting_character: Optional[Character] = None
-
-    def conflicting_character(self, novel: 'Novel') -> Optional[Character]:
-        if not self.conflicting_character_id:
-            return None
-        if not self._conflicting_character:
-            for c in novel.characters:
-                if c.id == self.conflicting_character_id:
-                    self._conflicting_character = c
-                    break
-
-        return self._conflicting_character
+    desc: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    tier: Optional[Tier] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
     @overrides
     def __eq__(self, other: 'Conflict'):
@@ -1493,6 +1574,23 @@ class Conflict(SelectionItem, CharacterBased):
     @overrides
     def __hash__(self):
         return hash(str(self.id))
+
+    def display_icon(self) -> str:
+        if self.scope == ConflictType.PERSONAL:
+            return 'mdi.sword-cross'
+        else:
+            return self.scope.icon()
+
+    def display_name(self) -> str:
+        if self.text:
+            return self.text
+        elif self.scope == ConflictType.PERSONAL:
+            return 'Conflict'
+        else:
+            return f'{self.scope.display_name()} conflict'
+
+    def display_color(self) -> str:
+        return self.scope.color()
 
 
 @dataclass
@@ -1594,18 +1692,6 @@ class SceneStructureItem(OutlineItem):
         self.meta['outcome'] = value.value
 
 
-@dataclass
-class ConflictReference:
-    conflict_id: uuid.UUID
-    message: str = ''
-    intensity: int = 1
-
-    def conflict(self, novel: 'Novel') -> Optional[Conflict]:
-        for conflict in novel.conflicts:
-            if conflict.id == self.conflict_id:
-                return conflict
-
-
 class Motivation(Enum):
     PHYSIOLOGICAL = 0
     SAFETY = 1
@@ -1681,38 +1767,13 @@ class CharacterAgencyChanges:
 
 
 @dataclass
-class SceneStructureAgenda(CharacterBased):
+class CharacterAgency:
     character_id: Optional[uuid.UUID] = None
-    conflict_references: List[ConflictReference] = field(default_factory=list)
-    goal_references: List[GoalReference] = field(default_factory=list)
-    intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
-    emotion: Optional[int] = None
+    conflicts: List[Conflict] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
     motivations: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
-    story_elements: List['StoryElement'] = field(default_factory=list)
-    changes: List[CharacterAgencyChanges] = field(default_factory=list)
-
-    def __post_init__(self):
-        self._character: Optional[Character] = None
-
-    def conflicts(self, novel: 'Novel') -> List[Conflict]:
-        conflicts_ = []
-        for id_ in [x.conflict_id for x in self.conflict_references]:
-            for conflict in novel.conflicts:
-                if conflict.id == id_:
-                    conflicts_.append(conflict)
-
-        return conflicts_
-
-    def remove_conflict(self, conflict: Conflict):
-        self.conflict_references = [x for x in self.conflict_references if x.conflict_id != conflict.id]
-
-    def remove_goal(self, char_goal: CharacterGoal):
-        self.goal_references = [x for x in self.goal_references if x.character_goal_id != char_goal.id]
-
-    def goals(self, character: Character) -> List[CharacterGoal]:
-        goals_ = character.flatten_goals()
-        agenda_goal_ids = [x.character_goal_id for x in self.goal_references]
-        return [x for x in goals_ if x.id in agenda_goal_ids]
+    intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
+    changes: List[CharacterAgencyChanges] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+    elements: List['StoryElement'] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass
@@ -1824,6 +1885,10 @@ class StoryElementType(Enum):
     Character_state_change = 'character_state_change'
     Character_internal_state_change = 'character_internal_state_change'
 
+    Connector = 'connector'
+    H_line = 'h_line'
+    V_line = 'v_line'
+
     Expectation = 'expectation'
     Realization = 'realization'
     Goal = 'goal'
@@ -1836,6 +1901,8 @@ class StoryElementType(Enum):
     Responsibility = 'responsibility'
     Decision = 'decision'
     Emotion = 'emotion'
+    Emotion_change = 'emotion_change'
+    Relationship = 'relationship'
     Agency = 'agency'
     Initiative = 'initiative'
     Catalyst = 'catalyst'
@@ -1843,8 +1910,7 @@ class StoryElementType(Enum):
     Plan_change = 'plan_change'
     Collaboration = 'collaboration'
     Subtext = 'subtext'
-    H_line = 'h_line'
-    V_line = 'v_line'
+
     Event = 'event'
     Effect = 'effect'
     Delayed_effect = 'delayed_effect'
@@ -1876,6 +1942,8 @@ class StoryElementType(Enum):
             return 'fa5s.vial'
         elif self == StoryElementType.Action:
             return 'mdi.run-fast'
+        elif self == StoryElementType.Impact:
+            return 'mdi.motion'
         elif self == StoryElementType.Outcome:
             return 'fa5s.bomb'
         elif self == StoryElementType.Character_state:
@@ -1894,6 +1962,12 @@ class StoryElementType(Enum):
             return 'fa5.lightbulb'
         elif self == StoryElementType.Motivation:
             return 'fa5s.fist-raised'
+        elif self == StoryElementType.Emotion:
+            return 'mdi.emoticon-neutral-outline'
+        elif self == StoryElementType.Emotion_change:
+            return 'mdi.emoticon-neutral-outline'
+        elif self == StoryElementType.Relationship:
+            return 'fa5s.people-arrows'
 
     def placeholder(self) -> str:
         if self == StoryElementType.Goal:
@@ -1901,7 +1975,7 @@ class StoryElementType(Enum):
         elif self == StoryElementType.Conflict:
             return "What kind of conflict does the character have to face?"
         elif self == StoryElementType.Internal_conflict:
-            return "What internal struggles, dilemmas, doubts does the character have to face?"
+            return "What internal struggles does the character have to face?"
         elif self == StoryElementType.Outcome:
             return "What's the scene's outcome for the character?"
         elif self == StoryElementType.Character_state:
@@ -1911,11 +1985,11 @@ class StoryElementType(Enum):
         elif self == StoryElementType.Character_state_change:
             return "How does the character's external circumstances change?"
         elif self == StoryElementType.Character_internal_state_change:
-            return "How does the character's internal state change, mentally or psychologically?"
+            return "How does the character's internal state change?"
         elif self == StoryElementType.Expectation:
             return "What does the character anticipate to happen?"
         elif self == StoryElementType.Realization:
-            return "What did actually happen in the scene that upended expectations?"
+            return "What did actually happen that upended expectations?"
         elif self == StoryElementType.Catalyst:
             return "What disrupts the character's life and forces them to act?"
         elif self == StoryElementType.Dilemma:
@@ -1924,10 +1998,18 @@ class StoryElementType(Enum):
             return "An impossible choice between two equally good or bad outcomes"
         elif self == StoryElementType.Action:
             return "What steps or decisions does the character make?"
+        elif self == StoryElementType.Impact:
+            return "What impact do the character’s actions have on the story?"
         elif self == StoryElementType.Decision:
             return "What decision does the character have to make?"
         elif self == StoryElementType.Motivation:
             return "How does the character's motivation change?"
+        elif self == StoryElementType.Emotion:
+            return "What's the character's emotional state?"
+        elif self == StoryElementType.Emotion_change:
+            return "How does the character's emotional state change?"
+        elif self == StoryElementType.Relationship:
+            return "How does the dynamic evolve among the characters?"
 
         return ''
 
@@ -1937,10 +2019,14 @@ class StoryElement:
     type: StoryElementType
     ref: Optional[uuid.UUID] = None
     text: str = ''
-    intensity: int = field(default=0, metadata=config(exclude=exclude_if_empty))
+    value: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     row: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     col: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     arrows: Dict[int, int] = field(default_factory=dict, metadata=config(exclude=exclude_if_empty))
+    elements: List['StoryElement'] = field(default_factory=list, metadata=config(exclude=exclude_if_empty))
+    dimension: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    modifier: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    icon: str = field(default='', metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass
@@ -2015,7 +2101,7 @@ class Scene:
     synopsis: str = ''
     pov: Optional[Character] = None
     characters: List[Character] = field(default_factory=list)
-    agendas: List[SceneStructureAgenda] = field(default_factory=list)
+    agency: List[CharacterAgency] = field(default_factory=list)
     wip: bool = False
     plot_values: List[ScenePlotReference] = field(default_factory=list)
     day: int = 1
@@ -4182,7 +4268,7 @@ class Novel(NovelDescriptor):
         char_ids = set()
         chars: List[Character] = []
         for scene in self.scenes:
-            for agenda in scene.agendas:
+            for agenda in scene.agency:
                 if agenda.character_id and str(agenda.character_id) not in char_ids:
                     character: Character = agenda.character(self)
                     if character:
@@ -4219,7 +4305,7 @@ class Novel(NovelDescriptor):
 
     @staticmethod
     def new_scene(title: str = '') -> Scene:
-        return Scene(title, agendas=[SceneStructureAgenda()])
+        return Scene(title)
 
     @staticmethod
     def new_novel(title: str = '') -> 'Novel':

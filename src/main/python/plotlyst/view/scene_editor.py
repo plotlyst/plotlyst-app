@@ -42,7 +42,7 @@ from plotlyst.events import NovelAboutToSyncEvent, SceneStoryBeatChangedEvent, \
 from plotlyst.model.characters_model import CharactersSceneAssociationTableModel
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import emoji_font, set_tab_icon, \
-    push_btn, fade_out_and_gc, set_tab_visible, scroll_to_bottom, link_buttons_to_pages
+    push_btn, fade_out_and_gc, set_tab_visible, link_buttons_to_pages
 from plotlyst.view.generated.scene_editor_ui import Ui_SceneEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
@@ -74,21 +74,13 @@ class SceneEditor(QObject, EventListener):
 
         set_tab_icon(self.ui.tabWidget, self.ui.tabFunctions,
                      IconRegistry.storylines_icon(color_on=PLOTLYST_SECONDARY_COLOR))
-        set_tab_icon(self.ui.tabWidget, self.ui.tabDrive,
-                     IconRegistry.from_name('mdi.chemical-weapon', color_on=PLOTLYST_SECONDARY_COLOR))
+        set_tab_icon(self.ui.tabWidget, self.ui.tabAgency,
+                     IconRegistry.from_name('ph.user-focus', color_on=PLOTLYST_SECONDARY_COLOR, scale=1.3))
         set_tab_icon(self.ui.tabWidget, self.ui.tabStructure,
                      IconRegistry.from_name('mdi6.timeline-outline', rotated=90, color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabWidget, self.ui.tabNotes, IconRegistry.document_edition_icon())
 
-        set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabAgency, IconRegistry.character_icon())
-        # set_tab_icon(self.ui.tabWidgetDrive, self.ui.tabCuriosity,
-        #              IconRegistry.from_name('ei.question-sign', color_on=PLOTLYST_SECONDARY_COLOR))
-        # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabDramaticFunctions,
-        #              IconRegistry.from_name('mdi.yin-yang', color_on=PLOTLYST_SECONDARY_COLOR))
-        # set_tab_icon(self.ui.tabWidgetFunctions, self.ui.tabInformationFunctions,
-        #              IconRegistry.from_name('fa5s.book-reader', color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_visible(self.ui.tabWidget, self.ui.tabStructure, False)
-        set_tab_visible(self.ui.tabWidget, self.ui.tabDrive, False)
 
         self.ui.btnDramaticFunctions.setIcon(
             IconRegistry.from_name('mdi.yin-yang', 'grey', color_on=PLOTLYST_SECONDARY_COLOR))
@@ -191,7 +183,7 @@ class SceneEditor(QObject, EventListener):
 
         self._agencyEditor = SceneAgencyEditor(self.novel)
         self._agencyEditor.setUnsetCharacterSlot(self._character_not_selected_notification)
-        self._agencyEditor.agencyAdded.connect(lambda: scroll_to_bottom(self.ui.scrollArea_2))
+        self._agencyEditor.agencyAdded.connect(lambda x: self.ui.scrollArea_2.ensureWidgetVisible(x, 10, 0))
         self.ui.scrollAgency.layout().addWidget(self._agencyEditor)
 
         self._informationEditor = ReaderInformationEditor(self.novel)
@@ -219,7 +211,6 @@ class SceneEditor(QObject, EventListener):
             PremiumOverlayWidget(self._informationEditor, "Reader's information tracking", icon='fa5s.book-reader',
                                  alt_link='https://plotlyst.com/docs/scenes/')
             self.ui.tabWidget.setCurrentWidget(self.ui.tabNotes)
-        self.ui.tabWidgetDrive.setCurrentWidget(self.ui.tabAgency)
         self.ui.tabWidget.currentChanged.connect(self._page_toggled)
 
         self.repo = RepositoryPersistenceManager.instance()
@@ -268,7 +259,7 @@ class SceneEditor(QObject, EventListener):
         # self.ui.wdgSceneStructure.setScene(self.novel, self.scene)
         # self.tag_selector.setScene(self.scene)
         self._functionsEditor.setScene(self.scene)
-        # self._agencyEditor.setScene(self.scene)
+        self._agencyEditor.setScene(self.scene)
         # self._curiosityEditor.setScene(self.scene)
         self._informationEditor.setScene(self.scene)
         self._progressEditor.setScene(self.scene)

@@ -26,19 +26,19 @@ import qtanim
 from PyQt6.QtCharts import QChartView
 from PyQt6.QtCore import pyqtProperty, QSize, Qt, QPoint, pyqtSignal, QRectF, QTimer, QEvent, QPointF, QObject
 from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyEvent, QIcon, QRadialGradient, \
-    QPen
+    QPen, QPolygonF
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
     QApplication, QTimeEdit, QAbstractSpinBox, QDateTimeEdit
 from overrides import overrides
 from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, pointy, hbox, busy, italic, decr_font, \
-    margins, translucent, sp, decr_icon
+    margins, translucent, sp, decr_icon, retain_when_hidden
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, \
     PLOTLYST_SECONDARY_COLOR, PLACEHOLDER_TEXT_COLOR
-from plotlyst.core.domain import WORLD_BUILDING_PREVIEW
+from plotlyst.core.domain import WORLD_BUILDING_PREVIEW, ConnectorType
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
@@ -567,6 +567,42 @@ class ArrowButton(QToolButton):
             self._increaseState()
 
 
+class ConnectorWidget(QWidget):
+    def __init__(self, parent=None, direction: ConnectorType = ConnectorType.LEFT_TO_RIGHT):
+        super().__init__(parent)
+        self._direction = direction
+
+        self._arrowhead = QPolygonF([
+            QPointF(-4, -6),  # Top point of the arrowhead
+            QPointF(8, 0),  # Far tip of the arrowhead
+            QPointF(-4, 6),  # Bottom point of the arrowhead
+            QPointF(1, 0),  # Inner point for a sharper look
+        ])
+
+    @overrides
+    def sizeHint(self) -> QSize:
+        return QSize(80, 40)
+
+    @overrides
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        painter.setPen(QPen(QColor('#6c757d'), 2))
+        painter.drawLine(5, self.height() // 2, self.width(), self.height() // 2)
+
+        painter.setBrush(QBrush(QColor('#6c757d')))
+
+        if self._direction != ConnectorType.RIGHT_TO_LEFT:
+            _arrowhead = self._arrowhead.translated(self.width() - 10, self.height() // 2)
+            painter.drawConvexPolygon(_arrowhead)
+
+        if self._direction != ConnectorType.LEFT_TO_RIGHT:
+            mirrored_arrow = QPolygonF([QPointF(-pt.x(), pt.y()) for pt in self._arrowhead])
+            mirrored_arrow = mirrored_arrow.translated(10, self.height() // 2)
+            painter.drawConvexPolygon(mirrored_arrow)
+
+
 class ReferencesButton(QPushButton):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -825,3 +861,28 @@ class TimerDisplay(QTimeEdit):
         self.setDisplayFormat("mm:ss")
         self.setCurrentSection(QDateTimeEdit.Section.MinuteSection)
         transparent(self)
+
+
+class HintLabel(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        hbox(self, 0, 0)
+
+        self._icon = Icon()
+        self._icon.setIcon(IconRegistry.general_info_icon('lightgrey'))
+        retain_when_hidden(self._icon)
+
+        self._lbl = label('', wordWrap=True, description=True)
+
+        self.layout().addWidget(self._icon)
+        self.layout().addWidget(self._lbl)
+
+        self._icon.setHidden(True)
+
+    def display(self, hint: str):
+        self._lbl.setText(hint)
+        self._icon.setVisible(True)
+
+    def clear(self):
+        self._lbl.setText('')
+        self._icon.setHidden(True)
