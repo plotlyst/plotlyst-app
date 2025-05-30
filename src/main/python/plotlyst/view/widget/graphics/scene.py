@@ -112,6 +112,15 @@ class NetworkScene(QGraphicsScene):
     def endAdditionMode(self):
         self._additionDescriptor = None
 
+    def isSnapToGrid(self) -> bool:
+        return False
+
+    def gridDistance(self) -> int:
+        return 50
+
+    def gridRange(self) -> int:
+        return 15
+
     def linkMode(self) -> bool:
         return self._linkMode
 
@@ -522,6 +531,8 @@ class NetworkScene(QGraphicsScene):
             item = ImageItem(node)
         else:
             item = EventItem(node)
+
+        item.setStickPoint(QPointF(1, 1), 15)
 
         self.addItem(item)
         return item

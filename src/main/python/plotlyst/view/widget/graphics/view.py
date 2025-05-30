@@ -28,7 +28,7 @@ from PyQt6.QtGui import QPainter, QWheelEvent, QMouseEvent, QColor, QIcon, QResi
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsItem, QFrame, \
     QToolButton, QApplication, QWidget
 from overrides import overrides
-from qthandy import sp, incr_icon, vbox
+from qthandy import sp, incr_icon, vbox, hbox
 from qthandy.filter import DragEventFilter
 from qtpy import sip
 
@@ -172,6 +172,12 @@ class NetworkGraphicsView(BaseGraphicsView):
         shadow(self._controlsNavBar)
         vbox(self._controlsNavBar, 5, 6)
 
+        self._settingsBar = self._roundedFrame()
+        sp(self._settingsBar).h_max()
+        shadow(self._settingsBar)
+        hbox(self._settingsBar, 5, 6)
+        self._settingsBar.setHidden(True)
+
         self._btnUndo = tool_btn(IconRegistry.from_name('mdi.undo', BLACK_COLOR), transparent_=True, tooltip='Undo')
         self._btnUndo.setShortcut(QKeySequence.StandardKey.Undo)
         self._btnUndo.setDisabled(True)
@@ -277,6 +283,10 @@ class NetworkGraphicsView(BaseGraphicsView):
                                          self._controlsNavBar.sizeHint().height())
         self._helpLabel.setGeometry(10, 70, self._helpLabel.sizeHint().width(),
                                     self._helpLabel.sizeHint().height())
+
+        self._settingsBar.setGeometry(self.width() - self._settingsBar.sizeHint().width() - 10, 10,
+                                      self._settingsBar.sizeHint().width(),
+                                      self._settingsBar.sizeHint().height())
 
     def _initScene(self):
         return NetworkScene()

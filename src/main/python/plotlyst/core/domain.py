@@ -4048,11 +4048,17 @@ class DiagramData:
 
 
 @dataclass
+class DiagramSettings:
+    snap_to_grid: bool = field(default=False, metadata=config(exclude=exclude_if_false))
+
+
+@dataclass
 class Diagram:
     title: str = field(default='', metadata=config(exclude=exclude_if_empty))
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     icon: str = field(default='', metadata=config(exclude=exclude_if_empty))
     icon_color: str = field(default='black', metadata=config(exclude=exclude_if_black))
+    settings: DiagramSettings = field(default_factory=DiagramSettings)
 
     def __post_init__(self):
         self.loaded: bool = False
