@@ -27,11 +27,12 @@ from qthandy import line
 
 from plotlyst.common import BLACK_COLOR
 from plotlyst.core.client import json_client
-from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_TOOL, NODE_SUBTYPE_COST
+from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_TOOL, NODE_SUBTYPE_COST, Diagram
 from plotlyst.core.domain import Node
 from plotlyst.core.domain import Novel
 from plotlyst.service.image import LoadedImage, upload_image, load_image
 from plotlyst.service.persistence import RepositoryPersistenceManager
+from plotlyst.view.common import tool_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.graphics import NetworkGraphicsView, NetworkScene, EventItem, NodeItem
@@ -56,7 +57,11 @@ class EventsMindMapScene(NetworkScene):
 
     @overrides
     def isSnapToGrid(self) -> bool:
-        return True
+        return self._diagram.settings.snap_to_grid
+
+    def setSnapToGrid(self, enabled: bool):
+        self._diagram.settings.snap_to_grid = enabled
+        self._save()
 
     @overrides
     def _load(self):
@@ -112,6 +117,14 @@ class EventsMindMapView(NetworkGraphicsView):
         # self._stickerEditor = StickerEditor(self)
         # self._stickerEditor.setVisible(False)
 
+        self._settingsBar.setVisible(True)
+        self._btnGrid = tool_btn(IconRegistry.from_name('mdi.dots-grid'), "Snap elements to an invisible grid",
+                                 True, icon_resize=False,
+                                 properties=['transparent-rounded-bg-on-hover', 'top-selector'],
+                                 parent=self._settingsBar)
+        self._settingsBar.layout().addWidget(self._btnGrid)
+        self._btnGrid.clicked.connect(self._scene.setSnapToGrid)
+
         self._itemEditor = EventItemToolbar(self.undoStack, self)
         self._itemEditor.setVisible(False)
 
@@ -126,6 +139,11 @@ class EventsMindMapView(NetworkGraphicsView):
         self._iconEditor.setVisible(False)
 
         self._arrangeSideBars()
+
+    @overrides
+    def setDiagram(self, diagram: Diagram):
+        super().setDiagram(diagram)
+        self._btnGrid.setChecked(diagram.settings.snap_to_grid)
 
     @overrides
     def _initScene(self) -> NetworkScene:
