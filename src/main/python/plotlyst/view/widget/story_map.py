@@ -23,7 +23,7 @@ from typing import Optional
 from PyQt6.QtGui import QImage
 from PyQt6.QtGui import QShowEvent
 from overrides import overrides
-from qthandy import line
+from qthandy import line, decr_icon
 
 from plotlyst.common import BLACK_COLOR
 from plotlyst.core.client import json_client
@@ -122,6 +122,7 @@ class EventsMindMapView(NetworkGraphicsView):
                                  True, icon_resize=False,
                                  properties=['transparent-rounded-bg-on-hover', 'top-selector'],
                                  parent=self._settingsBar)
+        decr_icon(self._btnGrid, 2)
         self._settingsBar.layout().addWidget(self._btnGrid)
         self._btnGrid.clicked.connect(self._scene.setSnapToGrid)
 
