@@ -191,9 +191,9 @@ class BackstoryCard(AbstractTimelineCard):
 
 
 class PlaceholderWidget(QFrame):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, acceptDrops: bool = True):
         super().__init__(parent)
-        self.setAcceptDrops(True)
+        self.setAcceptDrops(acceptDrops)
 
         self.btnPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
         sp(self.btnPlus).h_exp()
@@ -260,9 +260,11 @@ class PlaceholdersRow(QWidget):
         hbox(self, 0, 0)
         # self.setMinimumHeight(5)
 
-        self.placeholderLeft = PlaceholderWidget()
-        self.placeholderCenter = PlaceholderWidget()
-        self.placeholderRight = PlaceholderWidget()
+        acceptDrops = len(mimeType) > 0
+
+        self.placeholderLeft = PlaceholderWidget(acceptDrops=acceptDrops)
+        self.placeholderCenter = PlaceholderWidget(acceptDrops=acceptDrops)
+        self.placeholderRight = PlaceholderWidget(acceptDrops=acceptDrops)
         self.layout().addWidget(spacer())
         self.layout().addWidget(self.placeholderLeft)
         self.layout().addWidget(self.placeholderCenter)
@@ -275,12 +277,13 @@ class PlaceholdersRow(QWidget):
             self.placeholderLeft.setFixedWidth(1)
             self.placeholderRight.setFixedWidth(1)
 
-        self.placeholderLeft.installEventFilter(
-            DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.LEFT)))
-        self.placeholderRight.installEventFilter(
-            DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.RIGHT)))
-        self.placeholderCenter.installEventFilter(
-            DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.CENTER)))
+        if mimeType:
+            self.placeholderLeft.installEventFilter(
+                DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.LEFT)))
+            self.placeholderRight.installEventFilter(
+                DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.RIGHT)))
+            self.placeholderCenter.installEventFilter(
+                DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.CENTER)))
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:

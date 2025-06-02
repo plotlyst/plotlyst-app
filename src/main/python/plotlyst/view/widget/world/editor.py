@@ -28,8 +28,8 @@ from PyQt6.QtGui import QFont, QResizeEvent, QMouseEvent, QColor, QIcon, QImage,
 from PyQt6.QtWidgets import QWidget, QSplitter, QLineEdit, QDialog, QGridLayout, QSlider, QToolButton, QButtonGroup, \
     QLabel, QToolTip, QSpacerItem, QSizePolicy, QTextEdit
 from overrides import overrides
-from qthandy import vspacer, clear_layout, vbox, margins, hbox, sp, retain_when_hidden, decr_icon, pointy, \
-    grid, flow, spacer, line, gc, translucent, incr_font, vline, bold
+from qthandy import vspacer, clear_layout, vbox, margins, hbox, sp, pointy, \
+    grid, flow, spacer, line, gc, translucent, incr_font, vline, bold, incr_icon
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter, DisabledClickEventFilter, DragEventFilter, \
     DropEventFilter
 from qtmenu import MenuWidget, ActionTooltipDisplayMode
@@ -50,7 +50,7 @@ from plotlyst.view.style.text import apply_text_color
 from plotlyst.view.widget.button import DotsMenuButton
 from plotlyst.view.widget.display import Icon, PopupDialog, DotsDragIcon
 from plotlyst.view.widget.input import AutoAdjustableTextEdit, AutoAdjustableLineEdit, MarkdownPopupTextEditorToolbar
-from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme
+from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme, PlaceholdersRow
 from plotlyst.view.widget.topic import TopicSelectionDialog
 from plotlyst.view.widget.utility import IconSelectorDialog, ColorSelectorButton
 from plotlyst.view.widget.world._topics import ecological_topics, cultural_topics, historical_topics, \
@@ -114,11 +114,12 @@ class WorldBuildingEntityElementWidget(QWidget):
         if self._underSection():
             margins(self, left=15)
 
-        self.btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True, tooltip='Insert new block')
-        self.btnAdd.installEventFilter(OpacityEventFilter(self.btnAdd))
-        decr_icon(self.btnAdd, 4)
-        self.btnAdd.setHidden(True)
-        retain_when_hidden(self.btnAdd)
+        self.wdgPlaceholder = PlaceholdersRow('', centerOnly=True)
+        # self.btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True, tooltip='Insert new block')
+        # self.btnAdd.installEventFilter(OpacityEventFilter(self.btnAdd))
+        # decr_icon(self.btnAdd, 4)
+        # self.btnAdd.setHidden(True)
+        # retain_when_hidden(self.btnAdd)
 
         self.btnDrag = DotsDragIcon(self)
         self.btnDrag.setToolTip('''<html><b>Drag</b> to move<p/>
@@ -229,8 +230,8 @@ class TextElementEditor(WorldBuildingEntityElementWidget):
         self.textEdit.setBlockFormat(margin_bottom=10, margin_top=10)
 
         self.layout().addWidget(self.textEdit)
-        self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
+        self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
         self.btnDrag.raise_()
 
     def _textChanged(self):
@@ -326,8 +327,8 @@ class HeaderElementEditor(WorldBuildingEntityElementWidget):
             background: {self._palette.secondary_color};
         }}''')
 
-        self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
+        self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self._btnCornerButtonOffsetY = 7
 
@@ -403,8 +404,8 @@ class QuoteElementEditor(WorldBuildingEntityElementWidget):
                     background: {self._palette.tertiary_color};
                 }}''')
 
-        self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
+        self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self.btnDrag.raise_()
 
@@ -437,8 +438,8 @@ class ImageElementEditor(WorldBuildingEntityElementWidget):
             self.lblImage.setPixmap(QPixmap.fromImage(image))
 
         self.layout().addWidget(self.lblImage, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
+        self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self.btnDrag.raise_()
 
@@ -717,8 +718,8 @@ class TimelineElementEditor(WorldBuildingEntityElementWidget):
         self.layout().addWidget(self.timeline)
         self.timeline.changed.connect(self.save)
 
-        self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
+        self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self.btnDrag.raise_()
 
@@ -773,8 +774,8 @@ class ConceitsElementEditor(WorldBuildingEntityElementWidget):
         self.layout().addWidget(self._wdgToolbar)
         self.layout().addWidget(self._wdgEditor)
 
-        self.layout().addWidget(self.btnAdd, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
+        self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self._wdgToolbar.setStyleSheet(f'''
                         .QWidget {{
@@ -935,7 +936,7 @@ class SectionElementEditor(WorldBuildingEntityElementWidget):
 
     def __initBlockWidget(self, element: WorldBuildingEntityElement) -> WorldBuildingEntityElementWidget:
         wdg = WorldBuildingEntityElementWidget.newWidget(self.novel, element, self._palette, self)
-        wdg.btnAdd.clicked.connect(partial(self._addClicked, wdg))
+        wdg.wdgPlaceholder.placeholderCenter.btnPlus.clicked.connect(partial(self._addClicked, wdg))
         wdg.removed.connect(partial(self._removeBlock, wdg))
 
         mimeType = self.WORLD_SECTION_MIMETYPE if element.type == WorldBuildingEntityElementType.Header else self.WORLD_BLOCK_MIMETYPE
@@ -1099,6 +1100,8 @@ class WorldBuildingEntityEditor(QWidget):
 
     def _addPlaceholder(self, middle: bool = True):
         wdg = push_btn(IconRegistry.plus_icon('grey'), 'Add section' if middle else 'Add block', transparent_=True)
+        incr_font(wdg)
+        incr_icon(wdg, 2)
         if middle:
             menu = SectionAdditionMenu(wdg)
             menu.newSectionSelected.connect(self._addNewSection)
