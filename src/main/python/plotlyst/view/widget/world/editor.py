@@ -231,7 +231,6 @@ class TextElementEditor(WorldBuildingEntityElementWidget):
 
         self.layout().addWidget(self.textEdit)
         self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
         self.btnDrag.raise_()
 
     def _textChanged(self):
@@ -328,7 +327,6 @@ class HeaderElementEditor(WorldBuildingEntityElementWidget):
         }}''')
 
         self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self._btnCornerButtonOffsetY = 7
 
@@ -405,7 +403,6 @@ class QuoteElementEditor(WorldBuildingEntityElementWidget):
                 }}''')
 
         self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self.btnDrag.raise_()
 
@@ -439,7 +436,6 @@ class ImageElementEditor(WorldBuildingEntityElementWidget):
 
         self.layout().addWidget(self.lblImage, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self.btnDrag.raise_()
 
@@ -719,7 +715,6 @@ class TimelineElementEditor(WorldBuildingEntityElementWidget):
         self.timeline.changed.connect(self.save)
 
         self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self.btnDrag.raise_()
 
@@ -775,7 +770,6 @@ class ConceitsElementEditor(WorldBuildingEntityElementWidget):
         self.layout().addWidget(self._wdgEditor)
 
         self.layout().addWidget(self.wdgPlaceholder, alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.installEventFilter(VisibilityToggleEventFilter(self.btnAdd, self))
 
         self._wdgToolbar.setStyleSheet(f'''
                         .QWidget {{
@@ -914,6 +908,8 @@ class SectionElementEditor(WorldBuildingEntityElementWidget):
 
     def _addBlock(self, wdg: WorldBuildingEntityElementWidget, type_: WorldBuildingEntityElementType):
         element = WorldBuildingEntityElement(type_)
+        if type_ == WorldBuildingEntityElementType.Timeline:
+            element.events.append(BackstoryEvent('', ''))
         newBlockWdg = self.__initBlockWidget(element)
 
         index = self.element.blocks.index(wdg.element)
