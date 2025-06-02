@@ -23,7 +23,7 @@ from functools import partial
 from typing import List, Optional, Any, Dict
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QTimer
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QTimer, QVariantAnimation, QEasingCurve
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent, \
     QDragEnterEvent, QDragLeaveEvent, QDropEvent
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
@@ -202,19 +202,26 @@ class PlaceholderWidget(QFrame):
         retain_when_hidden(self.btnPlus)
         self.setMinimumWidth(150)
         self.setMaximumWidth(200)
-        self.deactivate()
 
         self._hover_timer = QTimer(self)
         self._hover_timer.setSingleShot(True)
         self._hover_timer.timeout.connect(self._applyHoverStyle)
 
+        self._icon_anim = QVariantAnimation(self)
+        self._icon_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        self._icon_anim.setDuration(200)
+        self._icon_anim.valueChanged.connect(self._updateIconSize)
+
+        self.btnPlus.setHidden(True)
+        self.btnPlus.setIconSize(QSize(8, 8))
+
     def activate(self):
         self.btnPlus.setVisible(True)
-        self._applyLargeIconSize()
+        self._animateIconSize(QSize(22, 22))
 
     def deactivate(self):
         self.btnPlus.setHidden(True)
-        self._resetIconSize()
+        self._animateIconSize(QSize(8, 8))
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
@@ -228,26 +235,33 @@ class PlaceholderWidget(QFrame):
     @overrides
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         self.setStyleSheet(f'background: {PLOTLYST_SECONDARY_COLOR};')
-        self._applyLargeIconSize()
+        self._animateIconSize(QSize(22, 22))
         event.accept()
 
     @overrides
     def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
-        self._resetIconSize()
+        self._animateIconSize(QSize(8, 8))
         self.setStyleSheet('')
 
     @overrides
     def dropEvent(self, event: QDropEvent) -> None:
         self.setStyleSheet('')
 
-    def _applyLargeIconSize(self):
-        self.btnPlus.setIconSize(QSize(22, 22))
-
-    def _resetIconSize(self):
-        self.btnPlus.setIconSize(QSize(8, 8))
-
     def _applyHoverStyle(self):
         self.setStyleSheet(f'background: {ALT_BACKGROUND_COLOR};')
+
+    def _animateIconSize(self, target_size: QSize):
+        current_size = self.btnPlus.iconSize()
+        if current_size == target_size:
+            return
+        self._icon_anim.stop()
+        self._icon_anim.setStartValue(current_size)
+        self._icon_anim.setEndValue(target_size)
+        self._icon_anim.start()
+
+    def _updateIconSize(self, value):
+        if isinstance(value, QSize):
+            self.btnPlus.setIconSize(value)
 
 
 class PlaceholdersRow(QWidget):

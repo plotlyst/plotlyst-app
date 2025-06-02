@@ -943,7 +943,7 @@ class SectionElementEditor(WorldBuildingEntityElementWidget):
 
         wdg.btnDrag.installEventFilter(
             DragEventFilter(wdg, mimeType,
-                            dataFunc=lambda x: wdg.element,
+                            dataFunc=lambda x: wdg.element.id,
                             grabbed=wdg,
                             startedSlot=partial(self.editor().dragStarted, wdg),
                             finishedSlot=partial(self.editor().dragStopped, wdg)))
