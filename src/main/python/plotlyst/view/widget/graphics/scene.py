@@ -532,8 +532,6 @@ class NetworkScene(QGraphicsScene):
         else:
             item = EventItem(node)
 
-        item.setStickPoint(QPointF(1, 1), 15)
-
         self.addItem(item)
         return item
 

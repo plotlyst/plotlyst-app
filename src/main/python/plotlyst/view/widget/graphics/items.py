@@ -934,20 +934,6 @@ class NodeItem(QAbstractGraphicsShapeItem):
                         snapped_center_x - center_offset.x(),
                         snapped_center_y - center_offset.y()
                     )
-                    # grid_dist = self.networkScene().gridDistance()
-                    # grid_radius = self.networkScene().gridRange()
-                    # x_mod = new_pos.x() % grid_dist
-                    # y_mod = new_pos.y() % grid_dist
-                    #
-                    # if x_mod < grid_radius:
-                    #     new_pos.setX(new_pos.x() - x_mod)
-                    # elif x_mod > grid_dist - grid_radius:
-                    #     new_pos.setX(new_pos.x() + (grid_dist - x_mod))
-                    #
-                    # if y_mod < grid_radius:
-                    #     new_pos.setY(new_pos.y() - y_mod)
-                    # elif y_mod > grid_dist - grid_radius:
-                    #     new_pos.setY(new_pos.y() + (grid_dist - y_mod))
 
                 self.setPos(new_pos)
                 self._onPosChanged()
