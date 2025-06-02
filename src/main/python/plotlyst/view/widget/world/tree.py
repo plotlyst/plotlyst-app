@@ -17,6 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import uuid
 from functools import partial
 from typing import Optional, Dict, Set, List
 
@@ -67,14 +68,14 @@ class EntityAdditionMenu(MenuWidget):
         apply_white_menu(self)
 
     def _entityTriggered(self):
-        entity = WorldBuildingEntity('New entity', elements=self.__newElements())
+        entity = self.__newEntity('New entity', elements=self.__newElements())
         self.entityTriggered.emit(entity)
 
     @busy
     def _linkToMilieu(self, _):
         element: Location = MilieuSelectorPopup.popup(self._novel)
         if element:
-            entity = WorldBuildingEntity('', elements=self.__newElements(), ref=element.id)
+            entity = self.__newEntity('', elements=self.__newElements(), ref=element.id)
             self.entityTriggered.emit(entity)
 
     def _linkToTopics(self):
@@ -82,9 +83,13 @@ class EntityAdditionMenu(MenuWidget):
         if topics:
             entities = []
             for topic in topics:
-                entity = WorldBuildingEntity(topic.text, icon=topic.icon, elements=self.__newElements(), ref=topic.id)
+                entity = self.__newEntity(topic.text, icon=topic.icon, elements=self.__newElements(), ref=topic.id)
                 entities.append(entity)
             self.topicsSelected.emit(entities)
+
+    def __newEntity(self, name: str, elements: List[WorldBuildingEntityElement], ref: Optional[uuid.UUID] = None,
+                    icon: str = '') -> WorldBuildingEntity:
+        return WorldBuildingEntity(name, elements=elements, ref=ref, icon=icon, side_visible=False)
 
     def __newElements(self) -> List[WorldBuildingEntityElement]:
         main_section = WorldBuildingEntityElement(WorldBuildingEntityElementType.Main_Section)
