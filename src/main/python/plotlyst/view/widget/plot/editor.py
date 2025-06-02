@@ -1010,7 +1010,7 @@ class PlotEditor(QWidget, Ui_PlotEditor):
         menu.addSeparator()
         menu.addAction(action('Relationship plot', IconRegistry.from_name('fa5s.people-arrows'),
                               slot=lambda: self.newPlot(PlotType.Relation),
-                              tooltip="Relationship dynamics between two or more characters", incr_font_=1))
+                              tooltip="Relationship dynamics between two characters", incr_font_=1))
         menu.addAction(action('Global storyline', IconRegistry.from_name('fa5s.globe'),
                               slot=lambda: self.newPlot(PlotType.Global),
                               tooltip="A broader storyline that can encompass multiple storylines without serving as the central plot itself",
