@@ -66,7 +66,7 @@ class RelationshipDynamicsTextElement(QTextEdit):
         elif self.element.rel_type == RelationshipDynamicsType.SEPARATE:
             self.setPlaceholderText(f"Define the {self.element.keyphrase.lower()} of this character")
         else:
-            self.setPlaceholderText(f"Define the mutual {self.element.keyphrase.lower()} of these character")
+            self.setPlaceholderText(f"Define the mutual {self.element.keyphrase.lower()} of these characters")
 
         self.textChanged.connect(self._textChanged)
 

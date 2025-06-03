@@ -1232,7 +1232,7 @@ class DynamicPlotPrincipleGroupType(Enum):
         elif self == DynamicPlotPrincipleGroupType.TIMELINE:
             return "Most significant events related to this storyline"
         elif self == DynamicPlotPrincipleGroupType.RELATIONSHIP:
-            return "A dynamic relationship and its evolution between two or more characters"
+            return "A dynamic relationship and its evolution between two characters"
 
 
 @dataclass

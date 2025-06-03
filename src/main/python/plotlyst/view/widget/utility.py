@@ -377,11 +377,17 @@ class IconSelectorButton(SecondaryActionToolButton):
 class IconPickerMenu(MenuWidget):
     iconSelected = pyqtSignal(str)
 
-    def __init__(self, icons: List[str], maxColumn: Optional[int] = None, iconSize: int = 22, parent=None):
+    def __init__(self, icons: List[str], maxColumn: Optional[int] = None, iconSize: int = 22, parent=None,
+                 colors: List[str] = None):
         super().__init__(parent)
 
         self.picker = IconPicker(icons, self, maxColumn, iconSize)
         self.picker.iconSelected.connect(self.iconSelected)
+
+        if colors:
+            self.colorPicker = ColorPicker(self, maxColumn=maxColumn, colors=colors)
+            self.addWidget(self.colorPicker)
+            self.addSeparator()
 
         self.addWidget(self.picker)
         self.addSeparator()
