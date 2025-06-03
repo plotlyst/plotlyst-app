@@ -52,7 +52,7 @@ from plotlyst.view.widget.display import Icon, PopupDialog, DotsDragIcon
 from plotlyst.view.widget.input import AutoAdjustableTextEdit, AutoAdjustableLineEdit, MarkdownPopupTextEditorToolbar
 from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme, PlaceholdersRow
 from plotlyst.view.widget.topic import TopicSelectionDialog
-from plotlyst.view.widget.utility import IconSelectorDialog, ColorSelectorButton, IconPickerMenu
+from plotlyst.view.widget.utility import IconSelectorDialog, ColorSelectorButton, IconPickerMenu, BASE_COLORS
 from plotlyst.view.widget.world._topics import ecological_topics, cultural_topics, historical_topics, \
     linguistic_topics, technological_topics, economic_topics, infrastructural_topics, religious_topics, \
     fantastic_topics, nefarious_topics, environmental_topics, ecology_topic, culture_topic, history_topic, \
@@ -686,15 +686,33 @@ class EntityTimelineCard(BackstoryCard):
         self.setMinimumWidth(250)
         self.setMaximumWidth(450)
 
+    @overrides
+    def _frameColor(self) -> str:
+        return self.backstory.type_color
+
     def _showMenu(self):
         self._iconPicker = IconPickerMenu(
             ['mdi.sword-cross', 'fa5.flag', 'fa5s.skull', 'fa5s.shield-alt', 'fa5s.gavel', 'fa5s.scroll', 'fa5s.crown',
              'fa5s.handshake', 'mdi.compass', 'fa5s.map', 'mdi.globe-model', 'fa5s.map-marker', 'fa5s.coins',
              'fa5s.flask', 'mdi.lightbulb', 'ph.magic-wand-bold', 'fa5s.book-open', 'fa5s.feather-alt',
              'fa5s.landmark', 'ph.warning-fill', 'mdi.radioactive', 'fa5s.virus', 'mdi6.scale-unbalanced'],
-            maxColumn=5)
+            maxColumn=5,
+            colors=BASE_COLORS
+        )
         self._iconPicker.iconSelected.connect(self._iconChanged)
+        self._iconPicker.colorPicker.colorPicked.connect(self._colorChanged)
         self._iconPicker.exec()
+
+    @overrides
+    def _iconChanged(self, icon: str):
+        self.backstory.type_icon = icon
+        self.btnType.setIcon(IconRegistry.from_name(self.backstory.type_icon, self.backstory.type_color))
+        self.edited.emit()
+
+    def _colorChanged(self, color: QColor):
+        self.backstory.type_color = color.name()
+        self._refreshStyle()
+        self.edited.emit()
 
 
 class EntityTimelineWidget(TimelineLinearWidget):
