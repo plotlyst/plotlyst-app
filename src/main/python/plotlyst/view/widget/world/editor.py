@@ -115,11 +115,6 @@ class WorldBuildingEntityElementWidget(QWidget):
             margins(self, left=15)
 
         self.wdgPlaceholder = PlaceholdersRow('', centerOnly=True)
-        # self.btnAdd = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True, tooltip='Insert new block')
-        # self.btnAdd.installEventFilter(OpacityEventFilter(self.btnAdd))
-        # decr_icon(self.btnAdd, 4)
-        # self.btnAdd.setHidden(True)
-        # retain_when_hidden(self.btnAdd)
 
         self.btnDrag = DotsDragIcon(self)
         self.btnDrag.setToolTip('''<html><b>Drag</b> to move<p/>
