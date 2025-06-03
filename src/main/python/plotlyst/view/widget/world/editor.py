@@ -52,7 +52,7 @@ from plotlyst.view.widget.display import Icon, PopupDialog, DotsDragIcon
 from plotlyst.view.widget.input import AutoAdjustableTextEdit, AutoAdjustableLineEdit, MarkdownPopupTextEditorToolbar
 from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme, PlaceholdersRow
 from plotlyst.view.widget.topic import TopicSelectionDialog
-from plotlyst.view.widget.utility import IconSelectorDialog, ColorSelectorButton
+from plotlyst.view.widget.utility import IconSelectorDialog, ColorSelectorButton, IconPickerMenu
 from plotlyst.view.widget.world._topics import ecological_topics, cultural_topics, historical_topics, \
     linguistic_topics, technological_topics, economic_topics, infrastructural_topics, religious_topics, \
     fantastic_topics, nefarious_topics, environmental_topics, ecology_topic, culture_topic, history_topic, \
@@ -677,11 +677,24 @@ class HighlightedTextElementEditor(WorldBuildingEntityElementWidget):
 
 class EntityTimelineCard(BackstoryCard):
     def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None):
-        super().__init__(backstory, theme, parent=parent)
+        super().__init__(backstory, theme, parent=parent, iconPicker=False)
+        self.btnType.clicked.connect(self._showMenu)
         self.refresh()
+
+        self._iconPicker: Optional[IconPickerMenu] = None
 
         self.setMinimumWidth(250)
         self.setMaximumWidth(450)
+
+    def _showMenu(self):
+        self._iconPicker = IconPickerMenu(
+            ['mdi.sword-cross', 'fa5.flag', 'fa5s.skull', 'fa5s.shield-alt', 'fa5s.gavel', 'fa5s.scroll', 'fa5s.crown',
+             'fa5s.handshake', 'mdi.compass', 'fa5s.map', 'mdi.globe-model', 'fa5s.map-marker', 'fa5s.coins',
+             'fa5s.flask', 'mdi.lightbulb', 'ph.magic-wand-bold', 'fa5s.book-open', 'fa5s.feather-alt',
+             'fa5s.landmark', 'ph.warning-fill', 'mdi.radioactive', 'fa5s.virus', 'mdi6.scale-unbalanced'],
+            maxColumn=5)
+        self._iconPicker.iconSelected.connect(self._iconChanged)
+        self._iconPicker.exec()
 
 
 class EntityTimelineWidget(TimelineLinearWidget):
