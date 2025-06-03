@@ -190,6 +190,9 @@ class BackstoryCard(AbstractTimelineCard):
         return EMOTION_COLORS.get(self.backstory.emotion, NEUTRAL_EMOTION_COLOR)
 
 
+TIMELINE_MIME_TYPE: str = 'application/timeline-event'
+
+
 class PlaceholderWidget(QFrame):
     def __init__(self, parent=None, acceptDrops: bool = True):
         super().__init__(parent)
@@ -234,9 +237,10 @@ class PlaceholderWidget(QFrame):
 
     @overrides
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        self.setStyleSheet(f'background: {PLOTLYST_SECONDARY_COLOR};')
-        self._animateIconSize(QSize(22, 22))
-        event.accept()
+        if event.mimeData().hasFormat(TIMELINE_MIME_TYPE):
+            self.setStyleSheet(f'background: {PLOTLYST_SECONDARY_COLOR};')
+            self._animateIconSize(QSize(22, 22))
+            event.accept()
 
     @overrides
     def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
@@ -398,7 +402,7 @@ class TimelineLinearWidget(QWidget):
         pass
 
     def mimeType(self) -> str:
-        return 'application/timeline-event'
+        return TIMELINE_MIME_TYPE
 
     def cardClass(self):
         return BackstoryCard
