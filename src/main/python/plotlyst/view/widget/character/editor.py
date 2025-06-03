@@ -29,7 +29,7 @@ import qtanim
 from PyQt6.QtCharts import QPieSeries, QPieSlice
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QRectF
 from PyQt6.QtGui import QIcon, QColor, QMouseEvent, QKeySequence
-from PyQt6.QtWidgets import QWidget, QSlider, QTextBrowser, QButtonGroup, QToolButton, QLineEdit, QDialog
+from PyQt6.QtWidgets import QWidget, QSlider, QTextBrowser, QButtonGroup, QToolButton, QLineEdit, QDialog, QFrame
 from overrides import overrides
 from qthandy import vbox, pointy, hbox, sp, vspacer, underline, decr_font, flow, clear_layout, translucent, line, grid, \
     spacer, incr_font, margins, incr_icon, decr_icon
@@ -47,7 +47,7 @@ from plotlyst.core.template import SelectionItem, enneagram_field, TemplateField
     foil_role, henchmen_role, love_style_field, disc_field
 from plotlyst.env import app_env
 from plotlyst.view.common import push_btn, action, tool_btn, label, wrap, restyle, \
-    scroll_area, emoji_font
+    scroll_area, emoji_font, frame
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
@@ -137,38 +137,30 @@ class LifeStage(Enum):
             return "Health management, end-of-life planning, and legacy concerns."
 
 
-class CharacterAgeEditor(QWidget):
+class CharacterAgeEditor(QFrame):
     valueChanged = pyqtSignal(int)
     infiniteToggled = pyqtSignal(bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        vbox(self, 10, 10)
+        self.setProperty('relaxed-white-bg', True)
+        self.setProperty('large-rounded', True)
 
-        self._wdgEditor = QWidget()
-        self._wdgHintDisplay = QWidget()
-        hbox(self)
-        self.layout().addWidget(self._wdgEditor)
-        self.layout().addWidget(self._wdgHintDisplay)
-
-        self._btnInfinite = tool_btn(IconRegistry.from_name('mdi.infinity', 'grey', PLOTLYST_MAIN_COLOR),
+        self._btnInfinite = push_btn(IconRegistry.from_name('mdi.infinity', 'grey', PLOTLYST_MAIN_COLOR),
+                                     'Infinite',
                                      checkable=True, transparent_=True,
                                      tooltip='Immortal or any character with an extraordinary lifespan')
         self._btnInfinite.installEventFilter(
             OpacityEventFilter(self._btnInfinite, leaveOpacity=0.7, ignoreCheckedButton=True))
         self._btnInfinite.toggled.connect(self._infiniteToggled)
 
-        self._slider = QSlider(self)
-        self._slider.setMinimum(1)
-        self._slider.setMaximum(100)
-        self._slider.setValue(1)
-        sp(self._slider).v_exp()
-        pointy(self._slider)
-
         self._spinbox = DecoratedSpinBox(self)
         self._spinbox.setPrefix('Age: ')
         self._spinbox.setMinimum(0)
         self._spinbox.setMaximum(65000)
         self._spinbox.setValue(0)
+        incr_font(self._spinbox.spinBox, 6)
 
         self._btnStage = push_btn(text='Life stage', transparent_=True)
         self._menuStages = MenuWidget(self._btnStage)
@@ -186,20 +178,20 @@ class CharacterAgeEditor(QWidget):
 
         self._text = QTextBrowser()
         self._text.setMaximumSize(200, 150)
-        self._text.setProperty('rounded', True)
+        self._text.setProperty('transparent', True)
 
-        vbox(self._wdgHintDisplay)
-        self._wdgHintDisplay.layout().addWidget(self._btnStage, alignment=Qt.AlignmentFlag.AlignCenter)
-        self._wdgHintDisplay.layout().addWidget(self._text)
-
-        vbox(self._wdgEditor)
-        self._wdgEditor.layout().addWidget(self._btnInfinite, alignment=Qt.AlignmentFlag.AlignRight)
-        self._wdgEditor.layout().addWidget(vspacer(20))
-        self._wdgEditor.layout().addWidget(self._slider, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self._wdgEditor.layout().addWidget(self._spinbox)
-
-        self._slider.valueChanged.connect(self._sliderValueChanged)
         self._spinbox.valueChanged.connect(self._spinboxValueChanged)
+
+        self.frameHint = frame()
+        vbox(self.frameHint, 4)
+        self.frameHint.setProperty('muted-bg', True)
+        self.frameHint.setProperty('large-rounded', True)
+        self.frameHint.layout().addWidget(self._btnStage, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frameHint.layout().addWidget(self._text)
+
+        self.layout().addWidget(self._btnInfinite, alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout().addWidget(self._spinbox, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.frameHint)
 
     def value(self) -> int:
         return self._spinbox.value()
@@ -216,7 +208,6 @@ class CharacterAgeEditor(QWidget):
 
     def reset(self):
         self._spinbox.setValue(self._spinbox.minimum())
-        self._slider.setValue(self._slider.minimum())
         self._btnInfinite.setChecked(False)
         self._btnStage.setText('Life stage')
         self._btnStage.setIcon(QIcon())
@@ -235,26 +226,13 @@ class CharacterAgeEditor(QWidget):
 
         range = stage.range()
         age = random.randint(range[0], range[1])
-        self._slider.setValue(age)
-
-    def _sliderValueChanged(self, value: int):
-        if value != self._spinbox.value():
-            if value == self._slider.maximum() and self._spinbox.value() >= value:
-                return
-
-            self._spinbox.setValue(value)
+        self._spinbox.setValue(age)
 
     def _spinboxValueChanged(self, value: int):
-        if value != self._slider.value():
-            if value > self._slider.maximum():
-                self._slider.setValue(self._slider.maximum())
-            else:
-                self._slider.setValue(value)
         self._setStageFromAge(value)
         self.valueChanged.emit(value)
 
     def _infiniteToggled(self, toggled: bool):
-        self._slider.setDisabled(toggled)
         self._spinbox.setDisabled(toggled)
 
         if toggled:

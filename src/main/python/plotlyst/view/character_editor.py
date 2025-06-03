@@ -43,14 +43,14 @@ from plotlyst.service.tour import TourService
 from plotlyst.view.common import set_tab_icon, ButtonPressResizeEventFilter, set_tab_visible, action, scroll_to_bottom
 from plotlyst.view.generated.character_editor_ui import Ui_CharacterEditor
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.style.base import apply_bg_image, apply_white_menu
+from plotlyst.view.style.base import apply_bg_image, transparent_menu
 from plotlyst.view.widget.button import FadeOutButtonGroup, DotsMenuButton
 from plotlyst.view.widget.character.editor import CharacterAgeEditor
 from plotlyst.view.widget.character.editor import CharacterRoleSelector
 from plotlyst.view.widget.character.profile import CharacterProfileEditor, CharacterNameEditorPopup
 from plotlyst.view.widget.character.topic import CharacterTopicsEditor
 from plotlyst.view.widget.confirm import asked
-from plotlyst.view.widget.display import PremiumOverlayWidget
+from plotlyst.view.widget.display import PremiumOverlayWidget, MenuOverlayEventFilter
 from plotlyst.view.widget.tour.core import CharacterEditorTourEvent, \
     CharacterEditorNameLineEditTourEvent, TourEvent, CharacterEditorNameFilledTourEvent, \
     CharacterEditorAvatarDisplayTourEvent, CharacterEditorAvatarMenuTourEvent, CharacterEditorBackButtonTourEvent, \
@@ -134,7 +134,8 @@ class CharacterEditor(QObject, EventListener):
         self._ageEditor.infiniteToggled.connect(self._age_infinite_toggled)
         menu = MenuWidget(self.ui.btnAge)
         menu.addWidget(self._ageEditor)
-        apply_white_menu(menu)
+        transparent_menu(menu)
+        menu.installEventFilter(MenuOverlayEventFilter(menu))
         menu.aboutToShow.connect(self._ageEditor.setFocus)
 
         self._lineOccupation = QLineEdit()
