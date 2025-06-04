@@ -26,7 +26,7 @@ from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter
 from PyQt6.QtWidgets import QWidget, QFileDialog, QButtonGroup
 from overrides import overrides
 from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hidden, italic, incr_font, margins, \
-    vspacer
+    vspacer, spacer
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import SnapshotType, Novel, LayoutType
@@ -48,6 +48,9 @@ class SnapshotCanvasEditor(QWidget):
 
     def desc(self) -> str:
         return ''
+
+    def hasDateSelector(self) -> bool:
+        return False
 
     def setYear(self, year: int):
         pass
@@ -110,6 +113,10 @@ class MonthlyWritingSnapshotEditor(SnapshotCanvasEditor):
         return 'Capture an image of your monthly writing progress'
 
     @overrides
+    def hasDateSelector(self) -> bool:
+        return True
+
+    @overrides
     def setYear(self, year: int):
         self.calendar.setCurrentPage(year, self.calendar.monthShown())
 
@@ -128,6 +135,10 @@ class DailyWritingSnapshotEditor(SnapshotCanvasEditor):
         super().__init__(parent)
         self.novel = novel
 
+    @overrides
+    def desc(self) -> str:
+        return 'Capture an image of your daily writing progress'
+
 
 class SocialSnapshotPopup(PopupDialog):
     def __init__(self, novel: Novel, snapshotType: SnapshotType = SnapshotType.MonthlyWriting, parent=None):
@@ -143,7 +154,6 @@ class SocialSnapshotPopup(PopupDialog):
         self.frame.layout().addWidget(self.wdgNav)
         self.frame.layout().addWidget(self.wdgEditor)
 
-        # self.wdgEditor.setProperty('muted-bg', True)
         self.frame.setProperty('muted-bg', True)
         self.frame.setProperty('white-bg', False)
         self.frame.layout().setSpacing(5)
@@ -183,11 +193,14 @@ class SocialSnapshotPopup(PopupDialog):
         self.btnRatio1_1.setText('1:1')
         incr_font(self.btnRatio1_1)
 
-        self.wdgRatios = QWidget()
-        hbox(self.wdgRatios)
+        self.wdgRatios = columns()
+        margins(self.wdgRatios, bottom=15)
+        self.wdgRatios.layout().addWidget(spacer())
         self.wdgRatios.layout().addWidget(icon_text('mdi.aspect-ratio', 'Size ratio'))
         self.wdgRatios.layout().addWidget(self.btnRatio9_16)
         self.wdgRatios.layout().addWidget(self.btnRatio1_1)
+        self.wdgRatios.layout().addWidget(spacer())
+        self.wdgRatios.layout().addWidget(self.lblCopied)
         self._btnGroupRatios = exclusive_buttons(self, self.btnRatio9_16, self.btnRatio1_1)
         self.btnRatio9_16.setChecked(True)
         self._btnGroupRatios.buttonClicked.connect(self._ratioChanged)
@@ -213,10 +226,10 @@ class SocialSnapshotPopup(PopupDialog):
 
         self.wdgEditor.layout().addWidget(self.lblDesc)
         self.wdgEditor.layout().addWidget(self.wdgTop, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.wdgEditor.layout().addWidget(self.lblCopied, alignment=Qt.AlignmentFlag.AlignRight)
-        self.wdgEditor.layout().addWidget(self.wdgRatios, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgEditor.layout().addWidget(self.wdgRatios)
         self.wdgEditor.layout().addWidget(self.wdgDateSelectors, alignment=Qt.AlignmentFlag.AlignCenter)
         self.wdgEditor.layout().addWidget(self.canvasContainer, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgEditor.layout().addWidget(vspacer())
         self.wdgEditor.layout().addWidget(self.btnCancel, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.btnGroupSelectors = QButtonGroup()
@@ -243,6 +256,7 @@ class SocialSnapshotPopup(PopupDialog):
             self.canvasContainer.layout().addWidget(self._editor.canvas)
 
         self.lblDesc.setText(self._editor.desc())
+        self.wdgDateSelectors.setVisible(self._editor.hasDateSelector())
 
     @overrides
     def paintEvent(self, event):
@@ -277,7 +291,7 @@ class SocialSnapshotPopup(PopupDialog):
         elif self.btnRatio1_1.isChecked():
             self.canvasContainer.setFixedSize(356, 356)
 
-        self._typeToggled(self._snapshotType)
+        self._typeToggled(self._snapshotType, True)
 
     def _yearSelected(self, year: int):
         self._editor.setYear(year)
