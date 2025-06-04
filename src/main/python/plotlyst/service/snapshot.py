@@ -18,18 +18,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import calendar
+from functools import partial
 from typing import Optional
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter
-from PyQt6.QtWidgets import QWidget, QFileDialog
+from PyQt6.QtWidgets import QWidget, QFileDialog, QButtonGroup
 from overrides import overrides
-from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hidden, italic, incr_font, margins
+from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hidden, italic, incr_font, margins, \
+    vspacer
 
 from plotlyst.common import RELAXED_WHITE_COLOR
-from plotlyst.core.domain import SnapshotType, Novel
+from plotlyst.core.domain import SnapshotType, Novel, LayoutType
 from plotlyst.env import app_env
-from plotlyst.view.common import push_btn, frame, exclusive_buttons, label, columns, set_font
+from plotlyst.view.common import push_btn, frame, exclusive_buttons, label, columns, set_font, rows
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report.productivity import ProductivityCalendar
 from plotlyst.view.widget.button import TopSelectorButton, SelectorToggleButton, YearSelectorButton, MonthSelectorButton
@@ -81,7 +83,7 @@ class WritingSnapshotLegend(QWidget):
         self.layout().addWidget(label('1500+ words', description=True, decr_font_diff=2))
 
 
-class WritingSnapshotEditor(SnapshotCanvasEditor):
+class MonthlyWritingSnapshotEditor(SnapshotCanvasEditor):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self.novel = novel
@@ -121,14 +123,27 @@ class WritingSnapshotEditor(SnapshotCanvasEditor):
         return calendar.month_name[self.calendar.monthShown()]
 
 
-class SocialSnapshotPopup(PopupDialog):
-    def __init__(self, novel: Novel, snapshotType: Optional[SnapshotType] = None, parent=None):
+class DailyWritingSnapshotEditor(SnapshotCanvasEditor):
+    def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
+        self.novel = novel
+
+
+class SocialSnapshotPopup(PopupDialog):
+    def __init__(self, novel: Novel, snapshotType: SnapshotType = SnapshotType.MonthlyWriting, parent=None):
+        super().__init__(parent, layoutType=LayoutType.HORIZONTAL)
         self.novel = novel
         self._exported_pixmap: Optional[QPixmap] = None
         self._snapshotType = snapshotType
         self._editor: Optional[SnapshotCanvasEditor] = None
 
+        self.wdgNav = rows()
+        self.wdgNav.setProperty('relaxed-white-bg', True)
+        self.wdgEditor = rows()
+        self.frame.layout().addWidget(self.wdgNav)
+        self.frame.layout().addWidget(self.wdgEditor)
+
+        # self.wdgEditor.setProperty('muted-bg', True)
         self.frame.setProperty('muted-bg', True)
         self.frame.setProperty('white-bg', False)
         self.frame.layout().setSpacing(5)
@@ -196,28 +211,35 @@ class SocialSnapshotPopup(PopupDialog):
                                   properties=['confirm', 'cancel'])
         self.btnCancel.clicked.connect(self.reject)
 
-        self.frame.layout().addWidget(self.lblDesc)
-        self.frame.layout().addWidget(self.wdgTop, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.frame.layout().addWidget(self.lblCopied, alignment=Qt.AlignmentFlag.AlignRight)
-        self.frame.layout().addWidget(self.wdgRatios, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.frame.layout().addWidget(self.wdgDateSelectors, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.frame.layout().addWidget(self.canvasContainer, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.frame.layout().addWidget(self.btnCancel, alignment=Qt.AlignmentFlag.AlignRight)
+        self.wdgEditor.layout().addWidget(self.lblDesc)
+        self.wdgEditor.layout().addWidget(self.wdgTop, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgEditor.layout().addWidget(self.lblCopied, alignment=Qt.AlignmentFlag.AlignRight)
+        self.wdgEditor.layout().addWidget(self.wdgRatios, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgEditor.layout().addWidget(self.wdgDateSelectors, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgEditor.layout().addWidget(self.canvasContainer, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.wdgEditor.layout().addWidget(self.btnCancel, alignment=Qt.AlignmentFlag.AlignRight)
 
-        if self._snapshotType:
-            self._selectType(self._snapshotType)
+        self.btnGroupSelectors = QButtonGroup()
+        self.__initSelectorBtn(SnapshotType.MonthlyWriting)
+        self.__initSelectorBtn(SnapshotType.DailyWriting)
+        self.wdgNav.layout().addWidget(vspacer())
 
     def display(self):
         self.exec()
 
-    def _selectType(self, snapshotType: SnapshotType):
+    def _typeToggled(self, snapshotType: SnapshotType, toggled: bool):
+        if not toggled:
+            return
         clear_layout(self.canvasContainer)
 
         if snapshotType == SnapshotType.Productivity:
             self._editor = ProductivitySnapshotEditor(self.novel)
             self.canvasContainer.layout().addWidget(self._editor.canvas)
-        elif snapshotType == SnapshotType.Writing:
-            self._editor = WritingSnapshotEditor(self.novel)
+        elif snapshotType == SnapshotType.MonthlyWriting:
+            self._editor = MonthlyWritingSnapshotEditor(self.novel)
+            self.canvasContainer.layout().addWidget(self._editor.canvas)
+        elif snapshotType == SnapshotType.DailyWriting:
+            self._editor = DailyWritingSnapshotEditor(self.novel)
             self.canvasContainer.layout().addWidget(self._editor.canvas)
 
         self.lblDesc.setText(self._editor.desc())
@@ -255,7 +277,7 @@ class SocialSnapshotPopup(PopupDialog):
         elif self.btnRatio1_1.isChecked():
             self.canvasContainer.setFixedSize(356, 356)
 
-        self._selectType(self._snapshotType)
+        self._typeToggled(self._snapshotType)
 
     def _yearSelected(self, year: int):
         self._editor.setYear(year)
@@ -283,3 +305,13 @@ class SocialSnapshotPopup(PopupDialog):
                                                          "JPEG Files (*.jpg *.jpeg)")
             if target_path:
                 self._exported_pixmap.save(target_path, "JPEG")
+
+    def __initSelectorBtn(self, snapshotType: SnapshotType):
+        btn = push_btn(IconRegistry.from_name(snapshotType.icon), text=snapshotType.display_name, checkable=True,
+                       properties=['main-side-nav'])
+        self.btnGroupSelectors.addButton(btn)
+        self.wdgNav.layout().addWidget(btn)
+        btn.toggled.connect(partial(self._typeToggled, snapshotType))
+
+        if self._snapshotType == snapshotType:
+            btn.setChecked(True)

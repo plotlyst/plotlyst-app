@@ -3745,8 +3745,16 @@ class ProductivityType(SelectionItem):
 
 
 class SnapshotType(Enum):
-    Productivity = 0
-    Writing = 1
+    Productivity = ('Monthly Productivity', 'mdi6.progress-star-four-points')
+    MonthlyWriting = ('Monthly Writing', 'mdi.calendar-month')
+    DailyWriting = ('Daily Writing', 'mdi6.calendar-today')
+
+    def __new__(cls, display_name: str, icon: str):
+        obj = object.__new__(cls)
+        obj._value_ = display_name
+        obj.display_name = display_name
+        obj.icon = icon
+        return obj
 
 
 def default_productivity_categories() -> List[ProductivityType]:

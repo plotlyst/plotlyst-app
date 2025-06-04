@@ -38,7 +38,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, \
     PLOTLYST_SECONDARY_COLOR, PLACEHOLDER_TEXT_COLOR
-from plotlyst.core.domain import WORLD_BUILDING_PREVIEW, ConnectorType
+from plotlyst.core.domain import WORLD_BUILDING_PREVIEW, ConnectorType, LayoutType
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
@@ -379,7 +379,7 @@ class StageRecommendationBadge(QFrame):
 
 
 class PopupDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, layoutType: LayoutType = LayoutType.VERTICAL):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -387,7 +387,10 @@ class PopupDialog(QDialog):
         self.frame = frame()
         self.frame.setProperty('white-bg', True)
         self.frame.setProperty('large-rounded', True)
-        vbox(self.frame, 15, 10)
+        if layoutType == LayoutType.VERTICAL:
+            vbox(self.frame, 15, 10)
+        else:
+            hbox(self.frame, 15, 10)
         self.layout().addWidget(self.frame)
 
         self.btnReset = tool_btn(IconRegistry.close_icon('grey'), tooltip='Cancel', transparent_=True)
