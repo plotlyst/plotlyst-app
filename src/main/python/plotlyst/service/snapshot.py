@@ -21,22 +21,25 @@ import calendar
 from functools import partial
 from typing import Optional
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter
+from PyQt6.QtCore import Qt, QEvent, QObject, QRectF, QPointF
+from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter, QPaintEvent, QPainterPath, QRadialGradient, QColor
 from PyQt6.QtWidgets import QWidget, QFileDialog, QButtonGroup
 from overrides import overrides
 from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hidden, italic, incr_font, margins, \
     vspacer, spacer
 
-from plotlyst.common import RELAXED_WHITE_COLOR
+from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_MAIN_COLOR
 from plotlyst.core.domain import SnapshotType, Novel, LayoutType
 from plotlyst.env import app_env
-from plotlyst.view.common import push_btn, frame, exclusive_buttons, label, columns, set_font, rows
+from plotlyst.service.common import today_str
+from plotlyst.service.manuscript import daily_overall_progress
+from plotlyst.view.common import push_btn, frame, exclusive_buttons, label, columns, set_font, rows, qpainter
 from plotlyst.view.icons import IconRegistry
+from plotlyst.view.layout import group
 from plotlyst.view.report.productivity import ProductivityCalendar
 from plotlyst.view.widget.button import TopSelectorButton, SelectorToggleButton, YearSelectorButton, MonthSelectorButton
 from plotlyst.view.widget.display import PopupDialog, PlotlystFooter, CopiedTextMessage, icon_text, \
-    HighQualityPaintedIcon
+    HighQualityPaintedIcon, SeparatorLineWithShadow
 from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar
 
 
@@ -104,6 +107,7 @@ class MonthlyWritingSnapshotEditor(SnapshotCanvasEditor):
         margins(self.legend, top=10)
 
         self.canvas.layout().addWidget(self.lblTitle)
+        self.canvas.layout().addWidget(SeparatorLineWithShadow())
         self.canvas.layout().addWidget(self.legend, alignment=Qt.AlignmentFlag.AlignCenter)
         self.canvas.layout().addWidget(self.calendar)
         self.canvas.layout().addWidget(PlotlystFooter(), alignment=Qt.AlignmentFlag.AlignLeft)
@@ -135,9 +139,70 @@ class DailyWritingSnapshotEditor(SnapshotCanvasEditor):
         super().__init__(parent)
         self.novel = novel
 
+        vbox(self.canvas, 4)
+        margins(self.canvas, top=8)
+        transparent(self.canvas)
+
+        self.lblTitle = label(self.novel.title, h4=True, centered=True, wordWrap=True)
+        set_font(self.lblTitle, app_env.serif_font())
+
+        progress = daily_overall_progress(self.novel)
+        progress.added = 1234
+        progress.removed = 17
+        if progress.added > progress.removed:
+            sign = '+'
+            action = 'written'
+            number = progress.added - progress.removed
+        else:
+            sign = '-'
+            action = 'removed'
+            number = progress.removed - progress.added
+
+        self.lblProgress = label(f'{sign}{number}', incr_font_diff=10, centered=True, color=PLOTLYST_MAIN_COLOR)
+        self.lblWord = label(f'words {action}', incr_font_diff=3, centered=True, color='#495057')
+        self.wdgWordDisplay = rows(0, 0)
+        self.wdgWordDisplay.layout().addWidget(self.lblProgress)
+        self.wdgWordDisplay.layout().addWidget(self.lblWord)
+        margins(self.wdgWordDisplay, bottom=65)
+
+        self.iconDay = HighQualityPaintedIcon(IconRegistry.from_name('mdi6.calendar-today', color='grey'), size=14)
+        self.lblDay = label(today_str(), color='grey', decr_font_diff=2)
+
+        self.canvas.layout().addWidget(self.lblTitle)
+        self.canvas.layout().addWidget(SeparatorLineWithShadow())
+        self.canvas.layout().addWidget(group(self.iconDay, self.lblDay, margin=0, spacing=1, margin_bottom=8),
+                                       alignment=Qt.AlignmentFlag.AlignRight)
+        self.canvas.layout().addWidget(vspacer())
+        self.canvas.layout().addWidget(self.wdgWordDisplay)
+        self.canvas.layout().addWidget(vspacer())
+        self.canvas.layout().addWidget(PlotlystFooter(), alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.canvas.installEventFilter(self)
+
     @overrides
     def desc(self) -> str:
         return 'Capture an image of your daily writing progress'
+
+    @overrides
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if isinstance(event, QPaintEvent):
+            painter = qpainter(self.canvas)
+
+            rect: QRectF = self.canvas.rect().toRectF()
+            corner_radius = 12
+
+            path = QPainterPath()
+            path.addRoundedRect(rect, corner_radius, corner_radius)
+
+            radius = max(rect.width(), rect.height()) / 3
+            gradient = QRadialGradient(rect.bottomRight() - QPointF(15, -25), radius)
+
+            gradient.setColorAt(0.0, QColor(PLOTLYST_MAIN_COLOR))
+            gradient.setColorAt(1.0, QColor(RELAXED_WHITE_COLOR))
+
+            painter.fillPath(path, gradient)
+
+        return super().eventFilter(watched, event)
 
 
 class SocialSnapshotPopup(PopupDialog):
@@ -250,6 +315,8 @@ class SocialSnapshotPopup(PopupDialog):
             return
         clear_layout(self.canvasContainer)
 
+        self._snapshotType = snapshotType
+
         if snapshotType == SnapshotType.Productivity:
             self._editor = ProductivitySnapshotEditor(self.novel)
             self.canvasContainer.layout().addWidget(self._editor.canvas)
@@ -326,7 +393,8 @@ class SocialSnapshotPopup(PopupDialog):
                 self._exported_pixmap.save(target_path, "JPEG")
 
     def __initSelectorBtn(self, snapshotType: SnapshotType):
-        btn = push_btn(IconRegistry.from_name(snapshotType.icon), text=snapshotType.display_name, checkable=True,
+        btn = push_btn(IconRegistry.from_name(snapshotType.icon, color_on=RELAXED_WHITE_COLOR),
+                       text=snapshotType.display_name, checkable=True,
                        properties=['main-side-nav'])
         self.btnGroupSelectors.addButton(btn)
         self.wdgNav.layout().addWidget(btn)

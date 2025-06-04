@@ -23,7 +23,7 @@ from qthandy import hbox, vbox, margins
 
 
 def group(*widgets, vertical: bool = True, margin: int = 2, spacing: int = 3, margin_top: int = 0, margin_left: int = 0,
-          margin_right: int = 0,
+          margin_right: int = 0, margin_bottom: int = 0,
           parent=None) -> QWidget:
     container = QWidget(parent)
     if vertical:
@@ -37,6 +37,8 @@ def group(*widgets, vertical: bool = True, margin: int = 2, spacing: int = 3, ma
         margins(container, left=margin_left)
     if margin_right:
         margins(container, right=margin_right)
+    if margin_bottom:
+        margins(container, bottom=margin_bottom)
 
     for w in widgets:
         container.layout().addWidget(w)

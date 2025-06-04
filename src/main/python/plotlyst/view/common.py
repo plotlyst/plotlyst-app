@@ -748,3 +748,9 @@ def set_font(wdg: QWidget, family: str):
     font = wdg.font()
     font.setFamily(family)
     wdg.setFont(font)
+
+
+def qpainter(parent: QWidget) -> QPainter:
+    painter = QPainter(parent)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    return painter
