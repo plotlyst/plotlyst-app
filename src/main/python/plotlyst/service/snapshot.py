@@ -148,11 +148,16 @@ class SocialSnapshotPopup(PopupDialog):
         self._snapshotType = snapshotType
         self._editor: Optional[SnapshotCanvasEditor] = None
 
-        self.wdgNav = rows()
+        self.wdgNav = rows(frame_=True)
         self.wdgNav.setProperty('relaxed-white-bg', True)
+        self.wdgNav.setProperty('large-rounded-on-left', True)
         self.wdgEditor = rows()
         self.frame.layout().addWidget(self.wdgNav)
         self.frame.layout().addWidget(self.wdgEditor)
+
+        margins(self.frame, left=0, top=0, bottom=0)
+        margins(self.wdgNav, top=10)
+        margins(self.wdgEditor, top=15, bottom=15)
 
         self.frame.setProperty('muted-bg', True)
         self.frame.setProperty('white-bg', False)
