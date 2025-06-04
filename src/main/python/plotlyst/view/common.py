@@ -702,8 +702,11 @@ def columns(margin: int = 2, spacing: int = 3) -> QWidget:
     return wdg
 
 
-def rows(margin: int = 2, spacing: int = 3) -> QWidget:
-    wdg = QWidget()
+def rows(margin: int = 2, spacing: int = 3, frame_: bool = False) -> QWidget:
+    if frame_:
+        wdg = frame()
+    else:
+        wdg = QWidget()
     vbox(wdg, margin, spacing)
     return wdg
 
@@ -745,3 +748,9 @@ def set_font(wdg: QWidget, family: str):
     font = wdg.font()
     font.setFamily(family)
     wdg.setFont(font)
+
+
+def qpainter(parent: QWidget) -> QPainter:
+    painter = QPainter(parent)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    return painter

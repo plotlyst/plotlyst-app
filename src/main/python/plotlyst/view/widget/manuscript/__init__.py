@@ -377,7 +377,7 @@ class ManuscriptDailyProgress(QWidget):
         self._novel = novel
         vbox(self, spacing=0)
 
-        self.btnSnapshot = SnapshotButton(self._novel, SnapshotType.Writing)
+        self.btnSnapshot = SnapshotButton(self._novel, SnapshotType.MonthlyWriting)
 
         self.btnDay = IconText()
         self.btnDay.setText('Today')
