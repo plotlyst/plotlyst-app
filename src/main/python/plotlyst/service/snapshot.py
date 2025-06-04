@@ -64,6 +64,9 @@ class SnapshotCanvasEditor(QWidget):
     def monthName(self) -> str:
         pass
 
+    def exportedName(self) -> str:
+        return "snapshot"
+
 
 class ProductivitySnapshotEditor(SnapshotCanvasEditor):
     def __init__(self, novel: Novel, parent=None):
@@ -133,6 +136,10 @@ class MonthlyWritingSnapshotEditor(SnapshotCanvasEditor):
     def monthName(self) -> str:
         return calendar.month_name[self.calendar.monthShown()]
 
+    @overrides
+    def exportedName(self) -> str:
+        return f'monthly-progress-{self.monthName().lower()}'
+
 
 class DailyWritingSnapshotEditor(SnapshotCanvasEditor):
     def __init__(self, novel: Novel, parent=None):
@@ -147,8 +154,6 @@ class DailyWritingSnapshotEditor(SnapshotCanvasEditor):
         set_font(self.lblTitle, app_env.serif_font())
 
         progress = daily_overall_progress(self.novel)
-        progress.added = 1234
-        progress.removed = 17
         if progress.added > progress.removed:
             sign = '+'
             action = 'written'
@@ -182,6 +187,10 @@ class DailyWritingSnapshotEditor(SnapshotCanvasEditor):
     @overrides
     def desc(self) -> str:
         return 'Capture an image of your daily writing progress'
+
+    @overrides
+    def exportedName(self) -> str:
+        return f'daily-progress-{today_str()}'
 
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
@@ -380,14 +389,12 @@ class SocialSnapshotPopup(PopupDialog):
             clipboard.setPixmap(self._exported_pixmap)
             self.lblCopied.trigger()
         elif self.btnPng.isChecked():
-            target_path, _ = QFileDialog.getSaveFileName(self, "Save PNG",
-                                                         f'monthly-progress-{self._editor.monthName().lower()}.png',
+            target_path, _ = QFileDialog.getSaveFileName(self, "Save PNG", f'{self._editor.exportedName()}.png',
                                                          "PNG Files (*.png)")
             if target_path:
                 self._exported_pixmap.save(target_path, "PNG")
         elif self.btnJpg.isChecked():
-            target_path, _ = QFileDialog.getSaveFileName(self, "Save JPG",
-                                                         f'monthly-progress-{self._editor.monthName().lower()}.jpg',
+            target_path, _ = QFileDialog.getSaveFileName(self, "Save JPG", f'{self._editor.exportedName()}.jpg',
                                                          "JPEG Files (*.jpg *.jpeg)")
             if target_path:
                 self._exported_pixmap.save(target_path, "JPEG")
