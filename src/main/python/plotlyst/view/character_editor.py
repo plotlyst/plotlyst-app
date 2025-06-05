@@ -77,8 +77,9 @@ class CharacterEditor(QObject, EventListener):
 
         self.ui.wdgBackstory.addedToTheEnd.connect(lambda: scroll_to_bottom(self.ui.scrollAreaBackstory))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
-        set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, app_env.profile().get('origin', False))
+        set_tab_visible(self.ui.tabAttributes, self.ui.tabOrigin, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))
+        set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, False)
 
         self.ui.textEdit.setTitleVisible(False)
         self.ui.textEdit.setToolbarVisible(False)
@@ -160,10 +161,10 @@ class CharacterEditor(QObject, EventListener):
                      IconRegistry.topics_icon(color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBigFive, IconRegistry.big_five_icon(PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabNotes, IconRegistry.document_edition_icon())
-        set_tab_icon(self.ui.tabAttributes, self.ui.tabGoals, IconRegistry.goal_icon('black', PLOTLYST_SECONDARY_COLOR))
+        set_tab_icon(self.ui.tabAttributes, self.ui.tabOrigin,
+                     IconRegistry.from_name('ri.typhoon-fill', 'black', PLOTLYST_SECONDARY_COLOR))
 
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBigFive, False)
-        set_tab_visible(self.ui.tabAttributes, self.ui.tabGoals, False)
 
         self.ui.wdgAvatar.btnAvatar.setToolTip('Character avatar. Click to add an image')
         self.ui.wdgAvatar.avatarUpdated.connect(self._avatar_updated)
@@ -189,10 +190,8 @@ class CharacterEditor(QObject, EventListener):
 
         self.ui.btnClose.clicked.connect(self._save)
 
-        if self.ui.tabBackstory.isVisible():
+        if app_env.profile().get('backstory', False):
             self.ui.tabAttributes.setCurrentWidget(self.ui.tabBackstory)
-        elif self.ui.tabTopics.isVisible():
-            self.ui.tabAttributes.setCurrentWidget(self.ui.tabTopics)
         else:
             self.ui.tabAttributes.setCurrentWidget(self.ui.tabNotes)
 

@@ -465,7 +465,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>858</width>
+            <width>875</width>
             <height>479</height>
            </rect>
           </property>
@@ -509,7 +509,7 @@
        <enum>Qt::ClickFocus</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tabTopics">
        <property name="relaxed-white-bg" stdset="0">
@@ -569,7 +569,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>327</width>
+             <width>310</width>
              <height>596</height>
             </rect>
            </property>
@@ -617,12 +617,12 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tabGoals">
+      <widget class="QWidget" name="tabOrigin">
        <property name="relaxed-white-bg" stdset="0">
         <bool>true</bool>
        </property>
        <attribute name="title">
-        <string>Plan</string>
+        <string>Origin</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <property name="spacing">
@@ -648,12 +648,12 @@
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaPlans">
+          <widget class="QWidget" name="scrollAreaOriginWdg">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>325</width>
+             <width>308</width>
              <height>594</height>
             </rect>
            </property>
