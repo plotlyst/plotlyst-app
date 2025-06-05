@@ -912,20 +912,22 @@ class CharacterTimelineWidget(TimelineLinearWidget):
         return CharacterBackstoryCard
 
 
-class CharacterRoleSelector(QWidget):
+class CharacterRoleSelector(QFrame):
     roleSelected = pyqtSignal(SelectionItem)
     rolePromoted = pyqtSignal(SelectionItem)
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        hbox(self, 0)
+        hbox(self, 0, 0)
+
+        self.setProperty('large-rounded', True)
 
         self.wdgSidebar = QWidget()
-        self.wdgSidebar.setProperty('bg', True)
+        self.wdgSidebar.setProperty('relaxed-white-bg', True)
         vbox(self.wdgSidebar)
         margins(self.wdgSidebar, left=10, top=15, right=10)
         self.wdgDisplay = QWidget()
-        self.wdgDisplay.setProperty('relaxed-white-bg', True)
+        self.wdgDisplay.setProperty('bg', True)
         vbox(self.wdgDisplay)
         margins(self.wdgDisplay, left=20, right=20)
         self.layout().addWidget(self.wdgSidebar)
@@ -996,8 +998,9 @@ class CharacterRoleSelector(QWidget):
         self.wdgDisplayHeader.layout().addWidget(self.iconSecondary)
         self.wdgDisplayHeader.layout().addWidget(self.iconMinor)
 
-        self.wdgExamples = QWidget()
-        self.wdgExamples.setProperty('relaxed-white-bg', True)
+        self.wdgExamples = frame()
+        self.wdgExamples.setProperty('muted-bg', True)
+        self.wdgExamples.setProperty('large-rounded', True)
         self.examplesScrollArea = scroll_area(False, False, True)
         self.examplesScrollArea.setWidget(self.wdgExamples)
         self.wdgExamples.setMinimumSize(400, 150)
@@ -1008,7 +1011,7 @@ class CharacterRoleSelector(QWidget):
         self.wdgDisplay.layout().addWidget(line(color='lightgrey'))
         self.wdgDisplay.layout().addWidget(self.iconRole, alignment=Qt.AlignmentFlag.AlignCenter)
         self.wdgDisplay.layout().addWidget(self.textBrowser)
-        self.wdgDisplay.layout().addWidget(label('Examples:'), alignment=Qt.AlignmentFlag.AlignLeft)
+        self.wdgDisplay.layout().addWidget(label('Examples:', description=True), alignment=Qt.AlignmentFlag.AlignLeft)
         self.wdgDisplay.layout().addWidget(self.examplesScrollArea)
         self.wdgDisplay.layout().addWidget(vspacer())
         self.wdgDisplay.layout().addWidget(self.btnSelect)

@@ -335,7 +335,10 @@
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="btnRole">
+               <widget class="SecondaryActionPushButton" name="btnRole">
+                <property name="font">
+                 <font/>
+                </property>
                 <property name="cursor">
                  <cursorShape>PointingHandCursor</cursorShape>
                 </property>
@@ -343,17 +346,7 @@
                  <enum>Qt::ClickFocus</enum>
                 </property>
                 <property name="styleSheet">
-                 <string notr="true">.QPushButton {
-	border: 2px dashed grey;
-	border-radius: 6px;
-	padding: 3px;
-	font: italic;
-}
-
-.QPushButton:pressed {
-	border: 2px solid grey;
-}
-</string>
+                 <string notr="true"/>
                 </property>
                 <property name="text">
                  <string>Role</string>
@@ -473,7 +466,7 @@
             <x>0</x>
             <y>0</y>
             <width>858</width>
-            <height>477</height>
+            <height>479</height>
            </rect>
           </property>
           <property name="sizePolicy">

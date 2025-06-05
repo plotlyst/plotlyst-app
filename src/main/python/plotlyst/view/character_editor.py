@@ -29,7 +29,7 @@ from qthandy import translucent, bold, italic, incr_font
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
-from plotlyst.common import PLOTLYST_SECONDARY_COLOR
+from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Character, Document, FEMALE, SelectionItem, BACKSTORY_PREVIEW
 from plotlyst.core.template import protagonist_role
@@ -125,6 +125,8 @@ class CharacterEditor(QObject, EventListener):
         self._roleSelector.rolePromoted.connect(self._role_promoted)
         self._roleMenu = MenuWidget(self.ui.btnRole)
         self._roleMenu.addWidget(self._roleSelector)
+        transparent_menu(self._roleMenu)
+        self._roleMenu.installEventFilter(MenuOverlayEventFilter(self._roleMenu))
 
         italic(self.ui.btnAge)
         italic(self.ui.btnOccupation)
@@ -346,35 +348,15 @@ class CharacterEditor(QObject, EventListener):
         self.ui.btnRole.setText(self.character.role.text)
         if self.character.role.icon:
             self.ui.btnRole.setIcon(IconRegistry.from_name(self.character.role.icon, self.character.role.icon_color))
-        self.ui.btnRole.setStyleSheet(f'''
-            #btnRole {{
-                border: 2px solid {self.character.role.icon_color};
-                color: {self.character.role.icon_color};
-                border-radius: 6px;
-                padding: 3px;
-                font: bold;
-            }}
-            #btnRole::menu-indicator {{width:0px;}}
-            #btnRole:pressed {{
-                border: 2px solid white;
-            }}
-        ''')
+
+        self.ui.btnRole.initStyleSheet(self.character.role.icon_color, 'solid', self.character.role.icon_color,
+                                       RELAXED_WHITE_COLOR)
         self._btnRoleEventFilter.enterOpacity = 0.8
 
     def _reset_role(self):
-        self.ui.btnRole.setIcon(IconRegistry.from_name('fa5s.chess-bishop'))
+        self.ui.btnRole.setIcon(IconRegistry.from_name('fa5s.chess-bishop', 'grey'))
         self.ui.btnRole.setText('Role')
-        self.ui.btnRole.setStyleSheet(".QPushButton {\n"
-                                      "    border: 2px dashed grey;\n"
-                                      "    border-radius: 6px;\n"
-                                      "    padding: 3px;\n"
-                                      "    font: italic;\n"
-                                      "}\n"
-                                      "\n"
-                                      ".QPushButton:pressed {\n"
-                                      "    border: 2px solid grey;\n"
-                                      "}\n"
-                                      "")
+        self.ui.btnRole.initStyleSheet()
         self._btnRoleEventFilter.enterOpacity = 1.0
 
     def _gender_clicked(self, btn: QAbstractButton):
