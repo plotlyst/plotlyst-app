@@ -38,7 +38,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR, CHARACTER_MAJOR_COLOR, \
     CHARACTER_SECONDARY_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import BackstoryEvent, Character, StrengthWeaknessAttribute, Novel
+from plotlyst.core.domain import BackstoryEvent, Character, StrengthWeaknessAttribute, Novel, WorldBuildingEntity
 from plotlyst.core.help import enneagram_help, mbti_help, character_roles_description, \
     character_role_examples, work_style_help, love_style_help
 from plotlyst.core.template import SelectionItem, enneagram_field, TemplateField, mbti_field, \
@@ -1211,6 +1211,8 @@ class CharacterCodexEditor(QFrame):
         super().__init__(parent)
         self.novel = novel
         self._character: Optional[Character] = None
+        self._codexEntity: Optional[WorldBuildingEntity] = None
+
         vbox(self, 0, 0)
 
         self._palette = WorldBuildingPalette(bg_color='#ede0d4', primary_color='#510442',
@@ -1238,6 +1240,7 @@ class CharacterCodexEditor(QFrame):
                             background-color: rgba(0, 0, 0, 0);
                             color: {self._palette.primary_color}; 
                         }}''')
+        self.lineName.textEdited.connect(self._titleChanged)
 
         self.wdgHeader = columns()
         margins(self.wdgHeader, top=10, bottom=5)
@@ -1250,5 +1253,9 @@ class CharacterCodexEditor(QFrame):
 
     def setCharacter(self, character: Character):
         self._character = character
-        self.editor.setEntity(self._character.codex)
-        self.lineName.setText(self._character.codex.name)
+        self._codexEntity = self._character.codex
+        self.editor.setEntity(self._codexEntity)
+        self.lineName.setText(self._codexEntity.name)
+
+    def _titleChanged(self, text: str):
+        self._codexEntity.name = text

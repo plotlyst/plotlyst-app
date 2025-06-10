@@ -79,7 +79,7 @@ class CharacterEditor(QObject, EventListener):
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBinder, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))
-        set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, False)
+        # set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, False)
 
         self.ui.textEdit.setTitleVisible(False)
         self.ui.textEdit.setToolbarVisible(False)
