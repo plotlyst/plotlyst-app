@@ -608,6 +608,14 @@ class TopicElement:
     blocks: List[TopicElementBlock] = field(default_factory=list)
 
 
+def character_codex_root() -> 'WorldBuildingEntity':
+    first_section = WorldBuildingEntityElement(WorldBuildingEntityElementType.Section)
+    first_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Header, title='Profile'))
+    first_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
+    return WorldBuildingEntity('Character Codex', icon='ri.typhoon-fill', bg_color='#40916c', side_visible=False,
+                               elements=[first_section])
+
+
 @dataclass
 class Character:
     name: str
@@ -640,6 +648,7 @@ class Character:
     personality: CharacterPersonality = field(default_factory=CharacterPersonality)
     alias: str = field(default='', metadata=config(exclude=exclude_if_empty))
     origin_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+    codex: 'WorldBuildingEntity' = field(default_factory=character_codex_root)
 
     def __post_init__(self):
         if self.prefs.avatar.icon_color == 'black':

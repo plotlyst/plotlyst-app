@@ -617,28 +617,28 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tabOrigin">
+      <widget class="QWidget" name="tabBinder">
        <property name="relaxed-white-bg" stdset="0">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <attribute name="title">
-        <string>Origin</string>
+        <string>Codex</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <property name="spacing">
-         <number>3</number>
+         <number>0</number>
         </property>
         <property name="leftMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="topMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="rightMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="bottomMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <item>
          <widget class="QScrollArea" name="scrollArea_2">
@@ -648,33 +648,33 @@
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaOriginWdg">
+          <widget class="QWidget" name="scrollAreaBinderWdg">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>308</width>
-             <height>594</height>
+             <width>312</width>
+             <height>598</height>
             </rect>
            </property>
            <property name="relaxed-white-bg" stdset="0">
-            <bool>true</bool>
+            <bool>false</bool>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_11">
             <property name="spacing">
-             <number>3</number>
+             <number>0</number>
             </property>
             <property name="leftMargin">
-             <number>2</number>
+             <number>0</number>
             </property>
             <property name="topMargin">
-             <number>2</number>
+             <number>0</number>
             </property>
             <property name="rightMargin">
-             <number>2</number>
+             <number>0</number>
             </property>
             <property name="bottomMargin">
-             <number>2</number>
+             <number>0</number>
             </property>
            </layout>
           </widget>

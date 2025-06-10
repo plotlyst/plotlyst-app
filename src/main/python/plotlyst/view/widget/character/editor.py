@@ -38,7 +38,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR, CHARACTER_MAJOR_COLOR, \
     CHARACTER_SECONDARY_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import BackstoryEvent, Character, StrengthWeaknessAttribute
+from plotlyst.core.domain import BackstoryEvent, Character, StrengthWeaknessAttribute, Novel
 from plotlyst.core.help import enneagram_help, mbti_help, character_roles_description, \
     character_role_examples, work_style_help, love_style_help
 from plotlyst.core.template import SelectionItem, enneagram_field, TemplateField, mbti_field, \
@@ -47,7 +47,7 @@ from plotlyst.core.template import SelectionItem, enneagram_field, TemplateField
     foil_role, henchmen_role, love_style_field, disc_field
 from plotlyst.env import app_env
 from plotlyst.view.common import push_btn, action, tool_btn, label, wrap, restyle, \
-    scroll_area, emoji_font, frame
+    scroll_area, emoji_font, frame, to_rgba_str, columns
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
@@ -55,11 +55,13 @@ from plotlyst.view.widget.button import SecondaryActionPushButton, SelectionItem
 from plotlyst.view.widget.chart import BaseChart, SelectionItemPieSlice
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import Icon, MajorRoleIcon, SecondaryRoleIcon, MinorRoleIcon, \
-    IconText, RoleIcon, TruitySourceWidget, PopupDialog, ChartView
-from plotlyst.view.widget.input import Toggle, DecoratedSpinBox
+    IconText, RoleIcon, TruitySourceWidget, PopupDialog, ChartView, SeparatorLineWithShadow
+from plotlyst.view.widget.input import Toggle, DecoratedSpinBox, AutoAdjustableLineEdit
 from plotlyst.view.widget.labels import TraitLabel
 from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme
 from plotlyst.view.widget.utility import IconSelectorDialog
+from plotlyst.view.widget.world.editor import WorldBuildingEntityEditor
+from plotlyst.view.widget.world.theme import WorldBuildingPalette
 
 
 class LifeStage(Enum):
@@ -1202,3 +1204,51 @@ class StrengthWeaknessEditor(PopupDialog):
         elif not self.btnGroup.checkedButton():
             qtanim.shake(self.toggleStrength)
             qtanim.shake(self.toggleWeakness)
+
+
+class CharacterCodexEditor(QFrame):
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(parent)
+        self.novel = novel
+        self._character: Optional[Character] = None
+        vbox(self, 0, 0)
+
+        self._palette = WorldBuildingPalette(bg_color='#ede0d4', primary_color='#510442',
+                                             secondary_color='#DABFA7',
+                                             tertiary_color='#E3D0BD')
+        self.editor = WorldBuildingEntityEditor(self.novel, self._palette)
+        margins(self.editor, top=15)
+        trans_bg_color = to_rgba_str(QColor(self._palette.bg_color), 245)
+        self.setObjectName('codexEditor')
+        self.setStyleSheet(f'''
+                               #codexEditor {{
+                                   background: {trans_bg_color};
+                               }}
+                           ''')
+
+        self.lineName = AutoAdjustableLineEdit()
+        font = self.lineName.font()
+        font.setPointSize(26)
+        font.setFamily(app_env.serif_font())
+        self.lineName.setFont(font)
+
+        self.lineName.setStyleSheet(f'''
+                        QLineEdit {{
+                            border: 0px;
+                            background-color: rgba(0, 0, 0, 0);
+                            color: {self._palette.primary_color}; 
+                        }}''')
+
+        self.wdgHeader = columns()
+        margins(self.wdgHeader, top=10, bottom=5)
+        self.wdgHeader.layout().addWidget(self.lineName)
+
+        self.layout().addWidget(self.wdgHeader, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(SeparatorLineWithShadow())
+        self.layout().addWidget(self.editor)
+        self.layout().addWidget(vspacer())
+
+    def setCharacter(self, character: Character):
+        self._character = character
+        self.editor.setEntity(self._character.codex)
+        self.lineName.setText(self._character.codex.name)

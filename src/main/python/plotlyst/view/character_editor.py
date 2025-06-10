@@ -45,7 +45,7 @@ from plotlyst.view.generated.character_editor_ui import Ui_CharacterEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_bg_image, transparent_menu
 from plotlyst.view.widget.button import FadeOutButtonGroup, DotsMenuButton
-from plotlyst.view.widget.character.editor import CharacterAgeEditor
+from plotlyst.view.widget.character.editor import CharacterAgeEditor, CharacterCodexEditor
 from plotlyst.view.widget.character.editor import CharacterRoleSelector
 from plotlyst.view.widget.character.profile import CharacterProfileEditor, CharacterNameEditorPopup
 from plotlyst.view.widget.character.topic import CharacterTopicsEditor
@@ -77,7 +77,7 @@ class CharacterEditor(QObject, EventListener):
 
         self.ui.wdgBackstory.addedToTheEnd.connect(lambda: scroll_to_bottom(self.ui.scrollAreaBackstory))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
-        set_tab_visible(self.ui.tabAttributes, self.ui.tabOrigin, app_env.profile().get('backstory', False))
+        set_tab_visible(self.ui.tabAttributes, self.ui.tabBinder, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, False)
 
@@ -161,10 +161,11 @@ class CharacterEditor(QObject, EventListener):
                      IconRegistry.topics_icon(color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBigFive, IconRegistry.big_five_icon(PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabNotes, IconRegistry.document_edition_icon())
-        set_tab_icon(self.ui.tabAttributes, self.ui.tabOrigin,
+        set_tab_icon(self.ui.tabAttributes, self.ui.tabBinder,
                      IconRegistry.from_name('ri.typhoon-fill', 'black', PLOTLYST_SECONDARY_COLOR))
 
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBigFive, False)
+        set_tab_visible(self.ui.tabAttributes, self.ui.tabNotes, False)
 
         self.ui.wdgAvatar.btnAvatar.setToolTip('Character avatar. Click to add an image')
         self.ui.wdgAvatar.avatarUpdated.connect(self._avatar_updated)
@@ -177,6 +178,9 @@ class CharacterEditor(QObject, EventListener):
 
         self.wdgTopicsEditor = CharacterTopicsEditor()
         self.ui.tabTopics.layout().addWidget(self.wdgTopicsEditor)
+
+        self.codexEditor = CharacterCodexEditor(self.novel)
+        self.ui.scrollAreaBinderWdg.layout().addWidget(self.codexEditor)
 
         self.profile = CharacterProfileEditor(self.novel)
         self.ui.wdgProfile.layout().addWidget(self.profile)
@@ -250,6 +254,7 @@ class CharacterEditor(QObject, EventListener):
         self.ui.wdgAvatar.setUploadPopupMenu()
         self.wdgTopicsEditor.setCharacter(self.character)
         self.ui.wdgBackstory.setCharacter(self.character)
+        self.codexEditor.setCharacter(self.character)
         self.profile.setCharacter(self.character)
         if self.character.document and self.character.document.loaded:
             self.ui.textEdit.setText(self.character.document.content, self.character.name, title_read_only=True)
