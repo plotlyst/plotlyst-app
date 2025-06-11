@@ -45,7 +45,8 @@ from plotlyst.view.generated.character_editor_ui import Ui_CharacterEditor
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_bg_image, transparent_menu
 from plotlyst.view.widget.button import FadeOutButtonGroup, DotsMenuButton
-from plotlyst.view.widget.character.editor import CharacterAgeEditor, CharacterCodexEditor
+from plotlyst.view.widget.character.codex import CharacterCodexEditor
+from plotlyst.view.widget.character.editor import CharacterAgeEditor
 from plotlyst.view.widget.character.editor import CharacterRoleSelector
 from plotlyst.view.widget.character.profile import CharacterProfileEditor, CharacterNameEditorPopup
 from plotlyst.view.widget.character.topic import CharacterTopicsEditor
