@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import copy
 import random
+import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from functools import partial
@@ -38,7 +39,8 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR, CHARACTER_MAJOR_COLOR, \
     CHARACTER_SECONDARY_COLOR, RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
-from plotlyst.core.domain import BackstoryEvent, Character, StrengthWeaknessAttribute, Novel, WorldBuildingEntity
+from plotlyst.core.domain import BackstoryEvent, Character, StrengthWeaknessAttribute, Novel, WorldBuildingEntity, \
+    WorldBuildingEntityElement, WorldBuildingEntityElementType
 from plotlyst.core.help import enneagram_help, mbti_help, character_roles_description, \
     character_role_examples, work_style_help, love_style_help
 from plotlyst.core.template import SelectionItem, enneagram_field, TemplateField, mbti_field, \
@@ -62,9 +64,9 @@ from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, T
 from plotlyst.view.widget.tree import TreeSettings
 from plotlyst.view.widget.utility import IconSelectorDialog
 from plotlyst.view.widget.world import WorldBuildingTreeView
-from plotlyst.view.widget.world.editor import WorldBuildingEntityEditor
+from plotlyst.view.widget.world.editor import WorldBuildingEntityEditor, WorldBuildingTopicSelectionDialog
 from plotlyst.view.widget.world.theme import WorldBuildingPalette
-from plotlyst.view.widget.world.tree import RootNode
+from plotlyst.view.widget.world.tree import RootNode, EntityNode
 
 
 class LifeStage(Enum):
@@ -1209,6 +1211,67 @@ class StrengthWeaknessEditor(PopupDialog):
             qtanim.shake(self.toggleWeakness)
 
 
+class CharacterCodexAdditionMenu(MenuWidget):
+    entityTriggered = pyqtSignal(WorldBuildingEntity)
+    topicsSelected = pyqtSignal(list)
+
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(parent)
+        self._novel = novel
+
+        self.addAction(action('Page', IconRegistry.from_name('ri.typhoon-fill'),
+                              slot=self._entityTriggered,
+                              tooltip='Create a new page about your character'))
+        self.addSeparator()
+
+        self.addAction(
+            action('Select topics...', IconRegistry.from_name('mdi.card-text-outline'), slot=self._linkToTopics,
+                   tooltip="Link to common characterization topics"))
+
+        apply_white_menu(self)
+
+    def _entityTriggered(self):
+        entity = self.__newEntity('', elements=self.__newElements())
+        self.entityTriggered.emit(entity)
+
+    def _linkToTopics(self):
+        topics = WorldBuildingTopicSelectionDialog.popup()
+        if topics:
+            entities = []
+            for topic in topics:
+                entity = self.__newEntity(topic.text, icon=topic.icon, elements=self.__newElements(), ref=topic.id)
+                entities.append(entity)
+            self.topicsSelected.emit(entities)
+
+    def __newEntity(self, name: str, elements: List[WorldBuildingEntityElement], ref: Optional[uuid.UUID] = None,
+                    icon: str = '') -> WorldBuildingEntity:
+        return WorldBuildingEntity(name, elements=elements, ref=ref, icon=icon, side_visible=False)
+
+    def __newElements(self) -> List[WorldBuildingEntityElement]:
+        main_section = WorldBuildingEntityElement(WorldBuildingEntityElementType.Main_Section)
+        main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Header))
+        main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
+        return [main_section]
+
+
+class CharacterCodexNode(EntityNode):
+    def __init__(self, novel: Novel, entity: WorldBuildingEntity, parent=None, settings: Optional[TreeSettings] = None):
+        super().__init__(novel, entity, parent, settings)
+        self._actionLinkMilieu.setVisible(False)
+        self._placeholderName = 'New page'
+
+    @overrides
+    def _initMenuActions(self, menu: MenuWidget):
+        menu.addAction(self._actionDelete)
+
+    @overrides
+    def _initAdditionMenu(self):
+        self._additionMenu = CharacterCodexAdditionMenu(self._novel, self._btnAdd)
+        self._additionMenu.entityTriggered.connect(self.addEntity)
+        self._additionMenu.topicsSelected.connect(self.addEntities)
+        self.setPlusMenu(self._additionMenu)
+
+
 class CharacterCodexTreeView(WorldBuildingTreeView):
 
     def __init__(self, parent=None, settings: Optional[TreeSettings] = None):
@@ -1225,6 +1288,10 @@ class CharacterCodexTreeView(WorldBuildingTreeView):
         self._root = RootNode(self._novel, character.codex, settings=self._settings)
         self._root.selectionChanged.connect(partial(self._entitySelectionChanged, self._root))
         self.refresh()
+
+    @overrides
+    def _nodeClass(self):
+        return CharacterCodexNode
 
 
 class CharacterCodexEditor(QFrame):
