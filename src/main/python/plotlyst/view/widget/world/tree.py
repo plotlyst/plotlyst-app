@@ -204,6 +204,11 @@ class WorldBuildingTreeView(TreeView):
         self._root.select()
         self._entitySelectionChanged(self._root, self._root.isSelected())
 
+    def selectEntity(self, entity: WorldBuildingEntity):
+        node = self._entities[entity]
+        node.select()
+        self._entitySelectionChanged(node, True)
+
     def setSettings(self, settings: TreeSettings):
         self._settings = settings
         self._centralWidget.setStyleSheet(f'#centralWidget {{background: {settings.bg_color};}}')
@@ -217,7 +222,7 @@ class WorldBuildingTreeView(TreeView):
     def addEntity(self, entity: WorldBuildingEntity):
         wdg = self.__initEntityWidget(entity)
         self._root.addChild(wdg)
-        self._novel.world.root_entity.children.append(entity)
+        self.rootEntity().children.append(entity)
         self._save()
 
         emit_event(self._novel, WorldEntityAddedEvent(self, entity))
@@ -225,6 +230,9 @@ class WorldBuildingTreeView(TreeView):
     def addEntities(self, entities: List[WorldBuildingEntity]):
         for entity in entities:
             self.addEntity(entity)
+
+    def rootEntity(self) -> WorldBuildingEntity:
+        return self._novel.world.root_entity
 
     def refresh(self):
         def addChildWdg(parent: WorldBuildingEntity, child: WorldBuildingEntity):
@@ -235,9 +243,9 @@ class WorldBuildingTreeView(TreeView):
         self._entities.clear()
         clear_layout(self._centralWidget)
 
-        self._entities[self._novel.world.root_entity] = self._root
+        self._entities[self.rootEntity()] = self._root
         self._centralWidget.layout().addWidget(self._root)
-        for entity in self._novel.world.root_entity.children:
+        for entity in self.rootEntity().children:
             wdg = self.__initEntityWidget(entity)
             self._root.addChild(wdg)
             recursive(entity, lambda parent: parent.children, addChildWdg)

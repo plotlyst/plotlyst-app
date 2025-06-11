@@ -630,6 +630,10 @@ class TopicElement:
 
 
 def character_codex_root() -> 'WorldBuildingEntity':
+    root_main_section = WorldBuildingEntityElement(WorldBuildingEntityElementType.Main_Section)
+    root_main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Header))
+    root_main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
+
     elements = []
     for topicType in [TopicType.Physical, TopicType.Background, TopicType.Habits, TopicType.Hobbies, TopicType.Skills,
                       TopicType.Communication, TopicType.Beliefs]:
@@ -644,8 +648,12 @@ def character_codex_root() -> 'WorldBuildingEntity':
     first_section = WorldBuildingEntityElement(WorldBuildingEntityElementType.Section)
     first_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Header, title='Profile'))
     first_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
-    return WorldBuildingEntity('Secondary Topics', icon='ri.typhoon-fill', bg_color='#40916c', side_visible=False,
-                               elements=elements)
+
+    child_el = WorldBuildingEntity('Secondary Topics', icon='mdi.card-account-details-star-outline', side_visible=False,
+                                   elements=elements)
+
+    return WorldBuildingEntity('Character Codex', icon='ri.typhoon-fill', bg_color='#40916c', side_visible=False,
+                               elements=[root_main_section], children=[child_el])
 
 
 @dataclass

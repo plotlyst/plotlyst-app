@@ -51,17 +51,20 @@ from plotlyst.view.common import push_btn, action, tool_btn, label, wrap, restyl
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
-from plotlyst.view.widget.button import SecondaryActionPushButton, SelectionItemPushButton
+from plotlyst.view.widget.button import SecondaryActionPushButton, SelectionItemPushButton, DotsMenuButton
 from plotlyst.view.widget.chart import BaseChart, SelectionItemPieSlice
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import Icon, MajorRoleIcon, SecondaryRoleIcon, MinorRoleIcon, \
-    IconText, RoleIcon, TruitySourceWidget, PopupDialog, ChartView, SeparatorLineWithShadow
+    IconText, RoleIcon, TruitySourceWidget, PopupDialog, ChartView, SeparatorLineWithShadow, MenuOverlayEventFilter
 from plotlyst.view.widget.input import Toggle, DecoratedSpinBox, AutoAdjustableLineEdit
 from plotlyst.view.widget.labels import TraitLabel
 from plotlyst.view.widget.timeline import TimelineLinearWidget, BackstoryCard, TimelineTheme
+from plotlyst.view.widget.tree import TreeSettings
 from plotlyst.view.widget.utility import IconSelectorDialog
+from plotlyst.view.widget.world import WorldBuildingTreeView
 from plotlyst.view.widget.world.editor import WorldBuildingEntityEditor
 from plotlyst.view.widget.world.theme import WorldBuildingPalette
+from plotlyst.view.widget.world.tree import RootNode
 
 
 class LifeStage(Enum):
@@ -1206,6 +1209,24 @@ class StrengthWeaknessEditor(PopupDialog):
             qtanim.shake(self.toggleWeakness)
 
 
+class CharacterCodexTreeView(WorldBuildingTreeView):
+
+    def __init__(self, parent=None, settings: Optional[TreeSettings] = None):
+        super().__init__(parent, settings)
+        self._character: Optional[Character] = None
+
+    @overrides
+    def rootEntity(self) -> WorldBuildingEntity:
+        return self._character.codex
+
+    def setCharacter(self, character: Character, novel: Novel):
+        self._character = character
+        self._novel = novel
+        self._root = RootNode(self._novel, character.codex, settings=self._settings)
+        self._root.selectionChanged.connect(partial(self._entitySelectionChanged, self._root))
+        self.refresh()
+
+
 class CharacterCodexEditor(QFrame):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -1228,6 +1249,15 @@ class CharacterCodexEditor(QFrame):
                                }}
                            ''')
 
+        self.treeView = CharacterCodexTreeView()
+        self.treeView.entitySelected.connect(self._entitySelected)
+        self.btnTree = tool_btn(IconRegistry.from_name('mdi.file-tree-outline'), transparent_=True)
+        self.treeMenu = MenuWidget(self.btnTree)
+        self.treeMenu.installEventFilter(MenuOverlayEventFilter(self.treeMenu))
+        self.treeMenu.aboutToShow.connect(self._beforeOpenTreeMenu)
+        self.treeMenu.addWidget(self.treeView)
+        self.btnContext = DotsMenuButton()
+
         self.lineName = AutoAdjustableLineEdit()
         font = self.lineName.font()
         font.setPointSize(26)
@@ -1244,18 +1274,34 @@ class CharacterCodexEditor(QFrame):
 
         self.wdgHeader = columns()
         margins(self.wdgHeader, top=10, bottom=5)
+        self.wdgHeader.layout().addWidget(self.btnTree, alignment=Qt.AlignmentFlag.AlignTop)
+        self.wdgHeader.layout().addWidget(spacer())
         self.wdgHeader.layout().addWidget(self.lineName)
+        self.wdgHeader.layout().addWidget(spacer())
+        self.wdgHeader.layout().addWidget(self.btnContext, alignment=Qt.AlignmentFlag.AlignTop)
 
-        self.layout().addWidget(self.wdgHeader, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.wdgHeader)
         self.layout().addWidget(SeparatorLineWithShadow())
         self.layout().addWidget(self.editor)
         self.layout().addWidget(vspacer())
 
     def setCharacter(self, character: Character):
         self._character = character
-        self._codexEntity = self._character.codex
+        if self._character.codex.children:
+            self._codexEntity = self._character.codex.children[0]
+        else:
+            self._codexEntity = self._character.codex
+        self.treeView.setCharacter(self._character, self.novel)
+        self.treeView.selectEntity(self._codexEntity)
         self.editor.setEntity(self._codexEntity)
         self.lineName.setText(self._codexEntity.name)
+
+    def _beforeOpenTreeMenu(self):
+        self.treeView.setFixedSize(self.parent().size().width() * 2 // 3, int(self.parent().size().height() * 0.5))
+
+    def _entitySelected(self, entity: WorldBuildingEntity):
+        self._codexEntity = entity
+        self.editor.setEntity(self._codexEntity)
 
     def _titleChanged(self, text: str):
         self._codexEntity.name = text
