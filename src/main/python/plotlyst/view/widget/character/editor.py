@@ -47,7 +47,7 @@ from plotlyst.core.template import SelectionItem, enneagram_field, TemplateField
     foil_role, henchmen_role, love_style_field, disc_field
 from plotlyst.env import app_env
 from plotlyst.view.common import push_btn, action, tool_btn, label, wrap, restyle, \
-    scroll_area, emoji_font, frame, to_rgba_str, columns
+    scroll_area, emoji_font, frame, to_rgba_str
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
@@ -1251,7 +1251,8 @@ class CharacterCodexEditor(QFrame):
 
         self.treeView = CharacterCodexTreeView()
         self.treeView.entitySelected.connect(self._entitySelected)
-        self.btnTree = tool_btn(IconRegistry.from_name('mdi.file-tree-outline'), transparent_=True)
+        self.btnTree = push_btn(IconRegistry.from_name('mdi.file-tree-outline'), 'Pages', transparent_=True)
+        self.btnTree.installEventFilter(OpacityEventFilter(self.btnTree))
         self.treeMenu = MenuWidget(self.btnTree)
         self.treeMenu.installEventFilter(MenuOverlayEventFilter(self.treeMenu))
         self.treeMenu.aboutToShow.connect(self._beforeOpenTreeMenu)
@@ -1259,6 +1260,7 @@ class CharacterCodexEditor(QFrame):
         self.btnContext = DotsMenuButton()
 
         self.lineName = AutoAdjustableLineEdit()
+        self.lineName.setPlaceholderText('Page')
         font = self.lineName.font()
         font.setPointSize(26)
         font.setFamily(app_env.serif_font())
@@ -1272,15 +1274,9 @@ class CharacterCodexEditor(QFrame):
                         }}''')
         self.lineName.textEdited.connect(self._titleChanged)
 
-        self.wdgHeader = columns()
-        margins(self.wdgHeader, top=10, bottom=5)
-        self.wdgHeader.layout().addWidget(self.btnTree, alignment=Qt.AlignmentFlag.AlignTop)
-        self.wdgHeader.layout().addWidget(spacer())
-        self.wdgHeader.layout().addWidget(self.lineName)
-        self.wdgHeader.layout().addWidget(spacer())
-        self.wdgHeader.layout().addWidget(self.btnContext, alignment=Qt.AlignmentFlag.AlignTop)
+        self.layout().addWidget(group(self.btnTree, spacer(), self.btnContext))
 
-        self.layout().addWidget(self.wdgHeader)
+        self.layout().addWidget(wrap(self.lineName, margin_bottom=5), alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(SeparatorLineWithShadow())
         self.layout().addWidget(self.editor)
         self.layout().addWidget(vspacer())
@@ -1288,13 +1284,13 @@ class CharacterCodexEditor(QFrame):
     def setCharacter(self, character: Character):
         self._character = character
         if self._character.codex.children:
-            self._codexEntity = self._character.codex.children[0]
+            entity = self._character.codex.children[0]
         else:
-            self._codexEntity = self._character.codex
+            entity = self._character.codex
         self.treeView.setCharacter(self._character, self.novel)
-        self.treeView.selectEntity(self._codexEntity)
-        self.editor.setEntity(self._codexEntity)
-        self.lineName.setText(self._codexEntity.name)
+        self.treeView.selectEntity(entity)
+
+        self._entitySelected(entity)
 
     def _beforeOpenTreeMenu(self):
         self.treeView.setFixedSize(self.parent().size().width() * 2 // 3, int(self.parent().size().height() * 0.5))
@@ -1302,6 +1298,8 @@ class CharacterCodexEditor(QFrame):
     def _entitySelected(self, entity: WorldBuildingEntity):
         self._codexEntity = entity
         self.editor.setEntity(self._codexEntity)
+        self.lineName.setText(self._codexEntity.name)
 
     def _titleChanged(self, text: str):
         self._codexEntity.name = text
+        self.treeView.updateEntity(self._codexEntity)

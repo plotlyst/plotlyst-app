@@ -252,7 +252,7 @@ class CharacterEditor(QObject, EventListener):
         self.ui.lineName.setText(self.character.name)
         self.ui.wdgAvatar.setCharacter(self.character)
         self.ui.wdgAvatar.setUploadPopupMenu()
-        self.wdgTopicsEditor.setCharacter(self.character)
+        # self.wdgTopicsEditor.setCharacter(self.character)
         self.ui.wdgBackstory.setCharacter(self.character)
         self.codexEditor.setCharacter(self.character)
         self.profile.setCharacter(self.character)
