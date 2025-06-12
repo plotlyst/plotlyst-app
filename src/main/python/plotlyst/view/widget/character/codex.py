@@ -95,9 +95,13 @@ class CharacterCodexNode(EntityNode):
         super().__init__(novel, entity, parent, settings)
         self._actionLinkMilieu.setVisible(False)
         self._placeholderName = 'New page'
+        self._pickIconColor: bool = False
+        self._actionChangeIcon.setVisible(True)
 
     @overrides
     def _initMenuActions(self, menu: MenuWidget):
+        menu.addAction(self._actionChangeIcon)
+        menu.addSeparator()
         menu.addAction(self._actionDelete)
 
     @overrides
@@ -106,6 +110,10 @@ class CharacterCodexNode(EntityNode):
         self._additionMenu.entityTriggered.connect(self.addEntity)
         self._additionMenu.topicsSelected.connect(self.addEntities)
         self.setPlusMenu(self._additionMenu)
+
+    @overrides
+    def _iconChanged(self, iconName: str, iconColor: str):
+        self._entity.icon = iconName
 
 
 class CharacterCodexTreeView(WorldBuildingTreeView):
