@@ -256,7 +256,7 @@ class PlaceholderWidget(QFrame):
 
     def _animateIconSize(self, target_size: QSize):
         current_size = self.btnPlus.iconSize()
-        if current_size == target_size:
+        if current_size == target_size and self._icon_anim.state() != QVariantAnimation.State.Running:
             return
         self._icon_anim.stop()
         self._icon_anim.setStartValue(current_size)
@@ -276,7 +276,6 @@ class PlaceholdersRow(QWidget):
         self._mimeType = mimeType
         self._centerOnly = centerOnly
         hbox(self, 0, 0)
-        # self.setMinimumHeight(5)
 
         acceptDrops = len(mimeType) > 0
 
@@ -312,8 +311,6 @@ class PlaceholdersRow(QWidget):
         else:
             self.placeholderCenter.activate()
 
-        # self.updateGeometry()
-
     @overrides
     def leaveEvent(self, event: QEvent) -> None:
         if not self._centerOnly:
@@ -322,7 +319,6 @@ class PlaceholdersRow(QWidget):
             self.placeholderRight.deactivate()
         else:
             self.placeholderCenter.deactivate()
-        # self.updateGeometry()
 
 
 class TimelineEntityRow(QWidget):
