@@ -38,10 +38,11 @@ from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
 from plotlyst.view.widget.button import DotsMenuButton
+from plotlyst.view.widget.character.topic import CharacterTopicSelectionDialog
 from plotlyst.view.widget.display import SeparatorLineWithShadow, MenuOverlayEventFilter
 from plotlyst.view.widget.input import AutoAdjustableLineEdit
 from plotlyst.view.widget.tree import TreeSettings
-from plotlyst.view.widget.world.editor import WorldBuildingTopicSelectionDialog, WorldBuildingEntityEditor
+from plotlyst.view.widget.world.editor import WorldBuildingEntityEditor
 from plotlyst.view.widget.world.theme import WorldBuildingPalette
 from plotlyst.view.widget.world.tree import EntityNode, WorldBuildingTreeView, RootNode
 
@@ -70,7 +71,7 @@ class CharacterCodexAdditionMenu(MenuWidget):
         self.entityTriggered.emit(entity)
 
     def _linkToTopics(self):
-        topics = WorldBuildingTopicSelectionDialog.popup()
+        topics = CharacterTopicSelectionDialog.popup()
         if topics:
             entities = []
             for topic in topics:
