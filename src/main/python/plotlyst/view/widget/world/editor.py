@@ -448,12 +448,11 @@ class ImageElementEditor(WorldBuildingEntityElementWidget):
 
     @overrides
     def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
         if self._image:
             w, h = calculate_resized_dimensions(self._image.width(), self._image.height(), self.parent().width() - 20)
             self.lblImage.setMinimumSize(int(w * 0.98), int(h * 0.98))
             self.lblImage.setMaximumSize(w, h)
-        else:
-            super().resizeEvent(event)
 
     @overrides
     def showEvent(self, a0: QShowEvent) -> None:
