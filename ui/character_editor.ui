@@ -509,7 +509,7 @@
        <enum>Qt::ClickFocus</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="tabBackstory">
        <attribute name="title">
@@ -679,34 +679,6 @@
         </property>
        </layout>
       </widget>
-      <widget class="QWidget" name="tabNotes">
-       <property name="relaxed-white-bg" stdset="0">
-        <bool>true</bool>
-       </property>
-       <attribute name="title">
-        <string>Notes</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_9">
-        <property name="spacing">
-         <number>3</number>
-        </property>
-        <property name="leftMargin">
-         <number>10</number>
-        </property>
-        <property name="topMargin">
-         <number>15</number>
-        </property>
-        <property name="rightMargin">
-         <number>3</number>
-        </property>
-        <property name="bottomMargin">
-         <number>3</number>
-        </property>
-        <item>
-         <widget class="DocumentTextEditor" name="textEdit" native="true"/>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="tabBackstoryDummy">
        <property name="bg-image" stdset="0">
         <bool>true</bool>
@@ -738,11 +710,6 @@
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>DocumentTextEditor</class>
-   <extends>QWidget</extends>
-   <header>plotlyst.view.widget.input</header>
-  </customwidget>
   <customwidget>
    <class>CharacterAvatar</class>
    <extends>QWidget</extends>

@@ -30,8 +30,7 @@ from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
-from plotlyst.core.client import json_client
-from plotlyst.core.domain import Novel, Character, Document, FEMALE, SelectionItem, BACKSTORY_PREVIEW
+from plotlyst.core.domain import Novel, Character, FEMALE, SelectionItem, BACKSTORY_PREVIEW
 from plotlyst.core.template import protagonist_role
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event
@@ -79,14 +78,6 @@ class CharacterEditor(QObject, EventListener):
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBinder, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))
-
-        self.ui.textEdit.setTitleVisible(False)
-        self.ui.textEdit.setToolbarVisible(False)
-        self.ui.textEdit.setWidthPercentage(95)
-        self.ui.textEdit.textEdit.setDocumentMargin(20)
-        self.ui.textEdit.textEdit.setBlockPlaceholderEnabled(True)
-
-        self.ui.tabAttributes.currentChanged.connect(self._tab_changed)
 
         self.ui.btnMale.setIcon(IconRegistry.male_gender_icon())
         self.ui.btnMale.installEventFilter(OpacityEventFilter(parent=self.ui.btnMale, ignoreCheckedButton=True))
@@ -157,12 +148,10 @@ class CharacterEditor(QObject, EventListener):
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBackstoryDummy,
                      IconRegistry.backstory_icon('black', PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBigFive, IconRegistry.big_five_icon(PLOTLYST_SECONDARY_COLOR))
-        set_tab_icon(self.ui.tabAttributes, self.ui.tabNotes, IconRegistry.document_edition_icon())
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBinder,
                      IconRegistry.from_name('ri.typhoon-fill', 'black', PLOTLYST_SECONDARY_COLOR))
 
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBigFive, False)
-        set_tab_visible(self.ui.tabAttributes, self.ui.tabNotes, False)
 
         self.ui.wdgAvatar.btnAvatar.setToolTip('Character avatar. Click to add an image')
         self.ui.wdgAvatar.avatarUpdated.connect(self._avatar_updated)
@@ -190,8 +179,6 @@ class CharacterEditor(QObject, EventListener):
 
         if app_env.profile().get('backstory', False):
             self.ui.tabAttributes.setCurrentWidget(self.ui.tabBackstory)
-        else:
-            self.ui.tabAttributes.setCurrentWidget(self.ui.tabNotes)
 
         self.repo = RepositoryPersistenceManager.instance()
         dispatcher = event_dispatchers.instance(self.novel)
@@ -249,11 +236,6 @@ class CharacterEditor(QObject, EventListener):
         self.ui.wdgBackstory.setCharacter(self.character)
         self.codexEditor.setCharacter(self.character)
         self.profile.setCharacter(self.character)
-        if self.character.document and self.character.document.loaded:
-            self.ui.textEdit.setText(self.character.document.content, self.character.name, title_read_only=True)
-        else:
-            self.ui.textEdit.clear()
-            self._tab_changed()
 
     @overrides
     def event_received(self, event: Event):
@@ -271,12 +253,6 @@ class CharacterEditor(QObject, EventListener):
         self.character.name = text
         if self.character.prefs.avatar.use_initial:
             self.ui.wdgAvatar.updateAvatar()
-
-    def _tab_changed(self):
-        if self.ui.tabAttributes.currentWidget() is self.ui.tabNotes and self.character:
-            if self.character.document and not self.character.document.loaded:
-                json_client.load_document(self.novel, self.character.document)
-                self.ui.textEdit.setText(self.character.document.content, self.character.name, title_read_only=True)
 
     def _role_promoted(self, role: SelectionItem):
         if self.character.role == role:
@@ -394,14 +370,6 @@ class CharacterEditor(QObject, EventListener):
 
         self.repo.update_character(self.character, self.ui.wdgAvatar.imageUploaded())
         self.repo.update_novel(self.novel)  # TODO temporary to update custom labels
-
-        if not self.character.document:
-            self.character.document = Document('', character_id=self.character.id)
-            self.character.document.loaded = True
-
-        if self.character.document.loaded:
-            self.character.document.content = self.ui.textEdit.textEdit.toHtml()
-            self.repo.update_doc(self.novel, self.character.document)
 
         self.close.emit(self.character)
         self.character = None

@@ -51,14 +51,22 @@ def migrate_novel(novel: Novel):
             continue
         migrate_scene_functions(scene)
 
+    character_docs_parent = None
     for character in novel.characters:
         if character.topics:
             migrate_character_topics(character)
             character.topics.clear()
             RepositoryPersistenceManager.instance().update_character(character)
         if character.document:
-            pass
-            #
+            if character_docs_parent is None:
+                character_docs_parent = Document('Characters (migrated)', icon='fa5s.user')
+            character_docs_parent.children.append(character.document)
+            character.document = None
+            RepositoryPersistenceManager.instance().update_character(character)
+
+    if character_docs_parent is not None:
+        novel.documents.append(character_docs_parent)
+        RepositoryPersistenceManager.instance().update_novel(novel)
 
 
 def migrate_plot_principles(novel: Novel, plot: Plot):

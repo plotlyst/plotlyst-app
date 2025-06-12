@@ -166,7 +166,7 @@ class CharacterCodexEditor(QFrame):
         self.treeMenu.aboutToShow.connect(self._beforeOpenTreeMenu)
         wdgHeader = QFrame()
         hbox(wdgHeader)
-        margins(wdgHeader, bottom=5)
+        margins(wdgHeader, left=5, bottom=5)
         sp(wdgHeader).v_max()
         wdgHeader.setStyleSheet(f'.QFrame {{background: {PLOTLYST_SECONDARY_COLOR};}}')
         wdgHeader.layout().addWidget(self.btnAdd)
