@@ -49,7 +49,6 @@ from plotlyst.view.widget.character.codex import CharacterCodexEditor
 from plotlyst.view.widget.character.editor import CharacterAgeEditor
 from plotlyst.view.widget.character.editor import CharacterRoleSelector
 from plotlyst.view.widget.character.profile import CharacterProfileEditor, CharacterNameEditorPopup
-from plotlyst.view.widget.character.topic import CharacterTopicsEditor
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import PremiumOverlayWidget, MenuOverlayEventFilter
 from plotlyst.view.widget.tour.core import CharacterEditorTourEvent, \
@@ -80,7 +79,6 @@ class CharacterEditor(QObject, EventListener):
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBinder, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))
-        # set_tab_visible(self.ui.tabAttributes, self.ui.tabTopics, False)
 
         self.ui.textEdit.setTitleVisible(False)
         self.ui.textEdit.setToolbarVisible(False)
@@ -158,8 +156,6 @@ class CharacterEditor(QObject, EventListener):
                      IconRegistry.backstory_icon('black', PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBackstoryDummy,
                      IconRegistry.backstory_icon('black', PLOTLYST_SECONDARY_COLOR))
-        set_tab_icon(self.ui.tabAttributes, self.ui.tabTopics,
-                     IconRegistry.topics_icon(color_on=PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBigFive, IconRegistry.big_five_icon(PLOTLYST_SECONDARY_COLOR))
         set_tab_icon(self.ui.tabAttributes, self.ui.tabNotes, IconRegistry.document_edition_icon())
         set_tab_icon(self.ui.tabAttributes, self.ui.tabBinder,
@@ -176,9 +172,6 @@ class CharacterEditor(QObject, EventListener):
 
         self.ui.lineName.setReadOnly(self.novel.is_readonly())
         self.ui.lineName.textEdited.connect(self._name_edited)
-
-        self.wdgTopicsEditor = CharacterTopicsEditor()
-        self.ui.tabTopics.layout().addWidget(self.wdgTopicsEditor)
 
         self.codexEditor = CharacterCodexEditor(self.novel)
         self.ui.scrollAreaBinderWdg.layout().addWidget(self.codexEditor)
@@ -253,7 +246,6 @@ class CharacterEditor(QObject, EventListener):
         self.ui.lineName.setText(self.character.name)
         self.ui.wdgAvatar.setCharacter(self.character)
         self.ui.wdgAvatar.setUploadPopupMenu()
-        # self.wdgTopicsEditor.setCharacter(self.character)
         self.ui.wdgBackstory.setCharacter(self.character)
         self.codexEditor.setCharacter(self.character)
         self.profile.setCharacter(self.character)
