@@ -1202,6 +1202,3 @@ class StrengthWeaknessEditor(PopupDialog):
         elif not self.btnGroup.checkedButton():
             qtanim.shake(self.toggleStrength)
             qtanim.shake(self.toggleWeakness)
-
-
-
