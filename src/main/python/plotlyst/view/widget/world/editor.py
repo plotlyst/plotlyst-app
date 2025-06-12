@@ -36,6 +36,7 @@ from qtmenu import MenuWidget, ActionTooltipDisplayMode
 from qttextedit.ops import Heading3Operation, InsertListOperation, InsertNumberedListOperation, \
     InsertDividerOperation
 
+from plotlyst.common import NEUTRAL_EMOTION_COLOR
 from plotlyst.core.domain import Novel, WorldBuildingEntity, WorldBuildingEntityElement, WorldBuildingEntityElementType, \
     BackstoryEvent, Variable, VariableType, \
     Topic, Location, WorldConceitType, WorldConceit
@@ -935,7 +936,7 @@ class SectionElementEditor(WorldBuildingEntityElementWidget):
     def _addBlock(self, wdg: WorldBuildingEntityElementWidget, type_: WorldBuildingEntityElementType):
         element = WorldBuildingEntityElement(type_)
         if type_ == WorldBuildingEntityElementType.Timeline:
-            element.events.append(BackstoryEvent('', ''))
+            element.events.append(BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR))
         newBlockWdg = self.__initBlockWidget(element)
 
         index = self.element.blocks.index(wdg.element)
