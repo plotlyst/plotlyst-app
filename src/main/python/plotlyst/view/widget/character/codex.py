@@ -35,9 +35,7 @@ from plotlyst.core.domain import WorldBuildingEntity, Character, Novel, WorldBui
 from plotlyst.env import app_env
 from plotlyst.view.common import wrap, action, to_rgba_str, push_btn
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
-from plotlyst.view.widget.button import DotsMenuButton
 from plotlyst.view.widget.character.topic import CharacterTopicSelectionDialog
 from plotlyst.view.widget.display import SeparatorLineWithShadow, MenuOverlayEventFilter
 from plotlyst.view.widget.input import AutoAdjustableLineEdit
@@ -138,6 +136,16 @@ class CharacterCodexTreeView(WorldBuildingTreeView):
         return CharacterCodexNode
 
 
+class CharacterCodexEntityEditor(WorldBuildingEntityEditor):
+
+    @overrides
+    def _selectNewTopic(self):
+        topics = CharacterTopicSelectionDialog.popup()
+        if topics:
+            for topic in topics:
+                self._addNewSection(topic)
+
+
 class CharacterCodexEditor(QFrame):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
@@ -150,7 +158,7 @@ class CharacterCodexEditor(QFrame):
         self._palette = WorldBuildingPalette(bg_color='#ede0d4', primary_color='#510442',
                                              secondary_color='#DABFA7',
                                              tertiary_color='#E3D0BD')
-        self.editor = WorldBuildingEntityEditor(self.novel, self._palette)
+        self.editor = CharacterCodexEntityEditor(self.novel, self._palette)
         margins(self.editor, top=15)
         trans_bg_color = to_rgba_str(QColor(self._palette.bg_color), 245)
         self.setObjectName('codexEditor')
@@ -182,12 +190,12 @@ class CharacterCodexEditor(QFrame):
         self.treeMenu.addWidget(wdgHeader)
         self.treeMenu.addWidget(self.treeView)
         transparent_menu(self.treeMenu)
-        self.btnContext = DotsMenuButton()
+        # self.btnContext = DotsMenuButton()
 
         menu.topicsSelected.connect(self.btnTree.click)
         self.treeView.childEntitiesAdded.connect(self.btnTree.click)
 
-        self.lineName = AutoAdjustableLineEdit()
+        self.lineName = AutoAdjustableLineEdit(defaultWidth=100)
         self.lineName.setPlaceholderText('Page')
         font = self.lineName.font()
         font.setPointSize(26)
@@ -202,7 +210,8 @@ class CharacterCodexEditor(QFrame):
                         }}''')
         self.lineName.textEdited.connect(self._titleChanged)
 
-        self.layout().addWidget(group(self.btnTree, spacer(), self.btnContext))
+        # self.layout().addWidget(group(self.btnTree, spacer(), self.btnContext))
+        self.layout().addWidget(self.btnTree, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.layout().addWidget(wrap(self.lineName, margin_bottom=5), alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(SeparatorLineWithShadow())
