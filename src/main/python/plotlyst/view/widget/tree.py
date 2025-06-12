@@ -64,6 +64,7 @@ class BaseTreeWidget(QWidget):
         self._menuEnabled: bool = True
         self._plusEnabled: bool = True
         self._translucentIcon: bool = False
+        self._pickIconColor: bool = True
         self._checkable = checkable
 
         if settings is None:
@@ -189,7 +190,7 @@ class BaseTreeWidget(QWidget):
         self._reStyle()
 
     def _changeIcon(self):
-        result = IconSelectorDialog.popup()
+        result = IconSelectorDialog.popup(pickColor=self._pickIconColor)
         if result:
             self._icon.setIcon(IconRegistry.from_name(result[0], result[1].name()))
             self._icon.setVisible(True)

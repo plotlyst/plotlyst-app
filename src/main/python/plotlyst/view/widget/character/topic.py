@@ -282,7 +282,7 @@ class CharacterTopicSelectionDialog(TopicSelectionDialog):
 
         for topicType in [TopicType.Physical, TopicType.Habits, TopicType.Skills, TopicType.Fears, TopicType.Background,
                           TopicType.Hobbies, TopicType.Communication, TopicType.Beliefs]:
-            self._addSection(topicType, topics[topicType])
+            self._addSection(topicType.topic(), topics[topicType])
 
         self._wdgCenter.layout().addWidget(vspacer())
         self.frame.layout().addWidget(group(self.btnCancel, self.btnSelect), alignment=Qt.AlignmentFlag.AlignRight)

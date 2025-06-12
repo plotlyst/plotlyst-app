@@ -165,9 +165,30 @@ class TopicType(Enum):
         elif self == TopicType.Hobbies:
             return 'Interests and Hobbies'
         elif self == TopicType.Communication:
-            return 'Communication and Social Interaction'
+            return 'Communication'
         elif self == TopicType.Beliefs:
-            return 'Beliefs and Values'
+            return 'Beliefs'
+
+    def id(self) -> uuid.UUID:
+        if self == TopicType.Physical:
+            return uuid.UUID('d841dc6a-18b2-4aa1-a4bb-144d7a47a4b2')
+        elif self == TopicType.Habits:
+            return uuid.UUID('2cd853f0-76db-4c0f-9736-610ba56a3351')
+        elif self == TopicType.Skills:
+            return uuid.UUID('4998d508-dbb0-4a00-bb1b-94a4511393c1')
+        elif self == TopicType.Fears:
+            return uuid.UUID('53e0be5c-951a-43fc-8722-61797d1a0151')
+        elif self == TopicType.Background:
+            return uuid.UUID('0ede391c-8c73-4f76-9e73-12d80044ffbb')
+        elif self == TopicType.Hobbies:
+            return uuid.UUID('f9f8d9b9-f609-4fec-8ae6-7eb5cef55fc5')
+        elif self == TopicType.Communication:
+            return uuid.UUID('9020065e-9a6a-479f-bd44-d29dc10cf52d')
+        elif self == TopicType.Beliefs:
+            return uuid.UUID('ba23f272-eec5-44d1-8abd-f032d1ae414a')
+
+    def topic(self) -> 'Topic':
+        return Topic(self.display_name(), self, id=self.id(), icon=self.icon())
 
 
 @dataclass
@@ -608,6 +629,33 @@ class TopicElement:
     blocks: List[TopicElementBlock] = field(default_factory=list)
 
 
+def character_codex_root() -> 'WorldBuildingEntity':
+    root_main_section = WorldBuildingEntityElement(WorldBuildingEntityElementType.Main_Section)
+    root_main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Header))
+    root_main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
+
+    elements = []
+    for topicType in [TopicType.Physical, TopicType.Background, TopicType.Habits, TopicType.Hobbies, TopicType.Skills,
+                      TopicType.Communication, TopicType.Beliefs]:
+        topic = topicType.topic()
+        section = WorldBuildingEntityElement(WorldBuildingEntityElementType.Section, title=topic.text, ref=topic.id)
+        section.blocks.append(
+            WorldBuildingEntityElement(WorldBuildingEntityElementType.Header, title=topic.text, icon=topic.icon))
+        section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
+
+        elements.append(section)
+
+    first_section = WorldBuildingEntityElement(WorldBuildingEntityElementType.Section)
+    first_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Header, title='Profile'))
+    first_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
+
+    child_el = WorldBuildingEntity('Secondary Topics', icon='mdi.card-account-details-star-outline', side_visible=False,
+                                   elements=elements)
+
+    return WorldBuildingEntity('Character Codex', icon='ri.typhoon-fill', bg_color='#40916c', side_visible=False,
+                               elements=[root_main_section], children=[child_el])
+
+
 @dataclass
 class Character:
     name: str
@@ -640,6 +688,7 @@ class Character:
     personality: CharacterPersonality = field(default_factory=CharacterPersonality)
     alias: str = field(default='', metadata=config(exclude=exclude_if_empty))
     origin_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+    codex: 'WorldBuildingEntity' = field(default_factory=character_codex_root)
 
     def __post_init__(self):
         if self.prefs.avatar.icon_color == 'black':

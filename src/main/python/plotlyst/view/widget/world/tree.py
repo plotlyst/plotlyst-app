@@ -68,7 +68,7 @@ class EntityAdditionMenu(MenuWidget):
         apply_white_menu(self)
 
     def _entityTriggered(self):
-        entity = self.__newEntity('New entity', elements=self.__newElements())
+        entity = self.__newEntity('', elements=self.__newElements())
         self.entityTriggered.emit(entity)
 
     @busy
@@ -119,10 +119,9 @@ class EntityNode(ContainerNode):
 
         self.setPlusButtonEnabled(True)
         self.setTranslucentIconEnabled(True)
-        self._additionMenu = EntityAdditionMenu(self._novel, self._btnAdd)
-        self._additionMenu.entityTriggered.connect(self.addEntity)
-        self._additionMenu.topicsSelected.connect(self.addEntities)
-        self.setPlusMenu(self._additionMenu)
+        self._initAdditionMenu()
+
+        self._placeholderName: str = 'New article'
 
         self.refresh()
 
@@ -135,7 +134,7 @@ class EntityNode(ContainerNode):
             if location:
                 self._lblTitle.setText(location.name)
         else:
-            self._lblTitle.setText(self._entity.name if self._entity.name else 'New entity')
+            self._lblTitle.setText(self._entity.name if self._entity.name else self._placeholderName)
 
         if self._entity.icon:
             self._icon.setIcon(IconRegistry.from_name(self._entity.icon, self._entity.icon_color))
@@ -152,6 +151,12 @@ class EntityNode(ContainerNode):
 
         menu.addSeparator()
         menu.addAction(self._actionDelete)
+
+    def _initAdditionMenu(self):
+        self._additionMenu = EntityAdditionMenu(self._novel, self._btnAdd)
+        self._additionMenu.entityTriggered.connect(self.addEntity)
+        self._additionMenu.topicsSelected.connect(self.addEntities)
+        self.setPlusMenu(self._additionMenu)
 
     @busy
     def _linkToMilieu(self, _):
@@ -184,6 +189,7 @@ class WorldBuildingTreeView(TreeView):
     entitySelected = pyqtSignal(WorldBuildingEntity)
     milieuLinked = pyqtSignal(WorldBuildingEntity)
     milieuUnlinked = pyqtSignal(WorldBuildingEntity)
+    childEntitiesAdded = pyqtSignal()
 
     def __init__(self, parent=None, settings: Optional[TreeSettings] = None):
         super(WorldBuildingTreeView, self).__init__(parent)
@@ -204,6 +210,11 @@ class WorldBuildingTreeView(TreeView):
         self._root.select()
         self._entitySelectionChanged(self._root, self._root.isSelected())
 
+    def selectEntity(self, entity: WorldBuildingEntity):
+        node = self._entities[entity]
+        node.select()
+        self._entitySelectionChanged(node, True)
+
     def setSettings(self, settings: TreeSettings):
         self._settings = settings
         self._centralWidget.setStyleSheet(f'#centralWidget {{background: {settings.bg_color};}}')
@@ -217,7 +228,7 @@ class WorldBuildingTreeView(TreeView):
     def addEntity(self, entity: WorldBuildingEntity):
         wdg = self.__initEntityWidget(entity)
         self._root.addChild(wdg)
-        self._novel.world.root_entity.children.append(entity)
+        self.rootEntity().children.append(entity)
         self._save()
 
         emit_event(self._novel, WorldEntityAddedEvent(self, entity))
@@ -225,6 +236,9 @@ class WorldBuildingTreeView(TreeView):
     def addEntities(self, entities: List[WorldBuildingEntity]):
         for entity in entities:
             self.addEntity(entity)
+
+    def rootEntity(self) -> WorldBuildingEntity:
+        return self._novel.world.root_entity
 
     def refresh(self):
         def addChildWdg(parent: WorldBuildingEntity, child: WorldBuildingEntity):
@@ -235,9 +249,9 @@ class WorldBuildingTreeView(TreeView):
         self._entities.clear()
         clear_layout(self._centralWidget)
 
-        self._entities[self._novel.world.root_entity] = self._root
+        self._entities[self.rootEntity()] = self._root
         self._centralWidget.layout().addWidget(self._root)
-        for entity in self._novel.world.root_entity.children:
+        for entity in self.rootEntity().children:
             wdg = self.__initEntityWidget(entity)
             self._root.addChild(wdg)
             recursive(entity, lambda parent: parent.children, addChildWdg)
@@ -290,6 +304,7 @@ class WorldBuildingTreeView(TreeView):
     def _addEntities(self, parent: EntityNode, entities: List[WorldBuildingEntity]):
         for entity in entities:
             self._addEntity(parent, entity)
+        self.childEntitiesAdded.emit()
 
     def _removeEntity(self, node: EntityNode):
         entity = node.entity()
@@ -316,7 +331,7 @@ class WorldBuildingTreeView(TreeView):
 
     def _dragStarted(self, wdg: EntityNode):
         wdg.setHidden(True)
-        self._dummyWdg = EntityNode(self._novel, wdg.entity(), settings=self._settings)
+        self._dummyWdg = self._nodeClass()(self._novel, wdg.entity(), settings=self._settings)
         self._dummyWdg.setPlusButtonEnabled(False)
         self._dummyWdg.setMenuEnabled(False)
         translucent(self._dummyWdg)
@@ -385,8 +400,11 @@ class WorldBuildingTreeView(TreeView):
         parent: EntityNode = wdg.parent().parent()
         parent.entity().children.remove(entity)
 
+    def _nodeClass(self):
+        return EntityNode
+
     def __initEntityWidget(self, entity: WorldBuildingEntity) -> EntityNode:
-        node = EntityNode(self._novel, entity, settings=self._settings)
+        node = self._nodeClass()(self._novel, entity, settings=self._settings)
         node.selectionChanged.connect(partial(self._entitySelectionChanged, node))
         node.milieuLinked.connect(partial(self._linkMilieu, node))
         node.milieuUnlinked.connect(partial(self._unlinkMilieu, node))

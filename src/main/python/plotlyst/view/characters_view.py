@@ -390,7 +390,7 @@ class CharactersView(AbstractNovelView):
                 for character in characters:
                     self.novel.characters.append(character)
                     self.repo.insert_character(self.novel, character)
-                    self.repo.update_doc(self.novel, character.document)
+                    # self.repo.update_doc(self.novel, character.document)
                     card = self.__init_card_widget(character)
                     self.ui.cards.addCard(card)
 

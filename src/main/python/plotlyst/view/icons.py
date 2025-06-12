@@ -686,8 +686,8 @@ class IconRegistry:
             return IconRegistry.genderless_icon('#6c757d')
 
     @staticmethod
-    def backstory_icon(color: str = '#9c6644', color_on='#9c6644') -> QIcon:
-        return IconRegistry.from_name('fa5s.archive', color, color_on)
+    def backstory_icon(color: str = 'black', color_on='black') -> QIcon:
+        return IconRegistry.from_name('mdi.timeline-text-outline', color, color_on)
 
     @staticmethod
     def topics_icon(color: str = 'black', color_on='darkBlue') -> QIcon:

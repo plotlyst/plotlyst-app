@@ -48,7 +48,7 @@ from plotlyst.core.domain import Novel, Character, Scene, Chapter, SceneStage, \
     DocumentProgress, ReaderQuestion, SceneReaderQuestion, ImageRef, SceneReaderInformation, \
     CharacterProfileSectionReference, CharacterMultiAttribute, default_character_profile, CharacterPersonality, \
     StrengthWeaknessAttribute, PremiseBuilder, SceneFunctions, Location, default_locations, TopicElement, StoryType, \
-    DailyProductivity, NovelInfo, SceneMigration
+    DailyProductivity, NovelInfo, SceneMigration, WorldBuildingEntity, character_codex_root
 from plotlyst.core.template import Role, exclude_if_empty, exclude_if_black, exclude_if_false
 from plotlyst.env import app_env
 
@@ -153,6 +153,7 @@ class CharacterInfo:
     personality: CharacterPersonality = field(default_factory=CharacterPersonality)
     alias: str = field(default='', metadata=config(exclude=exclude_if_empty))
     origin_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+    codex: WorldBuildingEntity = field(default_factory=character_codex_root)
 
 
 @dataclass
@@ -545,7 +546,7 @@ class JsonClient:
                                       flaws=info.flaws,
                                       strengths=info.strengths,
                                       personality=info.personality, alias=info.alias,
-                                      origin_id=info.origin_id
+                                      origin_id=info.origin_id, codex=info.codex
                                       )
                 if info.avatar_id:
                     bytes = self._load_image(self.__image_file(info.avatar_id))
@@ -726,7 +727,7 @@ class JsonClient:
                                   strengths=char.strengths,
                                   personality=char.personality,
                                   alias=char.alias,
-                                  origin_id=char.origin_id
+                                  origin_id=char.origin_id, codex=char.codex
                                   )
         self.__persist_info(self.characters_dir(novel), char_info)
 
