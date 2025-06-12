@@ -355,8 +355,9 @@ class MenuOverlayEventFilter(QObject):
         menu.aboutToHide.connect(self._aboutToHideMenu)
 
     def _aboutToShowMenu(self):
-        self._overlay = OverlayWidget.getActiveWindowOverlay(alpha=75)
-        self._overlay.show()
+        if QApplication.activeWindow():
+            self._overlay = OverlayWidget.getActiveWindowOverlay(alpha=75)
+            self._overlay.show()
 
     def _aboutToHideMenu(self):
         if self._overlay:

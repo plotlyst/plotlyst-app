@@ -189,6 +189,7 @@ class WorldBuildingTreeView(TreeView):
     entitySelected = pyqtSignal(WorldBuildingEntity)
     milieuLinked = pyqtSignal(WorldBuildingEntity)
     milieuUnlinked = pyqtSignal(WorldBuildingEntity)
+    childEntitiesAdded = pyqtSignal()
 
     def __init__(self, parent=None, settings: Optional[TreeSettings] = None):
         super(WorldBuildingTreeView, self).__init__(parent)
@@ -303,6 +304,7 @@ class WorldBuildingTreeView(TreeView):
     def _addEntities(self, parent: EntityNode, entities: List[WorldBuildingEntity]):
         for entity in entities:
             self._addEntity(parent, entity)
+        self.childEntitiesAdded.emit()
 
     def _removeEntity(self, node: EntityNode):
         entity = node.entity()

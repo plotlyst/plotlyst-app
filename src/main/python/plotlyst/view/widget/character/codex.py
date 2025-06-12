@@ -172,11 +172,12 @@ class CharacterCodexEditor(QFrame):
         wdgHeader.layout().addWidget(self.btnAdd)
         wdgHeader.layout().addWidget(spacer())
         self.treeMenu.addWidget(wdgHeader)
-        # self.treeMenu.addSeparator()
         self.treeMenu.addWidget(self.treeView)
-        # apply_white_menu(self.treeMenu)
         transparent_menu(self.treeMenu)
         self.btnContext = DotsMenuButton()
+
+        menu.topicsSelected.connect(self.btnTree.click)
+        self.treeView.childEntitiesAdded.connect(self.btnTree.click)
 
         self.lineName = AutoAdjustableLineEdit()
         self.lineName.setPlaceholderText('Page')
