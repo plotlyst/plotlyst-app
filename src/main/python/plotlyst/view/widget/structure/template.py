@@ -42,8 +42,8 @@ from plotlyst.core.domain import StoryStructure, Novel, StoryBeat, \
     midpoint_re_dedication, second_plot_points, second_plot_point_aha, second_plot_point, midpoint_hero_ordeal, \
     midpoint_hero_mirror, second_plot_point_hero_road_back, second_plot_point_hero_ordeal, hero_reward, \
     hero_false_victory, pace_driven_structure, TemplateStoryStructureType, tension_driven_structure, \
-    transformation_driven_structure, StoryStructureDisplayType
-from plotlyst.view.common import ExclusiveOptionalButtonGroup, push_btn, label, scroll_area, frame, action
+    transformation_driven_structure, StoryStructureDisplayType, corruption_spine
+from plotlyst.view.common import ExclusiveOptionalButtonGroup, push_btn, label, scroll_area, frame, action, columns
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
 from plotlyst.view.style.base import apply_white_menu
@@ -647,12 +647,52 @@ class _HerosJourneyStructureEditor(_AbstractStructureEditor):
 class _StorySpineStructureEditor(_AbstractStructureEditor):
     def __init__(self, novel: Novel, structure: StoryStructure, parent=None, newStructure: bool = True):
         super().__init__(novel, structure, parent, newStructure)
-
         vbox(self.wdgCustom, spacing=15)
         margins(self.wdgCustom, top=20)
-        self.wdgCustom.layout().addWidget(label(
-            "A simple narrative framework created by Kenn Adams that consists a series of connected phrases, beginning with the status quo, followed by a disrupting event, and ending with resolution.",
-            description=True, wordWrap=True))
+
+        self.btnOnceUpon = push_btn(
+            IconRegistry.from_name('mdi.chart-timeline-variant-shimmer', color_on=PLOTLYST_SECONDARY_COLOR),
+            text='Once upon a time',
+            properties=['transparent-rounded-bg-on-hover', 'secondary-selector'], checkable=True)
+        self.btnCorruption = push_btn(
+            IconRegistry.from_name('mdi.bottle-tonic-skull', color_on=PLOTLYST_SECONDARY_COLOR),
+            text='Corruption arc',
+            properties=['transparent-rounded-bg-on-hover', 'secondary-selector'], checkable=True)
+
+        self.btnGroup = QButtonGroup()
+        self.btnGroup.addButton(self.btnOnceUpon)
+        self.btnGroup.addButton(self.btnCorruption)
+
+        self.btnGroup.buttonClicked.connect(self._typeChanged)
+        self.wdgSelectors = columns()
+        self.wdgSelectors.layout().addWidget(spacer())
+        self.wdgSelectors.layout().addWidget(self.btnOnceUpon)
+        self.wdgSelectors.layout().addWidget(self.btnCorruption)
+        self.wdgSelectors.layout().addWidget(spacer())
+
+        self.wdgSelectors.setVisible(newStructure)
+
+        self.lblDesc = label(TemplateStoryStructureType.SPINE.description(), description=True, wordWrap=True)
+
+        self.wdgCustom.layout().addWidget(self.wdgSelectors)
+        self.wdgCustom.layout().addWidget(self.lblDesc)
+
+        if structure.template_type == TemplateStoryStructureType.SPINE:
+            self.btnOnceUpon.setChecked(True)
+
+    def _typeChanged(self):
+        if self.btnOnceUpon.isChecked():
+            self._structure = copy.deepcopy(story_spine)
+            self.lblDesc.setText(TemplateStoryStructureType.SPINE.description())
+        elif self.btnCorruption.isChecked():
+            self._structure = copy.deepcopy(corruption_spine)
+            self.lblDesc.setText(TemplateStoryStructureType.CORRUPTION.description())
+
+        self.wdgTitle.setText(self._structure.title)
+        self.wdgTitle.setIcon(IconRegistry.from_name(self._structure.icon, self._structure.icon_color))
+
+        self.wdgPreview.setStructure(self._novel, self._structure)
+        self.beatsPreview.setStructure(self._structure)
 
 
 class PercentageSpinBox(QDoubleSpinBox):
@@ -1043,7 +1083,7 @@ class StoryStructureSelectorDialog(PopupDialog):
         self.btnHerosJourney = push_btn(IconRegistry.from_name('fa5s.mask', color_on=WHITE_COLOR),
                                         text='Hero archetype', properties=['main-side-nav'], checkable=True)
         self.btnStorySpine = push_btn(IconRegistry.from_name('mdi.alpha-s-circle-outline', color_on=WHITE_COLOR),
-                                      text='Story spine', properties=['main-side-nav'], checkable=True)
+                                      text='Story spines', properties=['main-side-nav'], checkable=True)
         self.btnCore = push_btn(IconRegistry.from_name('mdi.lightning-bolt-outline', color_on=WHITE_COLOR),
                                 text='Core narrative beats', properties=['main-side-nav'], checkable=True)
 
@@ -1102,6 +1142,9 @@ class StoryStructureSelectorDialog(PopupDialog):
         if self.btnCore.isChecked():
             self._structure = self.pageCore.layout().itemAt(0).widget().structure()
             self._structure.update_acts()
+        elif self.btnStorySpine.isChecked():
+            self._structure = self.pageStorySpine.layout().itemAt(0).widget().structure()
+            self._structure.update_acts()
         return self._structure
 
     def display(self) -> Optional[StoryStructure]:
@@ -1152,7 +1195,7 @@ class StoryStructureSelectorDialog(PopupDialog):
             return self.pageThreeAct, _ThreeActStructureEditor
         elif structure.title == heros_journey.title:
             return self.pageHerosJourney, _HerosJourneyStructureEditor
-        elif structure.title == story_spine.title:
+        elif structure.template_type in [TemplateStoryStructureType.SPINE, TemplateStoryStructureType.CORRUPTION]:
             return self.pageStorySpine, _StorySpineStructureEditor
         elif structure.title == twists_and_turns.title:
             return self.pageTwists, _TwistsAndTurnsStructureEditor
