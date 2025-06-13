@@ -2757,6 +2757,11 @@ class TemplateStoryStructureType(Enum):
     TENSION = 6
     TRANSFORMATION = 7
     CUSTOM = 8
+    CORRUPTION = 9
+
+    def description(self) -> str:
+        if self == TemplateStoryStructureType.SPINE:
+            return "A simple narrative framework created by Kenn Adams that consists a series of connected phrases, beginning with the status quo, followed by a disrupting event, and ending with resolution."
 
 
 class StoryStructureDisplayType(Enum):
@@ -3460,7 +3465,7 @@ heros_journey = StoryStructure(title="Hero archetype",
 
 story_spine = StoryStructure(title="Story Spine",
                              id=uuid.UUID('38c22213-3f9b-4a51-ac87-b7a60a535e41'),
-                             icon='mdi.alpha-s-circle-outline',
+                             icon='mdi.chart-timeline-variant-shimmer',
                              display_type=StoryStructureDisplayType.Sequential_timeline,
                              template_type=TemplateStoryStructureType.SPINE,
                              acts=0,
@@ -3516,6 +3521,64 @@ story_spine = StoryStructure(title="Story Spine",
                              ]
 
                              )
+corruption_spine = StoryStructure(title="Corruption",
+                                  id=uuid.UUID('efd11bc7-91e4-48f8-a84b-eb8132168693'),
+                                  icon='mdi.bottle-tonic-skull',
+                                  display_type=StoryStructureDisplayType.Sequential_timeline,
+                                  template_type=TemplateStoryStructureType.CORRUPTION,
+                                  acts=0,
+                                  beats=[
+                                      StoryBeat(text='Once uncorrupted',
+                                                id=uuid.UUID('8e54323d-28cf-4fd7-b8b4-58bfd4b6b924'),
+                                                seq=1,
+                                                icon_color='#457b9d',
+                                                description="A morally intact character with an often unfulfilling life, untouched by corruption",
+                                                percentage=1),
+                                      StoryBeat(text='Yet they crave power',
+                                                id=uuid.UUID('b8cb5f80-a9b2-4598-a189-d2c775d35417'),
+                                                seq=2,
+                                                icon_color='#a2ad59',
+                                                description="",
+                                                percentage=12),
+                                      StoryBeat(text='They cross a line',
+                                                id=uuid.UUID('54ff1ca5-76fb-4e10-8b37-5db714302510'),
+                                                seq=3,
+                                                icon_color='#E76F51',
+                                                description="",
+                                                percentage=25),
+                                      StoryBeat(text='They silence their doubts',
+                                                id=uuid.UUID('e789bf11-6c17-41b2-8bc5-82f672cc86f3'),
+                                                seq=4,
+                                                icon_color='#B56576',
+                                                description="",
+                                                percentage=35),
+                                      StoryBeat(text='They cling to their gains',
+                                                id=uuid.UUID('c9d543fc-1543-4176-a909-2af6ade7446d'),
+                                                seq=5,
+                                                icon_color='#6D597A',
+                                                description="",
+                                                percentage=50),
+                                      StoryBeat(text='The truth breaks through',
+                                                id=uuid.UUID('bcb718d1-7542-4f12-a614-c845ad9b87cd'),
+                                                seq=6,
+                                                icon_color='#4C3A51',
+                                                description="",
+                                                percentage=70),
+                                      StoryBeat(text="They lose control",
+                                                id=uuid.UUID('fcc7ae00-00a1-407f-b243-f0ed125d898a'),
+                                                seq=7,
+                                                icon_color='#3E1F47',
+                                                description="",
+                                                percentage=90),
+                                      StoryBeat(text='They suffer the consequences',
+                                                id=uuid.UUID('61d1dffd-d547-45f5-91a4-4bcc001b760a'),
+                                                seq=8,
+                                                icon_color='#1A1A1A',
+                                                description="",
+                                                percentage=98),
+                                  ]
+
+                                  )
 twists_and_turns = StoryStructure(title='Twists and Turns',
                                   id=uuid.UUID('f905ba6b-0195-4ed7-932e-0b02e49cb1ae'),
                                   icon='ph.shuffle-bold',
