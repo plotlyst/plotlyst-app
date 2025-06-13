@@ -2763,7 +2763,7 @@ class TemplateStoryStructureType(Enum):
         if self == TemplateStoryStructureType.SPINE:
             return "A simple narrative framework created by Kenn Adams that consists a series of connected phrases, beginning with the status quo, followed by a disrupting event, and ending with resolution."
         elif self == TemplateStoryStructureType.CORRUPTION:
-            return "Blinded by power, a character falls from integrity to moral or emotional ruin"
+            return "Blinded by power, a character falls from integrity to moral or emotional ruin."
 
     def isTextStyle(self) -> bool:
         if self == TemplateStoryStructureType.SPINE or self == TemplateStoryStructureType.CORRUPTION:
@@ -3526,7 +3526,7 @@ story_spine = StoryStructure(title="Story Spine",
                              ]
 
                              )
-corruption_spine = StoryStructure(title="Corruption",
+corruption_spine = StoryStructure(title="Corruption arc",
                                   id=uuid.UUID('efd11bc7-91e4-48f8-a84b-eb8132168693'),
                                   icon='mdi.bottle-tonic-skull',
                                   display_type=StoryStructureDisplayType.Sequential_timeline,
@@ -3548,37 +3548,37 @@ corruption_spine = StoryStructure(title="Corruption",
                                       StoryBeat(text='Crossing a line',
                                                 id=uuid.UUID('54ff1ca5-76fb-4e10-8b37-5db714302510'),
                                                 seq=3,
-                                                icon_color='#E76F51',
+                                                icon_color='#f3a712',
                                                 description="The character makes an often immoral choice",
                                                 percentage=25),
                                       StoryBeat(text='Burying doubt',
                                                 id=uuid.UUID('e789bf11-6c17-41b2-8bc5-82f672cc86f3'),
                                                 seq=4,
-                                                icon_color='#B56576',
+                                                icon_color='#b88612',
                                                 description="The character ignores guilt or second thoughts",
                                                 percentage=35),
                                       StoryBeat(text='Clinging to gains',
                                                 id=uuid.UUID('c9d543fc-1543-4176-a909-2af6ade7446d'),
                                                 seq=5,
-                                                icon_color='#6D597A',
+                                                icon_color='#cd533b',
                                                 description="The character refuses to let go of what they've already taken and may fall further in corruption",
                                                 percentage=50),
                                       StoryBeat(text='Cracks appear',
                                                 id=uuid.UUID('bcb718d1-7542-4f12-a614-c845ad9b87cd'),
                                                 seq=6,
-                                                icon_color='#4C3A51',
+                                                icon_color='#494368',
                                                 description="The character's lies, control, or status begin to falter",
                                                 percentage=70),
                                       StoryBeat(text="Losing control",
                                                 id=uuid.UUID('fcc7ae00-00a1-407f-b243-f0ed125d898a'),
                                                 seq=7,
-                                                icon_color='#3E1F47',
+                                                icon_color='#ce2d4f',
                                                 description="The character starts loosing control",
                                                 percentage=90),
                                       StoryBeat(text='Suffering consequences',
                                                 id=uuid.UUID('61d1dffd-d547-45f5-91a4-4bcc001b760a'),
                                                 seq=8,
-                                                icon_color='#1A1A1A',
+                                                icon_color='#ac46a1',
                                                 description="The character's actions lead to fall, ruin, or punishment",
                                                 percentage=98),
                                   ]
