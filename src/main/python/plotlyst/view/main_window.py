@@ -20,10 +20,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from functools import partial
 from typing import Optional, List
 
+import qdarktheme
 import qtanim
 from PyQt6.QtCore import Qt, QThreadPool, QEvent, QMimeData, QTimer
-from PyQt6.QtGui import QCloseEvent, QPalette, QColor, QKeyEvent, QResizeEvent, QDrag, QWindowStateChangeEvent, QAction, \
-    QGuiApplication
+from PyQt6.QtGui import QCloseEvent, QPalette, QColor, QKeyEvent, QResizeEvent, QDrag, QWindowStateChangeEvent, QAction
 from PyQt6.QtWidgets import QMainWindow, QWidget, QApplication, QLineEdit, QTextEdit, QToolButton, QButtonGroup, \
     QProgressDialog, QAbstractButton
 from fbs_runtime import platform
@@ -79,7 +79,6 @@ from plotlyst.view.novel_view import NovelView
 from plotlyst.view.reports_view import ReportsView
 from plotlyst.view.scenes_view import ScenesOutlineView
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
-from plotlyst.view.stylesheet import APP_STYLESHEET
 from plotlyst.view.widget.button import ToolbarButton, NovelSyncButton
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.input import CapitalizationEventFilter
@@ -975,4 +974,5 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             SocialSnapshotPopup.popup(self.novel, type_)
 
     def _switch_theme(self):
-        QGuiApplication.instance().setStyleSheet(APP_STYLESHEET)
+        qdarktheme.setup_theme()
+        # QGuiApplication.instance().setStyleSheet(APP_STYLESHEET)
