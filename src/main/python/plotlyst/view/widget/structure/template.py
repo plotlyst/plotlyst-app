@@ -686,7 +686,7 @@ class _StorySpineStructureEditor(_AbstractStructureEditor):
             self.lblDesc.setText(TemplateStoryStructureType.SPINE.description())
         elif self.btnCorruption.isChecked():
             self._structure = copy.deepcopy(corruption_spine)
-            self.lblDesc.setText('')
+            self.lblDesc.setText(TemplateStoryStructureType.CORRUPTION.description())
 
         self.wdgTitle.setText(self._structure.title)
         self.wdgTitle.setIcon(IconRegistry.from_name(self._structure.icon, self._structure.icon_color))
@@ -1142,6 +1142,9 @@ class StoryStructureSelectorDialog(PopupDialog):
         if self.btnCore.isChecked():
             self._structure = self.pageCore.layout().itemAt(0).widget().structure()
             self._structure.update_acts()
+        elif self.btnStorySpine.isChecked():
+            self._structure = self.pageStorySpine.layout().itemAt(0).widget().structure()
+            self._structure.update_acts()
         return self._structure
 
     def display(self) -> Optional[StoryStructure]:
@@ -1192,7 +1195,7 @@ class StoryStructureSelectorDialog(PopupDialog):
             return self.pageThreeAct, _ThreeActStructureEditor
         elif structure.title == heros_journey.title:
             return self.pageHerosJourney, _HerosJourneyStructureEditor
-        elif structure.title == story_spine.title:
+        elif structure.template_type in [TemplateStoryStructureType.SPINE, TemplateStoryStructureType.CORRUPTION]:
             return self.pageStorySpine, _StorySpineStructureEditor
         elif structure.title == twists_and_turns.title:
             return self.pageTwists, _TwistsAndTurnsStructureEditor

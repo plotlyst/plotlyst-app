@@ -2762,7 +2762,12 @@ class TemplateStoryStructureType(Enum):
     def description(self) -> str:
         if self == TemplateStoryStructureType.SPINE:
             return "A simple narrative framework created by Kenn Adams that consists a series of connected phrases, beginning with the status quo, followed by a disrupting event, and ending with resolution."
+        elif self == TemplateStoryStructureType.CORRUPTION:
+            return "Blinded by power, a character falls from integrity to moral or emotional ruin"
 
+    def isTextStyle(self) -> bool:
+        if self == TemplateStoryStructureType.SPINE or self == TemplateStoryStructureType.CORRUPTION:
+            return True
 
 class StoryStructureDisplayType(Enum):
     Proportional_timeline = 'proportional_timeline'
@@ -3532,49 +3537,49 @@ corruption_spine = StoryStructure(title="Corruption",
                                                 id=uuid.UUID('8e54323d-28cf-4fd7-b8b4-58bfd4b6b924'),
                                                 seq=1,
                                                 icon_color='#457b9d',
-                                                description="A morally intact character with an often unfulfilling life, untouched by corruption",
+                                                description="A morally intact character with an often unfulfilling life",
                                                 percentage=1),
-                                      StoryBeat(text='Yet they crave power',
+                                      StoryBeat(text='Craving power',
                                                 id=uuid.UUID('b8cb5f80-a9b2-4598-a189-d2c775d35417'),
                                                 seq=2,
                                                 icon_color='#a2ad59',
-                                                description="",
+                                                description="The character wants power, control, or status",
                                                 percentage=12),
-                                      StoryBeat(text='They cross a line',
+                                      StoryBeat(text='Crossing a line',
                                                 id=uuid.UUID('54ff1ca5-76fb-4e10-8b37-5db714302510'),
                                                 seq=3,
                                                 icon_color='#E76F51',
-                                                description="",
+                                                description="The character makes an often immoral choice",
                                                 percentage=25),
-                                      StoryBeat(text='They silence their doubts',
+                                      StoryBeat(text='Burying doubt',
                                                 id=uuid.UUID('e789bf11-6c17-41b2-8bc5-82f672cc86f3'),
                                                 seq=4,
                                                 icon_color='#B56576',
-                                                description="",
+                                                description="The character ignores guilt or second thoughts",
                                                 percentage=35),
-                                      StoryBeat(text='They cling to their gains',
+                                      StoryBeat(text='Clinging to gains',
                                                 id=uuid.UUID('c9d543fc-1543-4176-a909-2af6ade7446d'),
                                                 seq=5,
                                                 icon_color='#6D597A',
-                                                description="",
+                                                description="The character refuses to let go of what they've already taken and may fall further in corruption",
                                                 percentage=50),
-                                      StoryBeat(text='The truth breaks through',
+                                      StoryBeat(text='Cracks appear',
                                                 id=uuid.UUID('bcb718d1-7542-4f12-a614-c845ad9b87cd'),
                                                 seq=6,
                                                 icon_color='#4C3A51',
-                                                description="",
+                                                description="The character's lies, control, or status begin to falter",
                                                 percentage=70),
-                                      StoryBeat(text="They lose control",
+                                      StoryBeat(text="Losing control",
                                                 id=uuid.UUID('fcc7ae00-00a1-407f-b243-f0ed125d898a'),
                                                 seq=7,
                                                 icon_color='#3E1F47',
-                                                description="",
+                                                description="The character starts loosing control",
                                                 percentage=90),
-                                      StoryBeat(text='They suffer the consequences',
+                                      StoryBeat(text='Suffering consequences',
                                                 id=uuid.UUID('61d1dffd-d547-45f5-91a4-4bcc001b760a'),
                                                 seq=8,
                                                 icon_color='#1A1A1A',
-                                                description="",
+                                                description="The character's actions lead to fall, ruin, or punishment",
                                                 percentage=98),
                                   ]
 
