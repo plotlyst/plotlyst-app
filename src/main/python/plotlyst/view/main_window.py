@@ -22,7 +22,8 @@ from typing import Optional, List
 
 import qtanim
 from PyQt6.QtCore import Qt, QThreadPool, QEvent, QMimeData, QTimer
-from PyQt6.QtGui import QCloseEvent, QPalette, QColor, QKeyEvent, QResizeEvent, QDrag, QWindowStateChangeEvent, QAction
+from PyQt6.QtGui import QCloseEvent, QPalette, QColor, QKeyEvent, QResizeEvent, QDrag, QWindowStateChangeEvent, QAction, \
+    QGuiApplication
 from PyQt6.QtWidgets import QMainWindow, QWidget, QApplication, QLineEdit, QTextEdit, QToolButton, QButtonGroup, \
     QProgressDialog, QAbstractButton
 from fbs_runtime import platform
@@ -78,6 +79,7 @@ from plotlyst.view.novel_view import NovelView
 from plotlyst.view.reports_view import ReportsView
 from plotlyst.view.scenes_view import ScenesOutlineView
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
+from plotlyst.view.stylesheet import APP_STYLESHEET
 from plotlyst.view.widget.button import ToolbarButton, NovelSyncButton
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.input import CapitalizationEventFilter
@@ -619,6 +621,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self.actionPurchase.triggered.connect(lambda: open_url(DEFAULT_PREMIUM_LINK))
         self.actionPurchase.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
 
+        self.actionDarkMode.triggered.connect(self._switch_theme)
+
         if not app_env.is_mac():
             self.actionAbout.setIcon(IconRegistry.from_name('fa5s.info'))
         self.actionAbout.triggered.connect(lambda: AboutDialog.popup())
@@ -969,3 +973,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
     def _capture_snapshot(self, type_: SnapshotType = SnapshotType.MonthlyWriting):
         if self.novel:
             SocialSnapshotPopup.popup(self.novel, type_)
+
+    def _switch_theme(self):
+        QGuiApplication.instance().setStyleSheet(APP_STYLESHEET)

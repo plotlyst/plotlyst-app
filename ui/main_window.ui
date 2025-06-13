@@ -1004,6 +1004,7 @@
      <addaction name="actionChangeDir"/>
     </widget>
     <addaction name="menuProject"/>
+    <addaction name="actionDarkMode"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1311,6 +1312,11 @@
   <action name="actionCaptureProgress">
    <property name="text">
     <string>Capture progress</string>
+   </property>
+  </action>
+  <action name="actionDarkMode">
+   <property name="text">
+    <string>Dark mode</string>
    </property>
   </action>
  </widget>
