@@ -448,7 +448,7 @@ class ImpactFunctionsWidget(_PrimaryFunctionsWidget):
         menu = MenuWidget(largeIcons=True)
         menu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
         menu.addSection(
-            f"This {unit} primarily reflects the aftermath of events, deepening emotions, themes, or consequences")
+            f"This {unit} primarily reflects the aftermath of events, while deepening emotions, themes, or consequences")
         menu.addSeparator()
 
         menu.addAction(action('Reaction', IconRegistry.from_name('fa5s.heartbeat'),

@@ -611,7 +611,10 @@ class CharacterInsightWidget(ReaderInformationWidget):
 
     def _updateCharacter(self):
         if self.info.character_id:
-            character = entities_registry.character(str(self.info.character_id))
+            if self._novel.tutorial:
+                character = self._novel.find_character(self.info.character_id)
+            else:
+                character = entities_registry.character(str(self.info.character_id))
             if character:
                 self._label.setIcon(avatars.avatar(character))
 

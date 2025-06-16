@@ -20,13 +20,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import uuid
 
 from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtWidgets import QTabWidget
 from overrides import overrides
 from qthandy import decr_icon
 
 from plotlyst.common import DEFAULT_PREMIUM_LINK
 from plotlyst.core.domain import Novel, Diagram, DiagramData, Character, CharacterPreferences, AvatarPreferences, Scene, \
     Plot, PlotType, ScenePlotReference, MINDMAP_PREVIEW, NETWORK_PREVIEW, BACKSTORY_PREVIEW, STORY_GRID_PREVIEW, \
-    STORY_MAP_PREVIEW, WORLD_BUILDING_PREVIEW
+    STORY_MAP_PREVIEW, WORLD_BUILDING_PREVIEW, SCENE_FUNCTIONS_PREVIEW
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import push_btn, open_url, label, scroll_area, rows
 from plotlyst.view.icons import IconRegistry
@@ -36,6 +37,8 @@ from plotlyst.view.widget.character.network import CharacterNetworkView, Relatio
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import PopupDialog
 from plotlyst.view.widget.graphics import NetworkScene
+from plotlyst.view.widget.scene.functions import SceneFunctionsWidget
+from plotlyst.view.widget.scene.reader_drive import ReaderInformationEditor
 from plotlyst.view.widget.scene.story_grid import ScenesGridWidget
 from plotlyst.view.widget.scene.story_map import StoryMap
 from plotlyst.view.widget.story_map import EventsMindMapView, EventsMindMapScene
@@ -205,6 +208,33 @@ class WorldBuildingPreviewPopup(PreviewPopup):
         self.frame.layout().insertWidget(0, self.editor.widget)
 
 
+class SceneFunctionsPreviewPopup(PreviewPopup):
+    def __init__(self, parent=None):
+        super().__init__(heightPerc=0.8, parent=parent)
+        novel = preview_novel()
+        scene = novel.scenes[6]
+
+        self.tabs = QTabWidget()
+        self.tabs.setProperty('centered', True)
+
+        self.tabFunctions = rows()
+        self.tabInfo = rows()
+        self.tabFunctions.setProperty('muted-bg', True)
+        self.tabInfo.setProperty('muted-bg', True)
+        self.tabs.addTab(self.tabFunctions, IconRegistry.from_name('mdi.yin-yang'), "Scene functions")
+        self.tabs.addTab(self.tabInfo, IconRegistry.from_name('fa5s.book-reader'), "Reader's information")
+
+        self.functionsEditor = SceneFunctionsWidget(novel)
+        self.functionsEditor.setScene(scene)
+        self.tabFunctions.layout().addWidget(self.functionsEditor)
+
+        self.infoEditor = ReaderInformationEditor(novel)
+        self.infoEditor.setScene(scene)
+        self.tabInfo.layout().addWidget(self.infoEditor)
+
+        self.frame.layout().insertWidget(0, self.tabs)
+
+
 def launch_preview(preview: str):
     if preview == MINDMAP_PREVIEW:
         MindmapPreviewPopup.popup()
@@ -218,7 +248,10 @@ def launch_preview(preview: str):
         StoryMapPreviewPopup.popup()
     elif preview == WORLD_BUILDING_PREVIEW:
         WorldBuildingPreviewPopup.popup()
+    elif preview == SCENE_FUNCTIONS_PREVIEW:
+        SceneFunctionsPreviewPopup.popup()
     else:
-        if asked("To try this feature out, please upgrade to the latest version of Plotlyst.", 'Old Plotlyst version',
+        if asked("To try this feature out, please download the latest version of Plotlyst.",
+                 'Old version of Plotlyst detected',
                  btnConfirmText='Understood', btnCancelText='Close'):
             open_url(DEFAULT_PREMIUM_LINK)

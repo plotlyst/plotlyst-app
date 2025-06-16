@@ -32,7 +32,8 @@ from qtmenu import MenuWidget
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import Novel, Scene, Document, StoryBeat, \
-    Character, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome, ScenePurposeType
+    Character, Plot, ScenePlotReference, NovelSetting, StoryElementType, SceneOutcome, ScenePurposeType, \
+    SCENE_FUNCTIONS_PREVIEW
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event, emit_event
 from plotlyst.event.handler import event_dispatchers
@@ -207,7 +208,7 @@ class SceneEditor(QObject, EventListener):
             self.ui.tabWidget.setCurrentWidget(self.ui.tabFunctions)
         else:
             PremiumOverlayWidget(self._functionsEditor, 'Scene functions', icon='mdi.yin-yang',
-                                 alt_link='https://plotlyst.com/docs/scenes/')
+                                 alt_link='https://plotlyst.com/docs/scenes/', preview=SCENE_FUNCTIONS_PREVIEW)
             PremiumOverlayWidget(self._informationEditor, "Reader's information tracking", icon='fa5s.book-reader',
                                  alt_link='https://plotlyst.com/docs/scenes/')
             PremiumOverlayWidget(self._agencyEditor, "Characters' agency", icon='ph.user-focus',
