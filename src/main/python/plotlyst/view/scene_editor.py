@@ -210,6 +210,8 @@ class SceneEditor(QObject, EventListener):
                                  alt_link='https://plotlyst.com/docs/scenes/')
             PremiumOverlayWidget(self._informationEditor, "Reader's information tracking", icon='fa5s.book-reader',
                                  alt_link='https://plotlyst.com/docs/scenes/')
+            PremiumOverlayWidget(self._agencyEditor, "Characters' agency", icon='ph.user-focus',
+                                 alt_link='https://plotlyst.com/docs/scenes/')
             self.ui.tabWidget.setCurrentWidget(self.ui.tabNotes)
         self.ui.tabWidget.currentChanged.connect(self._page_toggled)
 

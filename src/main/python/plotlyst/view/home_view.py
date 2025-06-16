@@ -112,6 +112,7 @@ class HomeView(AbstractView):
         self.ui.btnPinterest.clicked.connect(lambda: open_url('https://pinterest.com/Plotlyst'))
 
         self.ui.btnPurchase.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
+        self.ui.btnFullExperienceLink.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
         retain_when_hidden(self.ui.btnPurchase)
 
         self.ui.btnYoutube.setHidden(True)
