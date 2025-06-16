@@ -738,8 +738,7 @@ class ReaderInformationEditor(LazyWidget):
         self.setProperty('muted-bg', True)
         margins(self, top=15)
         self.layout().addWidget(label(
-            "Track what essential information is conveyed to the reader.", description=True),
-            alignment=Qt.AlignmentFlag.AlignRight)
+            "Track what essential information is conveyed to the reader.", description=True))
         self._scrollarea, self._wdgCenter = scrolled(self, frameless=True)
         self._wdgCenter.setProperty('muted-bg', True)
         hbox(self._wdgCenter)

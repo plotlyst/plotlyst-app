@@ -34,7 +34,7 @@ from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RED_COLOR, LIGHTGREY_ACTIV
 from plotlyst.core.domain import Scene, Novel, StoryElementType, Character, SceneFunction, Plot, ScenePlotReference
 from plotlyst.service.cache import entities_registry
 from plotlyst.view.common import tool_btn, action, label, fade_out_and_gc, fade_in, shadow, insert_before_the_end, rows, \
-    push_btn
+    push_btn, columns
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 from plotlyst.view.widget.characters import CharacterSelectorButton
@@ -483,7 +483,14 @@ class SceneFunctionsWidget(QFrame):
         self._novel = novel
         self._scene: Optional[Scene] = None
 
-        hbox(self, 10, 8)
+        vbox(self, 10, 3)
+
+        self.wdgEditor = columns(0, 8)
+        sp(self.wdgEditor).v_exp()
+        self.layout().addWidget(label(
+            "Define how the story advances (Drive) and explore why it matters emotionally, thematically, or narratively (Impact).",
+            description=True, wordWrap=True))
+        self.layout().addWidget(self.wdgEditor)
 
         self.wdgDrive = DriveFunctionsWidget(self._novel)
         self.wdgDrive.newFunctionSelected.connect(self.addPrimaryType)
@@ -491,8 +498,8 @@ class SceneFunctionsWidget(QFrame):
         self.wdgImpact = ImpactFunctionsWidget(self._novel)
         self.wdgImpact.newFunctionSelected.connect(self.addPrimaryType)
 
-        self.layout().addWidget(self.wdgDrive, alignment=Qt.AlignmentFlag.AlignTop)
-        self.layout().addWidget(self.wdgImpact, alignment=Qt.AlignmentFlag.AlignTop)
+        self.wdgEditor.layout().addWidget(self.wdgDrive, alignment=Qt.AlignmentFlag.AlignTop)
+        self.wdgEditor.layout().addWidget(self.wdgImpact, alignment=Qt.AlignmentFlag.AlignTop)
 
     def setScene(self, scene: Scene):
         self._scene = scene
