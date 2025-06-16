@@ -76,7 +76,6 @@ class CharacterEditor(QObject, EventListener):
 
         self.ui.wdgBackstory.addedToTheEnd.connect(lambda: scroll_to_bottom(self.ui.scrollAreaBackstory))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
-        set_tab_visible(self.ui.tabAttributes, self.ui.tabBinder, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))
 
         self.ui.btnMale.setIcon(IconRegistry.male_gender_icon())
@@ -174,6 +173,9 @@ class CharacterEditor(QObject, EventListener):
             PremiumOverlayWidget(self.ui.tabBackstoryDummy, 'Character backstory',
                                  icon='fa5s.archive',
                                  alt_link='https://plotlyst.com/docs/characters/', preview=BACKSTORY_PREVIEW)
+            PremiumOverlayWidget(self.ui.tabBinder, 'Character codex',
+                                 icon='ri.typhoon-fill',
+                                 alt_link='https://plotlyst.com/docs/characters/')
 
         self.ui.btnClose.clicked.connect(self._save)
 

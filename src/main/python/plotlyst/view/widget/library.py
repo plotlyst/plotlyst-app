@@ -60,9 +60,6 @@ class NovelNode(ContainerNode):
         self._actionChangeIcon.setVisible(True)
         self.refresh()
 
-        if novel.story_type == StoryType.Series and not app_env.profile().get('series'):
-            self.setDisabled(True)
-
     def novel(self) -> NovelDescriptor:
         return self._novel
 
@@ -144,7 +141,7 @@ class ShelvesTreeView(TreeView):
 
         self._wdgNovels.clearChildren()
         for novel in novels:
-            if app_env.profile().get('series') and novel.parent:
+            if novel.parent:
                 novels_under_series.append(novel)
                 continue
             node = self.__initNode(novel)
@@ -517,8 +514,6 @@ class StoryCreationDialog(PopupDialog):
         self.wdgTypesContainer.layout().addWidget(self.btnScrivener)
         self.wdgTypesContainer.layout().addWidget(self.btnDocx)
         self.wdgTypesContainer.layout().addWidget(vspacer())
-
-        self.btnNewSeries.setVisible(app_env.profile().get('series', False))
 
         self.stackedWidget = QStackedWidget()
         self.wdgRight = QWidget()

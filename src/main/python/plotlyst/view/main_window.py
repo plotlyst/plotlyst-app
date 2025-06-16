@@ -80,6 +80,7 @@ from plotlyst.view.scenes_view import ScenesOutlineView
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.button import ToolbarButton, NovelSyncButton
 from plotlyst.view.widget.confirm import asked
+from plotlyst.view.widget.display import PremiumMessagePopup
 from plotlyst.view.widget.input import CapitalizationEventFilter
 from plotlyst.view.widget.labels import SeriesLabel
 from plotlyst.view.widget.log import LogsPopup
@@ -444,6 +445,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             self._actionSeries.setVisible(False)
 
         self.btnProgress.setNovel(self.novel)
+        self._actionProgress.setVisible(True)
 
         self._current_view: Optional[AbstractView] = None
         self.novel_view = NovelView(self.novel)
@@ -963,6 +965,9 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             self.characters_view.import_from_series()
 
     def _import_locations(self):
+        if not app_env.profile().get('world-building', False):
+            PremiumMessagePopup.popup('Locations', 'mdi.globe-model', 'https://plotlyst.com/docs/world-building/')
+            return
         if self.novel and self.world_building_view:
             self.world_building_view.import_from_series()
 
