@@ -803,7 +803,10 @@ class CharacterAgencyEditor(QWidget):
         self.layout().addWidget(self.wdgElements)
 
         if self.agenda.character_id:
-            character = entities_registry.character(str(self.agenda.character_id))
+            if self.novel.tutorial:
+                character = self.novel.find_character(self.agenda.character_id)
+            else:
+                character = entities_registry.character(str(self.agenda.character_id))
             if character:
                 self._charDisplay.setIcon(avatars.avatar(character))
 

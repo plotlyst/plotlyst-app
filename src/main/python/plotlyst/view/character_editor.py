@@ -30,7 +30,7 @@ from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, RELAXED_WHITE_COLOR
-from plotlyst.core.domain import Novel, Character, FEMALE, SelectionItem, BACKSTORY_PREVIEW
+from plotlyst.core.domain import Novel, Character, FEMALE, SelectionItem, BACKSTORY_PREVIEW, CODEX_PREVIEW
 from plotlyst.core.template import protagonist_role
 from plotlyst.env import app_env
 from plotlyst.event.core import EventListener, Event
@@ -76,7 +76,6 @@ class CharacterEditor(QObject, EventListener):
 
         self.ui.wdgBackstory.addedToTheEnd.connect(lambda: scroll_to_bottom(self.ui.scrollAreaBackstory))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstory, app_env.profile().get('backstory', False))
-        set_tab_visible(self.ui.tabAttributes, self.ui.tabBinder, app_env.profile().get('backstory', False))
         set_tab_visible(self.ui.tabAttributes, self.ui.tabBackstoryDummy, not app_env.profile().get('backstory', False))
 
         self.ui.btnMale.setIcon(IconRegistry.male_gender_icon())
@@ -174,6 +173,9 @@ class CharacterEditor(QObject, EventListener):
             PremiumOverlayWidget(self.ui.tabBackstoryDummy, 'Character backstory',
                                  icon='fa5s.archive',
                                  alt_link='https://plotlyst.com/docs/characters/', preview=BACKSTORY_PREVIEW)
+            PremiumOverlayWidget(self.ui.tabBinder, 'Character codex',
+                                 icon='ri.typhoon-fill',
+                                 alt_link='https://plotlyst.com/docs/characters/', preview=CODEX_PREVIEW)
 
         self.ui.btnClose.clicked.connect(self._save)
 

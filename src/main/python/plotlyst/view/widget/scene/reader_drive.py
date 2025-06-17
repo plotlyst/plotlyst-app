@@ -611,7 +611,10 @@ class CharacterInsightWidget(ReaderInformationWidget):
 
     def _updateCharacter(self):
         if self.info.character_id:
-            character = entities_registry.character(str(self.info.character_id))
+            if self._novel.tutorial:
+                character = self._novel.find_character(self.info.character_id)
+            else:
+                character = entities_registry.character(str(self.info.character_id))
             if character:
                 self._label.setIcon(avatars.avatar(character))
 
@@ -738,8 +741,7 @@ class ReaderInformationEditor(LazyWidget):
         self.setProperty('muted-bg', True)
         margins(self, top=15)
         self.layout().addWidget(label(
-            "Track what essential information is conveyed to the reader.", description=True),
-            alignment=Qt.AlignmentFlag.AlignRight)
+            "Track what essential information is conveyed to the reader.", description=True))
         self._scrollarea, self._wdgCenter = scrolled(self, frameless=True)
         self._wdgCenter.setProperty('muted-bg', True)
         hbox(self._wdgCenter)

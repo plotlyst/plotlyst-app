@@ -2769,6 +2769,7 @@ class TemplateStoryStructureType(Enum):
         if self == TemplateStoryStructureType.SPINE or self == TemplateStoryStructureType.CORRUPTION:
             return True
 
+
 class StoryStructureDisplayType(Enum):
     Proportional_timeline = 'proportional_timeline'
     Sequential_timeline = 'sequential_timeline'
@@ -4336,9 +4337,13 @@ class ManuscriptGoals:
 MINDMAP_PREVIEW = 'mindmap'
 NETWORK_PREVIEW = 'network'
 BACKSTORY_PREVIEW = 'backstory'
+CODEX_PREVIEW = 'codex'
 STORY_GRID_PREVIEW = 'story_grid'
 STORY_MAP_PREVIEW = 'story_map'
 WORLD_BUILDING_PREVIEW = 'worldbuilding'
+SCENE_FUNCTIONS_PREVIEW = 'scene_functions'
+SCENE_AGENCY_PREVIEW = 'scene_agency'
+STORYLINES_PREVIEW = 'storylines'
 
 
 def default_locations() -> List[Location]:
@@ -4433,6 +4438,11 @@ class Novel(NovelDescriptor):
 
     def scenes_in_chapter(self, chapter: Chapter) -> List[Scene]:
         return [x for x in self.scenes if x.chapter is chapter]
+
+    def find_character(self, id_: uuid.UUID) -> Optional[Character]:
+        for char_ in self.characters:
+            if char_.id == id_:
+                return char_
 
     @staticmethod
     def new_scene(title: str = '') -> Scene:
