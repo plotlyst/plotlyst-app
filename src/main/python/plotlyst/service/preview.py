@@ -27,11 +27,13 @@ from qthandy import decr_icon
 from plotlyst.common import DEFAULT_PREMIUM_LINK
 from plotlyst.core.domain import Novel, Diagram, DiagramData, Character, CharacterPreferences, AvatarPreferences, Scene, \
     Plot, PlotType, ScenePlotReference, MINDMAP_PREVIEW, NETWORK_PREVIEW, BACKSTORY_PREVIEW, STORY_GRID_PREVIEW, \
-    STORY_MAP_PREVIEW, WORLD_BUILDING_PREVIEW, SCENE_FUNCTIONS_PREVIEW, SCENE_AGENCY_PREVIEW, CharacterAgency
+    STORY_MAP_PREVIEW, WORLD_BUILDING_PREVIEW, SCENE_FUNCTIONS_PREVIEW, SCENE_AGENCY_PREVIEW, CharacterAgency, \
+    CODEX_PREVIEW
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import push_btn, open_url, label, scroll_area, rows
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_bg_image
+from plotlyst.view.widget.character.codex import CharacterCodexEditor
 from plotlyst.view.widget.character.editor import CharacterTimelineWidget
 from plotlyst.view.widget.character.network import CharacterNetworkView, RelationsEditorScene
 from plotlyst.view.widget.confirm import asked
@@ -188,6 +190,22 @@ class BackstoryPreviewPopup(PreviewPopup):
         self.frame.layout().insertWidget(0, scroll)
 
 
+class CodexPreviewPopup(PreviewPopup):
+    def __init__(self, parent=None):
+        super().__init__(widthPerc=0.5, minWidth=550, parent=parent)
+
+        scroll = scroll_area()
+        wdgEditor = rows()
+        scroll.setWidget(wdgEditor)
+
+        novel = preview_novel()
+        self.editor = CharacterCodexEditor(novel)
+        self.editor.setCharacter(preview_novel().characters[0])
+        wdgEditor.layout().addWidget(self.editor)
+
+        self.frame.layout().insertWidget(0, scroll)
+
+
 class StoryGridPreviewPopup(PreviewPopup):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -262,6 +280,8 @@ def launch_preview(preview: str):
         NetworkPreviewPopup.popup()
     elif preview == BACKSTORY_PREVIEW:
         BackstoryPreviewPopup.popup()
+    elif preview == CODEX_PREVIEW:
+        CodexPreviewPopup.popup()
     elif preview == STORY_GRID_PREVIEW:
         StoryGridPreviewPopup.popup()
     elif preview == STORY_MAP_PREVIEW:

@@ -4337,6 +4337,7 @@ class ManuscriptGoals:
 MINDMAP_PREVIEW = 'mindmap'
 NETWORK_PREVIEW = 'network'
 BACKSTORY_PREVIEW = 'backstory'
+CODEX_PREVIEW = 'codex'
 STORY_GRID_PREVIEW = 'story_grid'
 STORY_MAP_PREVIEW = 'story_map'
 WORLD_BUILDING_PREVIEW = 'worldbuilding'
