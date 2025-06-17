@@ -4343,6 +4343,7 @@ STORY_MAP_PREVIEW = 'story_map'
 WORLD_BUILDING_PREVIEW = 'worldbuilding'
 SCENE_FUNCTIONS_PREVIEW = 'scene_functions'
 SCENE_AGENCY_PREVIEW = 'scene_agency'
+STORYLINES_PREVIEW = 'storylines'
 
 
 def default_locations() -> List[Location]:

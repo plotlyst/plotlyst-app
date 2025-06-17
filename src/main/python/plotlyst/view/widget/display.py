@@ -38,7 +38,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_TERTIARY_COLOR, RELAXED_WHITE_COLOR, DEFAULT_PREMIUM_LINK, \
     PLOTLYST_SECONDARY_COLOR, PLACEHOLDER_TEXT_COLOR
-from plotlyst.core.domain import WORLD_BUILDING_PREVIEW, ConnectorType, LayoutType
+from plotlyst.core.domain import WORLD_BUILDING_PREVIEW, ConnectorType, LayoutType, STORYLINES_PREVIEW
 from plotlyst.core.help import mid_revision_scene_structure_help
 from plotlyst.core.template import Role
 from plotlyst.core.text import wc
@@ -807,7 +807,7 @@ class PremiumOverlayWidget(QFrame):
     def storylinesOverlay(parent: QWidget) -> 'PremiumOverlayWidget':
         return PremiumOverlayWidget(parent, 'Storylines',
                                     icon='fa5s.theater-masks',
-                                    alt_link='https://plotlyst.com/docs/storylines/')
+                                    alt_link='https://plotlyst.com/docs/storylines/', preview=STORYLINES_PREVIEW)
 
     @staticmethod
     def worldbuildingOverlay(parent: QWidget) -> 'PremiumOverlayWidget':

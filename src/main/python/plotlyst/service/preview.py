@@ -28,7 +28,7 @@ from plotlyst.common import DEFAULT_PREMIUM_LINK
 from plotlyst.core.domain import Novel, Diagram, DiagramData, Character, CharacterPreferences, AvatarPreferences, Scene, \
     Plot, PlotType, ScenePlotReference, MINDMAP_PREVIEW, NETWORK_PREVIEW, BACKSTORY_PREVIEW, STORY_GRID_PREVIEW, \
     STORY_MAP_PREVIEW, WORLD_BUILDING_PREVIEW, SCENE_FUNCTIONS_PREVIEW, SCENE_AGENCY_PREVIEW, CharacterAgency, \
-    CODEX_PREVIEW
+    CODEX_PREVIEW, STORYLINES_PREVIEW
 from plotlyst.resources import resource_registry
 from plotlyst.view.common import push_btn, open_url, label, scroll_area, rows
 from plotlyst.view.icons import IconRegistry
@@ -39,6 +39,7 @@ from plotlyst.view.widget.character.network import CharacterNetworkView, Relatio
 from plotlyst.view.widget.confirm import asked
 from plotlyst.view.widget.display import PopupDialog
 from plotlyst.view.widget.graphics import NetworkScene
+from plotlyst.view.widget.plot.editor import PlotWidget
 from plotlyst.view.widget.scene.agency import SceneAgencyEditor
 from plotlyst.view.widget.scene.functions import SceneFunctionsWidget
 from plotlyst.view.widget.scene.reader_drive import ReaderInformationEditor
@@ -273,6 +274,18 @@ class SceneAgencyPreviewPopup(PreviewPopup):
         self.frame.layout().insertWidget(0, self.scrollArea)
 
 
+class StorylinesPreviewPopup(PreviewPopup):
+    def __init__(self, parent=None):
+        super().__init__(heightPerc=0.8, parent=parent)
+        novel = preview_novel()
+
+        self.editor = PlotWidget(novel, novel.plots[0])
+
+        self.scrollArea = scroll_area(frameless=True)
+        self.scrollArea.setWidget(self.editor)
+
+        self.frame.layout().insertWidget(0, self.scrollArea)
+
 def launch_preview(preview: str):
     if preview == MINDMAP_PREVIEW:
         MindmapPreviewPopup.popup()
@@ -292,6 +305,8 @@ def launch_preview(preview: str):
         SceneFunctionsPreviewPopup.popup()
     elif preview == SCENE_AGENCY_PREVIEW:
         SceneAgencyPreviewPopup.popup()
+    elif preview == STORYLINES_PREVIEW:
+        StorylinesPreviewPopup.popup()
     else:
         if asked("To try this feature out, please download the latest version of Plotlyst.",
                  'Old version of Plotlyst detected',
