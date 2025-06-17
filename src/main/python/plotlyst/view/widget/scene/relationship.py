@@ -84,7 +84,10 @@ class RelationshipChangeWidget(QWidget):
         self.layout().addWidget(self._lblDimension, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self._lblModifier, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        character = entities_registry.character(str(element.ref))
+        if self.novel.tutorial:
+            character = self.novel.find_character(element.ref)
+        else:
+            character = entities_registry.character(str(element.ref))
         if character:
             self._characterLbl.setIcon(avatars.avatar(character))
 

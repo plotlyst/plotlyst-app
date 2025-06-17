@@ -482,7 +482,10 @@ class ConflictReferenceWidget(QWidget):
         self._textedit.setPlaceholderText(self.conflict.scope.placeholder())
 
         if self.conflict.character_id:
-            character = entities_registry.character(str(self.conflict.character_id))
+            if self.novel.tutorial:
+                character = self.novel.find_character(self.conflict.character_id)
+            else:
+                character = entities_registry.character(str(self.conflict.character_id))
             if character:
                 self._interpersonalCharacterIcon.setIcon(avatars.avatar(character))
 

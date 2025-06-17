@@ -4341,6 +4341,7 @@ STORY_GRID_PREVIEW = 'story_grid'
 STORY_MAP_PREVIEW = 'story_map'
 WORLD_BUILDING_PREVIEW = 'worldbuilding'
 SCENE_FUNCTIONS_PREVIEW = 'scene_functions'
+SCENE_AGENCY_PREVIEW = 'scene_agency'
 
 
 def default_locations() -> List[Location]:
