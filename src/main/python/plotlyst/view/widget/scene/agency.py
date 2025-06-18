@@ -32,7 +32,7 @@ from qtmenu import MenuWidget
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, PLOTLYST_TERTIARY_COLOR
 from plotlyst.core.domain import Motivation, Novel, Scene, CharacterAgency, Character, StoryElementType, \
-    StoryElement, Conflict
+    StoryElement, Conflict, SceneOutcome
 from plotlyst.env import app_env
 from plotlyst.event.core import Event, EventListener
 from plotlyst.event.handler import event_dispatchers
@@ -56,6 +56,7 @@ from plotlyst.view.widget.scene.conflict import ConflictReferenceWidget, \
     ConflictSelectorPopup
 from plotlyst.view.widget.scene.motivation import MotivationDisplay, MotivationEditor, MotivationChargeLabel
 from plotlyst.view.widget.scene.relationship import RelationshipChangeWidget
+from plotlyst.view.widget.scenes import SceneOutcomeSelector
 
 
 class SceneAgendaMotivationEditor(QWidget):
@@ -670,6 +671,35 @@ class ConflictAgencyElementWidget(QFrame, AgencyElementWidget):
         return wdg
 
 
+class OutcomeAgencyElementWidget(CharacterChangeBubble):
+    def __init__(self, element: StoryElement, parent=None):
+        super().__init__(element, parent)
+
+        self.outcomeSelector = SceneOutcomeSelector(autoSelect=False)
+        self.layout().addWidget(self.outcomeSelector, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.outcomeSelector.selected.connect(self._outcomeSelected)
+
+        if self.element.outcome:
+            self.outcomeSelector.refresh(self.element.outcome)
+            self._handleOutcome()
+
+    def _outcomeSelected(self, outcome: SceneOutcome):
+        self.element.outcome = outcome
+        self._handleOutcome()
+
+    def _handleOutcome(self):
+        if self.element.outcome == SceneOutcome.RESOLUTION:
+            self._title.setText('Success')
+            self._title.setIcon(IconRegistry.success_icon())
+        elif self.element.outcome == SceneOutcome.TRADE_OFF:
+            self._title.setText('Trade-off')
+            self._title.setIcon(IconRegistry.tradeoff_icon())
+        else:
+            self._title.setText('Disaster')
+            self._title.setIcon(IconRegistry.disaster_icon())
+
+
 class CharacterMotivationChange(CharacterChangeBubble):
     def __init__(self, novel: Novel, scene: Scene, agency: CharacterAgency, element: StoryElement, parent=None):
         super().__init__(element, parent)
@@ -885,6 +915,8 @@ class CharacterAgencyEditor(QWidget):
             wdg = CharacterMotivationChange(self.novel, self.scene, self.agenda, element)
         elif element.type == StoryElementType.Conflict:
             wdg = ConflictAgencyElementWidget(self.novel, self.agenda, element)
+        elif element.type == StoryElementType.Outcome:
+            wdg = OutcomeAgencyElementWidget(element)
         elif element.type == StoryElementType.Emotion or element.type == StoryElementType.Emotion_change:
             wdg = CharacterEmotionChange(element, self.agenda)
         elif element.type == StoryElementType.Relationship:

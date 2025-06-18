@@ -72,7 +72,7 @@ class SceneOutcomeSelector(QWidget):
     def __init__(self, parent=None, autoSelect: bool = True, extended: bool = False):
         super().__init__(parent)
         self._outcome = SceneOutcome.DISASTER
-        hbox(self)
+        hbox(self, 0)
         self.btnDisaster = tool_btn(IconRegistry.disaster_icon(color='grey'), scene_disaster_outcome_help,
                                     checkable=True)
         self.btnResolution = tool_btn(IconRegistry.success_icon(color='grey'), scene_resolution_outcome_help,
@@ -150,9 +150,9 @@ class SceneOutcomeSelector(QWidget):
         btn.setIconSize(QSize(20, 20))
         btn.setStyleSheet(f'''
         QToolButton {{
-            border-radius: 12px;
+            border-radius: 16px;
             border: 1px hidden lightgrey;
-            padding: 2px;
+            padding: 5px;
         }}
         QToolButton:hover {{
             background: {color};

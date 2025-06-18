@@ -2076,6 +2076,7 @@ class StoryElement:
     dimension: str = field(default='', metadata=config(exclude=exclude_if_empty))
     modifier: str = field(default='', metadata=config(exclude=exclude_if_empty))
     icon: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    outcome: Optional[SceneOutcome] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass
