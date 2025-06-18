@@ -29,7 +29,7 @@ from PyQt6.QtGui import QPainter, QShowEvent, QColor, QPaintEvent, QBrush, QKeyE
     QPen, QPolygonF
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QToolButton, QSizePolicy, QTextBrowser, QFrame, QDialog, \
-    QApplication, QTimeEdit, QAbstractSpinBox, QDateTimeEdit
+    QApplication, QTimeEdit, QAbstractSpinBox, QDateTimeEdit, QGraphicsColorizeEffect
 from overrides import overrides
 from qthandy import spacer, incr_font, bold, transparent, vbox, incr_icon, pointy, hbox, busy, italic, decr_font, \
     margins, translucent, sp, decr_icon, retain_when_hidden
@@ -140,12 +140,17 @@ class Subtitle(QWidget):
 
 
 class Emoji(QLabel):
-    def __init__(self, parent=None, emoji: str = ''):
+    def __init__(self, parent=None, emoji: str = '', color: Optional[str] = None):
         super(Emoji, self).__init__(parent)
         self._emoji = emoji
         self._emojiFont = emoji_font()
 
         self.setFont(self._emojiFont)
+
+        if color:
+            effect = QGraphicsColorizeEffect(self)
+            effect.setColor(QColor(color))
+            self.setGraphicsEffect(effect)
 
         self.setMaximumWidth(30)
 
