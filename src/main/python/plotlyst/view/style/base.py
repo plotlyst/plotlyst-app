@@ -102,6 +102,10 @@ QFrame[muted-bg=true] {{
     background-color: {BG_MUTED_COLOR};
 }}
 
+QFrame[night-bg=true] {{
+    background-color: rgba(39, 39, 39, 200);
+}}
+
 QFrame[alt-bg=true] {{
     background-color: {BG_ALT_COLOR};
 }}

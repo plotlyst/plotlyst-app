@@ -52,6 +52,7 @@ from plotlyst.view.widget.labels import CharacterLabel
 from plotlyst.view.widget.scene.agency import SceneAgencyEditor
 from plotlyst.view.widget.scene.editor import ScenePurposeTypeButton, SceneProgressEditor
 from plotlyst.view.widget.scene.functions import SceneFunctionsWidget
+from plotlyst.view.widget.scene.milieu import SceneMilieuLinkWidget
 from plotlyst.view.widget.scene.plot import ScenePlotLabels, \
     ScenePlotSelectorMenu
 from plotlyst.view.widget.scene.reader_drive import ReaderInformationEditor
@@ -146,6 +147,9 @@ class SceneEditor(QObject, EventListener):
         self.ui.treeScenes.setSettings(TreeSettings(font_incr=1))
         self.ui.treeScenes.setNovel(self.novel, readOnly=True)
         self.ui.treeScenes.sceneSelected.connect(self._scene_selected)
+
+        self._milieuEditor = SceneMilieuLinkWidget()
+        self.ui.wdgLocationsContainer.layout().addWidget(self._milieuEditor)
 
         self._btnPurposeType = ScenePurposeTypeButton()
         self.ui.wdgSceneType.layout().insertWidget(1, self._btnPurposeType)

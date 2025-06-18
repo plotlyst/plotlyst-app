@@ -417,6 +417,33 @@
               </layout>
              </widget>
             </item>
+            <item>
+             <widget class="QWidget" name="wdgLocationsContainer" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_13">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+              </layout>
+             </widget>
+            </item>
             <item alignment="Qt::AlignBottom">
              <widget class="QWidget" name="wdgCharactersContainer" native="true">
               <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -427,7 +454,7 @@
                 <number>2</number>
                </property>
                <property name="topMargin">
-                <number>25</number>
+                <number>2</number>
                </property>
                <property name="rightMargin">
                 <number>2</number>
