@@ -48,7 +48,7 @@ from plotlyst.events import SceneDeletedEvent, SceneChangedEvent, ScenesOrganiza
 from plotlyst.resources import resource_registry
 from plotlyst.service.manuscript import daily_progress, daily_overall_progress
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import tool_btn, fade_in, fade, frame, restyle, sound_effect
+from plotlyst.view.common import tool_btn, fade_in, fade, frame, restyle, media_player, sound_effect
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.text import apply_text_color
 from plotlyst.view.style.theme import BG_DARK_COLOR
@@ -276,10 +276,16 @@ class ManuscriptTextEdit(TextEditBase):
 
         self.textChanged.connect(self.resizeToContent)
 
-        self._keystrokePlayer = sound_effect(resource_registry.keystroke)
-        self._spaceKeystrokePlayer = sound_effect(resource_registry.keystroke_space)
-        self._returnKeystrokePlayer = sound_effect(resource_registry.keystroke_return)
-        self._backspaceKeystrokePlayer = sound_effect(resource_registry.keystroke_backspace)
+        if app_env.is_windows():
+            self._keystrokePlayer = media_player(resource_registry.keystroke)
+            self._spaceKeystrokePlayer = media_player(resource_registry.keystroke_space)
+            self._returnKeystrokePlayer = media_player(resource_registry.keystroke_return)
+            self._backspaceKeystrokePlayer = media_player(resource_registry.keystroke_backspace)
+        else:
+            self._keystrokePlayer = sound_effect(resource_registry.keystroke)
+            self._spaceKeystrokePlayer = sound_effect(resource_registry.keystroke_space)
+            self._returnKeystrokePlayer = sound_effect(resource_registry.keystroke_return)
+            self._backspaceKeystrokePlayer = sound_effect(resource_registry.keystroke_backspace)
 
     @overrides
     def createEnhancedContextMenu(self, pos: QPoint):
