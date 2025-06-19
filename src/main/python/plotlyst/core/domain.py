@@ -1724,6 +1724,13 @@ class SceneOutcome(Enum):
             return 'Set into motion'
         return outcome.name.lower().capitalize() + ' outcome'
 
+    def color(self) -> str:
+        if self == SceneOutcome.RESOLUTION:
+            return '#0b6e4f'
+        elif self == SceneOutcome.DISASTER:
+            return '#f4442e'
+        elif self == SceneOutcome.TRADE_OFF:
+            return '#832161'
 
 @dataclass
 class SceneStructureItem(OutlineItem):
@@ -2076,6 +2083,7 @@ class StoryElement:
     dimension: str = field(default='', metadata=config(exclude=exclude_if_empty))
     modifier: str = field(default='', metadata=config(exclude=exclude_if_empty))
     icon: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    outcome: Optional[SceneOutcome] = field(default=None, metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass
