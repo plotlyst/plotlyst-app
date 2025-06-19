@@ -253,7 +253,7 @@ class ManuscriptTextEdit(TextEditBase):
         self._resizedOnShow: bool = False
         self._menuIsShown = False
         self._minHeight = 40
-        self._typeWriterSounds: bool = True
+        self._typeWriterSounds: bool = False
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setTabChangesFocus(True)
         self._scene: Optional[Scene] = None
@@ -405,6 +405,9 @@ class ManuscriptTextEdit(TextEditBase):
         padding = self.contentsMargins().top() + self.contentsMargins().bottom() + 2 * self.document().documentMargin()
         size = self.document().size()
         self.setFixedHeight(max(self._minHeight, math.ceil(size.height() + padding)))
+
+    def setTypeWriterSoundsEnabled(self, enabled: bool):
+        self._typeWriterSounds = enabled
 
     def _addScene(self, scene: Scene):
         if not scene.manuscript.loaded:
@@ -778,6 +781,8 @@ class ManuscriptEditor(QWidget, EventListener):
         self._settings.textSettings.fontSetting.fontSelected.connect(self._fontChanged)
         self._settings.textSettings.spaceSetting.spaceChanged.connect(self._spaceChanged)
 
+        self._settings.immersionSettings.typeWriterChanged.connect(self._typeWriterChanged)
+
     def statistics(self) -> TextStatistics:
         overall_stats = TextStatistics(0)
         if self.hasScenes():
@@ -884,6 +889,7 @@ class ManuscriptEditor(QWidget, EventListener):
         _textedit.setSmartQuotesEnabled(self._novel.prefs.manuscript.smart_quotes)
         _textedit.setPeriodInsertionEnabled(self._novel.prefs.manuscript.period)
         _textedit.setEllipsisInsertionMode(self._novel.prefs.manuscript.ellipsis)
+        _textedit.setTypeWriterSoundsEnabled(self._novel.prefs.manuscript.typewriter_sounds)
         transparent(_textedit)
 
         _textedit.setBlockFormat(self._lineSpace, textIndent=DEFAULT_MANUSCRIPT_INDENT)
@@ -950,6 +956,12 @@ class ManuscriptEditor(QWidget, EventListener):
         for textedit in self._textedits:
             textedit.setEllipsisInsertionMode(mode)
         self._novel.prefs.manuscript.ellipsis = mode
+        self.repo.update_novel(self._novel)
+
+    def _typeWriterChanged(self, enabled: bool):
+        for textedit in self._textedits:
+            textedit.setTypeWriterSoundsEnabled(enabled)
+        self._novel.prefs.manuscript.typewriter_sounds = enabled
         self.repo.update_novel(self._novel)
 
     def _setHeaderVariant(self, variant: int):

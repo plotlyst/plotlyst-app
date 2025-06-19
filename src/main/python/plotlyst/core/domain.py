@@ -4241,6 +4241,7 @@ class ManuscriptPreferences:
     smart_quotes: bool = True
     period: bool = True
     header_variant: int = 1
+    typewriter_sounds: bool = False
 
 
 class NovelPanel(Enum):

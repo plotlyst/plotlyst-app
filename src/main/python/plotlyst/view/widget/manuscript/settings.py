@@ -386,7 +386,34 @@ class ManuscriptTextSettingsWidget(QWidget):
         self.layout().addWidget(self.spaceSetting)
 
 
-class ManuscriptSmartTypingSettingsWidget(QWidget):
+class BaseSettingsWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def _addHeader(self, title: str, desc: str = '') -> QWidget:
+        self.layout().addWidget(label(title, incr_font_diff=1), alignment=Qt.AlignmentFlag.AlignLeft)
+        wdgSettings = QWidget()
+        vbox(wdgSettings, 0, 0)
+        margins(wdgSettings, left=10)
+        if desc:
+            wdgSettings.layout().addWidget(label(desc, description=True, wordWrap=True, decr_font_diff=1),
+                                           alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.layout().addWidget(wdgSettings)
+        return wdgSettings
+
+    def _addToggleSetting(self, wdg: QWidget, text: str = '', icon: str = '') -> QAbstractButton:
+        toggle = SmallToggleButton(translucent=False)
+        lbl = IconText()
+        lbl.setText(text)
+        if icon:
+            lbl.setIcon(IconRegistry.from_name(icon, 'grey'))
+        wdg.layout().addWidget(group(lbl, toggle, spacing=0), alignment=Qt.AlignmentFlag.AlignRight)
+
+        return toggle
+
+
+class ManuscriptSmartTypingSettingsWidget(BaseSettingsWidget):
     dashChanged = pyqtSignal(DashInsertionMode)
     capitalizationChanged = pyqtSignal(AutoCapitalizationMode)
     ellipsisChanged = pyqtSignal(EllipsisInsertionMode)
@@ -441,28 +468,6 @@ class ManuscriptSmartTypingSettingsWidget(QWidget):
 
         self.layout().addWidget(vspacer())
 
-    def _addHeader(self, title: str, desc: str = '') -> QWidget:
-        self.layout().addWidget(label(title, bold=True), alignment=Qt.AlignmentFlag.AlignLeft)
-        wdgSettings = QWidget()
-        vbox(wdgSettings, 0, 0)
-        margins(wdgSettings, left=10)
-        if desc:
-            wdgSettings.layout().addWidget(label(desc, description=True, wordWrap=True, decr_font_diff=1),
-                                           alignment=Qt.AlignmentFlag.AlignLeft)
-
-        self.layout().addWidget(wdgSettings)
-        return wdgSettings
-
-    def _addToggleSetting(self, wdg: QWidget, text: str = '', icon: str = '') -> QAbstractButton:
-        toggle = SmallToggleButton(translucent=False)
-        lbl = IconText()
-        lbl.setText(text)
-        if icon:
-            lbl.setIcon(IconRegistry.from_name(icon, 'grey'))
-        wdg.layout().addWidget(group(lbl, toggle, spacing=0), alignment=Qt.AlignmentFlag.AlignRight)
-
-        return toggle
-
     def _dashToggled(self):
         btn = self.btnGroupDash.checkedButton()
         if btn is None:
@@ -488,6 +493,21 @@ class ManuscriptSmartTypingSettingsWidget(QWidget):
             self.ellipsisChanged.emit(EllipsisInsertionMode.NONE)
 
 
+class ManuscriptImmersionSettingsWidget(BaseSettingsWidget):
+    typeWriterChanged = pyqtSignal(bool)
+
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(parent)
+        self.novel = novel
+        vbox(self, spacing=1)
+
+        self.typeWriterSettings = self._addHeader('Typewriter sounds',
+                                                  'Play typewriter sounds on each keypress while writing')
+        self.typeWriterQuotes = self._addToggleSetting(self.typeWriterSettings, icon='mdi6.typewriter')
+        self.typeWriterQuotes.setChecked(self.novel.prefs.manuscript.typewriter_sounds)
+        self.typeWriterQuotes.clicked.connect(self.typeWriterChanged)
+
+
 class EditorSettingsHeader(QFrame):
     def __init__(self, title: str, icon: str, widget: QWidget, parent=None):
         super().__init__(parent)
@@ -498,7 +518,7 @@ class EditorSettingsHeader(QFrame):
         pointy(self)
 
         sectionTitle = push_btn(IconRegistry.from_name(icon), title, transparent_=True)
-        incr_font(sectionTitle)
+        incr_font(sectionTitle, 2)
         self.btnCollapse = CollapseButton(checked=Qt.Edge.TopEdge)
         decr_icon(self.btnCollapse, 4)
         sectionTitle.clicked.connect(self.btnCollapse.click)
@@ -524,12 +544,15 @@ class ManuscriptEditorSettingsWidget(QWidget):
 
         self.textSettings = ManuscriptTextSettingsWidget(novel)
         self.smartTypingSettings = ManuscriptSmartTypingSettingsWidget(novel)
+        self.immersionSettings = ManuscriptImmersionSettingsWidget(novel)
         self.langSelectionWidget = ManuscriptSpellcheckingSettingsWidget(novel)
 
         headerSettings = self._addSection('Editor settings', 'fa5s.font', self.textSettings)
         headerSmart = self._addSection('Smart Typing', 'ri.double-quotes-r', self.smartTypingSettings)
+        headerImmersion = self._addSection('Immersion', 'ri.magic-fill', self.immersionSettings)
         headerSpellcheck = self._addSection('Spellchecking', 'fa5s.spell-check', self.langSelectionWidget)
-        exclusive_buttons(self, headerSettings.btnCollapse, headerSmart.btnCollapse, headerSpellcheck.btnCollapse,
+        exclusive_buttons(self, headerSettings.btnCollapse, headerSmart.btnCollapse, headerImmersion.btnCollapse,
+                          headerSpellcheck.btnCollapse,
                           optional=True)
         headerSettings.setChecked(True)
         self.layout().addWidget(vspacer())
