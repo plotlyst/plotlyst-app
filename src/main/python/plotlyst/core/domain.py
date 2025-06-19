@@ -1724,6 +1724,13 @@ class SceneOutcome(Enum):
             return 'Set into motion'
         return outcome.name.lower().capitalize() + ' outcome'
 
+    def color(self) -> str:
+        if self == SceneOutcome.RESOLUTION:
+            return '#0b6e4f'
+        elif self == SceneOutcome.DISASTER:
+            return '#f4442e'
+        elif self == SceneOutcome.TRADE_OFF:
+            return '#832161'
 
 @dataclass
 class SceneStructureItem(OutlineItem):

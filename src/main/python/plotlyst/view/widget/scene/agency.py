@@ -22,7 +22,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import qtanim
 from PyQt6.QtCore import Qt, QEvent, pyqtSignal, QSize, QTimer, QMimeData
-from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent
+from PyQt6.QtGui import QEnterEvent, QCursor, QDragEnterEvent, QDragLeaveEvent, QResizeEvent, QColor
 from PyQt6.QtWidgets import QWidget, QGridLayout, QButtonGroup, QAbstractButton, QFrame
 from overrides import overrides
 from qthandy import hbox, sp, bold, vbox, translucent, clear_layout, margins, vspacer, \
@@ -682,13 +682,17 @@ class OutcomeAgencyElementWidget(CharacterChangeBubble):
 
         if self.element.outcome:
             self.outcomeSelector.refresh(self.element.outcome)
-            self._handleOutcome()
+            self._updateTitle()
+            self._updateShadow()
 
     def _outcomeSelected(self, outcome: SceneOutcome):
         self.element.outcome = outcome
-        self._handleOutcome()
+        self._updateTitle()
+        self._updateShadow()
+        # qtanim.glow(self, color=QColor(self.element.outcome.color()), reverseAnimation=False, duration=250, radius=15,
+        #             teardown=self._updateShadow)
 
-    def _handleOutcome(self):
+    def _updateTitle(self):
         if self.element.outcome == SceneOutcome.RESOLUTION:
             self._title.setText('Success')
             self._title.setIcon(IconRegistry.success_icon())
@@ -698,6 +702,10 @@ class OutcomeAgencyElementWidget(CharacterChangeBubble):
         else:
             self._title.setText('Disaster')
             self._title.setIcon(IconRegistry.disaster_icon())
+        apply_button_palette_color(self._title, self.element.outcome.color())
+
+    def _updateShadow(self):
+        shadow(self, color=QColor(self.element.outcome.color()))
 
 
 class CharacterMotivationChange(CharacterChangeBubble):
