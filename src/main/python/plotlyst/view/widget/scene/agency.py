@@ -689,8 +689,6 @@ class OutcomeAgencyElementWidget(CharacterChangeBubble):
         self.element.outcome = outcome
         self._updateTitle()
         self._updateShadow()
-        # qtanim.glow(self, color=QColor(self.element.outcome.color()), reverseAnimation=False, duration=250, radius=15,
-        #             teardown=self._updateShadow)
 
     def _updateTitle(self):
         if self.element.outcome == SceneOutcome.RESOLUTION:
