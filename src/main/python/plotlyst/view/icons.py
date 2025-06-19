@@ -28,9 +28,10 @@ from plotlyst.common import CONFLICT_CHARACTER_COLOR, \
     CONFLICT_SOCIETY_COLOR, CONFLICT_NATURE_COLOR, CONFLICT_TECHNOLOGY_COLOR, CONFLICT_SUPERNATURAL_COLOR, \
     CONFLICT_SELF_COLOR, CHARACTER_MAJOR_COLOR, CHARACTER_MINOR_COLOR, CHARACTER_SECONDARY_COLOR, \
     PLOTLYST_SECONDARY_COLOR, PLOTLYST_MAIN_COLOR, NEUTRAL_EMOTION_COLOR, EMOTION_COLORS, RED_COLOR, act_color, \
-    BLACK_COLOR
-from plotlyst.core.domain import Character, ConflictType, \
-    Scene, PlotType, MALE, FEMALE, TRANSGENDER, NON_BINARY, GENDERLESS, ScenePurposeType, StoryStructure
+    BLACK_COLOR, RELAXED_WHITE_COLOR, LIGHTGREY_ACTIVE_COLOR
+from plotlyst.core.domain import Character, \
+    Scene, PlotType, MALE, FEMALE, TRANSGENDER, NON_BINARY, GENDERLESS, ScenePurposeType, StoryStructure, Tier, \
+    ConflictType
 from plotlyst.core.template import SelectionItem
 from plotlyst.view.common import rounded_pixmap
 
@@ -343,7 +344,7 @@ class IconRegistry:
         return IconRegistry.from_name('fa5s.map-signs', '#ba6f4d')
 
     @staticmethod
-    def conflict_icon(color: str = '#f3a712', color_on: str = '#f3a712') -> QIcon:
+    def conflict_icon(color: str = '#e57c04', color_on: str = '#e57c04') -> QIcon:
         return IconRegistry.from_name('mdi.sword-cross', color=color, color_on=color_on)
 
     @staticmethod
@@ -430,21 +431,6 @@ class IconRegistry:
     @staticmethod
     def cards_icon() -> QIcon:
         return IconRegistry.from_name('mdi.cards', color_on=PLOTLYST_SECONDARY_COLOR)
-
-    @staticmethod
-    def conflict_type_icon(type: ConflictType) -> QIcon:
-        if type == ConflictType.CHARACTER:
-            return IconRegistry.conflict_character_icon()
-        elif type == ConflictType.SOCIETY:
-            return IconRegistry.conflict_society_icon()
-        elif type == ConflictType.NATURE:
-            return IconRegistry.conflict_nature_icon()
-        elif type == ConflictType.TECHNOLOGY:
-            return IconRegistry.conflict_technology_icon()
-        elif type == ConflictType.SUPERNATURAL:
-            return IconRegistry.conflict_supernatural_icon()
-        elif type == ConflictType.SELF:
-            return IconRegistry.conflict_self_icon()
 
     @staticmethod
     def conflict_character_icon() -> QIcon:
@@ -700,8 +686,8 @@ class IconRegistry:
             return IconRegistry.genderless_icon('#6c757d')
 
     @staticmethod
-    def backstory_icon(color: str = '#9c6644', color_on='#9c6644') -> QIcon:
-        return IconRegistry.from_name('fa5s.archive', color, color_on)
+    def backstory_icon(color: str = 'black', color_on='black') -> QIcon:
+        return IconRegistry.from_name('mdi.timeline-text-outline', color, color_on)
 
     @staticmethod
     def topics_icon(color: str = 'black', color_on='darkBlue') -> QIcon:
@@ -732,6 +718,23 @@ class IconRegistry:
         return qtawesome.icon('mdi6.checkbox-blank-badge-outline', name,
                               options=[{'color': act_color, 'scale_factor': 1.5},
                                        {'color': color, 'color_disabled': 'lightgrey', 'scale_factor': 0.7}])
+
+    @staticmethod
+    def conflict_tier_badge_icon(scope: ConflictType, tier: Tier):
+        suffix = ''
+        color = scope.color()
+        if tier == Tier.S:
+            suffix = '-box-outline'
+        elif tier == Tier.A:
+            suffix = '-box-outline'
+        elif tier == Tier.C:
+            color = 'grey'
+        elif tier == Tier.D:
+            color = LIGHTGREY_ACTIVE_COLOR
+
+        return qtawesome.icon('fa5s.square', f'mdi6.alpha-{tier.value}{suffix}',
+                              options=[{'color': RELAXED_WHITE_COLOR, 'scale_factor': 1.2},
+                                       {'color': color, 'color_disabled': 'lightgrey', 'scale_factor': 1.4}])
 
     @staticmethod
     def refresh_icon(color: str = PLOTLYST_MAIN_COLOR) -> QIcon:

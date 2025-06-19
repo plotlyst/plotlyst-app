@@ -23,14 +23,14 @@ from functools import partial
 from typing import List, Optional, Any, Dict
 
 import qtanim
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QTimer
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QEvent, QTimer, QVariantAnimation, QEasingCurve
 from PyQt6.QtGui import QIcon, QColor, QPainter, QPaintEvent, QBrush, QResizeEvent, QShowEvent, QEnterEvent, \
     QDragEnterEvent, QDragLeaveEvent, QDropEvent
 from PyQt6.QtWidgets import QWidget, QSizePolicy, \
     QLineEdit, QFrame
 from overrides import overrides
-from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc, retain_when_hidden, \
-    translucent, decr_icon
+from qthandy import vbox, hbox, sp, vspacer, clear_layout, spacer, incr_font, margins, gc, translucent, decr_icon, \
+    retain_when_hidden
 from qthandy.filter import VisibilityToggleEventFilter, DragEventFilter, DropEventFilter, OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -54,14 +54,24 @@ class TimelineTheme:
     card_bg_color: str = '#ffe8d6'
 
 
-class BackstoryCard(QWidget):
-    TYPE_SIZE: int = 36
+class AbstractTimelineCard(QWidget):
     edited = pyqtSignal()
     deleteRequested = pyqtSignal(object)
 
-    def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None, iconPicker: bool = True):
+    def __init__(self, backstory: BackstoryEvent, parent=None):
         super().__init__(parent)
         self.backstory = backstory
+
+        self.btnDrag = DotsDragIcon()
+        self.btnDrag.setVisible(False)
+        decr_icon(self.btnDrag, 2)
+
+
+class BackstoryCard(AbstractTimelineCard):
+    TYPE_SIZE: int = 36
+
+    def __init__(self, backstory: BackstoryEvent, theme: TimelineTheme, parent=None, iconPicker: bool = True):
+        super().__init__(backstory, parent)
         self._theme = theme
 
         vbox(self, 0)
@@ -77,11 +87,7 @@ class BackstoryCard(QWidget):
         if iconPicker:
             self.btnType.clicked.connect(self._selectIcon)
 
-        self.btnDrag = DotsDragIcon()
-        self.btnDrag.setVisible(False)
-        decr_icon(self.btnDrag, 2)
         self.btnDrag.clicked.connect(self._showContextMenu)
-        # self.btnDrag.clicked.connect(self._remove)
 
         self.lineKeyPhrase = QLineEdit()
         self.lineKeyPhrase.setPlaceholderText('Keyphrase')
@@ -110,7 +116,6 @@ class BackstoryCard(QWidget):
         self.layout().addWidget(self.cardFrame)
 
         self.cardFrame.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self.cardFrame))
-        self.installEventFilter(VisibilityToggleEventFilter(self.btnDrag, self))
 
         self.btnType.raise_()
 
@@ -185,30 +190,41 @@ class BackstoryCard(QWidget):
         return EMOTION_COLORS.get(self.backstory.emotion, NEUTRAL_EMOTION_COLOR)
 
 
+TIMELINE_MIME_TYPE: str = 'application/timeline-event'
+
+
 class PlaceholderWidget(QFrame):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, acceptDrops: bool = True):
         super().__init__(parent)
-        self.setAcceptDrops(True)
+        self.setAcceptDrops(acceptDrops)
 
         self.btnPlus = tool_btn(IconRegistry.plus_icon('grey'), transparent_=True)
-        self.btnPlus.setIconSize(QSize(22, 22))
         sp(self.btnPlus).h_exp()
         vbox(self, 0, 0).addWidget(self.btnPlus)
         translucent(self)
         retain_when_hidden(self.btnPlus)
         self.setMinimumWidth(150)
         self.setMaximumWidth(200)
-        self.deactivate()
 
         self._hover_timer = QTimer(self)
         self._hover_timer.setSingleShot(True)
         self._hover_timer.timeout.connect(self._applyHoverStyle)
 
+        self._icon_anim = QVariantAnimation(self)
+        self._icon_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        self._icon_anim.setDuration(200)
+        self._icon_anim.valueChanged.connect(self._updateIconSize)
+
+        self.btnPlus.setHidden(True)
+        self.btnPlus.setIconSize(QSize(8, 8))
+
     def activate(self):
         self.btnPlus.setVisible(True)
+        self._animateIconSize(QSize(22, 22))
 
     def deactivate(self):
         self.btnPlus.setHidden(True)
+        self._animateIconSize(QSize(8, 8))
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
@@ -221,11 +237,14 @@ class PlaceholderWidget(QFrame):
 
     @overrides
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        self.setStyleSheet(f'background: {PLOTLYST_SECONDARY_COLOR};')
-        event.accept()
+        if event.mimeData().hasFormat(TIMELINE_MIME_TYPE):
+            self.setStyleSheet(f'background: {PLOTLYST_SECONDARY_COLOR};')
+            self._animateIconSize(QSize(22, 22))
+            event.accept()
 
     @overrides
     def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
+        self._animateIconSize(QSize(8, 8))
         self.setStyleSheet('')
 
     @overrides
@@ -234,6 +253,19 @@ class PlaceholderWidget(QFrame):
 
     def _applyHoverStyle(self):
         self.setStyleSheet(f'background: {ALT_BACKGROUND_COLOR};')
+
+    def _animateIconSize(self, target_size: QSize):
+        current_size = self.btnPlus.iconSize()
+        if current_size == target_size and self._icon_anim.state() != QVariantAnimation.State.Running:
+            return
+        self._icon_anim.stop()
+        self._icon_anim.setStartValue(current_size)
+        self._icon_anim.setEndValue(target_size)
+        self._icon_anim.start()
+
+    def _updateIconSize(self, value):
+        if isinstance(value, QSize):
+            self.btnPlus.setIconSize(value)
 
 
 class PlaceholdersRow(QWidget):
@@ -245,9 +277,11 @@ class PlaceholdersRow(QWidget):
         self._centerOnly = centerOnly
         hbox(self, 0, 0)
 
-        self.placeholderLeft = PlaceholderWidget()
-        self.placeholderCenter = PlaceholderWidget()
-        self.placeholderRight = PlaceholderWidget()
+        acceptDrops = len(mimeType) > 0
+
+        self.placeholderLeft = PlaceholderWidget(acceptDrops=acceptDrops)
+        self.placeholderCenter = PlaceholderWidget(acceptDrops=acceptDrops)
+        self.placeholderRight = PlaceholderWidget(acceptDrops=acceptDrops)
         self.layout().addWidget(spacer())
         self.layout().addWidget(self.placeholderLeft)
         self.layout().addWidget(self.placeholderCenter)
@@ -260,12 +294,13 @@ class PlaceholdersRow(QWidget):
             self.placeholderLeft.setFixedWidth(1)
             self.placeholderRight.setFixedWidth(1)
 
-        self.placeholderLeft.installEventFilter(
-            DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.LEFT)))
-        self.placeholderRight.installEventFilter(
-            DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.RIGHT)))
-        self.placeholderCenter.installEventFilter(
-            DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.CENTER)))
+        if mimeType:
+            self.placeholderLeft.installEventFilter(
+                DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.LEFT)))
+            self.placeholderRight.installEventFilter(
+                DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.RIGHT)))
+            self.placeholderCenter.installEventFilter(
+                DropEventFilter(self, [mimeType], droppedSlot=lambda x: self.dropped.emit(Position.CENTER)))
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
@@ -363,16 +398,19 @@ class TimelineLinearWidget(QWidget):
         pass
 
     def mimeType(self) -> str:
-        return 'application/timeline-event'
+        return TIMELINE_MIME_TYPE
 
     def cardClass(self):
         return BackstoryCard
+
+    def domainClass(self):
+        return BackstoryEvent
 
     def setAddButtonEnabled(self, color: str = 'grey'):
         btnAdd = tool_btn(IconRegistry.plus_icon(color), transparent_=True, parent=self)
         btnAdd.installEventFilter(OpacityEventFilter(btnAdd))
         btnAdd.setIconSize(QSize(32, 32))
-        btnAdd.clicked.connect(self.add)
+        btnAdd.clicked.connect(lambda: self.add(Position.CENTER))
 
         btnAdd.setGeometry(0, 0, btnAdd.sizeHint().width(), btnAdd.sizeHint().height())
         margins(self, top=btnAdd.sizeHint().height())
@@ -413,7 +451,10 @@ class TimelineLinearWidget(QWidget):
         painter.end()
 
     def add(self, position: Position = Position.CENTER):
-        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        backstory = self.domainClass()('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        self._addElement(backstory)
+
+    def _addElement(self, backstory: BackstoryEvent):
         self.events().append(backstory)
 
         row = self.__initEntityRow(backstory)
@@ -432,8 +473,11 @@ class TimelineLinearWidget(QWidget):
             row.setVisible(True)
 
     def _insert(self, event: TimelineEntityRow, position: Position):
+        backstory = self.domainClass()('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
+        self._insertElement(backstory, event)
+
+    def _insertElement(self, backstory: BackstoryEvent, event: TimelineEntityRow):
         i = self.layout().indexOf(event)
-        backstory = BackstoryEvent('', '', type_color=NEUTRAL_EMOTION_COLOR, position=position)
         self.events().insert(i, backstory)
 
         row = self.__initEntityRow(backstory)

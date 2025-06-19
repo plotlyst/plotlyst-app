@@ -134,6 +134,19 @@ text_edit_styles = f"""
         border: 1px solid #D4B8E0;
     }}
     
+    QTextEdit[rounded-on-bottom=true] {{
+        border: 1px solid lightgrey;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        padding: 4px;
+    }}
+    
+    QTextEdit[rounded-on-bottom=true]:focus {{
+        border: 1px solid #D4B8E0;
+    }}
+    
     QTextEdit[white-bg=true] {{
         background-color: #FcFcFc;
     }}

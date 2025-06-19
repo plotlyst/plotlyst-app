@@ -300,7 +300,7 @@ class RoadmapView(QWidget, Ui_RoadmapView):
 
         self.btnAll.setText(f'All ({versions_counter.get("Free", 0) + versions_counter.get("Plus", 0)})')
         self.btnFree.setText(f'Free ({versions_counter.get("Free", 0)})')
-        self.btnPlus.setText(f'Plus ({versions_counter.get("Plus", 0)})')
+        self.btnPlus.setText(f'Premium ({versions_counter.get("Plus", 0)})')
 
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         self.lblLastUpdated.setText(f"Last updated: {now}")

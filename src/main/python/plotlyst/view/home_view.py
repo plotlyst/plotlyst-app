@@ -112,6 +112,7 @@ class HomeView(AbstractView):
         self.ui.btnPinterest.clicked.connect(lambda: open_url('https://pinterest.com/Plotlyst'))
 
         self.ui.btnPurchase.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
+        self.ui.btnFullExperienceLink.setVisible(app_env.profile().get('license_type', 'FREE') == 'FREE')
         retain_when_hidden(self.ui.btnPurchase)
 
         self.ui.btnYoutube.setHidden(True)
@@ -128,7 +129,7 @@ class HomeView(AbstractView):
         self.ui.btnRoadmap.setIcon(
             IconRegistry.from_name('fa5s.road', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.ui.btnPatrons.setIcon(
-            IconRegistry.from_name('fa5b.patreon', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
+            IconRegistry.from_name('msc.organization', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
         self.ui.btnKnowledgeBase.setIcon(
             IconRegistry.from_name('fa5s.graduation-cap', NAV_BAR_BUTTON_DEFAULT_COLOR, NAV_BAR_BUTTON_CHECKED_COLOR))
 

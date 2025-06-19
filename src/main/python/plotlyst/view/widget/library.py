@@ -60,9 +60,6 @@ class NovelNode(ContainerNode):
         self._actionChangeIcon.setVisible(True)
         self.refresh()
 
-        if novel.story_type == StoryType.Series and not app_env.profile().get('series'):
-            self.setDisabled(True)
-
     def novel(self) -> NovelDescriptor:
         return self._novel
 
@@ -144,7 +141,7 @@ class ShelvesTreeView(TreeView):
 
         self._wdgNovels.clearChildren()
         for novel in novels:
-            if app_env.profile().get('series') and novel.parent:
+            if novel.parent:
                 novels_under_series.append(novel)
                 continue
             node = self.__initNode(novel)
@@ -518,8 +515,6 @@ class StoryCreationDialog(PopupDialog):
         self.wdgTypesContainer.layout().addWidget(self.btnDocx)
         self.wdgTypesContainer.layout().addWidget(vspacer())
 
-        self.btnNewSeries.setVisible(app_env.profile().get('series', False))
-
         self.stackedWidget = QStackedWidget()
         self.wdgRight = QWidget()
         vbox(self.wdgRight).addWidget(self.stackedWidget)
@@ -671,8 +666,8 @@ class StoryCreationDialog(PopupDialog):
             self.btnNext.setVisible(False)
             self.btnFinish.setVisible(False)
         elif self.stackedWidget.currentWidget() == self.pageImportedPreview:
-            self.btnNext.setVisible(False)
-            self.btnFinish.setVisible(True)
+            self.btnNext.setVisible(True)
+            self.btnFinish.setVisible(False)
 
     def _wizardToggled(self, toggled: bool):
         self.btnNext.setText('Start wizard' if toggled else 'Create')
@@ -683,8 +678,15 @@ class StoryCreationDialog(PopupDialog):
         self.btnNext.setIcon(icon)
 
     def _nextClicked(self):
-        if self.stackedWidget.currentWidget() == self.pageNewStory and self.toggleWizard.isChecked():
-            self._wizardNovel = self.__newNovel()
+        if self.stackedWidget.currentWidget() == self.pageWizard:
+            self._wizard.next()
+        else:
+            if self.stackedWidget.currentWidget() == self.pageImportedPreview:
+                self._wizardNovel = self._importedNovel
+            elif self.stackedWidget.currentWidget() == self.pageNewStory and self.toggleWizard.isChecked():
+                self._wizardNovel = self.__newNovel()
+            else:
+                return self.accept()
             self._wizard = NovelCustomizationWizard(self._wizardNovel)
             self._wizard.stack.currentChanged.connect(self._wizardPageChanged)
             self._wizard.finished.connect(self.accept)
@@ -696,10 +698,6 @@ class StoryCreationDialog(PopupDialog):
             self.btnNext.setIcon(IconRegistry.from_name('fa5s.chevron-circle-right', RELAXED_WHITE_COLOR))
             self.btnFinish.setVisible(False)
             self.stackedWidget.setCurrentWidget(self.pageWizard)
-        elif self.stackedWidget.currentWidget() == self.pageWizard:
-            self._wizard.next()
-        else:
-            self.accept()
 
     def _wizardPageChanged(self):
         if not self._wizard.hasMore():
@@ -754,6 +752,9 @@ class StoryCreationDialog(PopupDialog):
         self.setMaximumWidth(MAXIMUM_SIZE)
         self.wdgImportDetails.setVisible(True)
         self.wdgImportDetails.setNovel(self._importedNovel)
+
+        self.btnNext.setText('Next')
+        self.btnNext.setIcon(IconRegistry.from_name('fa5s.chevron-circle-right', RELAXED_WHITE_COLOR))
 
     def __newNovel(self) -> Novel:
         return Novel.new_novel(self.lineTitle.text() if self.lineTitle.text() else 'My new novel')

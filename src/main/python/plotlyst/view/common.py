@@ -275,15 +275,15 @@ def link_buttons_to_pages(stack: QStackedWidget, buttons: List[Tuple[QAbstractBu
         btn.toggled.connect(partial(_open, wdg))
 
 
-def link_editor_to_btn(editor: QWidget, btn: QAbstractButton, disabledShake: bool = False):
+def link_editor_to_btn(editor: QWidget, btn: QAbstractButton, disabledShake: bool = False,
+                       shakedWidget: Optional[QWidget] = None):
     if isinstance(editor, QLineEdit):
         editor.textChanged.connect(lambda: btn.setEnabled((len(editor.text()) > 0)))
     elif isinstance(editor, QTextEdit):
         editor.textChanged.connect(lambda: btn.setEnabled((len(editor.toPlainText()) > 0)))
 
     if disabledShake:
-        # btn.installEventFilter(DisabledClickEventFilter(btn, slot=lambda: qtanim.shake(editor)))
-        btn.installEventFilter(DisabledClickEventFilter(btn, lambda: qtanim.shake(editor)))
+        btn.installEventFilter(DisabledClickEventFilter(btn, lambda: qtanim.shake(shakedWidget or editor)))
 
 
 def scroll_to_top(scroll_area: QAbstractScrollArea):
@@ -505,7 +505,7 @@ def frame(parent=None):
 def label(text: str = '', bold: Optional[bool] = None, italic: Optional[bool] = None, underline: Optional[bool] = None,
           description: Optional[bool] = None, wordWrap: Optional[bool] = None, h1: Optional[bool] = None,
           h2: Optional[bool] = None, h3: Optional[bool] = None, h4: Optional[bool] = None, h5: Optional[bool] = None,
-          color=None, decr_font_diff: int = 0, incr_font_diff: int = 0,
+          color=None, decr_font_diff: int = 0, incr_font_diff: int = 0, centered: bool = False,
           parent=None) -> QLabel:
     lbl = QLabel(text, parent)
     font = lbl.font()
@@ -540,6 +540,9 @@ def label(text: str = '', bold: Optional[bool] = None, italic: Optional[bool] = 
 
     if wordWrap:
         lbl.setWordWrap(wordWrap)
+
+    if centered:
+        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     return lbl
 
@@ -700,8 +703,11 @@ def columns(margin: int = 2, spacing: int = 3) -> QWidget:
     return wdg
 
 
-def rows(margin: int = 2, spacing: int = 3) -> QWidget:
-    wdg = QWidget()
+def rows(margin: int = 2, spacing: int = 3, frame_: bool = False) -> QWidget:
+    if frame_:
+        wdg = frame()
+    else:
+        wdg = QWidget()
     vbox(wdg, margin, spacing)
     return wdg
 
@@ -755,3 +761,15 @@ def sound_effect(source: str, volume: float = 0.6) -> QSoundEffect:
     effect.setVolume(volume)
 
     return effect
+
+  
+def set_font(wdg: QWidget, family: str):
+    font = wdg.font()
+    font.setFamily(family)
+    wdg.setFont(font)
+
+
+def qpainter(parent: QWidget) -> QPainter:
+    painter = QPainter(parent)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    return painter

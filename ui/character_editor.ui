@@ -335,7 +335,10 @@
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="btnRole">
+               <widget class="SecondaryActionPushButton" name="btnRole">
+                <property name="font">
+                 <font/>
+                </property>
                 <property name="cursor">
                  <cursorShape>PointingHandCursor</cursorShape>
                 </property>
@@ -343,17 +346,7 @@
                  <enum>Qt::ClickFocus</enum>
                 </property>
                 <property name="styleSheet">
-                 <string notr="true">.QPushButton {
-	border: 2px dashed grey;
-	border-radius: 6px;
-	padding: 3px;
-	font: italic;
-}
-
-.QPushButton:pressed {
-	border: 2px solid grey;
-}
-</string>
+                 <string notr="true"/>
                 </property>
                 <property name="text">
                  <string>Role</string>
@@ -472,8 +465,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>858</width>
-            <height>477</height>
+            <width>875</width>
+            <height>479</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -516,33 +509,8 @@
        <enum>Qt::ClickFocus</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
-      <widget class="QWidget" name="tabTopics">
-       <property name="relaxed-white-bg" stdset="0">
-        <bool>true</bool>
-       </property>
-       <attribute name="title">
-        <string>Topics</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_6">
-        <property name="spacing">
-         <number>3</number>
-        </property>
-        <property name="leftMargin">
-         <number>25</number>
-        </property>
-        <property name="topMargin">
-         <number>15</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-       </layout>
-      </widget>
       <widget class="QWidget" name="tabBackstory">
        <attribute name="title">
         <string>Backstory</string>
@@ -576,7 +544,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>327</width>
+             <width>310</width>
              <height>596</height>
             </rect>
            </property>
@@ -624,28 +592,28 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tabGoals">
+      <widget class="QWidget" name="tabBinder">
        <property name="relaxed-white-bg" stdset="0">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <attribute name="title">
-        <string>Plan</string>
+        <string>Codex</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <property name="spacing">
-         <number>3</number>
+         <number>0</number>
         </property>
         <property name="leftMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="topMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="rightMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="bottomMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <item>
          <widget class="QScrollArea" name="scrollArea_2">
@@ -655,33 +623,33 @@
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaPlans">
+          <widget class="QWidget" name="scrollAreaBinderWdg">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>325</width>
-             <height>594</height>
+             <width>312</width>
+             <height>598</height>
             </rect>
            </property>
            <property name="relaxed-white-bg" stdset="0">
-            <bool>true</bool>
+            <bool>false</bool>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_11">
             <property name="spacing">
-             <number>3</number>
+             <number>0</number>
             </property>
             <property name="leftMargin">
-             <number>2</number>
+             <number>0</number>
             </property>
             <property name="topMargin">
-             <number>2</number>
+             <number>0</number>
             </property>
             <property name="rightMargin">
-             <number>2</number>
+             <number>0</number>
             </property>
             <property name="bottomMargin">
-             <number>2</number>
+             <number>0</number>
             </property>
            </layout>
           </widget>
@@ -709,34 +677,6 @@
         <property name="bottomMargin">
          <number>2</number>
         </property>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabNotes">
-       <property name="relaxed-white-bg" stdset="0">
-        <bool>true</bool>
-       </property>
-       <attribute name="title">
-        <string>Notes</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_9">
-        <property name="spacing">
-         <number>3</number>
-        </property>
-        <property name="leftMargin">
-         <number>10</number>
-        </property>
-        <property name="topMargin">
-         <number>15</number>
-        </property>
-        <property name="rightMargin">
-         <number>3</number>
-        </property>
-        <property name="bottomMargin">
-         <number>3</number>
-        </property>
-        <item>
-         <widget class="DocumentTextEditor" name="textEdit" native="true"/>
-        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="tabBackstoryDummy">
@@ -770,11 +710,6 @@
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>DocumentTextEditor</class>
-   <extends>QWidget</extends>
-   <header>plotlyst.view.widget.input</header>
-  </customwidget>
   <customwidget>
    <class>CharacterAvatar</class>
    <extends>QWidget</extends>

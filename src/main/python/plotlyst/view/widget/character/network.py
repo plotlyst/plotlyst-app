@@ -75,6 +75,8 @@ class CharacterNetworkView(NetworkGraphicsView):
         self._btnAddCharacter = self._newControlButton(IconRegistry.character_icon(BLACK_COLOR), 'Add new character',
                                                        GraphicsItemType.CHARACTER)
         self._controlsNavBar.layout().addWidget(line())
+        self._btnAddText = self._newControlButton(
+            IconRegistry.from_name('mdi6.format-text'), 'Add new text', GraphicsItemType.TEXT)
         self._btnAddNote = self._newControlButton(
             IconRegistry.from_name('msc.note'), 'Add new note', GraphicsItemType.NOTE)
         self._btnAddIcon = self._newControlButton(

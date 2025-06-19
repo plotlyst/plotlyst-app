@@ -28,7 +28,7 @@ from PyQt6.QtGui import QPainter, QPen, QPainterPath, QColor, QIcon, QPolygonF, 
     QTextDocument, QUndoStack
 from PyQt6.QtWidgets import QAbstractGraphicsShapeItem, QGraphicsItem, QGraphicsPathItem, QGraphicsSceneMouseEvent, \
     QStyleOptionGraphicsItem, QWidget, \
-    QGraphicsSceneHoverEvent, QGraphicsPolygonItem, QApplication, QGraphicsOpacityEffect, QGraphicsTextItem
+    QGraphicsSceneHoverEvent, QGraphicsPolygonItem, QApplication, QGraphicsTextItem, QGraphicsOpacityEffect
 from overrides import overrides
 from qthandy import pointy
 
@@ -298,6 +298,9 @@ class AbstractSocketItem(QAbstractGraphicsShapeItem):
         self.prepareGeometryChange()
         self.update()
 
+        if self._linkAvailable and self.networkScene() and self.networkScene().linkMode():
+            self.networkScene().setPlaceholderAngle(self.angle())
+
         for connector in self._connectors:
             connector.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
@@ -308,6 +311,9 @@ class AbstractSocketItem(QAbstractGraphicsShapeItem):
         self.setToolTip('Connect')
         self.prepareGeometryChange()
         self.update()
+
+        if self.networkScene() and self.networkScene().linkMode():
+            self.networkScene().resetPlaceholderAngle()
 
         for connector in self._connectors:
             connector.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
@@ -486,7 +492,21 @@ class ConnectorItem(QGraphicsPathItem):
         self._label = LabelItem(self)
         self._label.setVisible(False)
 
+        self.setAcceptHoverEvents(True)
         self.rearrange()
+
+    @overrides
+    def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
+        super().hoverEnterEvent(event)
+        if self.networkScene() and not self.networkScene().linkMode():
+            effect = QGraphicsOpacityEffect()
+            effect.setOpacity(0.5)
+            self.setGraphicsEffect(effect)
+
+    @overrides
+    def hoverLeaveEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
+        super().hoverLeaveEvent(event)
+        self.setGraphicsEffect(None)
 
     def networkScene(self) -> 'NetworkScene':
         return self.scene()
@@ -831,6 +851,18 @@ class NodeItem(QAbstractGraphicsShapeItem):
     def color(self) -> QColor:
         return QColor(self._node.color)
 
+    def transparent(self) -> bool:
+        return self._node.transparent
+
+    def setTransparent(self, transparent: bool):
+        self._node.transparent = transparent
+        self.networkScene().nodeChangedEvent(self._node)
+        self.update()
+        if transparent:
+            self.setGraphicsEffect(None)
+        else:
+            self.activate()
+
     def networkScene(self) -> 'NetworkScene':
         return self.scene()
 
@@ -864,14 +896,44 @@ class NodeItem(QAbstractGraphicsShapeItem):
     @overrides
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
-            if self._confinedRect is not None:
+            if self._confinedRect is not None or self._stickyPoint is not None or self.networkScene().isSnapToGrid():
                 new_pos = value
-                new_pos.setX(max(self._confinedRect.left(), min(self._confinedRect.right(), new_pos.x())))
-                new_pos.setY(max(self._confinedRect.top(), min(self._confinedRect.bottom(), new_pos.y())))
+                if self._confinedRect is not None:
+                    new_pos.setX(max(self._confinedRect.left(), min(self._confinedRect.right(), new_pos.x())))
+                    new_pos.setY(max(self._confinedRect.top(), min(self._confinedRect.bottom(), new_pos.y())))
 
-                if self._stickyPoint:
+                if self._stickyPoint is not None:
                     if self._stickyPoint.y() - self._stickyRange < new_pos.y() < self._stickyPoint.y() + self._stickyRange:
                         new_pos.setY(self._stickyPoint.y())
+
+                if self.networkScene().isSnapToGrid():
+                    grid_dist = self.networkScene().gridDistance()
+                    grid_range = self.networkScene().gridRange()
+
+                    center_offset = self.boundingRect().center()
+
+                    center_scene_pos = new_pos + center_offset
+
+                    x_mod = center_scene_pos.x() % grid_dist
+                    y_mod = center_scene_pos.y() % grid_dist
+
+                    snapped_center_x = center_scene_pos.x()
+                    snapped_center_y = center_scene_pos.y()
+
+                    if x_mod < grid_range:
+                        snapped_center_x -= x_mod
+                    elif x_mod > grid_dist - grid_range:
+                        snapped_center_x += (grid_dist - x_mod)
+
+                    if y_mod < grid_range:
+                        snapped_center_y -= y_mod
+                    elif y_mod > grid_dist - grid_range:
+                        snapped_center_y += (grid_dist - y_mod)
+
+                    new_pos = QPointF(
+                        snapped_center_x - center_offset.x(),
+                        snapped_center_y - center_offset.y()
+                    )
 
                 self.setPos(new_pos)
                 self._onPosChanged()
@@ -881,6 +943,10 @@ class NodeItem(QAbstractGraphicsShapeItem):
         elif change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
             self._onSelection(value)
         return super(NodeItem, self).itemChange(change, value)
+
+    # @overrides
+    # def contextMenuEvent(self, event: QContextMenuEvent):
+    #     self.networkScene().showContextMenu(self)
 
     @abstractmethod
     def socket(self, angle: float) -> AbstractSocketItem:
@@ -1103,8 +1169,15 @@ class CharacterItem(CircleShapedNodeItem):
             effect = QGraphicsOpacityEffect()
             effect.setOpacity(0.3)
             self._label.setGraphicsEffect(effect)
+            self._label.setAcceptHoverEvents(False)
         else:
             self._label.setGraphicsEffect(None)
+            self._label.setAcceptHoverEvents(True)
+
+    @overrides
+    def _setConnectionEnabled(self, enabled: bool):
+        super()._setConnectionEnabled(enabled)
+        self._label.setAcceptHoverEvents(not enabled)
 
 
 class IconItem(CircleShapedNodeItem):
@@ -1150,7 +1223,7 @@ class EventItem(NodeItem):
 
     def __init__(self, node: Node, parent=None):
         super().__init__(node, parent)
-        self._placeholderText: str = 'New event'
+        self._placeholderText: str = 'New event' if node.type == GraphicsItemType.EVENT else 'Text'
         self._text: str = self._node.text if self._node.text else ''
         self._setTooltip()
 
@@ -1200,7 +1273,6 @@ class EventItem(NodeItem):
         self._text = text
         self._node.text = text
         self._setTooltip()
-        self.setSelected(False)
         self._refresh()
         self.networkScene().nodeChangedEvent(self._node)
 
@@ -1316,7 +1388,8 @@ class EventItem(NodeItem):
 
     @overrides
     def activate(self):
-        shadow(self)
+        if not self._node.transparent:
+            shadow(self)
 
     @overrides
     def boundingRect(self) -> QRectF:
@@ -1329,8 +1402,9 @@ class EventItem(NodeItem):
             painter.drawRoundedRect(self.Margin, self.Margin, self._nestedRectWidth, self._nestedRectHeight, 2, 2)
 
         painter.setPen(QPen(QColor(self._node.color), 1))
-        painter.setBrush(QColor(WHITE_COLOR))
-        painter.drawRoundedRect(self.Margin, self.Margin, self._nestedRectWidth, self._nestedRectHeight, 16, 16)
+        if not self._node.transparent:
+            painter.setBrush(QColor(WHITE_COLOR))
+            painter.drawRoundedRect(self.Margin, self.Margin, self._nestedRectWidth, self._nestedRectHeight, 16, 16)
         painter.setFont(self._font)
         painter.drawText(self._textRect, Qt.AlignmentFlag.AlignCenter,
                          self._text if self._text else self._placeholderText)
@@ -1442,6 +1516,10 @@ class NoteItem(NodeItem):
 
         self._recalculateRect()
         self._resizeItem.setVisible(False)
+        self.activate()
+
+    @overrides
+    def activate(self):
         if not self._node.transparent:
             shadow(self)
 
@@ -1461,18 +1539,6 @@ class NoteItem(NodeItem):
 
         self.networkScene().nodeChangedEvent(self._node)
         self._refresh()
-
-    def transparent(self) -> bool:
-        return self._node.transparent
-
-    def setTransparent(self, transparent: bool):
-        self._node.transparent = transparent
-        self.networkScene().nodeChangedEvent(self._node)
-        self.update()
-        if transparent:
-            self.setGraphicsEffect(None)
-        else:
-            shadow(self)
 
     @overrides
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:

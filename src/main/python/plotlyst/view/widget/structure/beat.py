@@ -38,6 +38,7 @@ from plotlyst.view.widget.structure.timeline import StoryStructureTimelineWidget
 
 class BeatWidget(QFrame):
     beatHighlighted = pyqtSignal(StoryBeat)
+    beatHighlightCleared = pyqtSignal()
     beatToggled = pyqtSignal(StoryBeat)
 
     def __init__(self, novel: Novel, beat: StoryBeat, checkOccupiedBeats: bool = True, parent=None,
@@ -161,6 +162,7 @@ class BeatWidget(QFrame):
             self.cbToggle.setHidden(True)
             # self.btnSceneSelector.setHidden(True)
             self.setStyleSheet(f'.BeatWidget {{background-color: {RELAXED_WHITE_COLOR};}}')
+            self.beatHighlightCleared.emit()
 
         return super().eventFilter(watched, event)
 
@@ -275,6 +277,7 @@ class BeatsPreview(QFrame):
         wdg.setMinimumWidth(200)
         wdg.setMaximumWidth(300)
         wdg.beatHighlighted.connect(self._structurePreview.highlightBeat)
+        wdg.beatHighlightCleared.connect(self._structurePreview.clearHighlights)
         wdg.beatToggled.connect(partial(self._structurePreview.toggleBeatVisibility, beat))
 
         return wdg

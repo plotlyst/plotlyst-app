@@ -38,8 +38,8 @@ from plotlyst.common import recursive
 from plotlyst.core.domain import Novel, Character, Scene, Chapter, SceneStage, \
     default_stages, StoryStructure, \
     default_story_structures, NovelDescriptor, TemplateValue, \
-    Conflict, BackstoryEvent, Comment, Document, default_documents, DocumentType, Causality, \
-    Plot, ScenePlotReference, SceneStructureAgenda, \
+    BackstoryEvent, Comment, Document, default_documents, DocumentType, Causality, \
+    Plot, ScenePlotReference, CharacterAgency, \
     three_act_structure, SceneStoryBeat, Tag, default_general_tags, TagType, \
     default_tag_types, LanguageSettings, ImportOrigin, NovelPreferences, Goal, CharacterPreferences, TagReference, \
     ScenePlotReferenceData, MiceQuotient, SceneDrive, WorldBuilding, Board, \
@@ -48,7 +48,7 @@ from plotlyst.core.domain import Novel, Character, Scene, Chapter, SceneStage, \
     DocumentProgress, ReaderQuestion, SceneReaderQuestion, ImageRef, SceneReaderInformation, \
     CharacterProfileSectionReference, CharacterMultiAttribute, default_character_profile, CharacterPersonality, \
     StrengthWeaknessAttribute, PremiseBuilder, SceneFunctions, Location, default_locations, TopicElement, StoryType, \
-    DailyProductivity, NovelInfo, SceneMigration
+    DailyProductivity, NovelInfo, SceneMigration, WorldBuildingEntity, character_codex_root
 from plotlyst.core.template import Role, exclude_if_empty, exclude_if_black, exclude_if_false
 from plotlyst.env import app_env
 
@@ -153,6 +153,7 @@ class CharacterInfo:
     personality: CharacterPersonality = field(default_factory=CharacterPersonality)
     alias: str = field(default='', metadata=config(exclude=exclude_if_empty))
     origin_id: Optional[uuid.UUID] = field(default=None, metadata=config(exclude=exclude_if_empty))
+    codex: WorldBuildingEntity = field(default_factory=character_codex_root)
 
 
 @dataclass
@@ -180,7 +181,7 @@ class SceneInfo:
     synopsis: str = ''
     pov: Optional[uuid.UUID] = None
     characters: List[uuid.UUID] = field(default_factory=list)
-    agendas: List[SceneStructureAgenda] = field(default_factory=list)
+    agency: List[CharacterAgency] = field(default_factory=list)
     wip: bool = False
     plots: List[ScenePlotReferenceInfo] = field(default_factory=list)
     day: int = 1
@@ -223,7 +224,6 @@ class NovelInfo:
     chapters: List[ChapterInfo] = field(default_factory=list)
     custom_chapters: int = field(default=0, metadata=config(exclude=exclude_if_empty))
     stages: List[SceneStage] = field(default_factory=default_stages)
-    conflicts: List[Conflict] = field(default_factory=list)
     goals: List[Goal] = field(default_factory=list)
     tags: List[Tag] = field(default_factory=default_general_tags)
     tag_types: List[TagType] = field(default_factory=default_tag_types, metadata=config(exclude=exclude_if_empty))
@@ -546,7 +546,7 @@ class JsonClient:
                                       flaws=info.flaws,
                                       strengths=info.strengths,
                                       personality=info.personality, alias=info.alias,
-                                      origin_id=info.origin_id
+                                      origin_id=info.origin_id, codex=info.codex
                                       )
                 if info.avatar_id:
                     bytes = self._load_image(self.__image_file(info.avatar_id))
@@ -556,17 +556,6 @@ class JsonClient:
         characters_ids: Dict[str, Character] = {}
         for char in characters:
             characters_ids[str(char.id)] = char
-
-        conflicts = []
-        conflict_ids = {}
-        for conflict in novel_info.conflicts:
-            if str(conflict.character_id) not in characters_ids.keys():
-                continue
-            if conflict.conflicting_character_id and str(
-                    conflict.conflicting_character_id) not in characters_ids.keys():
-                continue
-            conflicts.append(conflict)
-            conflict_ids[str(conflict.id)] = conflict
 
         if not novel_info.story_structures:
             novel_info.story_structures = [copy.deepcopy(three_act_structure)]
@@ -610,7 +599,7 @@ class JsonClient:
 
                 scene = Scene(title=info.title, id=info.id, synopsis=info.synopsis,
                               wip=info.wip, day=info.day,
-                              plot_values=scene_plots, pov=pov, characters=scene_characters, agendas=info.agendas,
+                              plot_values=scene_plots, pov=pov, characters=scene_characters, agency=info.agency,
                               chapter=chapter, stage=stage, beats=info.beats,
                               comments=info.comments, tag_references=info.tag_references,
                               document=info.document, manuscript=info.manuscript, drive=info.drive,
@@ -649,7 +638,7 @@ class JsonClient:
                       scenes=scenes, chapters=chapters, custom_chapters=novel_info.custom_chapters,
                       stages=novel_info.stages,
                       story_structures=novel_info.story_structures,
-                      conflicts=conflicts, goals=[x for x in novel_info.goals if str(x.id) in goal_ids], tags=tags_dict,
+                      goals=[x for x in novel_info.goals if str(x.id) in goal_ids], tags=tags_dict,
                       documents=novel_info.documents, premise=novel_info.premise, synopsis=novel_info.synopsis,
                       prefs=novel_info.prefs, locations=novel_info.locations,
                       manuscript_goals=novel_info.manuscript_goals,
@@ -688,7 +677,6 @@ class JsonClient:
                                chapters=[ChapterInfo(title=x.title, id=x.id, type=x.type) for x in novel.chapters],
                                custom_chapters=novel.custom_chapters,
                                stages=novel.stages, story_structures=novel.story_structures,
-                               conflicts=novel.conflicts,
                                goals=novel.goals,
                                tags=[item for sublist in novel.tags.values() for item in sublist if not item.builtin],
                                tag_types=list(novel.tags.keys()),
@@ -739,7 +727,7 @@ class JsonClient:
                                   strengths=char.strengths,
                                   personality=char.personality,
                                   alias=char.alias,
-                                  origin_id=char.origin_id
+                                  origin_id=char.origin_id, codex=char.codex
                                   )
         self.__persist_info(self.characters_dir(novel), char_info)
 
@@ -749,7 +737,7 @@ class JsonClient:
         info = SceneInfo(id=scene.id, title=scene.title, synopsis=scene.synopsis,
                          wip=scene.wip, day=scene.day,
                          pov=self.__id_or_none(scene.pov), plots=plots, characters=characters,
-                         agendas=scene.agendas,
+                         agency=scene.agency,
                          chapter=self.__id_or_none(scene.chapter),
                          stage=self.__id_or_none(scene.stage),
                          beats=scene.beats, comments=scene.comments,

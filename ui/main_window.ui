@@ -1074,6 +1074,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionPatronRecognitionBuilder"/>
+    <addaction name="actionCaptureProgress"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -1305,6 +1306,11 @@
   <action name="actionPurchase">
    <property name="text">
     <string>Purchase</string>
+   </property>
+  </action>
+  <action name="actionCaptureProgress">
+   <property name="text">
+    <string>Capture progress</string>
    </property>
   </action>
  </widget>

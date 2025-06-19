@@ -157,13 +157,13 @@ plot_value_help = """<html>When a storyline is linked to a scene, these values c
 </html>"""
 
 scene_disaster_outcome_help = """<html><head/><body><p>Scene ends with a <span style=" font-weight:600; color:#f4442e;">disaster</span>,
- so the agenda character's scene goal remains unachieved</p></body></html>"""
+ so the character's goal remains unresolved</p></body></html>"""
 
 scene_trade_off_outcome_help = """<html><head/><body><p>Scene ends with a bittersweet <span style=" font-weight:600; color:#832161;">trade-off</span>,
- so the agenda character's scene goal is achieved but not without a price</p></body></html>"""
+ so the character's goal is achieved but not without a price</p></body></html>"""
 
 scene_resolution_outcome_help = """<html><head/><body><p>Scene ends with a <span style=" font-weight:600; color:#6ba368;">resolution</span>,
- so the agenda character's scene goal is achieved</p></body></html>"""
+ so the character's goal is achieved</p></body></html>"""
 
 scene_motion_outcome_help = """<html><head/><body><p>Scene sets the story in motion without delivering any imminent disaster or resolution outcome</p></body></html>"""
 

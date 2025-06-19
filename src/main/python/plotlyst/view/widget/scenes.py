@@ -47,7 +47,7 @@ from plotlyst.events import SceneStatusChangedEvent, \
     ActiveSceneStageChanged, AvailableSceneStagesChanged, NovelConflictTrackingToggleEvent
 from plotlyst.model.common import DistributionFilterProxyModel
 from plotlyst.model.distribution import CharactersScenesDistributionTableModel, TagScenesDistributionTableModel, \
-    ConflictScenesDistributionTableModel, InformationScenesDistributionTableModel
+    InformationScenesDistributionTableModel
 from plotlyst.model.novel import NovelTagsTreeModel, TagNode
 from plotlyst.model.scenes_model import ScenesTableModel
 from plotlyst.service.persistence import RepositoryPersistenceManager
@@ -72,7 +72,7 @@ class SceneOutcomeSelector(QWidget):
     def __init__(self, parent=None, autoSelect: bool = True, extended: bool = False):
         super().__init__(parent)
         self._outcome = SceneOutcome.DISASTER
-        hbox(self)
+        hbox(self, 0)
         self.btnDisaster = tool_btn(IconRegistry.disaster_icon(color='grey'), scene_disaster_outcome_help,
                                     checkable=True)
         self.btnResolution = tool_btn(IconRegistry.success_icon(color='grey'), scene_resolution_outcome_help,
@@ -150,9 +150,9 @@ class SceneOutcomeSelector(QWidget):
         btn.setIconSize(QSize(20, 20))
         btn.setStyleSheet(f'''
         QToolButton {{
-            border-radius: 12px;
+            border-radius: 16px;
             border: 1px hidden lightgrey;
-            padding: 2px;
+            padding: 5px;
         }}
         QToolButton:hover {{
             background: {color};
@@ -638,7 +638,6 @@ class ScenesDistributionWidget(QWidget, Ui_CharactersScenesDistributionWidget, E
         self.tblSceneDistribution.selectionModel().selectionChanged.connect(self._on_scene_selected)
 
         self.btnCharacters.toggled.connect(self._toggle_characters)
-        self.btnConflicts.toggled.connect(self._toggle_conflicts)
         self.btnInformation.toggled.connect(self._toggle_information)
         self.btnTags.toggled.connect(self._toggle_tags)
 
@@ -701,17 +700,6 @@ class ScenesDistributionWidget(QWidget, Ui_CharactersScenesDistributionWidget, E
     #         self.tblCharacters.setMaximumWidth(170)
     #
     #         self.spinAverage.setVisible(False)
-
-    def _toggle_conflicts(self, toggled: bool):
-        if toggled:
-            self._model = ConflictScenesDistributionTableModel(self.novel)
-            self._scenes_proxy.setSourceModel(self._model)
-            self.tblCharacters.showColumn(0)
-            self.tblCharacters.setColumnWidth(CharactersScenesDistributionTableModel.IndexMeta, 34)
-            self.tblCharacters.setColumnWidth(CharactersScenesDistributionTableModel.IndexTags, 170)
-            self.tblCharacters.setMaximumWidth(204)
-
-            self.spinAverage.setVisible(False)
 
     def _toggle_information(self, toggled: bool):
         if toggled:

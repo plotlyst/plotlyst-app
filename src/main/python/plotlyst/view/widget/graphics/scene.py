@@ -62,6 +62,7 @@ class NetworkScene(QGraphicsScene):
     editItem = pyqtSignal(NodeItem)
     itemMoved = pyqtSignal(NodeItem)
     hideItemEditor = pyqtSignal()
+    contextMenu = pyqtSignal(NodeItem)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -111,12 +112,31 @@ class NetworkScene(QGraphicsScene):
     def endAdditionMode(self):
         self._additionDescriptor = None
 
+    def isSnapToGrid(self) -> bool:
+        return False
+
+    def gridDistance(self) -> int:
+        return 50
+
+    def gridRange(self) -> int:
+        return 15
+
     def linkMode(self) -> bool:
         return self._linkMode
 
     def linkSource(self) -> Optional[AbstractSocketItem]:
         if self._connectorPlaceholder is not None:
             return self._connectorPlaceholder.source()
+
+    def setPlaceholderAngle(self, angle: float):
+        if self._placeholder:
+            self._placeholder.setAngle(angle)
+            self._connectorPlaceholder.rearrange()
+
+    def resetPlaceholderAngle(self):
+        if self._placeholder:
+            self._placeholder.setAngle(0)
+            self._connectorPlaceholder.rearrange()
 
     def startLink(self, source: AbstractSocketItem):
         self._linkMode = True
@@ -179,6 +199,9 @@ class NetworkScene(QGraphicsScene):
 
     def editItemEvent(self, item: Node):
         self.editItem.emit(item)
+
+    # def showContextMenu(self, item: Node):
+    #     self.contextMenu.emit(item)
 
     @overrides
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -302,10 +325,12 @@ class NetworkScene(QGraphicsScene):
             connectorItem.target().addConnector(connectorItem)
             self._diagram.data.connectors.append(connectorItem.connector())
             self.addItem(connectorItem)
+            connectorItem.setVisible(True)
 
         if isinstance(item, NodeItem):
             self._diagram.data.nodes.append(item.node())
             self.addItem(item)
+            item.setVisible(True)
             if connectors:
                 for connector in connectors:
                     addConnectorItem(connector)
@@ -315,9 +340,6 @@ class NetworkScene(QGraphicsScene):
 
     def removeNetworkItem(self, item: Union[NodeItem, ConnectorItem]):
         self._removeItem(item)
-
-    def removeConnectorItem(self, connector: ConnectorItem):
-        self._removeItem(connector)
 
     @staticmethod
     def toCharacterNode(scenePos: QPointF) -> Node:
@@ -374,6 +396,7 @@ class NetworkScene(QGraphicsScene):
             for connectorItem in item.connectors():
                 try:
                     self._clearUpConnectorItem(connectorItem)
+                    connectorItem.setVisible(False)
                     self.removeItem(connectorItem)
                 except ValueError:
                     pass  # connector might have been already removed if a node was deleted first
@@ -384,8 +407,8 @@ class NetworkScene(QGraphicsScene):
             self._clearUpConnectorItem(item)
 
         if item.scene():
+            item.setVisible(False)
             self.removeItem(item)
-            item.update()
         self._save()
 
     def _clearUpConnectorItem(self, item: ConnectorItem):
@@ -424,6 +447,7 @@ class NetworkScene(QGraphicsScene):
             self._copyDescriptor.bold = item.bold()
             self._copyDescriptor.italic = item.italic()
             self._copyDescriptor.underline = item.underline()
+            self._copyDescriptor.transparent = item.transparent()
         elif isinstance(item, NoteItem):
             self._copyDescriptor.text = item.text()
             self._copyDescriptor.height = item.height()
@@ -454,6 +478,7 @@ class NetworkScene(QGraphicsScene):
         if isinstance(item, EventItem):
             item.setFontSettings(self._copyDescriptor.font_size, self._copyDescriptor.bold, self._copyDescriptor.italic,
                                  self._copyDescriptor.underline)
+            item.setTransparent(self._copyDescriptor.transparent)
 
     def _cursorScenePos(self) -> Optional[QPointF]:
         view = self.views()[0]

@@ -22,7 +22,7 @@ from PyQt6.QtGui import QBrush, QColor
 from overrides import overrides
 
 from plotlyst.common import PLOTLYST_MAIN_COLOR
-from plotlyst.core.domain import Conflict, ConflictType, Tag, Goal, Novel, ReaderInformationType
+from plotlyst.core.domain import Tag, Goal, Novel, ReaderInformationType
 from plotlyst.model.common import DistributionModel
 from plotlyst.view.common import text_color_with_bg_color
 from plotlyst.view.icons import avatars, IconRegistry
@@ -76,57 +76,11 @@ class GoalScenesDistributionTableModel(DistributionModel):
 
     @overrides
     def _match_by_row_col(self, row: int, column: int):
-        for agenda in self.novel.scenes[column - 2].agendas:
+        for agenda in self.novel.scenes[column - 2].agency:
             if agenda.character_id:
                 character = agenda.character(self.novel)
                 if character and self.novel.goals[row].id in [x.goal_id for x in agenda.goals(character)]:
                     return True
-        return False
-
-
-class ConflictScenesDistributionTableModel(DistributionModel):
-
-    def __init__(self, novel: Novel, parent=None):
-        super().__init__(novel, parent)
-        self._active_brush = QBrush(QColor('#E09C14'))
-
-    @overrides
-    def rowCount(self, parent: QModelIndex = None) -> int:
-        return len(self.novel.conflicts)
-
-    @overrides
-    def _dataForTag(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole):
-        conflict: Conflict = self.novel.conflicts[index.row()]
-        if role == Qt.ItemDataRole.DecorationRole:
-            if conflict.type == ConflictType.CHARACTER:
-                return avatars.avatar(conflict.conflicting_character(self.novel))
-            elif conflict.type == ConflictType.SELF:
-                return IconRegistry.conflict_self_icon()
-            elif conflict.type == ConflictType.NATURE:
-                return IconRegistry.conflict_nature_icon()
-            elif conflict.type == ConflictType.SOCIETY:
-                return IconRegistry.conflict_society_icon()
-            elif conflict.type == ConflictType.TECHNOLOGY:
-                return IconRegistry.conflict_technology_icon()
-            elif conflict.type == ConflictType.SUPERNATURAL:
-                return IconRegistry.conflict_supernatural_icon()
-
-        if role == Qt.ItemDataRole.ToolTipRole:
-            return conflict.type
-        elif role == Qt.ItemDataRole.DisplayRole:
-            return conflict.text
-
-    @overrides
-    def _dataForMeta(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole):
-        conflict: Conflict = self.novel.conflicts[index.row()]
-        if role == Qt.ItemDataRole.DecorationRole:
-            return avatars.avatar(conflict.character(self.novel))
-
-    @overrides
-    def _match_by_row_col(self, row: int, column: int) -> bool:
-        for agenda in self.novel.scenes[column - 2].agendas:
-            if self.novel.conflicts[row] in agenda.conflicts(self.novel):
-                return True
         return False
 
 

@@ -92,7 +92,7 @@
       <item>
        <widget class="QLabel" name="lblDesc">
         <property name="text">
-         <string>Planned and completed features for the Plotlyst Free and Plotlyst Plus packages.</string>
+         <string>Planned and completed features for the Plotlyst Free and Plotlyst premium packages.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -216,10 +216,10 @@
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="toolTip">
-         <string>Display tasks that belong to Plotlyst Plus</string>
+         <string>Display tasks that belong to Plotlyst premium</string>
         </property>
         <property name="text">
-         <string>Plus</string>
+         <string>Premium</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -320,7 +320,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>168</width>
+            <width>415</width>
             <height>147</height>
            </rect>
           </property>
@@ -358,7 +358,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>356</width>
+         <width>109</width>
          <height>157</height>
         </rect>
        </property>

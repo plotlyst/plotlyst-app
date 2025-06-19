@@ -37,7 +37,7 @@ from plotlyst.common import NAV_BAR_BUTTON_DEFAULT_COLOR, \
     NAV_BAR_BUTTON_CHECKED_COLOR, PLOTLYST_MAIN_COLOR, PLACEHOLDER_TEXT_COLOR, PLOTLYST_TERTIARY_COLOR, BLACK_COLOR, \
     DEFAULT_PREMIUM_LINK
 from plotlyst.core.client import client
-from plotlyst.core.domain import Novel, NovelPanel, ScenesView, NovelSetting, NovelDescriptor
+from plotlyst.core.domain import Novel, NovelPanel, ScenesView, NovelSetting, NovelDescriptor, SnapshotType
 from plotlyst.core.text import sentence_count
 from plotlyst.env import app_env, open_location
 from plotlyst.event.core import event_log_reporter, EventListener, Event, global_event_sender, \
@@ -80,6 +80,7 @@ from plotlyst.view.scenes_view import ScenesOutlineView
 from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.button import ToolbarButton, NovelSyncButton
 from plotlyst.view.widget.confirm import asked
+from plotlyst.view.widget.display import PremiumMessagePopup
 from plotlyst.view.widget.input import CapitalizationEventFilter
 from plotlyst.view.widget.labels import SeriesLabel
 from plotlyst.view.widget.log import LogsPopup
@@ -346,7 +347,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             if self.novel and self.novel.tutorial:
                 self.close_novel()
         elif isinstance(event, SocialSnapshotRequested):
-            SocialSnapshotPopup.popup(self.novel, event.snapshotType)
+            self._capture_snapshot(event.snapshotType)
         elif isinstance(event, SelectNovelEvent):
             self.home_mode.setChecked(True)
             self.home_view.selectNovel(event.novel)
@@ -411,6 +412,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             self._actionScrivener.setVisible(False)
             self._actionSeries.setVisible(False)
             self.menuDetachPanels.setDisabled(True)
+            self.actionCaptureProgress.setDisabled(True)
             return
 
         sender: EventSender = event_senders.instance(self.novel)
@@ -424,6 +426,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             btn.setVisible(True)
 
         self.menuDetachPanels.setEnabled(True)
+        self.actionCaptureProgress.setEnabled(True)
         self.outline_mode.setEnabled(True)
         self.outline_mode.setVisible(True)
 
@@ -442,6 +445,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             self._actionSeries.setVisible(False)
 
         self.btnProgress.setNovel(self.novel)
+        self._actionProgress.setVisible(True)
 
         self._current_view: Optional[AbstractView] = None
         self.novel_view = NovelView(self.novel)
@@ -576,6 +580,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
 
         self.actionPatronRecognitionBuilder.setIcon(IconRegistry.from_name('fa5s.hand-holding-heart'))
         self.actionPatronRecognitionBuilder.triggered.connect(lambda: PatronRecognitionBuilderPopup.popup())
+        self.actionCaptureProgress.setIcon(IconRegistry.from_name('mdi.calendar-month'))
+        self.actionCaptureProgress.triggered.connect(lambda: self._capture_snapshot())
 
         self.actionLogs.setIcon(IconRegistry.from_name('fa5.file-code'))
         self.actionLogs.triggered.connect(lambda: LogsPopup.popup())
@@ -802,6 +808,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
         self._actionScrivener.setVisible(False)
         self._actionSeries.setVisible(False)
         self.menuDetachPanels.setDisabled(True)
+        self.actionCaptureProgress.setDisabled(True)
 
         self.outline_mode.setDisabled(True)
         self._actionNovelEditor.setVisible(False)
@@ -958,5 +965,12 @@ class MainWindow(QMainWindow, Ui_MainWindow, EventListener):
             self.characters_view.import_from_series()
 
     def _import_locations(self):
+        if not app_env.profile().get('world-building', False):
+            PremiumMessagePopup.popup('Locations', 'mdi.globe-model', 'https://plotlyst.com/docs/world-building/')
+            return
         if self.novel and self.world_building_view:
             self.world_building_view.import_from_series()
+
+    def _capture_snapshot(self, type_: SnapshotType = SnapshotType.MonthlyWriting):
+        if self.novel:
+            SocialSnapshotPopup.popup(self.novel, type_)

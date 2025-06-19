@@ -23,21 +23,21 @@ from typing import Optional
 from PyQt6.QtGui import QImage
 from PyQt6.QtGui import QShowEvent
 from overrides import overrides
-from qthandy import line
+from qthandy import line, decr_icon
 
 from plotlyst.common import BLACK_COLOR
 from plotlyst.core.client import json_client
-from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_TOOL, NODE_SUBTYPE_COST
+from plotlyst.core.domain import GraphicsItemType, NODE_SUBTYPE_TOOL, NODE_SUBTYPE_COST, Diagram
 from plotlyst.core.domain import Node
 from plotlyst.core.domain import Novel
 from plotlyst.service.image import LoadedImage, upload_image, load_image
 from plotlyst.service.persistence import RepositoryPersistenceManager
+from plotlyst.view.common import tool_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
-from plotlyst.view.widget.graphics import NetworkGraphicsView, NetworkScene, EventItem, \
-    NodeItem
-from plotlyst.view.widget.graphics.editor import EventSelectorWidget, EventItemToolbar, ConnectorToolbar, \
-    SecondarySelectorWidget, CharacterToolbar, NoteToolbar, IconItemToolbar
+from plotlyst.view.widget.graphics import NetworkGraphicsView, NetworkScene, EventItem, NodeItem
+from plotlyst.view.widget.graphics.editor import EventItemToolbar, ConnectorToolbar, \
+    SecondarySelectorWidget, CharacterToolbar, NoteToolbar, IconItemToolbar, EventSelectorWidget
 
 
 class EventsMindMapScene(NetworkScene):
@@ -54,6 +54,14 @@ class EventsMindMapScene(NetworkScene):
     #         item = self.selectedItems()[0]
     #         if isinstance(item, (EventItem, NoteItem)):
     #             self.editItem.emit(item)
+
+    @overrides
+    def isSnapToGrid(self) -> bool:
+        return self._diagram.settings.snap_to_grid
+
+    def setSnapToGrid(self, enabled: bool):
+        self._diagram.settings.snap_to_grid = enabled
+        self._save()
 
     @overrides
     def _load(self):
@@ -79,6 +87,8 @@ class EventsMindMapView(NetworkGraphicsView):
         super().__init__(parent)
         self._btnAddEvent = self._newControlButton(
             IconRegistry.from_name('mdi6.shape-square-rounded-plus'), 'Add new event', GraphicsItemType.EVENT)
+        self._btnAddText = self._newControlButton(
+            IconRegistry.from_name('mdi6.format-text'), 'Add new text', GraphicsItemType.TEXT)
         self._btnAddNote = self._newControlButton(
             IconRegistry.from_name('msc.note'), 'Add new note', GraphicsItemType.NOTE)
         self._btnAddCharacter = self._newControlButton(
@@ -100,12 +110,21 @@ class EventsMindMapView(NetworkGraphicsView):
         self._wdgSecondaryEventSelector = EventSelectorWidget(self)
         self._wdgSecondaryEventSelector.setVisible(False)
         self._wdgSecondaryEventSelector.selected.connect(self._startAddition)
-        self._wdgSecondaryStickerSelector = StickerSelectorWidget(self)
-        self._wdgSecondaryStickerSelector.setVisible(False)
-        self._wdgSecondaryStickerSelector.selected.connect(self._startAddition)
+        # self._wdgSecondaryStickerSelector = StickerSelectorWidget(self)
+        # self._wdgSecondaryStickerSelector.setVisible(False)
+        # self._wdgSecondaryStickerSelector.selected.connect(self._startAddition)
 
         # self._stickerEditor = StickerEditor(self)
         # self._stickerEditor.setVisible(False)
+
+        self._settingsBar.setVisible(True)
+        self._btnGrid = tool_btn(IconRegistry.from_name('mdi.dots-grid'), "Snap elements to an invisible grid",
+                                 True, icon_resize=False,
+                                 properties=['transparent-rounded-bg-on-hover', 'top-selector'],
+                                 parent=self._settingsBar)
+        decr_icon(self._btnGrid, 2)
+        self._settingsBar.layout().addWidget(self._btnGrid)
+        self._btnGrid.clicked.connect(self._scene.setSnapToGrid)
 
         self._itemEditor = EventItemToolbar(self.undoStack, self)
         self._itemEditor.setVisible(False)
@@ -123,6 +142,11 @@ class EventsMindMapView(NetworkGraphicsView):
         self._arrangeSideBars()
 
     @overrides
+    def setDiagram(self, diagram: Diagram):
+        super().setDiagram(diagram)
+        self._btnGrid.setChecked(diagram.settings.snap_to_grid)
+
+    @overrides
     def _initScene(self) -> NetworkScene:
         return EventsMindMapScene(self._novel)
 
@@ -132,22 +156,26 @@ class EventsMindMapView(NetworkGraphicsView):
 
         if itemType == GraphicsItemType.EVENT:
             self._wdgSecondaryEventSelector.setVisible(True)
-            self._wdgSecondaryStickerSelector.setHidden(True)
-        elif itemType == GraphicsItemType.COMMENT:
-            self._wdgSecondaryStickerSelector.setVisible(True)
+        else:
             self._wdgSecondaryEventSelector.setHidden(True)
-        elif itemType == GraphicsItemType.CHARACTER:
-            self._wdgSecondaryStickerSelector.setHidden(True)
-            self._wdgSecondaryEventSelector.setHidden(True)
-        elif itemType == GraphicsItemType.ICON:
-            self._wdgSecondaryStickerSelector.setHidden(True)
-            self._wdgSecondaryEventSelector.setHidden(True)
+
+    #         self._wdgSecondaryStickerSelector.setHidden(True)
+    #     elif itemType == GraphicsItemType.COMMENT:
+    #         self._wdgSecondaryStickerSelector.setVisible(True)
+    #         self._wdgSecondaryEventSelector.setHidden(True)
+    #     elif itemType == GraphicsItemType.CHARACTER:
+    #         self._wdgSecondaryStickerSelector.setHidden(True)
+    #         self._wdgSecondaryEventSelector.setHidden(True)
+    #     elif itemType == GraphicsItemType.ICON:
+    #         self._wdgSecondaryStickerSelector.setHidden(True)
+    #         self._wdgSecondaryEventSelector.setHidden(True)
 
     @overrides
     def _endAddition(self, itemType: Optional[GraphicsItemType] = None, item: Optional[NodeItem] = None):
         super()._endAddition(itemType, item)
         self._wdgSecondaryEventSelector.setHidden(True)
-        self._wdgSecondaryStickerSelector.setHidden(True)
+
+    #     self._wdgSecondaryStickerSelector.setHidden(True)
 
     @overrides
     def _characterSelectorMenu(self) -> CharacterSelectorMenu:

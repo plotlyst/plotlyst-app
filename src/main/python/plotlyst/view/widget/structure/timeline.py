@@ -33,7 +33,7 @@ from qthandy.filter import InstantTooltipEventFilter, DragEventFilter
 
 from plotlyst.common import PLOTLYST_SECONDARY_COLOR, act_color, RELAXED_WHITE_COLOR
 from plotlyst.core.domain import StoryBeat, StoryBeatType, Novel, \
-    StoryStructure, Scene, StoryStructureDisplayType, TemplateStoryStructureType
+    StoryStructure, Scene, StoryStructureDisplayType
 from plotlyst.service.cache import acts_registry
 from plotlyst.view.common import to_rgba_str, ButtonPressResizeEventFilter
 from plotlyst.view.icons import IconRegistry
@@ -66,7 +66,7 @@ class _BeatButton(QToolButton):
         if beat.icon:
             self.setIcon(IconRegistry.from_name(beat.icon, color, beat.icon_color))
         elif beat.seq:
-            if self.structure.template_type == TemplateStoryStructureType.SPINE:
+            if self.structure.template_type.isTextStyle():
                 icon = f'mdi.numeric-{beat.seq}-box'
             else:
                 icon = f'mdi.numeric-{beat.seq}'
@@ -114,7 +114,7 @@ class _BeatButton(QToolButton):
     def setTextStyle(self):
         self._style = _BeatButtonStyle.Text
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-        decr_font(self, 2)
+        decr_font(self, 3)
         self.setText(self.beat.text)
 
     @overrides
@@ -313,7 +313,7 @@ class StoryStructureTimelineWidget(QWidget):
             # btn.installEventFilter(self)
             self._refreshBeatButtonDragStatus(btn)
             if not self.isProportionalDisplay():
-                if self.structure.template_type == TemplateStoryStructureType.SPINE:
+                if self.structure.template_type.isTextStyle():
                     btn.setTextStyle()
                 else:
                     btn.setBorderStyle()

@@ -143,6 +143,15 @@ QFrame[large-rounded=true] {{
     border-radius: 15px;
 }}
 
+QFrame[large-rounded-on-left=true] {{
+    border: 1px solid lightgrey;
+    border: 1px solid lightgrey;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 0px;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 0px;
+}}
+
 QDialog[relaxed-white-bg] {{
     background-color: {BG_SECONDARY_COLOR};
 }}

@@ -17,9 +17,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+from typing import Dict
+
 from plotlyst.core.domain import Novel, Document, DocumentType, StoryElementType, SceneReaderInformation, \
-    ReaderInformationType, Scene, Plot, DynamicPlotPrincipleGroupType, BackstoryEvent, Position
+    ReaderInformationType, Scene, Plot, DynamicPlotPrincipleGroupType, BackstoryEvent, Position, PlotType, \
+    RelationshipDynamics, Character, TopicType, WorldBuildingEntity, WorldBuildingEntityElement, \
+    WorldBuildingEntityElementType
 from plotlyst.service.persistence import RepositoryPersistenceManager
+from plotlyst.view.widget.character.topic import topic_ids
 
 
 def migrate_novel(novel: Novel):
@@ -39,11 +44,29 @@ def migrate_novel(novel: Novel):
     for plot in novel.plots:
         migrate_plot_principles(novel, plot)
         migrate_plot_timeline(novel, plot)
+        migrate_plot_relationships(novel, plot)
 
     for scene in novel.scenes:
         if scene.migration.migrated_functions:
             continue
         migrate_scene_functions(scene)
+
+    character_docs_parent = None
+    for character in novel.characters:
+        if character.topics:
+            migrate_character_topics(character)
+            character.topics.clear()
+            RepositoryPersistenceManager.instance().update_character(character)
+        if character.document:
+            if character_docs_parent is None:
+                character_docs_parent = Document('Characters (migrated)', icon='fa5s.user')
+            character_docs_parent.children.append(character.document)
+            character.document = None
+            RepositoryPersistenceManager.instance().update_character(character)
+
+    if character_docs_parent is not None:
+        novel.documents.append(character_docs_parent)
+        RepositoryPersistenceManager.instance().update_novel(novel)
 
 
 def migrate_plot_principles(novel: Novel, plot: Plot):
@@ -87,6 +110,20 @@ def migrate_plot_timeline(novel: Novel, plot: Plot):
     RepositoryPersistenceManager.instance().update_novel(novel)
 
 
+def migrate_plot_relationships(novel: Novel, plot: Plot):
+    if plot.plot_type != PlotType.Relation or plot.relationship is not None:
+        return
+
+    plot.relationship = RelationshipDynamics()
+    if plot.character_id:
+        plot.relationship.source_characters.append(plot.character_id)
+    if plot.relation_character_id:
+        plot.relationship.target_characters.append(plot.character_id)
+        plot.relation_character_id = None
+
+    RepositoryPersistenceManager.instance().update_novel(novel)
+
+
 def migrate_scene_functions(scene: Scene):
     for function in scene.functions.primary:
         if function.type == StoryElementType.Character:
@@ -116,3 +153,25 @@ def migrate_scene_functions(scene: Scene):
 
     scene.migration.migrated_functions = True
     RepositoryPersistenceManager.instance().update_scene(scene)
+
+
+def migrate_character_topics(character: Character):
+    groupPages: Dict[TopicType, WorldBuildingEntity] = {}
+
+    for element in character.topics:
+        topic = topic_ids.get(str(element.id))
+        if topic:
+            if topic.type not in groupPages.keys():
+                groupPages[topic.type] = WorldBuildingEntity(topic.type.display_name(), icon=topic.type.icon(),
+                                                             side_visible=False)
+            entity = groupPages[topic.type]
+            section = WorldBuildingEntityElement(WorldBuildingEntityElementType.Section)
+            section.blocks.append(
+                WorldBuildingEntityElement(WorldBuildingEntityElementType.Header, title=topic.text, icon=topic.icon))
+            section.blocks.append(
+                WorldBuildingEntityElement(WorldBuildingEntityElementType.Text, text=element.blocks[0].text))
+            entity.elements.append(section)
+
+    character.codex.children.clear()
+    for entity in groupPages.values():
+        character.codex.children.append(entity)
