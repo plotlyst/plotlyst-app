@@ -37,7 +37,7 @@ from qttextedit.ops import Heading1Operation, Heading2Operation, Heading3Operati
     AlignLeftOperation, AlignCenterOperation, AlignRightOperation
 
 from plotlyst.common import RELAXED_WHITE_COLOR, DEFAULT_MANUSCRIPT_LINE_SPACE, DEFAULT_MANUSCRIPT_INDENT, \
-    PLACEHOLDER_TEXT_COLOR, PLOTLYST_TERTIARY_COLOR
+    PLACEHOLDER_TEXT_COLOR, PLOTLYST_TERTIARY_COLOR, IGNORE_CAPITALIZATION_PROPERTY
 from plotlyst.core.client import json_client
 from plotlyst.core.domain import DocumentProgress, Novel, Scene, TextStatistics, DocumentStatistics, FontSettings, \
     Chapter
@@ -48,7 +48,7 @@ from plotlyst.events import SceneDeletedEvent, SceneChangedEvent, ScenesOrganiza
 from plotlyst.resources import resource_registry
 from plotlyst.service.manuscript import daily_progress, daily_overall_progress
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import tool_btn, fade_in, fade, frame, restyle
+from plotlyst.view.common import tool_btn, fade_in, fade, frame, restyle, media_player, sound_effect
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.text import apply_text_color
 from plotlyst.view.style.theme import BG_DARK_COLOR
@@ -253,6 +253,7 @@ class ManuscriptTextEdit(TextEditBase):
         self._resizedOnShow: bool = False
         self._menuIsShown = False
         self._minHeight = 40
+        self._typeWriterSounds: bool = False
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setTabChangesFocus(True)
         self._scene: Optional[Scene] = None
@@ -262,6 +263,7 @@ class ManuscriptTextEdit(TextEditBase):
 
         self._sentenceHighlighter: Optional[SentenceHighlighter] = None
 
+        self.setProperty(IGNORE_CAPITALIZATION_PROPERTY, True)
         self.setReadOnly(readOnly)
         if not readOnly:
             toolbar = ManuscriptPopupTextEditorToolbar()
@@ -273,6 +275,17 @@ class ManuscriptTextEdit(TextEditBase):
                                    InsertNumberedListOperation])
 
         self.textChanged.connect(self.resizeToContent)
+
+        if app_env.is_windows():
+            self._keystrokePlayer = media_player(resource_registry.keystroke)
+            self._spaceKeystrokePlayer = media_player(resource_registry.keystroke_space)
+            self._returnKeystrokePlayer = media_player(resource_registry.keystroke_return)
+            self._backspaceKeystrokePlayer = media_player(resource_registry.keystroke_backspace)
+        else:
+            self._keystrokePlayer = sound_effect(resource_registry.keystroke)
+            self._spaceKeystrokePlayer = sound_effect(resource_registry.keystroke_space)
+            self._returnKeystrokePlayer = sound_effect(resource_registry.keystroke_return)
+            self._backspaceKeystrokePlayer = sound_effect(resource_registry.keystroke_backspace)
 
     @overrides
     def createEnhancedContextMenu(self, pos: QPoint):
@@ -304,6 +317,8 @@ class ManuscriptTextEdit(TextEditBase):
 
     @overrides
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if self._typeWriterSounds:
+            self._playTypeWriterSound(event)
         cursor: QTextCursor = self.textCursor()
         move_up = cursor.block().blockNumber() == 0 and event.key() == Qt.Key.Key_Up
         move_down = cursor.block().blockNumber() == self.document().blockCount() - 1 and event.key() == Qt.Key.Key_Down
@@ -333,31 +348,6 @@ class ManuscriptTextEdit(TextEditBase):
 
                     return
         super(ManuscriptTextEdit, self).keyPressEvent(event)
-
-    # @overrides
-    # def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
-    #     anchor = self.anchorAt(event.pos())
-    #     if anchor and anchor.startswith(SceneSeparatorTextFormatPrefix):
-    #         if QApplication.overrideCursor() is None:
-    #             QApplication.setOverrideCursor(Qt.CursorShape.PointingHandCursor)
-    #         synopsis = self._sceneTextObject.sceneSynopsis(anchor.replace(SceneSeparatorTextFormatPrefix, ''))
-    #         self.setToolTip(synopsis)
-    #         return
-    #     else:
-    #         QApplication.restoreOverrideCursor()
-    #         self.setToolTip('')
-    #     super(ManuscriptTextEdit, self).mouseMoveEvent(event)
-
-    # @overrides
-    # def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
-    #     anchor = self.anchorAt(event.pos())
-    #     if anchor and anchor.startswith(SceneSeparatorTextFormatPrefix):
-    #         scene = self._sceneTextObject.scene(anchor.replace(SceneSeparatorTextFormatPrefix, ''))
-    #         if scene:
-    #             self.sceneSeparatorClicked.emit(scene)
-    #         return
-    #
-    #     super(ManuscriptTextEdit, self).mouseReleaseEvent(event)
 
     def setGrammarCheckEnabled(self, enabled: bool):
         self.highlighter.setCheckEnabled(enabled)
@@ -392,40 +382,11 @@ class ManuscriptTextEdit(TextEditBase):
         return self._scene
 
     def setScene(self, scene: Scene):
-        # self._sceneTextObject.setScenes([scene])
         self._scene = scene
         self._addScene(scene)
         self.setUneditableBlocksEnabled(False)
         self.document().clearUndoRedoStacks()
         self.resizeToContent()
-
-    # def setScenes(self, scenes: List[Scene]):
-    #     def sceneCharFormat(scene: Scene) -> QTextCharFormat:
-    #         sceneSepCharFormat = QTextCharFormat()
-    #         sceneSepCharFormat.setObjectType(SceneSeparatorTextFormat)
-    #         sceneSepCharFormat.setToolTip(scene.synopsis)
-    #         sceneSepCharFormat.setAnchor(True)
-    #         sceneSepCharFormat.setAnchorHref(f'{SceneSeparatorTextFormatPrefix}{scene.id}')
-    #
-    #         return sceneSepCharFormat
-    #
-    #     self.setUneditableBlocksEnabled(True)
-    #     self._sceneTextObject.setScenes(scenes)
-    #
-    #     for i, scene in enumerate(scenes):
-    #         self.textCursor().insertBlock(self._sceneSepBlockFormat)
-    #         self.textCursor().insertText(f'{OBJECT_REPLACEMENT_CHARACTER}', sceneCharFormat(scene))
-    #         self.textCursor().block().setUserState(TextBlockState.UNEDITABLE.value)
-    #         self.insertNewBlock()
-    #         self._addScene(scene)
-    #
-    #     self._deleteBlock(0, force=True)
-    #
-    #     self.document().clearUndoRedoStacks()
-    #     self.resizeToContent()
-
-    # def insertNewBlock(self):
-    #     self.textCursor().insertBlock(self._defaultBlockFormat, QTextCharFormat())
 
     @overrides
     def showEvent(self, event: QShowEvent) -> None:
@@ -445,6 +406,9 @@ class ManuscriptTextEdit(TextEditBase):
         size = self.document().size()
         self.setFixedHeight(max(self._minHeight, math.ceil(size.height() + padding)))
 
+    def setTypeWriterSoundsEnabled(self, enabled: bool):
+        self._typeWriterSounds = enabled
+
     def _addScene(self, scene: Scene):
         if not scene.manuscript.loaded:
             json_client.load_document(app_env.novel, scene.manuscript)
@@ -461,6 +425,39 @@ class ManuscriptTextEdit(TextEditBase):
     def _setDefaultStyleSheet(self):
         self.setStyleSheet(
             f'ManuscriptTextEdit {{background-color: {RELAXED_WHITE_COLOR};}}')
+
+    def _playTypeWriterSound(self, event: QtGui.QKeyEvent):
+        if event.modifiers() & (
+                Qt.KeyboardModifier.ControlModifier
+                | Qt.KeyboardModifier.AltModifier
+                | Qt.KeyboardModifier.MetaModifier
+        ):
+            return
+        if event.key() in (
+                Qt.Key.Key_Left,
+                Qt.Key.Key_Right,
+                Qt.Key.Key_Up,
+                Qt.Key.Key_Down,
+                Qt.Key.Key_Home,
+                Qt.Key.Key_End,
+                Qt.Key.Key_PageUp,
+                Qt.Key.Key_PageDown,
+                Qt.Key.Key_Tab,
+                Qt.Key.Key_Escape
+        ):
+            return
+        key = event.key()
+
+        if key == Qt.Key.Key_Space:
+            player = self._spaceKeystrokePlayer
+        elif key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            player = self._returnKeystrokePlayer
+        elif key == Qt.Key.Key_Backspace:
+            player = self._backspaceKeystrokePlayer
+        else:
+            player = self._keystrokePlayer
+
+        player.play()
 
 
 class ManuscriptEditor(QWidget, EventListener):
@@ -784,6 +781,8 @@ class ManuscriptEditor(QWidget, EventListener):
         self._settings.textSettings.fontSetting.fontSelected.connect(self._fontChanged)
         self._settings.textSettings.spaceSetting.spaceChanged.connect(self._spaceChanged)
 
+        self._settings.immersionSettings.typeWriterChanged.connect(self._typeWriterChanged)
+
     def statistics(self) -> TextStatistics:
         overall_stats = TextStatistics(0)
         if self.hasScenes():
@@ -890,6 +889,7 @@ class ManuscriptEditor(QWidget, EventListener):
         _textedit.setSmartQuotesEnabled(self._novel.prefs.manuscript.smart_quotes)
         _textedit.setPeriodInsertionEnabled(self._novel.prefs.manuscript.period)
         _textedit.setEllipsisInsertionMode(self._novel.prefs.manuscript.ellipsis)
+        _textedit.setTypeWriterSoundsEnabled(self._novel.prefs.manuscript.typewriter_sounds)
         transparent(_textedit)
 
         _textedit.setBlockFormat(self._lineSpace, textIndent=DEFAULT_MANUSCRIPT_INDENT)
@@ -956,6 +956,12 @@ class ManuscriptEditor(QWidget, EventListener):
         for textedit in self._textedits:
             textedit.setEllipsisInsertionMode(mode)
         self._novel.prefs.manuscript.ellipsis = mode
+        self.repo.update_novel(self._novel)
+
+    def _typeWriterChanged(self, enabled: bool):
+        for textedit in self._textedits:
+            textedit.setTypeWriterSoundsEnabled(enabled)
+        self._novel.prefs.manuscript.typewriter_sounds = enabled
         self.repo.update_novel(self._novel)
 
     def _setHeaderVariant(self, variant: int):
