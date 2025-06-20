@@ -115,11 +115,17 @@ jobs:
         with:
           name: app-deb-artifact
           path: target/Plotlyst.deb
-      - uses: actions/upload-artifact@v4
+      - name: Upload mac artifacts to draft release
         if: matrix.os == 'macos-13'
+        uses: softprops/action-gh-release@v2
         with:
-          name: plotlyst-mac
-          path: target/Plotlyst.dmg
+          tag_name: build-${{ github.run_number }}
+          name: "Internal Build ${{ github.run_number }}"
+          draft: true
+          repository: plotlyst/release-mac
+          files: target/Plotlyst.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.PLOTLYST_MAC_RELEASE_PA_TOKEN }
       - uses: actions/upload-artifact@v4
         if: matrix.os == 'windows-2019'
         with:
