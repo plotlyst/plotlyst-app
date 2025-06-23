@@ -171,7 +171,7 @@ class RelationshipDynamicsSelectorTemplate(Enum):
         'Attitude', 'mdi6.emoticon-neutral-outline', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
     Values = ('Values', 'fa5s.balance-scale', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
     Social_status = ('Social status', 'mdi.ladder', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
-    Desire = ('Desire', 'ei.star-alt', '#e9c46a', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
+    Desire = ('Desire', 'ei.star-alt', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
     Conflict = (
         'Conflict', 'mdi.sword-cross', '#e57c04', RelationshipDynamicsType.SEPARATE, None,
         "What causes conflict between the characters?")
