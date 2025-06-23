@@ -88,7 +88,6 @@ def main():
     args = parser.parse_args()
 
     original_version = read_version()
-    print(original_version)
     if not original_version:
         raise RuntimeError("Could not read version from version.py")
 
