@@ -25,7 +25,7 @@ from PyQt6.QtCore import Qt, QRect, QDate, QPoint, QObject, QEvent
 from PyQt6.QtGui import QPainter, QTextOption, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView
 from overrides import overrides
-from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon
+from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon, vspacer, sp
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -79,8 +79,9 @@ class ProductivityReport(AbstractReport, QWidget):
         self.btnYearSelector = YearSelectorButton()
         self.btnYearSelector.selected.connect(self._yearSelected)
 
-        self.wdgCategoriesScroll = scroll_area(False, False, True)
+        self.wdgCategoriesScroll = scroll_area(True, False, True)
         self.wdgCategories = QWidget()
+        sp(self.wdgCategoriesScroll).v_max()
         self.wdgCategories.setProperty('relaxed-white-bg', True)
         self.wdgCategoriesScroll.setWidget(self.wdgCategories)
         hbox(self.wdgCategories, spacing=10)
@@ -110,6 +111,7 @@ class ProductivityReport(AbstractReport, QWidget):
         self.layout().addWidget(self.btnYearSelector, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgCategoriesScroll)
         self.layout().addWidget(self.wdgCalendars)
+        self.layout().addWidget(vspacer())
 
         if not app_env.profile().get('productivity', False):
             PremiumOverlayWidget(self, 'Daily Productivity Tracking',
