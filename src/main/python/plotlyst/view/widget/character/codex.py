@@ -197,8 +197,8 @@ class CharacterCodexEditor(QFrame):
         transparent_menu(self.treeMenu)
         # self.btnContext = DotsMenuButton()
 
-        menu.topicsSelected.connect(self.btnTree.click)
-        self.treeView.childEntitiesAdded.connect(self.btnTree.click)
+        menu.topicsSelected.connect(lambda: self.treeMenu.exec())
+        self.treeView.childEntitiesAdded.connect(lambda: self.treeMenu.exec())
 
         self.lineName = AutoAdjustableLineEdit(defaultWidth=100)
         self.lineName.setPlaceholderText('Page')
