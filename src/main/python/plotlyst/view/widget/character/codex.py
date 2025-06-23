@@ -25,7 +25,7 @@ from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QFrame
 from overrides import overrides
-from qthandy import vspacer, spacer, vbox, margins, hbox, sp
+from qthandy import vspacer, spacer, vbox, margins, hbox, sp, incr_font, incr_icon
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -33,7 +33,7 @@ from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_SECONDARY_COLOR
 from plotlyst.core.domain import WorldBuildingEntity, Character, Novel, WorldBuildingEntityElement, \
     WorldBuildingEntityElementType
 from plotlyst.env import app_env
-from plotlyst.view.common import wrap, action, to_rgba_str, push_btn
+from plotlyst.view.common import wrap, action, to_rgba_str, push_btn, columns
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
 from plotlyst.view.widget.character.topic import CharacterTopicSelectionDialog
@@ -158,7 +158,10 @@ class CharacterCodexEditor(QFrame):
         self._palette = WorldBuildingPalette(bg_color='#ede0d4', primary_color='#510442',
                                              secondary_color='#DABFA7',
                                              tertiary_color='#E3D0BD')
+        self.wdgEditorContainer = columns(0, 0)
         self.editor = CharacterCodexEntityEditor(self.novel, self._palette)
+        self.editor.setMaximumWidth(800)
+        self.wdgEditorContainer.layout().addWidget(self.editor)
         margins(self.editor, top=15)
         trans_bg_color = to_rgba_str(QColor(self._palette.bg_color), 245)
         self.setObjectName('codexEditor')
@@ -176,6 +179,8 @@ class CharacterCodexEditor(QFrame):
         menu.entityTriggered.connect(self.treeView.addEntity)
         menu.topicsSelected.connect(self.treeView.addEntities)
         self.btnTree = push_btn(IconRegistry.from_name('mdi.file-tree-outline'), 'Pages', transparent_=True)
+        incr_font(self.btnTree)
+        incr_icon(self.btnTree, 2)
         self.btnTree.installEventFilter(OpacityEventFilter(self.btnTree))
         self.treeMenu = MenuWidget(self.btnTree)
         self.treeMenu.installEventFilter(MenuOverlayEventFilter(self.treeMenu))
@@ -210,12 +215,11 @@ class CharacterCodexEditor(QFrame):
                         }}''')
         self.lineName.textEdited.connect(self._titleChanged)
 
-        # self.layout().addWidget(group(self.btnTree, spacer(), self.btnContext))
-        self.layout().addWidget(self.btnTree, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(wrap(self.btnTree, margin_left=5, margin_top=2), alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.layout().addWidget(wrap(self.lineName, margin_bottom=5), alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(SeparatorLineWithShadow())
-        self.layout().addWidget(self.editor)
+        self.layout().addWidget(self.wdgEditorContainer)
         self.layout().addWidget(vspacer())
 
     def setCharacter(self, character: Character):
