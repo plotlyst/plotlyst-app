@@ -719,8 +719,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>506</width>
-                    <height>580</height>
+                    <width>98</width>
+                    <height>28</height>
                    </rect>
                   </property>
                   <layout class="QHBoxLayout" name="horizontalLayout_8">
@@ -1119,6 +1119,19 @@
                    <number>0</number>
                   </property>
                   <item>
+                   <widget class="QLabel" name="lblStorymapDesc">
+                    <property name="text">
+                     <string>Link storylines to scenes and visualize their occurrence</string>
+                    </property>
+                    <property name="wordWrap">
+                     <bool>false</bool>
+                    </property>
+                    <property name="description" stdset="0">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
                    <spacer name="horizontalSpacer_7">
                     <property name="orientation">
                      <enum>Qt::Horizontal</enum>
@@ -1218,7 +1231,7 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>506</width>
+                    <width>459</width>
                     <height>513</height>
                    </rect>
                   </property>
@@ -1330,7 +1343,7 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="btnGroupViews"/>
   <buttongroup name="btnGroupStoryMapView"/>
+  <buttongroup name="btnGroupViews"/>
  </buttongroups>
 </ui>
