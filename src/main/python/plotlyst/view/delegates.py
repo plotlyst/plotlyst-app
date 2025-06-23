@@ -23,7 +23,7 @@ from PyQt6.QtCore import Qt, QModelIndex, \
     QAbstractItemModel
 from PyQt6.QtGui import QPainter, QIcon
 from PyQt6.QtWidgets import QWidget, QStyledItemDelegate, \
-    QStyleOptionViewItem, QTextEdit, QComboBox, QLineEdit, QSpinBox
+    QStyleOptionViewItem, QTextEdit, QComboBox, QLineEdit, QSpinBox, QApplication
 from overrides import overrides
 
 from plotlyst.core.domain import Scene, Character
@@ -69,7 +69,9 @@ class ScenesViewDelegate(QStyledItemDelegate):
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex) -> QWidget:
         if index.column() == ScenesTableModel.ColTime:
             return QSpinBox(parent)
-        return QTextEdit(parent)
+        editor = QTextEdit(parent)
+        editor.setFont(QApplication.font())
+        return editor
 
     @overrides
     def setEditorData(self, editor: QWidget, index: QModelIndex):
