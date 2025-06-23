@@ -878,7 +878,7 @@ class HintLabel(QWidget):
 
         self._lbl = label('', wordWrap=True, description=True)
 
-        self.layout().addWidget(self._icon)
+        self.layout().addWidget(self._icon, alignment=Qt.AlignmentFlag.AlignTop)
         self.layout().addWidget(self._lbl)
 
         self._icon.setHidden(True)
