@@ -1582,7 +1582,7 @@ class ConflictType(Enum):
         if self == ConflictType.INTERNAL:
             return "Character struggles with their own desires and beliefs"
         if self == ConflictType.MILIEU:
-            return "Conflict against the environment or society"
+            return "Character is in conflict with their environment"
         return "Conflict that personally affects the character"
 
 
