@@ -2506,7 +2506,7 @@ def worldbuilding_root() -> WorldBuildingEntity:
     main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Header))
     main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
     return WorldBuildingEntity('My world', icon='mdi.globe-model', bg_color='#40916c',
-                               elements=[main_section])
+                               elements=[main_section], side_visible=False)
 
 
 @dataclass
