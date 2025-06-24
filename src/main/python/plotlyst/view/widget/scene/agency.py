@@ -221,7 +221,7 @@ class CharacterChangesSelectorPopup(MenuWidget):
 
     added = pyqtSignal(list)
 
-    def __init__(self, agenda: CharacterAgency):  # agenda: CharacterAgency
+    def __init__(self, agenda: CharacterAgency):
         super().__init__()
         self.agenda = agenda
         transparent_menu(self)
@@ -297,6 +297,11 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.wdgSelectors.layout().addWidget(line(color='lightgrey'), 1, self.INITIAL_COL, 1, 3)
 
         row = 2
+        self.selectorEmotion, btnQuickAddEmotion = self.__initSelector(StoryElementType.Emotion, row, self.INITIAL_COL,
+                                                                       quickAdd=True)
+        self.selectorEmotionChange = self.__initSelector(StoryElementType.Emotion_change, row, self.FINAL_COL)
+        row += 1
+
         self.selectorGoal, btnQuickAddGoal = self.__initSelector(StoryElementType.Goal, row, self.INITIAL_COL,
                                                                  quickAdd=True)
         self.selectorConflict = self.__initSelector(StoryElementType.Conflict, row, self.TRANSITION_COL)
@@ -311,11 +316,6 @@ class CharacterChangesSelectorPopup(MenuWidget):
         self.selectorExpectation, btnQuickAddExpectation = self.__initSelector(StoryElementType.Expectation, row,
                                                                                self.INITIAL_COL, quickAdd=True)
         self.selectorRealization = self.__initSelector(StoryElementType.Realization, row, self.FINAL_COL)
-        row += 1
-
-        self.selectorEmotion, btnQuickAddEmotion = self.__initSelector(StoryElementType.Emotion, row, self.INITIAL_COL,
-                                                                       quickAdd=True)
-        self.selectorEmotionChange = self.__initSelector(StoryElementType.Emotion_change, row, self.FINAL_COL)
         row += 1
 
         self.selectorInternalState, btnQuickAddInternal = self.__initSelector(StoryElementType.Character_internal_state,

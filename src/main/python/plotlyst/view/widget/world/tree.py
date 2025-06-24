@@ -177,7 +177,6 @@ class RootNode(EntityNode):
     def __init__(self, novel: Novel, entity: WorldBuildingEntity, parent=None, settings: Optional[TreeSettings] = None):
         super(RootNode, self).__init__(novel, entity, parent=parent, settings=settings)
         self.setMenuEnabled(False)
-        self.setPlusButtonEnabled(False)
 
     @overrides
     def _initMenuActions(self, menu: MenuWidget):
@@ -223,6 +222,8 @@ class WorldBuildingTreeView(TreeView):
         self._novel = novel
         self._root = RootNode(self._novel, self._novel.world.root_entity, settings=self._settings)
         self._root.selectionChanged.connect(partial(self._entitySelectionChanged, self._root))
+        self._root.addEntity.connect(self.addEntity)
+        self._root.addEntities.connect(self.addEntities)
         self.refresh()
 
     def addEntity(self, entity: WorldBuildingEntity):

@@ -1582,7 +1582,7 @@ class ConflictType(Enum):
         if self == ConflictType.INTERNAL:
             return "Character struggles with their own desires and beliefs"
         if self == ConflictType.MILIEU:
-            return "Conflict against the environment or society"
+            return "Character is in conflict with their environment"
         return "Conflict that personally affects the character"
 
 
@@ -2506,7 +2506,7 @@ def worldbuilding_root() -> WorldBuildingEntity:
     main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Header))
     main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
     return WorldBuildingEntity('My world', icon='mdi.globe-model', bg_color='#40916c',
-                               elements=[main_section])
+                               elements=[main_section], side_visible=False)
 
 
 @dataclass
