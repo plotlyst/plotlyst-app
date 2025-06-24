@@ -249,6 +249,7 @@ class PlaceholderWidget(QFrame):
 
     @overrides
     def dropEvent(self, event: QDropEvent) -> None:
+        self._animateIconSize(QSize(8, 8))
         self.setStyleSheet('')
 
     def _applyHoverStyle(self):
