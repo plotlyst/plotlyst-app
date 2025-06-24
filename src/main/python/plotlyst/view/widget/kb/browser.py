@@ -24,9 +24,9 @@ from typing import Optional, Dict
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QWidget, QSplitter
 from overrides import overrides
-from qthandy import vspacer, clear_layout, vbox, margins, hbox, incr_font
+from qthandy import vspacer, clear_layout, vbox, margins, hbox, incr_font, line
 
-from plotlyst.view.common import frame, scroll_area, label, wrap
+from plotlyst.view.common import frame, scroll_area, label, rows
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.kb.articles import PlotlystArticleWidget, FAQArticleWidget
 from plotlyst.view.widget.patron import PatronsWidget
@@ -98,7 +98,11 @@ class KnowledgeBaseTreeView(ItemBasedTreeView):
         self._nodes.clear()
         clear_layout(self._centralWidget)
 
-        self._centralWidget.layout().addWidget(wrap(label('Knowledge Base', h3=True), margin_bottom=40))
+        wdgTitle = rows(0)
+        wdgTitle.layout().addWidget(label('Knowledge Base', h3=True))
+        wdgTitle.layout().addWidget(line())
+        margins(wdgTitle, bottom=40)
+        self._centralWidget.layout().addWidget(wdgTitle)
 
         commnunity_node = self._addType(ArticleType.Community)
         commnunity_node.containerWidget().setFixedHeight(20)
