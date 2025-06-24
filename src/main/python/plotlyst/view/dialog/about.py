@@ -20,10 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QLabel, QWidget, QApplication
-from qthandy import hbox
+from qthandy import hbox, spacer
 
 from plotlyst.resources import resource_registry
+from plotlyst.version import plotlyst_product_version
 from plotlyst.view.common import push_btn, label
+from plotlyst.view.layout import group
 from plotlyst.view.widget.display import PopupDialog
 
 
@@ -44,7 +46,8 @@ class AboutDialog(PopupDialog):
         self.frame.layout().addWidget(self.wdgBanner)
         self.frame.layout().addWidget(label("Plotlyst is an indie software developed by Zsolt Kovari", h4=True))
         self.frame.layout().addWidget(label('Copyright (C) 2021-2025  Zsolt Kovari', description=True))
-        self.frame.layout().addWidget(label(f'Version: {version}', description=True))
+        self.frame.layout().addWidget(group(label(f'Version: {version}', description=True, incr_font_diff=2), spacer(),
+                                            label(f'Product version: {plotlyst_product_version}', description=True)))
         self.frame.layout().addWidget(self.btnClose, alignment=Qt.AlignmentFlag.AlignRight)
 
     def display(self):
