@@ -9,12 +9,13 @@ from qthandy import vbox
 
 from plotlyst.core.domain import Novel, Character
 from plotlyst.core.text import html
+from plotlyst.env import app_env
 from plotlyst.service.cache import acts_registry
 from plotlyst.view.common import icon_to_html_img, columns, rows, wrap
 from plotlyst.view.icons import avatars
 from plotlyst.view.report import AbstractReport
 from plotlyst.view.widget.chart import BaseChart, ActDistributionChart
-from plotlyst.view.widget.display import ChartView
+from plotlyst.view.widget.display import ChartView, PremiumOverlayWidget
 from plotlyst.view.widget.structure.selector import ActSelectorButtons
 
 
@@ -25,6 +26,7 @@ class SceneReport(AbstractReport):
         vbox(self)
 
         self.wdgDistributions = columns()
+        self.wdgDistributions.setMinimumHeight(550)
         self.wdgPov = rows(0, 0)
         self.chartViewPovDistribution = ChartView()
         self._povChart = PovDistributionChart()
@@ -41,7 +43,15 @@ class SceneReport(AbstractReport):
         self.wdgDistributions.layout().addWidget(wrap(self.chartViewActDistribution, margin_top=35))
         self.wdgDistributions.layout().addWidget(self.wdgPov)
 
+        self.wdgConflict = rows()
+
         self.layout().addWidget(self.wdgDistributions)
+        self.layout().addWidget(self.wdgConflict)
+
+        if not app_env.profile().get('scene-functions', False):
+            PremiumOverlayWidget(self.wdgConflict, 'Conflict reports',
+                                 icon='mdi.sword-cross',
+                                 alt_link='https://plotlyst.com/docs/scenes/')
 
         self.refresh()
 
