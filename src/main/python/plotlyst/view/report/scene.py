@@ -5,17 +5,17 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QToolTip, QWidget, QPushButton, QFrame
 from overrides import overrides
-from qthandy import vbox, hbox, sp, translucent
+from qthandy import vbox, hbox, sp, translucent, flow, clear_layout
 
-from plotlyst.core.domain import Novel, Character, Tier
+from plotlyst.core.domain import Novel, Character, Tier, Conflict
 from plotlyst.core.text import html
 from plotlyst.env import app_env
-from plotlyst.service.cache import acts_registry
+from plotlyst.service.cache import acts_registry, entities_registry
 from plotlyst.view.common import icon_to_html_img, columns, rows, wrap, label
 from plotlyst.view.icons import avatars, IconRegistry
 from plotlyst.view.report import AbstractReport
 from plotlyst.view.widget.chart import BaseChart, ActDistributionChart
-from plotlyst.view.widget.display import ChartView, PremiumOverlayWidget
+from plotlyst.view.widget.display import ChartView, PremiumOverlayWidget, IconText
 from plotlyst.view.widget.structure.selector import ActSelectorButtons
 
 
@@ -46,7 +46,7 @@ class SceneReport(AbstractReport):
         self.conflictDisplay = ConflictSTierDisplay()
 
         self.layout().addWidget(self.wdgDistributions)
-        self.layout().addWidget(label("Conflict tier list", h3=True), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(label("Conflict tier list", h2=True), alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.conflictDisplay)
 
         if not app_env.profile().get('scene-functions', False):
@@ -60,6 +60,7 @@ class SceneReport(AbstractReport):
     def refresh(self):
         self._povChart.refresh(self.novel)
         self._actChart.refresh(self.novel)
+        self.conflictDisplay.refresh(self.novel)
 
 
 class PovDistributionChart(BaseChart):
@@ -108,6 +109,30 @@ class PovDistributionChart(BaseChart):
             QToolTip.hideText()
 
 
+class TierConflictReferenceWidget(QFrame):
+    def __init__(self, conflict: Conflict, parent=None):
+        super().__init__(parent)
+        self.conflict = conflict
+
+        vbox(self, 5)
+        self.setMinimumSize(145, 105)
+        self.setProperty('large-rounded', True)
+        self.setProperty('white-bg', True)
+
+        self._lblConflict = IconText()
+        font = self._lblConflict.font()
+        font.setFamily(app_env.serif_font())
+        self._lblConflict.setFont(font)
+        self._lblConflict.setText(self.conflict.text if self.conflict.text else self.conflict.scope.display_name())
+
+        if self.conflict.character_id:
+            character = entities_registry.character(str(self.conflict.character_id))
+            if character:
+                self._lblConflict.setIcon(avatars.avatar(character))
+
+        self.layout().addWidget(self._lblConflict, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
 class STierRow(QWidget):
     def __init__(self, tier: Tier, parent=None):
         super().__init__(parent)
@@ -116,14 +141,14 @@ class STierRow(QWidget):
 
         self.lbl = QPushButton()
         self.lbl.setIconSize(QSize(55, 55))
-        sp(self.lbl).h_max()
+        self.lbl.setMinimumHeight(110)
+        sp(self.lbl).h_max().v_exp()
         self.lbl.setStyleSheet(f'''
                     QPushButton {{
                         background: {self.tier.color()};
                         border: 1px solid lightgrey;
-                        padding: 15px;
-                        padding-top: 25px;
-                        padding-bottom: 25px;
+                        padding-left: 15px;
+                        padding-right: 15px;
                         border-top-left-radius: 6px;
                         border-bottom-left-radius: 6px;
                     }}
@@ -134,15 +159,29 @@ class STierRow(QWidget):
         self.lbl.setIcon(
             IconRegistry.from_name(f'mdi6.alpha-{self.tier.value}', scale=1.4))
 
+        self.container = QWidget()
+        flow(self.container)
+        sp(self.container).h_exp().v_max()
+
         self.layout().addWidget(self.lbl, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(self.container)
+
+    def clear(self):
+        clear_layout(self.container)
+
+    def addConflict(self, conflict: Conflict):
+        wdg = TierConflictReferenceWidget(conflict)
+        self.container.layout().addWidget(wdg)
 
 
 class ConflictSTierDisplay(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         vbox(self, 0, 0)
-        self.setProperty('muted-bg', True)
+        self.setProperty('dark-bg', True)
         self.setProperty('large-rounded', True)
+
+        self._tiers: Dict[Tier, STierRow] = {}
 
         self.__initTierWidget(Tier.S)
         self.__initTierWidget(Tier.A)
@@ -150,6 +189,17 @@ class ConflictSTierDisplay(QFrame):
         self.__initTierWidget(Tier.C)
         self.__initTierWidget(Tier.D)
 
+    def refresh(self, novel: Novel):
+        for wdg in self._tiers.values():
+            wdg.clear()
+
+        for scene in novel.scenes:
+            for agency in scene.agency:
+                for conflict in agency.conflicts:
+                    if conflict.tier:
+                        self._tiers[conflict.tier].addConflict(conflict)
+
     def __initTierWidget(self, tier: Tier):
         wdg = STierRow(tier)
+        self._tiers[tier] = wdg
         self.layout().addWidget(wdg)

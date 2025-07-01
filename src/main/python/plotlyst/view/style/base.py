@@ -25,7 +25,7 @@ from PyQt6.QtWidgets import QWidget
 from qtmenu import MenuWidget
 
 from plotlyst.env import app_env
-from plotlyst.view.style.theme import BG_PRIMARY_COLOR, BG_SECONDARY_COLOR, BG_MUTED_COLOR, BG_ALT_COLOR
+from plotlyst.view.style.theme import BG_PRIMARY_COLOR, BG_SECONDARY_COLOR, BG_MUTED_COLOR, BG_ALT_COLOR, BG_DARK_COLOR
 
 style = f'''
 * {{
@@ -100,6 +100,10 @@ QFrame[relaxed-white-bg=true] {{
 
 QFrame[muted-bg=true] {{
     background-color: {BG_MUTED_COLOR};
+}}
+
+QFrame[dark-bg] {{
+    background-color: {BG_DARK_COLOR};
 }}
 
 QFrame[alt-bg=true] {{
