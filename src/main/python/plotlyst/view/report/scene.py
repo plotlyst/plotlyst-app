@@ -16,7 +16,7 @@ from plotlyst.view.common import icon_to_html_img, columns, rows, wrap, label
 from plotlyst.view.icons import avatars, IconRegistry
 from plotlyst.view.report import AbstractReport
 from plotlyst.view.widget.chart import BaseChart, ActDistributionChart
-from plotlyst.view.widget.display import ChartView, PremiumOverlayWidget, IconText
+from plotlyst.view.widget.display import PremiumOverlayWidget, IconText
 from plotlyst.view.widget.structure.selector import ActSelectorButtons
 
 
@@ -27,9 +27,8 @@ class SceneReport(AbstractReport):
         vbox(self)
 
         self.wdgDistributions = columns()
-        self.wdgDistributions.setMinimumHeight(550)
         self.wdgPov = rows(0, 0)
-        self.chartViewPovDistribution = ChartView()
+        self.chartViewPovDistribution = self._newChartView(self.largeSize)
         self._povChart = PovDistributionChart()
         self.chartViewPovDistribution.setChart(self._povChart)
         self.actSelector = ActSelectorButtons(novel)
@@ -37,7 +36,7 @@ class SceneReport(AbstractReport):
         self.wdgPov.layout().addWidget(self.chartViewPovDistribution)
         self.actSelector.actToggled.connect(self._povChart.toggleAct)
 
-        self.chartViewActDistribution = ChartView()
+        self.chartViewActDistribution = self._newChartView(self.largeSize)
         self._actChart = ActDistributionChart()
         self.chartViewActDistribution.setChart(self._actChart)
 

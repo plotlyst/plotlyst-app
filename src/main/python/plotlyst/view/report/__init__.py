@@ -23,9 +23,14 @@ from PyQt6.QtWidgets import QWidget
 
 from plotlyst.core.domain import Novel
 from plotlyst.service.persistence import RepositoryPersistenceManager
+from plotlyst.view.widget.display import ChartView
 
 
 class AbstractReport(QWidget):
+    largeSize: int = 400
+    mediumSize: int = 350
+    smallSize: int = 250
+
     def __init__(self, novel: Novel, parent=None, setupUi: bool = True):
         super(AbstractReport, self).__init__(parent)
         self.novel = novel
@@ -37,3 +42,8 @@ class AbstractReport(QWidget):
     @abstractmethod
     def refresh(self):
         pass
+
+    def _newChartView(self, size: int):
+        chart = ChartView()
+        chart.setFixedSize(size, size)
+        return chart
