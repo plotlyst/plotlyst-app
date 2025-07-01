@@ -1607,7 +1607,7 @@ class Tier(Enum):
 
     def color(self) -> str:
         if self == Tier.D:
-            return '#fad643'
+            return 'lightgrey'
         if self == Tier.C:
             return '#fad643'
         if self == Tier.B:
