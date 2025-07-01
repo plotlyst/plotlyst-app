@@ -1605,6 +1605,18 @@ class Tier(Enum):
         if self == Tier.S:
             return 5
 
+    def color(self) -> str:
+        if self == Tier.D:
+            return 'lightgrey'
+        if self == Tier.C:
+            return '#fad643'
+        if self == Tier.B:
+            return '#fad643'
+        if self == Tier.A:
+            return '#e57c04'
+        if self == Tier.S:
+            return '#c41e3a'
+
 
 @dataclass
 class Conflict(SelectionItem):
@@ -1731,6 +1743,7 @@ class SceneOutcome(Enum):
             return '#f4442e'
         elif self == SceneOutcome.TRADE_OFF:
             return '#832161'
+
 
 @dataclass
 class SceneStructureItem(OutlineItem):
