@@ -264,6 +264,8 @@ class BackstoryEvent(Event):
     type_icon: str = 'ri.calendar-event-fill'
     type_color: str = 'darkBlue'
     position: Optional[Position] = None
+    dimension: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    modifier: str = field(default='', metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass
