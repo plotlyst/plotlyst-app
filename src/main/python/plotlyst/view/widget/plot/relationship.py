@@ -112,7 +112,8 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
         self.btnDrag.clicked.connect(self._showContextMenu)
 
         self._source = self.__initTextElement()
-        self._title = icon_text(self._element.type_icon, self._element.keyphrase, self._element.type_color)
+        self._title = icon_text(self._element.type_icon,
+                                self._element.keyphrase, self._element.type_color)
         apply_button_palette_color(self._title, self._element.type_color)
         self._title.setIconSize(QSize(28, 28))
         incr_font(self._title)
@@ -144,7 +145,7 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
             if self._element.dimension:
                 self._title.setText(self._element.dimension)
-                self._title.setIcon(IconRegistry.from_name(self._element.type_icon))
+                self._title.setIcon(IconRegistry.from_name(self._element.type_icon, self._element.type_color))
                 if self._element.modifier:
                     self._lblModifier.setText(f'[{self._element.modifier}]')
                 else:
@@ -171,7 +172,10 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
     def _showContextMenu(self):
         menu = MenuWidget()
-        menu.addAction(action('Edit', IconRegistry.edit_icon(), slot=self._edit))
+        if self._element.data_type == RelationshipDynamicsDataType.RELATION:
+            menu.addAction(action('Edit dimension', IconRegistry.edit_icon(), slot=self._editDimension))
+        else:
+            menu.addAction(action('Edit', IconRegistry.edit_icon(), slot=self._edit))
         menu.addSeparator()
         menu.addAction(action('Remove', IconRegistry.trash_can_icon(), slot=self._remove))
         menu.exec()
@@ -201,19 +205,22 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
     def _dimensionChanged(self, btn: DimensionSelectorButton):
         if btn.isChecked():
-            self._title.setText(btn.dimension)
-            self._title.setIcon(IconRegistry.from_name(btn.iconName))
             self._element.dimension = btn.dimension
             self._element.type_icon = btn.iconName
+            self._element.update_relation_color()
+            self._title.setText(btn.dimension)
+            self._title.setIcon(IconRegistry.from_name(self._element.type_icon, self._element.type_color))
         else:
+            self._element.modifier = ''
+            self._element.dimension = ''
+            self._element.type_icon = 'fa5s.people-arrows'
+            self._element.update_relation_color()
             self._title.setText('')
             self._title.setIcon(IconRegistry.edit_icon('grey'))
             self._lblModifier.setText('')
             self._lblModifier.setVisible(False)
-            self._element.modifier = ''
-            self._element.dimension = ''
-            self._element.type_icon = ''
 
+        apply_button_palette_color(self._title, self._element.type_color)
         self.edited.emit()
 
     def _modifierChanged(self, btn: ModifierSelectorButton):

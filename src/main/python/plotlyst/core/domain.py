@@ -1466,6 +1466,19 @@ class RelationshipDynamicsElement(BackstoryEvent):
     data_type: RelationshipDynamicsDataType = RelationshipDynamicsDataType.TEXT
     connector_type: Optional[ConnectorType] = None
 
+    def update_relation_color(self):
+        if self.dimension:
+            if self.dimension in ['Bond', 'Love', 'Friendship', 'Family']:
+                self.type_color = RED_COLOR
+            elif self.dimension in ['Cooperation', 'Trust', 'Alliance', 'Respect', 'Loyalty']:
+                self.type_color = '#266dd3'
+            elif self.dimension in ['Conflict', 'Rivalry', 'Betrayal', 'Jealousy']:
+                self.type_color = '#e57c04'
+            else:
+                self.type_color = PLOTLYST_SECONDARY_COLOR
+        else:
+            self.type_color = 'black'
+
 
 @dataclass
 class RelationshipDynamics:
@@ -1733,6 +1746,7 @@ class SceneOutcome(Enum):
             return '#f4442e'
         elif self == SceneOutcome.TRADE_OFF:
             return '#832161'
+
 
 @dataclass
 class SceneStructureItem(OutlineItem):
