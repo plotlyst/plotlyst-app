@@ -25,7 +25,7 @@ from PyQt6.QtCore import pyqtSignal, Qt, QSize
 from PyQt6.QtGui import QResizeEvent, QPaintEvent
 from PyQt6.QtWidgets import QWidget, QTextEdit, QButtonGroup, QFrame
 from overrides import overrides
-from qthandy import vbox, incr_font, incr_icon, spacer, hbox, margins, flow
+from qthandy import vbox, incr_font, incr_icon, spacer, hbox, margins, flow, pointy
 from qthandy.filter import OpacityEventFilter, VisibilityToggleEventFilter
 from qtmenu import MenuWidget
 
@@ -33,14 +33,16 @@ from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Plot, Novel, BackstoryEvent, Position, Character, PlotType, \
     RelationshipDynamicsElement, RelationshipDynamicsType, RelationshipDynamicsDataType, ConnectorType
 from plotlyst.env import app_env
-from plotlyst.view.common import push_btn, columns, action, shadow, frame, label
+from plotlyst.view.common import push_btn, columns, action, shadow, frame, label, set_font
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu, transparent_menu
 from plotlyst.view.style.button import apply_button_palette_color
 from plotlyst.view.widget.button import SelectorToggleButton
 from plotlyst.view.widget.characters import CharacterSelectorButton
-from plotlyst.view.widget.display import ConnectorWidget, icon_text
+from plotlyst.view.widget.display import ConnectorWidget, icon_text, MenuOverlayEventFilter
 from plotlyst.view.widget.input import IconTextInputDialog, Toggle
+from plotlyst.view.widget.relationship import AbstractRelationshipChangeDimensionPopup, DimensionSelectorButton, \
+    ModifierSelectorButton
 from plotlyst.view.widget.timeline import TimelineLinearWidget, TimelineTheme, AbstractTimelineCard, TimelineEntityRow
 
 
@@ -81,6 +83,25 @@ class RelationshipDynamicsTextElement(QTextEdit):
         self.changed.emit()
 
 
+class RelationshipDynamicsDimensionPopup(AbstractRelationshipChangeDimensionPopup):
+    def __init__(self, element: RelationshipDynamicsElement, parent=None):
+        super().__init__(parent)
+
+        if element.dimension:
+            for btn in self.btnGroupDimensions.buttons():
+                if btn.text() == element.dimension:
+                    btn.setChecked(True)
+                    break
+            if element.modifier:
+                for btn in self.btnGroupModifiers.buttons():
+                    if btn.text() == element.modifier:
+                        btn.setChecked(True)
+                        break
+        else:
+            for btn in self.btnGroupModifiers.buttons():
+                btn.setEnabled(False)
+
+
 class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
     def __init__(self, element: RelationshipDynamicsElement, _: TimelineTheme, parent=None):
@@ -91,15 +112,14 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
         self.btnDrag.clicked.connect(self._showContextMenu)
 
         self._source = self.__initTextElement()
-        self._title = icon_text(self._element.type_icon, self._element.keyphrase, self._element.type_color)
+        self._title = icon_text(self._element.type_icon,
+                                self._element.keyphrase, self._element.type_color)
         apply_button_palette_color(self._title, self._element.type_color)
         self._title.setIconSize(QSize(28, 28))
         incr_font(self._title)
-        font = self._title.font()
-        font.setFamily(app_env.serif_font())
-        self._title.setFont(font)
+        set_font(self._title, app_env.serif_font())
         wdgHeader = frame()
-        hbox(wdgHeader, 2, 0)
+        vbox(wdgHeader, 2, 0)
         wdgHeader.layout().addWidget(self._title, alignment=Qt.AlignmentFlag.AlignCenter)
         wdgHeader.setProperty('rounded-on-top', True)
         wdgHeader.setProperty('muted-bg', True)
@@ -116,6 +136,24 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
         elif element.rel_type == RelationshipDynamicsType.SHARED:
             wdgEditor.layout().addWidget(self._source, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        if element.data_type == RelationshipDynamicsDataType.RELATION:
+            incr_font(self._title)  # increase again
+            pointy(self._title)
+            self._title.clicked.connect(self._editDimension)
+            self._lblModifier = label('', description=True, decr_font_diff=1)
+
+            if self._element.dimension:
+                self._title.setText(self._element.dimension)
+                self._title.setIcon(IconRegistry.from_name(self._element.type_icon, self._element.type_color))
+                if self._element.modifier:
+                    self._lblModifier.setText(f'[{self._element.modifier}]')
+                else:
+                    self._lblModifier.setHidden(True)
+            else:
+                self._title.setIcon(IconRegistry.edit_icon('grey', 'grey'))
+                self._lblModifier.setHidden(True)
+            wdgHeader.layout().addWidget(self._lblModifier, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.layout().addWidget(wdgHeader)
         self.layout().addWidget(wdgEditor)
@@ -134,7 +172,10 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
 
     def _showContextMenu(self):
         menu = MenuWidget()
-        menu.addAction(action('Edit', IconRegistry.edit_icon(), slot=self._edit))
+        if self._element.data_type == RelationshipDynamicsDataType.RELATION:
+            menu.addAction(action('Edit dimension', IconRegistry.edit_icon(), slot=self._editDimension))
+        else:
+            menu.addAction(action('Edit', IconRegistry.edit_icon(), slot=self._edit))
         menu.addSeparator()
         menu.addAction(action('Remove', IconRegistry.trash_can_icon(), slot=self._remove))
         menu.exec()
@@ -154,6 +195,44 @@ class RelationshipDynamicsElementCard(AbstractTimelineCard):
             apply_button_palette_color(self._title, self._element.type_color)
 
             self.edited.emit()
+
+    def _editDimension(self):
+        self._menu = RelationshipDynamicsDimensionPopup(self._element)
+        self._menu.btnGroupDimensions.buttonClicked.connect(self._dimensionChanged)
+        self._menu.btnGroupModifiers.buttonClicked.connect(self._modifierChanged)
+        self._menu.installEventFilter(MenuOverlayEventFilter(self._menu))
+        self._menu.exec()
+
+    def _dimensionChanged(self, btn: DimensionSelectorButton):
+        if btn.isChecked():
+            self._element.dimension = btn.dimension
+            self._element.type_icon = btn.iconName
+            self._element.update_relation_color()
+            self._title.setText(btn.dimension)
+            self._title.setIcon(IconRegistry.from_name(self._element.type_icon, self._element.type_color))
+        else:
+            self._element.modifier = ''
+            self._element.dimension = ''
+            self._element.type_icon = 'fa5s.people-arrows'
+            self._element.update_relation_color()
+            self._title.setText('')
+            self._title.setIcon(IconRegistry.edit_icon('grey'))
+            self._lblModifier.setText('')
+            self._lblModifier.setVisible(False)
+
+        apply_button_palette_color(self._title, self._element.type_color)
+        self.edited.emit()
+
+    def _modifierChanged(self, btn: ModifierSelectorButton):
+        self._lblModifier.setVisible(btn.isChecked())
+        if btn.isChecked():
+            self._lblModifier.setText(f'[{btn.modifier}]')
+            self._element.modifier = btn.modifier
+        else:
+            self._lblModifier.setText('')
+            self._element.modifier = ''
+
+        self.edited.emit()
 
     def _remove(self):
         self.deleteRequested.emit(self)
@@ -179,12 +258,12 @@ class RelationshipDynamicsSelectorTemplate(Enum):
     Need = ('Need', 'mdi.key', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
     Flaw = ('Flaw', 'mdi.virus', 'black', RelationshipDynamicsType.SEPARATE, 'BIDIRECTIONAL')
     Relationship_evolution = (
-        'Relationship evolution', 'fa5s.people-arrows', 'black', RelationshipDynamicsType.SHARED, None,
-        "How does the relationship evolve between the characters?")
+        'Evolution', 'fa5s.people-arrows', 'black', RelationshipDynamicsType.SHARED, None,
+        "How does the relationship evolve between the characters?", RelationshipDynamicsDataType.RELATION)
 
     def __new__(cls, display_name: str, icon: str, color: str, rel_type: RelationshipDynamicsType,
                 connector_type: Optional[str],
-                placeholder: str = ''):
+                placeholder: str = '', data_type=RelationshipDynamicsDataType.TEXT):
         obj = object.__new__(cls)
         obj._value_ = display_name
         obj.display_name = display_name
@@ -193,12 +272,13 @@ class RelationshipDynamicsSelectorTemplate(Enum):
         obj.rel_type = rel_type
         obj.connector_type = connector_type
         obj.placeholder = placeholder
+        obj.data_type = data_type
         return obj
 
     def element(self) -> RelationshipDynamicsElement:
         el = RelationshipDynamicsElement(self.display_name, self.placeholder, type_icon=self.icon,
                                          type_color=self.color, rel_type=self.rel_type,
-                                         data_type=RelationshipDynamicsDataType.TEXT)
+                                         data_type=self.data_type)
         if self.connector_type:
             el.connector_type = ConnectorType[self.connector_type]
         return el
@@ -253,6 +333,9 @@ class RelationshipDynamicsSelectorWidget(QFrame):
         self.layout().addWidget(
             label("Select an element that is either mutual or contrasting between the characters", description=True))
         self.layout().addWidget(self.wdgSelectors)
+        self.layout().addWidget(
+            label("Or, define how the relationship evolves between the characters", description=True))
+        self._initSelector(RelationshipDynamicsSelectorTemplate.Relationship_evolution, parent=self)
         self.layout().addWidget(self.wdgBottom, alignment=Qt.AlignmentFlag.AlignRight)
 
     def _selectorClicked(self, template: RelationshipDynamicsSelectorTemplate):
@@ -260,14 +343,16 @@ class RelationshipDynamicsSelectorWidget(QFrame):
         self.lblShared.setVisible(shared_visible)
         self.toggleShared.setVisible(shared_visible)
 
-    def _initSelector(self, template: RelationshipDynamicsSelectorTemplate) -> SelectorToggleButton:
+    def _initSelector(self, template: RelationshipDynamicsSelectorTemplate, parent=None) -> SelectorToggleButton:
         btn = SelectorToggleButton()
         btn.template = template
         btn.setIcon(IconRegistry.from_name(template.icon))
         btn.setText(template.display_name)
         btn.clicked.connect(partial(self._selectorClicked, template))
         self._selectorBtnGroup.addButton(btn)
-        self.wdgSelectors.layout().addWidget(btn)
+        if parent is None:
+            parent = self.wdgSelectors
+        parent.layout().addWidget(btn)
 
         return btn
 
@@ -275,7 +360,7 @@ class RelationshipDynamicsSelectorWidget(QFrame):
         if self.toggleShared.isVisible():
             shared = self.toggleShared.isChecked()
         else:
-            shared = False
+            shared = True
 
         if self._selectorBtnGroup.checkedButton() is self._btnCustom:
             self.customSelected.emit(RelationshipDynamicsType.SHARED if shared else RelationshipDynamicsType.SEPARATE)

@@ -48,7 +48,7 @@ jobs:
           ./test.sh
 
   core-windows-test:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - name: Add mask
         run: |
