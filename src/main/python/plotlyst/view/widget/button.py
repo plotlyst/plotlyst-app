@@ -568,7 +568,10 @@ class TaskTagSelector(QToolButton):
         tagsMenu.addAction(self._actionRemove, 12, 0)
         italic(self._actionRemove)
         set_font(self, app_env.serif_font())
-        decr_font(self, 2)
+        if app_env.is_mac():
+            incr_font(self, 1)
+        else:
+            decr_font(self, 2)
         decr_icon(self, 4)
         translucent(self, 0.7)
         transparent(self)

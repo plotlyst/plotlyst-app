@@ -94,7 +94,7 @@ class BackstoryCard(AbstractTimelineCard):
         self.lineKeyPhrase.setProperty('transparent', True)
         self.lineKeyPhrase.textEdited.connect(self._keyphraseEdited)
         font = self.lineKeyPhrase.font()
-        font.setPointSize(font.pointSize() + 2)
+        font.setPointSize(font.pointSize() + 4 if app_env.is_mac() else 2)
         font.setFamily(app_env.serif_font())
         self.lineKeyPhrase.setFont(font)
 

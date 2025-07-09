@@ -22,11 +22,13 @@ from typing import Dict, List, Union
 
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from PyQt6.QtWidgets import QWidget, QTextEdit, QGridLayout, QDialog
-from qthandy import vbox, bold, line, margins, spacer, grid, hbox, clear_layout, flow, transparent, vspacer, sp
+from qthandy import vbox, bold, line, margins, spacer, grid, hbox, clear_layout, flow, transparent, vspacer, sp, \
+    incr_font
 from qthandy.filter import VisibilityToggleEventFilter
 
 from plotlyst.common import RELAXED_WHITE_COLOR
 from plotlyst.core.domain import Topic, TopicType, TopicElement, TopicElementBlock
+from plotlyst.env import app_env
 from plotlyst.view.common import push_btn, fade_out_and_gc, label, \
     scrolled
 from plotlyst.view.icons import IconRegistry
@@ -42,6 +44,8 @@ class TopicSelectorButton(SelectorToggleButton):
         super().__init__(button_style)
         self.topic = topic
 
+        if group and app_env.is_mac():
+            incr_font(self, 2)
         self.setText(topic.text)
         self.setIcon(IconRegistry.from_name(topic.icon))
         self.setToolTip(topic.description)
