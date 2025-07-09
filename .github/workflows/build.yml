@@ -124,6 +124,9 @@ jobs:
         with:
           name: app-deb-artifact
           path: target/Plotlyst.deb
+      - name: Rename artifact
+        if: matrix.os == 'macos-13'
+        run: mv target/Plotlyst.dmg target/Plotlyst-${{ matrix.license }}.dmg
       - name: Upload mac artifacts to draft release
         if: matrix.os == 'macos-13'
         uses: softprops/action-gh-release@v2
@@ -132,7 +135,7 @@ jobs:
           name: "Internal Build ${{ github.run_number }}"
           draft: true
           repository: plotlyst/release-mac
-          files: target/Plotlyst.dmg
+          files: target/Plotlyst-${{ matrix.license }}.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.PLOTLYST_MAC_RELEASE_PA_TOKEN }}
       - uses: actions/upload-artifact@v4
