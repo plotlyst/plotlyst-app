@@ -41,6 +41,8 @@ jobs:
           path: license
       - name: Activate license
         run: python license/activate.py ${{ matrix.license }}
+      - if: matrix.license == 'plus'
+        run: python bump_premium_version.py
       - if: matrix.os != 'windows-2019'
         name: Set up Python
         uses: actions/setup-python@v2
