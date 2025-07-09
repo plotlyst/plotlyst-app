@@ -12,7 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-22.04, windows-2019, macos-13 ]
+        os: [ macos-13 ]
+        license: [ free, plus ]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -32,6 +33,16 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.10.11
+      - name: Checkout license repository
+        uses: actions/checkout@v2
+        with:
+          repository: plotlyst/license
+          token: ${{ secrets.PLOTLYST_MAC_RELEASE_PA_TOKEN }}
+          path: license
+      - name: Activate license
+        run: python license/activate.py ${{ matrix.license }}
+      - if: matrix.license == 'plus'
+        run: python bump_premium_version.py
       - if: matrix.os != 'windows-2019'
         name: Set up Python
         uses: actions/setup-python@v2
@@ -115,11 +126,20 @@ jobs:
         with:
           name: app-deb-artifact
           path: target/Plotlyst.deb
-      - uses: actions/upload-artifact@v4
+      - name: Rename artifact
         if: matrix.os == 'macos-13'
+        run: mv target/Plotlyst.dmg target/Plotlyst-${{ matrix.license }}.dmg
+      - name: Upload mac artifacts to draft release
+        if: matrix.os == 'macos-13'
+        uses: softprops/action-gh-release@v2
         with:
-          name: plotlyst-mac
-          path: target/Plotlyst.dmg
+          tag_name: build-${{ github.run_number }}
+          name: "Internal Build ${{ github.run_number }}"
+          draft: true
+          repository: plotlyst/release-mac
+          files: target/Plotlyst-${{ matrix.license }}.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.PLOTLYST_MAC_RELEASE_PA_TOKEN }}
       - uses: actions/upload-artifact@v4
         if: matrix.os == 'windows-2019'
         with:
