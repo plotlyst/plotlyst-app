@@ -812,8 +812,8 @@ class YearSelectorButton(QPushButton):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        current_year = datetime.today().year
-        self.setText(str(current_year))
+        self._current_year = datetime.today().year
+        self.setText(str(self._current_year))
         self.setIcon(IconRegistry.from_name('mdi.calendar-blank'))
         self.installEventFilter(ButtonPressResizeEventFilter(self))
         pointy(self)
@@ -826,6 +826,9 @@ class YearSelectorButton(QPushButton):
             f'border: 0px; background-color: rgba(0, 0, 0, 0); padding-right: {self._dropDownIconSize}px;')
 
         self.clicked.connect(self._showSelector)
+
+    def year(self) -> int:
+        return self._current_year
 
     @overrides
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -844,6 +847,7 @@ class YearSelectorButton(QPushButton):
         menu.exec(self.mapToGlobal(QPoint(0, self.sizeHint().height() + 10)))
 
     def _selected(self, year: int):
+        self._current_year = year
         self.setText(str(year))
         self.selected.emit(year)
 
@@ -853,8 +857,8 @@ class MonthSelectorButton(QPushButton):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        current_month = datetime.today().month
-        self.setText(calendar.month_name[current_month])
+        self._current_month = datetime.today().month
+        self.setText(calendar.month_name[self._current_month])
         self.setIcon(IconRegistry.from_name('mdi.calendar-month'))
         self.installEventFilter(ButtonPressResizeEventFilter(self))
         pointy(self)
@@ -867,6 +871,9 @@ class MonthSelectorButton(QPushButton):
             f'border: 0px; background-color: rgba(0, 0, 0, 0); padding-right: {self._dropDownIconSize}px;')
 
         self.clicked.connect(self._showSelector)
+
+    def month(self) -> int:
+        return self._current_month
 
     @overrides
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -886,5 +893,6 @@ class MonthSelectorButton(QPushButton):
         menu.exec(self.mapToGlobal(QPoint(0, self.sizeHint().height() + 10)))
 
     def _selected(self, month: int):
+        self._current_month = month
         self.setText(calendar.month_name[month])
         self.selected.emit(month)

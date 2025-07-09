@@ -61,6 +61,9 @@ class SnapshotCanvasEditor(QWidget):
     def setMonth(self, month: int):
         pass
 
+    def setDate(self, year: int, month: int):
+        pass
+
     def monthName(self) -> str:
         pass
 
@@ -133,6 +136,11 @@ class MonthlyWritingSnapshotEditor(SnapshotCanvasEditor):
         self.lblTitle.setText(calendar.month_name[month])
 
     @overrides
+    def setDate(self, year: int, month: int):
+        self.calendar.setCurrentPage(year, month)
+        self.lblTitle.setText(calendar.month_name[month])
+
+    @overrides
     def monthName(self) -> str:
         return calendar.month_name[self.calendar.monthShown()]
 
@@ -154,14 +162,16 @@ class DailyWritingSnapshotEditor(SnapshotCanvasEditor):
         set_font(self.lblTitle, app_env.serif_font())
 
         progress = daily_overall_progress(self.novel)
-        if progress.added > progress.removed:
+        if progress.added >= progress.removed:
             sign = '+'
-            action = 'written'
+            action = 'added'
             number = progress.added - progress.removed
         else:
             sign = '-'
             action = 'removed'
             number = progress.removed - progress.added
+        if number == 0:
+            sign = ''
 
         self.lblProgress = label(f'{sign}{number}', incr_font_diff=10, centered=True, color=PLOTLYST_MAIN_COLOR)
         self.lblWord = label(f'words {action}', incr_font_diff=3, centered=True, color='#495057')
@@ -332,6 +342,7 @@ class SocialSnapshotPopup(PopupDialog):
         elif snapshotType == SnapshotType.MonthlyWriting:
             self._editor = MonthlyWritingSnapshotEditor(self.novel)
             self.canvasContainer.layout().addWidget(self._editor.canvas)
+            self._editor.setDate(self.btnYearSelector.year(), self.btnMonthSelector.month())
         elif snapshotType == SnapshotType.DailyWriting:
             self._editor = DailyWritingSnapshotEditor(self.novel)
             self.canvasContainer.layout().addWidget(self._editor.canvas)
