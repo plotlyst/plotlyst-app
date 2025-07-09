@@ -68,6 +68,7 @@ class ManuscriptView(AbstractNovelView):
         self.ui.splitter.setSizes([150, 500])
         self._empty_page()
         self._dist_free_mode: bool = False
+        self._last_scroll_value: int = 0
 
         self.ui.lblWc.setAlignment(Qt.AlignmentFlag.AlignRight)
 
@@ -497,9 +498,11 @@ class ManuscriptView(AbstractNovelView):
             margins(self.ui.pageText, bottom=0)
 
     def _scroll_changed(self, value: int):
-        diff = self.ui.scrollEditor.verticalScrollBar().maximum() - value
-        if 0 < diff < 40:
-            scroll_to_bottom(self.ui.scrollEditor)
+        maximum = self.ui.scrollEditor.verticalScrollBar().maximum()
+        if self._last_scroll_value < maximum and value >= self._last_scroll_value:
+            if 0 < maximum - value < 40:
+                scroll_to_bottom(self.ui.scrollEditor)
+        self._last_scroll_value = value
 
     def _term_searched(self):
         if self._cbSpellCheck.isChecked():
