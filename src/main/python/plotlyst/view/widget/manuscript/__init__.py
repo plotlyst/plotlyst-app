@@ -470,7 +470,8 @@ class ManuscriptProgressCalendar(QCalendarWidget):
         self.setMaximumDate(today)
 
         if limitSize:
-            self.setMaximumHeight(220)
+            self.setMinimumHeight(220)
+            self.setMaximumHeight(230)
 
     @overrides
     def showEvent(self, event: QShowEvent) -> None:

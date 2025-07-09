@@ -1027,7 +1027,7 @@ class CharacterRoleSelector(QFrame):
         btn.setStyleSheet('''
                         QPushButton {
                             border: 1px hidden black;
-                            padding: 2px;
+                            padding: 4px;
                         }
                         QPushButton:hover {
                             background-color: #e9ecef;

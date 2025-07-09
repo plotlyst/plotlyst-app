@@ -22,7 +22,7 @@ from typing import Optional
 from PyQt6.QtCore import pyqtSignal, QPointF
 from PyQt6.QtGui import QAction, QUndoStack, QImage
 from overrides import overrides
-from qthandy import vline, line
+from qthandy import vline, line, decr_icon
 from qtmenu import GridMenuWidget
 
 from plotlyst.common import BLACK_COLOR
@@ -31,7 +31,7 @@ from plotlyst.core.domain import Diagram, Relation, Node
 from plotlyst.core.domain import Novel, GraphicsItemType
 from plotlyst.service.image import LoadedImage, upload_image, load_image
 from plotlyst.service.persistence import RepositoryPersistenceManager
-from plotlyst.view.common import action
+from plotlyst.view.common import action, tool_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.widget.characters import CharacterSelectorMenu
 from plotlyst.view.widget.graphics import NetworkGraphicsView, NetworkScene
@@ -45,6 +45,14 @@ class RelationsEditorScene(NetworkScene):
         self._novel = novel
 
         self.repo = RepositoryPersistenceManager.instance()
+
+    @overrides
+    def isSnapToGrid(self) -> bool:
+        return self._diagram.settings.snap_to_grid
+
+    def setSnapToGrid(self, enabled: bool):
+        self._diagram.settings.snap_to_grid = enabled
+        self._save()
 
     @overrides
     def _load(self):
@@ -88,6 +96,15 @@ class CharacterNetworkView(NetworkGraphicsView):
         self._controlsNavBar.layout().addWidget(self._btnUndo)
         self._controlsNavBar.layout().addWidget(self._btnRedo)
 
+        self._settingsBar.setVisible(True)
+        self._btnGrid = tool_btn(IconRegistry.from_name('mdi.dots-grid'), "Snap elements to an invisible grid",
+                                 True, icon_resize=False,
+                                 properties=['transparent-rounded-bg-on-hover', 'top-selector'],
+                                 parent=self._settingsBar)
+        decr_icon(self._btnGrid, 2)
+        self._settingsBar.layout().addWidget(self._btnGrid)
+        self._btnGrid.clicked.connect(self._scene.setSnapToGrid)
+
         self._characterEditor = CharacterToolbar(self.undoStack, self)
         self._characterEditor.changeCharacter.connect(self._editCharacterItem)
         self._characterEditor.setVisible(False)
@@ -97,6 +114,11 @@ class CharacterNetworkView(NetworkGraphicsView):
         self._noteEditor.setVisible(False)
         self._iconEditor = IconItemToolbar(self.undoStack, self)
         self._iconEditor.setVisible(False)
+
+    @overrides
+    def setDiagram(self, diagram: Diagram):
+        super().setDiagram(diagram)
+        self._btnGrid.setChecked(diagram.settings.snap_to_grid)
 
     @overrides
     def _initScene(self) -> NetworkScene:

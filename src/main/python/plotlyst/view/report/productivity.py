@@ -25,7 +25,7 @@ from PyQt6.QtCore import Qt, QRect, QDate, QPoint, QObject, QEvent
 from PyQt6.QtGui import QPainter, QTextOption, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView
 from overrides import overrides
-from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon
+from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon, vspacer, sp
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -79,8 +79,9 @@ class ProductivityReport(AbstractReport, QWidget):
         self.btnYearSelector = YearSelectorButton()
         self.btnYearSelector.selected.connect(self._yearSelected)
 
-        self.wdgCategoriesScroll = scroll_area(False, False, True)
+        self.wdgCategoriesScroll = scroll_area(True, False, True)
         self.wdgCategories = QWidget()
+        sp(self.wdgCategoriesScroll).v_max()
         self.wdgCategories.setProperty('relaxed-white-bg', True)
         self.wdgCategoriesScroll.setWidget(self.wdgCategories)
         hbox(self.wdgCategories, spacing=10)
@@ -97,8 +98,7 @@ class ProductivityReport(AbstractReport, QWidget):
         for i in range(12):
             wdg = QWidget()
             vbox(wdg)
-            calendar = ProductivityCalendar(novel.productivity)
-            calendar.setCurrentPage(current_year, i + 1)
+            calendar = ProductivityCalendar(novel.productivity, current_year, i + 1)
             calendar.clicked.connect(partial(self._dateSelected, calendar))
             self._calendars.append(calendar)
             wdg.layout().addWidget(label(months[i + 1], h5=True), alignment=Qt.AlignmentFlag.AlignCenter)
@@ -110,6 +110,7 @@ class ProductivityReport(AbstractReport, QWidget):
         self.layout().addWidget(self.btnYearSelector, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.wdgCategoriesScroll)
         self.layout().addWidget(self.wdgCalendars)
+        self.layout().addWidget(vspacer())
 
         if not app_env.profile().get('productivity', False):
             PremiumOverlayWidget(self, 'Daily Productivity Tracking',
@@ -118,7 +119,7 @@ class ProductivityReport(AbstractReport, QWidget):
 
     def _yearSelected(self, year: int):
         for i, calendar in enumerate(self._calendars):
-            calendar.setCurrentPage(year, i + 1)
+            calendar.setYear(year)
 
     def _dateSelected(self, calendar: 'ProductivityCalendar', date: QDate):
         def categorySelected(category: ProductivityType):
@@ -136,6 +137,10 @@ class ProductivityReport(AbstractReport, QWidget):
                 cal.selectDate(date)
                 continue
             cal.clearSelection()
+
+        if date.month() != calendar.month:
+            calendar.activate()
+            return
 
         menu = MenuWidget()
         menu.addSection(date.toString(Qt.DateFormat.ISODate), IconRegistry.from_name('mdi.calendar-blank'))
@@ -157,9 +162,11 @@ def date_to_str(date: QDate) -> str:
 
 
 class ProductivityCalendar(QCalendarWidget):
-    def __init__(self, productivity: DailyProductivity, parent=None):
+    def __init__(self, productivity: DailyProductivity, year: int, month: int, parent=None):
         super().__init__(parent)
         self.productivity = productivity
+        self.year = year
+        self.month = month
         self._selectedDate: Optional[QDate] = None
 
         self.setVerticalHeaderFormat(QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
@@ -184,12 +191,21 @@ class ProductivityCalendar(QCalendarWidget):
         today = QDate.currentDate()
         self.setMaximumDate(today)
 
+        self.activate()
+
     @overrides
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Wheel:
             event.ignore()
             return True
         return super().eventFilter(watched, event)
+
+    def setYear(self, year: int):
+        self.year = year
+        self.activate()
+
+    def activate(self):
+        self.setCurrentPage(self.year, self.month)
 
     def selectDate(self, date: QDate):
         self._selectedDate = date

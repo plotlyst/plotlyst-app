@@ -134,9 +134,10 @@ class CharactersView(AbstractNovelView):
             IconRegistry.from_name('ph.share-network-bold', color_on=PLOTLYST_SECONDARY_COLOR))
         self.ui.btnProgressView.setIcon(IconRegistry.progress_check_icon('black'))
 
-        if not app_env.profile().get('character-comparison', False):
-            self.ui.btnComparison.setHidden(True)
-            self.ui.btnGroupViews.removeButton(self.ui.btnComparison)
+        # if not app_env.profile().get('character-comparison', False):
+        # hide comparison view for now even for premium
+        self.ui.btnComparison.setHidden(True)
+        self.ui.btnGroupViews.removeButton(self.ui.btnComparison)
 
         self.setNavigableButtonGroup(self.ui.btnGroupViews)
 

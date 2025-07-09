@@ -20,12 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import QWidget
 from overrides import overrides
-from qthandy import vbox, incr_icon, vspacer, line
+from qthandy import vbox, incr_icon, vspacer, margins
 
 from plotlyst.env import app_env
-from plotlyst.view.common import wrap
+from plotlyst.view.common import wrap, rows
 from plotlyst.view.icons import IconRegistry
-from plotlyst.view.widget.display import IconText
+from plotlyst.view.widget.display import IconText, SeparatorLineWithShadow
 from plotlyst.view.widget.input import AutoAdjustableTextEdit
 
 
@@ -56,10 +56,16 @@ class AbstractArticleWidget(QWidget):
             title.setIcon(IconRegistry.from_name(icon))
             title.setIconSize(QSize(self.titleIconSize, self.titleIconSize))
 
-        self.layout().addWidget(wrap(title, margin_bottom=35), alignment=Qt.AlignmentFlag.AlignCenter)
+        wdgTitle = rows(0)
+        wdgTitle.layout().addWidget(title)
+        wdgTitle.layout().addWidget(SeparatorLineWithShadow())
+        margins(wdgTitle, bottom=25)
+
+        # self.layout().addWidget(wrap(title, margin_bottom=35), alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(wdgTitle)
 
     def addSeparator(self):
-        self.layout().addWidget(line())
+        self.layout().addWidget(SeparatorLineWithShadow())
 
     def addSubheading(self, heading: str, icon: str = ''):
         subheading = IconText()
@@ -114,7 +120,6 @@ class FAQArticleWidget(AbstractArticleWidget):
         super().__init__(parent)
 
         self.setTitle('Frequently Asked Questions', 'ei.question')
-        self.addSeparator()
         self.addSubheading("Where is all of my data stored?", 'fa5s.database')
         self.addText(
             '''Your library, including all your novels, characters, manuscripts, etc., are in a separate folder that you can find under the menu option `File > Project > Open in explorer`.
@@ -125,6 +130,10 @@ You can also change this location under the same menu, `Change project directory
         self.addSubheading("Is there any AI in the app?", 'mdi.robot-angry')
         self.addText(
             "No, there isn't, and I plan to keep it that way. An AI-based spellchecker could be an argument later on, but otherwise there won't be any AI support for writing.")
+
+        self.addSubheading("Is Dark Mode available?", 'fa5s.palette')
+        self.addText("Not yet, but it's planned for Q3 2025.")
+
         self.finish()
 
     @overrides

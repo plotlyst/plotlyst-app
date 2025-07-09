@@ -189,13 +189,14 @@ class ScenePurposeTypeButton(QPushButton):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._scene: Optional[Scene] = None
-        pointy(self)
+        # pointy(self)
         font = self.font()
         font.setFamily(app_env.serif_font())
         font.setPointSize(font.pointSize() + 1)
         self.setFont(font)
-        self._opacityFilter = OpacityEventFilter(self, 0.8, 1.0, ignoreCheckedButton=True)
-        self.installEventFilter(self._opacityFilter)
+        translucent(self, 0.7)
+        # self._opacityFilter = OpacityEventFilter(self, 0.8, 1.0, ignoreCheckedButton=True)
+        # self.installEventFilter(self._opacityFilter)
 
         self.refresh()
 

@@ -28,7 +28,7 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QWidget, QFrame, QToolButton, QTreeView, QLabel, QTableView, \
     QAbstractItemView, QButtonGroup
 from overrides import overrides
-from qthandy import busy, margins, pointy, vline, grid, line, retain_when_hidden
+from qthandy import busy, margins, pointy, vline, grid, line, retain_when_hidden, translucent
 from qthandy import transparent, flow, \
     clear_layout, hbox, btn_popup, italic
 from qtmenu import MenuWidget
@@ -602,7 +602,7 @@ class SceneDriveTrackingEditor(QWidget, Ui_SceneDriveTrackingEditor):
 
 
 class ScenesDistributionWidget(QWidget, Ui_CharactersScenesDistributionWidget, EventListener):
-    avg_text: str = 'Characters per scene: '
+    avg_text: str = 'Character appearances per scene: '
     common_text: str = 'Common scenes: '
 
     def __init__(self, novel: Novel, parent=None):
@@ -642,7 +642,9 @@ class ScenesDistributionWidget(QWidget, Ui_CharactersScenesDistributionWidget, E
         self.btnTags.toggled.connect(self._toggle_tags)
 
         transparent(self.spinAverage)
+        translucent(self.spinAverage, 0.7)
         retain_when_hidden(self.spinAverage)
+        self.spinAverage.setPrefix(self.avg_text)
 
         self.btnCharacters.setChecked(True)
         self.btnConflicts.setVisible(self.novel.prefs.toggled(NovelSetting.Track_conflict))

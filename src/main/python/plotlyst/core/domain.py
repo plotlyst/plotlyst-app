@@ -264,6 +264,8 @@ class BackstoryEvent(Event):
     type_icon: str = 'ri.calendar-event-fill'
     type_color: str = 'darkBlue'
     position: Optional[Position] = None
+    dimension: str = field(default='', metadata=config(exclude=exclude_if_empty))
+    modifier: str = field(default='', metadata=config(exclude=exclude_if_empty))
 
 
 @dataclass
@@ -1464,6 +1466,19 @@ class RelationshipDynamicsElement(BackstoryEvent):
     data_type: RelationshipDynamicsDataType = RelationshipDynamicsDataType.TEXT
     connector_type: Optional[ConnectorType] = None
 
+    def update_relation_color(self):
+        if self.dimension:
+            if self.dimension in ['Bond', 'Love', 'Friendship', 'Family']:
+                self.type_color = RED_COLOR
+            elif self.dimension in ['Cooperation', 'Trust', 'Alliance', 'Respect', 'Loyalty']:
+                self.type_color = '#266dd3'
+            elif self.dimension in ['Conflict', 'Rivalry', 'Betrayal', 'Jealousy']:
+                self.type_color = '#e57c04'
+            else:
+                self.type_color = PLOTLYST_SECONDARY_COLOR
+        else:
+            self.type_color = 'black'
+
 
 @dataclass
 class RelationshipDynamics:
@@ -1582,7 +1597,7 @@ class ConflictType(Enum):
         if self == ConflictType.INTERNAL:
             return "Character struggles with their own desires and beliefs"
         if self == ConflictType.MILIEU:
-            return "Conflict against the environment or society"
+            return "Character is in conflict with their environment"
         return "Conflict that personally affects the character"
 
 
@@ -1731,6 +1746,7 @@ class SceneOutcome(Enum):
             return '#f4442e'
         elif self == SceneOutcome.TRADE_OFF:
             return '#832161'
+
 
 @dataclass
 class SceneStructureItem(OutlineItem):
@@ -2506,7 +2522,7 @@ def worldbuilding_root() -> WorldBuildingEntity:
     main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Header))
     main_section.blocks.append(WorldBuildingEntityElement(WorldBuildingEntityElementType.Text))
     return WorldBuildingEntity('My world', icon='mdi.globe-model', bg_color='#40916c',
-                               elements=[main_section])
+                               elements=[main_section], side_visible=False)
 
 
 @dataclass

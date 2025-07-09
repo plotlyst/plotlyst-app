@@ -42,7 +42,7 @@ from plotlyst.events import CharacterDeletedEvent, TaskChanged, TaskDeleted, Tas
     TaskChangedFromWip, CharacterChangedEvent
 from plotlyst.service.persistence import RepositoryPersistenceManager
 from plotlyst.view.common import ButtonPressResizeEventFilter, shadow, action, tool_btn, \
-    any_menu_visible, insert_before_the_end, label, push_btn
+    any_menu_visible, insert_before_the_end, label, push_btn, restyle
 from plotlyst.view.icons import IconRegistry, avatars
 from plotlyst.view.layout import group
 from plotlyst.view.widget.button import CollapseButton, TaskTagSelector
@@ -234,6 +234,8 @@ class TaskWidget(QFrame):
     def _tagChanged(self, tag: SelectionItem):
         self._task.tags.clear()
         self._task.tags.append(tag.text)
+        self.changed.emit()
+        restyle(self)
 
     def _onLeave(self):
         if not self._task.character_id:

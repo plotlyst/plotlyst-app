@@ -45,7 +45,7 @@ from plotlyst.event.core import emit_event, emit_global_event
 from plotlyst.events import SocialSnapshotRequested, ShowRoadmapEvent
 from plotlyst.service.importer import SyncImporter
 from plotlyst.view.common import ButtonPressResizeEventFilter, tool_btn, spin, action, label, \
-    ButtonIconSwitchEventFilter, push_btn
+    ButtonIconSwitchEventFilter, push_btn, set_font
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.style.base import apply_white_menu
 
@@ -539,7 +539,6 @@ class TaskTagSelector(QToolButton):
         super().__init__(parent)
         self._selected = False
         pointy(self)
-        self._reset()
 
         tagsMenu = GridMenuWidget(self)
 
@@ -566,11 +565,17 @@ class TaskTagSelector(QToolButton):
 
         tagsMenu.addSeparator(10, 0, colSpan=3)
         self._actionRemove = action('Remove', IconRegistry.trash_can_icon(), slot=self._reset)
-        italic(self._actionRemove)
         tagsMenu.addAction(self._actionRemove, 12, 0)
+        italic(self._actionRemove)
+        set_font(self, app_env.serif_font())
+        decr_font(self, 2)
+        decr_icon(self, 4)
+        translucent(self, 0.7)
         transparent(self)
-        translucent(self, 0.9)
+        self.setStyleSheet(f'border: 0px; background-color: rgba(0,0,0,0); color: {PLOTLYST_MAIN_COLOR};')
         self.installEventFilter(ButtonPressResizeEventFilter(self))
+
+        self._reset()
 
     @overrides
     def enterEvent(self, event: QEnterEvent) -> None:
@@ -594,17 +599,21 @@ class TaskTagSelector(QToolButton):
         self.setToolTip('Ling a tag')
         self._selected = False
         decr_icon(self)
+        self._actionRemove.setVisible(self._selected)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
     def _action(self, tag: SelectionItem) -> QAction:
-        return action(tag.text, IconRegistry.from_selection_item(tag),
+        return action(tag.text, IconRegistry.from_name(tag.icon, PLOTLYST_MAIN_COLOR),
                       slot=partial(self._tagSelected, tag))
 
     def __updateTag(self, tag: SelectionItem):
         if not self._selected:
             incr_icon(self)
-        self.setIcon(IconRegistry.from_selection_item(tag))
-        self.setToolTip(tag.text)
+        self.setIcon(IconRegistry.from_name(tag.icon, PLOTLYST_MAIN_COLOR))
         self._selected = True
+        self._actionRemove.setVisible(self._selected)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.setText(tag.text)
 
 
 class ChargeButton(SecondaryActionToolButton):

@@ -276,7 +276,7 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         tagPlanned.clicked.connect(partial(self._roadmapWidget.filterStatus, 'Planned'))
         btnGroup.addButton(tagCompleted)
         btnGroup.addButton(tagPlanned)
-        self.wdgCategories.layout().addWidget(label('State', description=True))
+        self.wdgCategories.layout().addWidget(label('State', description=True, incr_font_diff=1))
         wdgStates = QWidget()
         vbox(wdgStates)
         margins(wdgStates, left=10, bottom=30)
@@ -284,7 +284,7 @@ class RoadmapView(QWidget, Ui_RoadmapView):
         wdgStates.layout().addWidget(tagPlanned, alignment=Qt.AlignmentFlag.AlignLeft)
         self.wdgCategories.layout().addWidget(wdgStates)
 
-        self.wdgCategories.layout().addWidget(label('Type', description=True))
+        self.wdgCategories.layout().addWidget(label('Type', description=True, incr_font_diff=1))
         wdgTypes = QWidget()
         vbox(wdgTypes)
         margins(wdgTypes, left=10)

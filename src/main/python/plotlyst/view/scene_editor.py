@@ -227,7 +227,18 @@ class SceneEditor(QObject, EventListener):
                             NovelStructureToggleEvent,
                             NovelPovTrackingToggleEvent, NovelScenesOrganizationToggleEvent)
 
+        # self.ui.scrollAreaWidgetDramaticFunctions.installEventFilter(self)
+
         self._handle_scenes_organization()
+
+    # @overrides
+    # def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+    #     if isinstance(event, QResizeEvent):
+    #         print(event.size().width() * event.size().height())
+    #         if event.size().width() * event.size().height() > 500000:
+    #             if self.ui.scrollAreaWidgetDramaticFunctions.layout().count() == 1:
+    #                 self.ui.scrollAreaWidgetDramaticFunctions.layout().layout().addWidget(self._informationEditor)
+    #     return super().eventFilter(watched, event)
 
     @overrides
     def event_received(self, event: Event):

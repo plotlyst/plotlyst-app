@@ -136,6 +136,9 @@ class GlossaryItemsEditorWidget(ItemsEditorWidget):
         self.setInlineAdditionEnabled(False)
         self.setAskRemovalConfirmation(True)
 
+        self.hintLbl = label("Define a list of terms specific to your fictional world", description=True)
+        self.toolbar.layout().addWidget(self.hintLbl, alignment=Qt.AlignmentFlag.AlignRight)
+
     @overrides
     def _itemDisplayText(self, item: GlossaryItem) -> str:
         return item.key
@@ -293,6 +296,9 @@ class WorldBuildingGlossaryEditor(QWidget):
         self.editor.setStyleSheet(f'background: {self._palette.bg_color};')
         self.editor.btnAdd.clicked.connect(self._addNew)
         self.editor.editRequested.connect(self._edit)
+
+        if self._novel.world.glossary:
+            self.editor.hintLbl.setHidden(True)
         self.glossaryModel = GlossaryModel(self._novel)
         proxyModel = proxy(self.glossaryModel)
         proxyModel.sort(GlossaryModel.ColName)
@@ -337,6 +343,7 @@ class WorldBuildingGlossaryEditor(QWidget):
     def _addNew(self):
         glossary = GlossaryEditorDialog.edit(self._novel.world.glossary)
         if glossary:
+            self.editor.hintLbl.setHidden(True)
             self._updateGlossary(glossary)
 
     def _edit(self, item: GlossaryItem):

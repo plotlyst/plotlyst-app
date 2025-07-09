@@ -37,7 +37,7 @@ class StorylineTimelineCard(BackstoryCard):
 
 class StorylineTimelineWidget(TimelineLinearWidget):
     def __init__(self, plot: Plot, parent=None):
-        theme = TimelineTheme(plot.icon_color, timeline_opacity=0.6, card_bg_color='#F6EAE1')
+        theme = TimelineTheme('grey', timeline_opacity=0.6, card_bg_color='#F6EAE1')
         super().__init__(theme, parent)
         self._plot = plot
 
