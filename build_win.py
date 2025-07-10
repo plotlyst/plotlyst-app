@@ -68,7 +68,7 @@ def main():
         identity=args.identity,
         edition='free',
         version=original_version,
-        zipname='Plotlyst-free.zip'
+        zipname='Plotlyst-free-windows.zip'
     )
 
     premium_version = bump_middle_version(original_version)
