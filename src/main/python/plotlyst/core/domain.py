@@ -3887,7 +3887,7 @@ class ProductivityType(SelectionItem):
 
 
 class SnapshotType(Enum):
-    Productivity = ('Monthly Productivity', 'mdi6.progress-star-four-points')
+    MonthlyProductivity = ('Monthly Productivity', 'mdi6.progress-star-four-points')
     MonthlyWriting = ('Monthly Writing', 'mdi.calendar-month')
     DailyWriting = ('Daily Writing', 'mdi6.calendar-today')
 

@@ -833,6 +833,15 @@ class HighQualityPaintedIcon(QWidget):
         self._icon.paint(painter, event.rect())
 
 
+class HighQualityPaintedIconText(QWidget):
+    def __init__(self, icon: QIcon, qlabel: QLabel, parent=None, size: int = 18):
+        super().__init__(parent)
+        hbox(self, 0, 0)
+
+        self.layout().addWidget(HighQualityPaintedIcon(icon, parent, size))
+        self.layout().addWidget(qlabel)
+
+
 class PlotlystFooter(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)

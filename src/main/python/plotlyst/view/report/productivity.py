@@ -25,7 +25,7 @@ from PyQt6.QtCore import Qt, QRect, QDate, QPoint, QObject, QEvent
 from PyQt6.QtGui import QPainter, QTextOption, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView
 from overrides import overrides
-from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon, vspacer, sp
+from qthandy import flow, bold, underline, vbox, margins, incr_icon, vspacer
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -35,7 +35,7 @@ from plotlyst.env import app_env
 from plotlyst.event.core import emit_event, emit_global_event
 from plotlyst.events import SocialSnapshotRequested, DailyProductivityChanged
 from plotlyst.service.productivity import find_daily_productivity, set_daily_productivity, clear_daily_productivity
-from plotlyst.view.common import label, scroll_area, tool_btn, action
+from plotlyst.view.common import label, tool_btn, action
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report import AbstractReport
 from plotlyst.view.widget.button import YearSelectorButton
@@ -69,30 +69,21 @@ class ProductivityReport(AbstractReport, QWidget):
         incr_icon(self.btnSnapshot, 6)
         self.btnSnapshot.installEventFilter(OpacityEventFilter(self.btnSnapshot, leaveOpacity=0.7))
         self.btnSnapshot.clicked.connect(
-            lambda: emit_event(novel, SocialSnapshotRequested(self, SnapshotType.Productivity)))
-        self.btnSnapshot.setHidden(True)
+            lambda: emit_event(novel, SocialSnapshotRequested(self, SnapshotType.MonthlyProductivity)))
 
         self.wdgCalendars = QWidget()
-        flow(self.wdgCalendars, 5, 10)
+        flow(self.wdgCalendars, 5, 10, centered=True)
         margins(self.wdgCalendars, left=15, right=15, top=15)
 
         self.btnYearSelector = YearSelectorButton()
         self.btnYearSelector.selected.connect(self._yearSelected)
 
-        self.wdgCategoriesScroll = scroll_area(True, False, True)
         self.wdgCategories = QWidget()
-        sp(self.wdgCategoriesScroll).v_max()
-        self.wdgCategories.setProperty('relaxed-white-bg', True)
-        self.wdgCategoriesScroll.setWidget(self.wdgCategories)
-        hbox(self.wdgCategories, spacing=10)
-        margins(self.wdgCategories, left=25, right=25)
+        flow(self.wdgCategories, spacing=10, centered=True)
 
-        self.wdgCategories.layout().addWidget(spacer())
         for category in novel.productivity.categories:
             self.wdgCategories.layout().addWidget(
                 icon_text('fa5s.circle', category.text, category.icon_color, opacity=0.7))
-
-        self.wdgCategories.layout().addWidget(spacer())
 
         current_year = datetime.today().year
         for i in range(12):
@@ -108,7 +99,7 @@ class ProductivityReport(AbstractReport, QWidget):
         self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
         self.layout().addWidget(label('Daily Productivity Report', h2=True), alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.btnYearSelector, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(self.wdgCategoriesScroll)
+        self.layout().addWidget(self.wdgCategories)
         self.layout().addWidget(self.wdgCalendars)
         self.layout().addWidget(vspacer())
 
@@ -162,7 +153,7 @@ def date_to_str(date: QDate) -> str:
 
 
 class ProductivityCalendar(QCalendarWidget):
-    def __init__(self, productivity: DailyProductivity, year: int, month: int, parent=None):
+    def __init__(self, productivity: DailyProductivity, year: int, month: int, limitSize: bool = True, parent=None):
         super().__init__(parent)
         self.productivity = productivity
         self.year = year
@@ -184,8 +175,9 @@ class ProductivityCalendar(QCalendarWidget):
                         selection-background-color: {RELAXED_WHITE_COLOR};
                     }}
                     ''')
-            widget.horizontalHeader().setMinimumSectionSize(30)
-            widget.verticalHeader().setMinimumSectionSize(30)
+            if limitSize:
+                widget.horizontalHeader().setMinimumSectionSize(30)
+                widget.verticalHeader().setMinimumSectionSize(30)
             widget.viewport().installEventFilter(self)
 
         today = QDate.currentDate()
@@ -202,6 +194,10 @@ class ProductivityCalendar(QCalendarWidget):
 
     def setYear(self, year: int):
         self.year = year
+        self.activate()
+
+    def setMonth(self, month: int):
+        self.month = month
         self.activate()
 
     def activate(self):
@@ -232,11 +228,9 @@ class ProductivityCalendar(QCalendarWidget):
                 color = QColor(category.icon_color)
                 color.setAlpha(115)
                 painter.setBrush(color)
-                rad = rect.width() // 2 - 1
 
                 painter.setOpacity(125)
-
-                # IconRegistry.from_name('mdi.circle-slice-8', category.icon_color).paint(painter, rect)
+                rad = min(rect.width(), rect.height()) // 2 - 1
                 painter.drawEllipse(rect.center() + QPoint(1, 1), rad, rad)
 
             if date > self.maximumDate():

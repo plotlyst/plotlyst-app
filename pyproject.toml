@@ -34,7 +34,6 @@ dependencies = [
     "cbor2==5.6.5",
     "cryptography==44.0.1",
     "jinja2==3.1.2",
-    "qt-handy",
 ]
 
 [project.optional-dependencies]
@@ -49,7 +48,7 @@ test = [
 [tool.briefcase]
 project_name = "Plotlyst"
 bundle = "com.plotlyst"
-version = "1.2.1"
+version = "1.3.0"
 
 [tool.briefcase.app.plotlyst]
 formal_name = "Plotlyst"
@@ -59,6 +58,7 @@ sources = [
 ]
 icon = "src/main/icons/Icon"
 requires = [
+    'qt-handy @ git+https://github.com/plotlyst/qt-handy.git',
     'qt-anim @ git+https://github.com/plotlyst/qt-anim.git',
     'qt-menu @ git+https://github.com/plotlyst/qt-menu.git',
     'qt-tour @ git+https://github.com/plotlyst/qt-tour.git',
