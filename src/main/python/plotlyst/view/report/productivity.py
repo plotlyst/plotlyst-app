@@ -25,7 +25,7 @@ from PyQt6.QtCore import Qt, QRect, QDate, QPoint, QObject, QEvent
 from PyQt6.QtGui import QPainter, QTextOption, QColor, QCursor
 from PyQt6.QtWidgets import QWidget, QCalendarWidget, QTableView
 from overrides import overrides
-from qthandy import flow, bold, underline, vbox, margins, hbox, spacer, incr_icon, vspacer, sp
+from qthandy import flow, bold, underline, vbox, margins, incr_icon, vspacer
 from qthandy.filter import OpacityEventFilter
 from qtmenu import MenuWidget
 
@@ -35,7 +35,7 @@ from plotlyst.env import app_env
 from plotlyst.event.core import emit_event, emit_global_event
 from plotlyst.events import SocialSnapshotRequested, DailyProductivityChanged
 from plotlyst.service.productivity import find_daily_productivity, set_daily_productivity, clear_daily_productivity
-from plotlyst.view.common import label, scroll_area, tool_btn, action
+from plotlyst.view.common import label, tool_btn, action
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.report import AbstractReport
 from plotlyst.view.widget.button import YearSelectorButton
@@ -78,20 +78,12 @@ class ProductivityReport(AbstractReport, QWidget):
         self.btnYearSelector = YearSelectorButton()
         self.btnYearSelector.selected.connect(self._yearSelected)
 
-        self.wdgCategoriesScroll = scroll_area(True, False, True)
         self.wdgCategories = QWidget()
-        sp(self.wdgCategoriesScroll).v_max()
-        self.wdgCategories.setProperty('relaxed-white-bg', True)
-        self.wdgCategoriesScroll.setWidget(self.wdgCategories)
-        hbox(self.wdgCategories, spacing=10)
-        margins(self.wdgCategories, left=25, right=25)
+        flow(self.wdgCategories, spacing=10, centered=True)
 
-        self.wdgCategories.layout().addWidget(spacer())
         for category in novel.productivity.categories:
             self.wdgCategories.layout().addWidget(
                 icon_text('fa5s.circle', category.text, category.icon_color, opacity=0.7))
-
-        self.wdgCategories.layout().addWidget(spacer())
 
         current_year = datetime.today().year
         for i in range(12):
@@ -107,7 +99,7 @@ class ProductivityReport(AbstractReport, QWidget):
         self.layout().addWidget(self.btnSnapshot, alignment=Qt.AlignmentFlag.AlignRight)
         self.layout().addWidget(label('Daily Productivity Report', h2=True), alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.btnYearSelector, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout().addWidget(self.wdgCategoriesScroll)
+        self.layout().addWidget(self.wdgCategories)
         self.layout().addWidget(self.wdgCalendars)
         self.layout().addWidget(vspacer())
 
