@@ -127,7 +127,7 @@ class ProductivitySnapshotLegend(QWidget):
     def __init__(self, novel: Novel, parent=None):
         super().__init__(parent)
         self._novel = novel
-        flow(self)
+        flow(self, centered=True)
         sp(self).v_max()
 
     def refresh(self, year: int, month: int):

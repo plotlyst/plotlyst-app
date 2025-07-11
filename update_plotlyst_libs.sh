@@ -5,6 +5,7 @@ set -e
 
 pip uninstall -y qt-uic
 pip uninstall -y qt-menu
+pip uninstall -y qt-handy
 pip uninstall -y qt-anim
 pip uninstall -y qt-tour
 pip uninstall -y qt-textedit
@@ -14,6 +15,7 @@ pip uninstall -y qt-toolbox
 
 pip install git+https://github.com/plotlyst/qt-uic.git
 pip install git+https://github.com/plotlyst/qt-menu.git
+pip install git+https://github.com/plotlyst/qt-handy.git
 pip install git+https://github.com/plotlyst/qt-anim.git
 pip install git+https://github.com/plotlyst/qt-tour.git
 pip install git+https://github.com/plotlyst/qt-textedit.git

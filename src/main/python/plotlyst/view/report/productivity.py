@@ -72,7 +72,7 @@ class ProductivityReport(AbstractReport, QWidget):
             lambda: emit_event(novel, SocialSnapshotRequested(self, SnapshotType.MonthlyProductivity)))
 
         self.wdgCalendars = QWidget()
-        flow(self.wdgCalendars, 5, 10)
+        flow(self.wdgCalendars, 5, 10, centered=True)
         margins(self.wdgCalendars, left=15, right=15, top=15)
 
         self.btnYearSelector = YearSelectorButton()
@@ -236,11 +236,9 @@ class ProductivityCalendar(QCalendarWidget):
                 color = QColor(category.icon_color)
                 color.setAlpha(115)
                 painter.setBrush(color)
-                rad = rect.width() // 2 - 1
 
                 painter.setOpacity(125)
-
-                # IconRegistry.from_name('mdi.circle-slice-8', category.icon_color).paint(painter, rect)
+                rad = min(rect.width(), rect.height()) // 2 - 1
                 painter.drawEllipse(rect.center() + QPoint(1, 1), rad, rad)
 
             if date > self.maximumDate():
