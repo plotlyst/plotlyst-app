@@ -45,6 +45,7 @@ from plotlyst.view.common import DelayedSignalSlotConnector, action, wrap, label
     ButtonPressResizeEventFilter, push_btn, tool_btn
 from plotlyst.view.icons import IconRegistry
 from plotlyst.view.layout import group
+from plotlyst.view.style.theme import BG_PRIMARY_COLOR
 from plotlyst.view.widget.characters import CharacterSelectorButton
 from plotlyst.view.widget.display import Icon, ArrowButton
 from plotlyst.view.widget.input import RemovalButton
@@ -210,7 +211,7 @@ class ScenePurposeTypeButton(QPushButton):
 
         if self._scene.purpose == ScenePurposeType.Other:
             self.setText('Type...')
-            self.setIcon(QIcon())
+            self.setIcon(IconRegistry.from_name('msc.debug-stackframe-dot', BG_PRIMARY_COLOR))
         else:
             purpose = scene_purposes.get(self._scene.purpose)
             tip = purpose.display_name.replace('\n', ' ')
@@ -243,7 +244,7 @@ class ScenePurposeTypeButton(QPushButton):
         elif self._scene.progress:
             self.setIcon(IconRegistry.charge_icon(self._scene.progress, borderColor))
         else:
-            self.setIcon(QIcon())
+            self.setIcon(IconRegistry.from_name('ph.minus-thin', borderColor))
 
         self.setStyleSheet(f'''
             QPushButton {{
@@ -1233,6 +1234,8 @@ class SceneProgressEditor(ProgressEditor):
         self._charge: int = 0
         self._altCharge: int = 0
         self.btnLock.setToolTip('Scene progression is calculated from the associated storylines')
+        self.posCharge.setToolTip('The story progresses positively for the character')
+        self.negCharge.setToolTip('The story intensifies with a setback or negative outcome for the character')
 
     def setScene(self, scene: Scene):
         self._scene = scene
