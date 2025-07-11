@@ -26,7 +26,7 @@ from PyQt6.QtGui import QGuiApplication, QPixmap, QPainter, QPaintEvent, QPainte
 from PyQt6.QtWidgets import QWidget, QFileDialog, QButtonGroup
 from overrides import overrides
 from qthandy import vbox, clear_layout, transparent, vline, hbox, retain_when_hidden, italic, incr_font, margins, \
-    vspacer, spacer
+    vspacer, spacer, line, flow, sp, translucent
 
 from plotlyst.common import RELAXED_WHITE_COLOR, PLOTLYST_MAIN_COLOR
 from plotlyst.core.domain import SnapshotType, Novel, LayoutType
@@ -39,7 +39,7 @@ from plotlyst.view.layout import group
 from plotlyst.view.report.productivity import ProductivityCalendar
 from plotlyst.view.widget.button import TopSelectorButton, SelectorToggleButton, YearSelectorButton, MonthSelectorButton
 from plotlyst.view.widget.display import PopupDialog, PlotlystFooter, CopiedTextMessage, icon_text, \
-    HighQualityPaintedIcon, SeparatorLineWithShadow
+    HighQualityPaintedIcon, SeparatorLineWithShadow, HighQualityPaintedIconText
 from plotlyst.view.widget.manuscript import ManuscriptProgressCalendar
 
 
@@ -72,14 +72,42 @@ class SnapshotCanvasEditor(QWidget):
 
 
 class ProductivitySnapshotEditor(SnapshotCanvasEditor):
-    def __init__(self, novel: Novel, parent=None):
+    def __init__(self, novel: Novel, year: int, month: int, parent=None):
         super().__init__(parent)
         self.novel = novel
         vbox(self.canvas)
         transparent(self.canvas)
 
-        calendar = ProductivityCalendar(self.novel.productivity)
-        self.canvas.layout().addWidget(calendar)
+        self.calendar = ProductivityCalendar(self.novel.productivity, year, month, limitSize=False)
+        self.calendar.setDisabled(True)
+
+        self.lblTitle = label(calendar.month_name[month], h4=True, centered=True, wordWrap=True)
+        set_font(self.lblTitle, app_env.serif_font())
+
+        self.legend = ProductivitySnapshotLegend(self.novel)
+        margins(self.legend, top=10)
+        self.legend.refresh(year, month)
+
+        self.canvas.layout().addWidget(self.lblTitle)
+        self.canvas.layout().addWidget(SeparatorLineWithShadow())
+        self.canvas.layout().addWidget(self.legend)
+        self.canvas.layout().addWidget(self.calendar)
+        self.canvas.layout().addWidget(PlotlystFooter(), alignment=Qt.AlignmentFlag.AlignLeft)
+
+    @overrides
+    def hasDateSelector(self) -> bool:
+        return True
+
+    @overrides
+    def setYear(self, year: int):
+        self.calendar.setYear(year)
+        self.legend.refresh(self.calendar.year, self.calendar.month)
+
+    @overrides
+    def setMonth(self, month: int):
+        self.calendar.setMonth(month)
+        self.lblTitle.setText(calendar.month_name[month])
+        self.legend.refresh(self.calendar.year, self.calendar.month)
 
 
 class WritingSnapshotLegend(QWidget):
@@ -93,6 +121,30 @@ class WritingSnapshotLegend(QWidget):
         self.layout().addWidget(label('450+', description=True, decr_font_diff=2))
         self.layout().addWidget(HighQualityPaintedIcon(IconRegistry.from_name('fa5s.square', color='#C8A4D7'), size=16))
         self.layout().addWidget(label('1500+ words', description=True, decr_font_diff=2))
+
+
+class ProductivitySnapshotLegend(QWidget):
+    def __init__(self, novel: Novel, parent=None):
+        super().__init__(parent)
+        self._novel = novel
+        flow(self)
+        sp(self).v_max()
+
+    def refresh(self, year: int, month: int):
+        clear_layout(self)
+
+        categories = set()
+        month_str = f"{month:02d}"
+        for prod_date, category in self._novel.productivity.progress.items():
+            if prod_date.startswith(f'{year}-{month_str}'):
+                categories.add(category)
+
+        for category in self._novel.productivity.categories:
+            if str(category.id) in categories:
+                wdg = HighQualityPaintedIconText(IconRegistry.from_name('fa5s.circle', category.icon_color),
+                                                 label(category.text, description=True, decr_font_diff=2), size=15)
+                translucent(wdg, 0.7)
+                self.layout().addWidget(wdg)
 
 
 class MonthlyWritingSnapshotEditor(SnapshotCanvasEditor):
@@ -324,6 +376,8 @@ class SocialSnapshotPopup(PopupDialog):
         self.btnGroupSelectors = QButtonGroup()
         self.__initSelectorBtn(SnapshotType.MonthlyWriting)
         self.__initSelectorBtn(SnapshotType.DailyWriting)
+        self.wdgNav.layout().addWidget(line())
+        self.__initSelectorBtn(SnapshotType.MonthlyProductivity)
         self.wdgNav.layout().addWidget(vspacer())
 
     def display(self):
@@ -336,8 +390,9 @@ class SocialSnapshotPopup(PopupDialog):
 
         self._snapshotType = snapshotType
 
-        if snapshotType == SnapshotType.Productivity:
-            self._editor = ProductivitySnapshotEditor(self.novel)
+        if snapshotType == SnapshotType.MonthlyProductivity:
+            self._editor = ProductivitySnapshotEditor(self.novel, self.btnYearSelector.year(),
+                                                      self.btnMonthSelector.month())
             self.canvasContainer.layout().addWidget(self._editor.canvas)
         elif snapshotType == SnapshotType.MonthlyWriting:
             self._editor = MonthlyWritingSnapshotEditor(self.novel)

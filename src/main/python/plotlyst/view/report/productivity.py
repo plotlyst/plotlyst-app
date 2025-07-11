@@ -69,8 +69,7 @@ class ProductivityReport(AbstractReport, QWidget):
         incr_icon(self.btnSnapshot, 6)
         self.btnSnapshot.installEventFilter(OpacityEventFilter(self.btnSnapshot, leaveOpacity=0.7))
         self.btnSnapshot.clicked.connect(
-            lambda: emit_event(novel, SocialSnapshotRequested(self, SnapshotType.Productivity)))
-        self.btnSnapshot.setHidden(True)
+            lambda: emit_event(novel, SocialSnapshotRequested(self, SnapshotType.MonthlyProductivity)))
 
         self.wdgCalendars = QWidget()
         flow(self.wdgCalendars, 5, 10)
@@ -162,7 +161,7 @@ def date_to_str(date: QDate) -> str:
 
 
 class ProductivityCalendar(QCalendarWidget):
-    def __init__(self, productivity: DailyProductivity, year: int, month: int, parent=None):
+    def __init__(self, productivity: DailyProductivity, year: int, month: int, limitSize: bool = True, parent=None):
         super().__init__(parent)
         self.productivity = productivity
         self.year = year
@@ -184,8 +183,9 @@ class ProductivityCalendar(QCalendarWidget):
                         selection-background-color: {RELAXED_WHITE_COLOR};
                     }}
                     ''')
-            widget.horizontalHeader().setMinimumSectionSize(30)
-            widget.verticalHeader().setMinimumSectionSize(30)
+            if limitSize:
+                widget.horizontalHeader().setMinimumSectionSize(30)
+                widget.verticalHeader().setMinimumSectionSize(30)
             widget.viewport().installEventFilter(self)
 
         today = QDate.currentDate()
@@ -202,6 +202,10 @@ class ProductivityCalendar(QCalendarWidget):
 
     def setYear(self, year: int):
         self.year = year
+        self.activate()
+
+    def setMonth(self, month: int):
+        self.month = month
         self.activate()
 
     def activate(self):
